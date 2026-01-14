@@ -1,9 +1,15 @@
-const CACHE_NAME = 'ski-race-timer-v1';
+const CACHE_NAME = 'ski-race-timer-v3';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icons/icon-72.png',
+  '/icons/icon-96.png',
+  '/icons/icon-128.png',
+  '/icons/icon-144.png',
+  '/icons/icon-152.png',
   '/icons/icon-192.png',
+  '/icons/icon-384.png',
   '/icons/icon-512.png'
 ];
 

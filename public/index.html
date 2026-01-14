@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -38,31 +38,31 @@
             --safe-bottom: env(safe-area-inset-bottom);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { 
-            height: 100%; 
+        html, body {
+            height: 100%;
             overflow: hidden;
             position: fixed;
             width: 100%;
         }
-        body { 
-            font-family: 'Outfit', -apple-system, sans-serif; 
-            background: var(--background); 
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--background);
             color: var(--text-primary);
         }
-        .app-container { 
-            max-width: 430px; 
-            margin: 0 auto; 
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
             height: 100%;
-            display: flex; 
-            flex-direction: column; 
+            display: flex;
+            flex-direction: column;
             background: linear-gradient(135deg, var(--background) 0%, rgba(21, 27, 35, 0.5) 50%, var(--background) 100%);
             padding-top: var(--safe-top);
             padding-bottom: var(--safe-bottom);
         }
-        .tab-bar { 
-            display: flex; 
-            background: var(--surface); 
-            border-top: 1px solid var(--surface-elevated); 
+        .tab-bar {
+            display: flex;
+            background: var(--surface);
+            border-top: 1px solid var(--surface-elevated);
             padding: 6px 0;
             flex-shrink: 0;
         }
@@ -70,145 +70,209 @@
         .tab-item svg { width: 22px; height: 22px; }
         .tab-item span { font-size: 10px; font-weight: 500; }
         .tab-item.active { color: var(--primary); }
+        .tab-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
         .view { display: none; flex: 1; min-height: 0; overflow: hidden; }
         .view.active { display: flex; flex-direction: column; }
-        
+
         /* Timing View - uses flexbox to distribute space */
         #timing-view {
             padding: 2vmin;
             gap: 1.5vmin;
         }
-        .timing-header { 
-            display: flex; 
-            align-items: center; 
+        .timing-header {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
         }
-        .gps-indicator { 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            padding: 6px 10px; 
-            background: var(--surface); 
-            border-radius: 16px; 
-            font-size: 11px; 
-            font-weight: 500; 
+        .gps-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--surface);
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 500;
         }
-        .gps-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gps-active); box-shadow: 0 0 6px var(--gps-active); animation: pulse 2s infinite; }
+        .gps-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gps-inactive); box-shadow: 0 0 6px var(--gps-inactive); transition: all 0.3s; }
+        .gps-dot.active { background: var(--gps-active); box-shadow: 0 0 6px var(--gps-active); animation: pulse 2s infinite; }
+        .gps-dot.searching { background: var(--gps-searching); box-shadow: 0 0 6px var(--gps-searching); animation: pulse 1s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        
-        .clock-display { 
+
+        .undo-btn {
+            padding: 6px 10px;
+            background: var(--surface);
+            border: none;
+            border-radius: 16px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .undo-btn.show { display: flex; }
+        .undo-btn:hover { background: var(--surface-elevated); color: var(--text-primary); }
+        .undo-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .undo-btn svg { width: 14px; height: 14px; }
+
+        .clock-display {
             text-align: center;
             flex-shrink: 0;
         }
-        .clock-time { 
-            font-family: 'JetBrains Mono', monospace; 
-            font-size: clamp(32px, 10vw, 48px); 
-            font-weight: 700; 
-            letter-spacing: -1px; 
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+        .clock-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(32px, 10vw, 48px);
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             background-clip: text;
             line-height: 1.1;
         }
         .clock-date { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-        
-        .bib-section { 
+        .time-sync-info { font-size: 9px; color: var(--text-tertiary); margin-top: 2px; }
+
+        .bib-section {
             flex-shrink: 0;
         }
         .bib-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .bib-display { 
-            font-family: 'JetBrains Mono', monospace; 
-            font-size: clamp(28px, 9vw, 40px); 
-            font-weight: 700; 
-            color: var(--text-primary); 
-            background: var(--surface); 
-            border-radius: 10px; 
-            padding: 10px 16px; 
+        .bib-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(28px, 9vw, 40px);
+            font-weight: 700;
+            color: var(--text-primary);
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 10px 16px;
             text-align: center;
         }
         .bib-display.empty { color: var(--text-tertiary); }
-        
-        .timing-points { 
-            display: flex; 
+        .bib-display.duplicate { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+
+        .timing-points {
+            display: flex;
             gap: 6px;
             flex-shrink: 0;
         }
-        .timing-point { 
-            flex: 1; 
-            padding: 8px 4px; 
-            background: var(--surface); 
-            border: 2px solid transparent; 
-            border-radius: 10px; 
-            color: var(--text-secondary); 
-            font-weight: 600; 
-            font-size: 13px; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            text-align: center; 
+        .timing-point {
+            flex: 1;
+            padding: 8px 4px;
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
         }
-        .timing-point.active { background: rgba(0, 212, 255, 0.1); border-color: var(--primary); color: var(--primary); }
-        .timing-point.start { background: rgba(74, 222, 128, 0.1); border-color: var(--success); color: var(--success); }
-        .timing-point.finish { background: rgba(255, 107, 53, 0.1); border-color: var(--secondary); color: var(--secondary); }
-        
-        .number-pad { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
+        .timing-point:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .timing-point.start.active { background: rgba(74, 222, 128, 0.2); border-color: var(--success); color: var(--success); box-shadow: 0 0 12px rgba(74, 222, 128, 0.3); }
+        .timing-point.finish.active { background: rgba(255, 107, 53, 0.2); border-color: var(--secondary); color: var(--secondary); box-shadow: 0 0 12px rgba(255, 107, 53, 0.3); }
+
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 6px;
             flex: 1;
             min-height: 0;
         }
-        .num-btn { 
-            background: var(--surface); 
-            border: none; 
-            border-radius: 10px; 
-            color: var(--text-primary); 
-            font-size: clamp(20px, 6vw, 28px); 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: all 0.15s; 
-            display: flex; 
-            align-items: center; 
+        .num-btn {
+            background: var(--surface);
+            border: none;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
             justify-content: center;
         }
+        .num-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .num-btn:active { background: var(--surface-elevated); transform: scale(0.95); }
         .num-btn.delete { background: rgba(239, 68, 68, 0.2); color: var(--error); }
         .num-btn.clear { font-size: 14px; color: var(--text-secondary); }
-        
-        .timestamp-btn { 
-            padding: 14px; 
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%); 
-            border: none; 
-            border-radius: 12px; 
-            color: white; 
-            font-size: clamp(16px, 5vw, 22px); 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            cursor: pointer; 
-            transition: all 0.15s; 
+
+        .timestamp-btn {
+            padding: 14px;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: clamp(16px, 5vw, 22px);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.15s;
             box-shadow: 0 6px 24px rgba(255, 107, 53, 0.4);
             flex-shrink: 0;
         }
+        .timestamp-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
         .timestamp-btn:active { transform: scale(0.98); box-shadow: 0 3px 12px rgba(255, 107, 53, 0.4); }
-        
+
         /* Results View */
         #results-view {
             padding: 2vmin;
             gap: 2vmin;
         }
-        .results-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .results-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
         .results-title { font-size: 22px; font-weight: 700; }
-        .results-actions { display: flex; gap: 6px; }
-        .action-btn { padding: 6px 12px; background: var(--surface); border: none; border-radius: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .results-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .action-btn { padding: 6px 12px; background: var(--surface); border: none; border-radius: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
         .action-btn:hover { background: var(--surface-elevated); color: var(--text-primary); }
+        .action-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .action-btn.danger { color: var(--error); }
-        .results-stats { display: flex; gap: 8px; flex-shrink: 0; }
-        .stat-card { flex: 1; padding: 10px; background: var(--surface); border-radius: 10px; text-align: center; }
-        .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+        .action-btn svg { width: 14px; height: 14px; }
+
+        .search-filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        .search-input::placeholder { color: var(--text-tertiary); }
+        .filter-select {
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .filter-select:focus { outline: none; border-color: var(--primary); }
+
+        .results-stats { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+        .stat-card { flex: 1; min-width: 70px; padding: 10px; background: var(--surface); border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 18px; font-weight: 700; color: var(--primary); }
         .stat-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .stat-card.success .stat-value { color: var(--success); }
+        .stat-card.warning .stat-value { color: var(--warning); }
+        .stat-card.secondary .stat-value { color: var(--secondary); }
+
         .results-list { flex: 1; overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
         .result-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--surface); border-radius: 10px; margin-bottom: 6px; }
         .result-checkbox { width: 22px; height: 22px; border: 2px solid var(--text-tertiary); border-radius: 5px; cursor: pointer; display: none; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -220,14 +284,18 @@
         .result-info { flex: 1; min-width: 0; }
         .result-time { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; }
         .result-date { font-size: 11px; color: var(--text-secondary); }
+        .result-status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+        .result-status.dns { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+        .result-status.dnf { background: rgba(239, 68, 68, 0.2); color: var(--error); }
         .result-delete { padding: 6px; background: none; border: none; color: var(--text-tertiary); cursor: pointer; border-radius: 6px; transition: all 0.2s; flex-shrink: 0; }
         .result-delete:hover { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .result-delete:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .select-mode .result-delete { display: none; }
         .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; }
         .empty-icon { width: 48px; height: 48px; color: var(--text-tertiary); margin-bottom: 12px; }
         .empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
         .empty-text { font-size: 13px; color: var(--text-tertiary); }
-        
+
         /* Settings View */
         #settings-view {
             padding: 2vmin;
@@ -246,10 +314,12 @@
         .settings-row-label { flex: 1; font-size: 14px; }
         .settings-row-value { font-size: 13px; color: var(--text-secondary); }
         .toggle { width: 44px; height: 26px; background: var(--surface-elevated); border-radius: 13px; position: relative; cursor: pointer; transition: all 0.3s; flex-shrink: 0; }
+        .toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: var(--text-secondary); border-radius: 50%; top: 2px; left: 2px; transition: all 0.3s; }
         .toggle.on { background: var(--primary); }
         .toggle.on::after { left: 20px; background: white; }
         .lang-toggle { padding: 6px 12px; background: var(--surface-elevated); border: none; border-radius: 6px; color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer; }
+        .lang-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .about-card { padding: 16px; text-align: center; }
         .about-icon { width: 48px; height: 48px; margin: 0 auto 12px; color: var(--primary); }
         .about-icon svg { width: 100%; height: 100%; }
@@ -259,27 +329,48 @@
         .about-feature { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); }
         .about-feature svg { width: 16px; height: 16px; color: var(--primary); flex-shrink: 0; }
         .about-version { font-size: 11px; color: var(--text-tertiary); }
-        
+
+        .backup-section { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .backup-btn { flex: 1; min-width: 100px; padding: 10px; background: var(--surface-elevated); border: none; border-radius: 8px; color: var(--text-primary); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; }
+        .backup-btn:hover { background: var(--primary); color: var(--background); }
+        .backup-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .backup-btn svg { width: 16px; height: 16px; }
+
         /* Overlays */
         .confirmation-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 14, 20, 0.9); display: none; align-items: center; justify-content: center; z-index: 200; }
         .confirmation-overlay.show { display: flex; }
         .confirmation-card { background: var(--surface); border-radius: 20px; padding: 24px; text-align: center; animation: scaleIn 0.3s ease; }
         @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .confirmation-icon { width: 48px; height: 48px; color: var(--success); margin-bottom: 12px; }
+        .confirmation-icon.warning { color: var(--warning); }
         .confirmation-bib { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; margin-bottom: 6px; }
         .confirmation-time { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: var(--primary); }
+        .confirmation-warning { font-size: 12px; color: var(--warning); margin-top: 8px; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 14, 20, 0.9); display: none; align-items: center; justify-content: center; z-index: 200; }
         .modal-overlay.show { display: flex; }
         .modal-card { background: var(--surface); border-radius: 14px; padding: 20px; width: 90%; max-width: 300px; }
         .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
         .modal-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+        .modal-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4; }
         .modal-input { width: 100%; padding: 12px; background: var(--surface-elevated); border: 2px solid transparent; border-radius: 10px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 20px; text-align: center; margin-bottom: 12px; }
         .modal-input:focus { outline: none; border-color: var(--primary); }
         .modal-buttons { display: flex; gap: 10px; }
         .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .modal-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
         .modal-btn.cancel { background: var(--surface-elevated); color: var(--text-secondary); }
         .modal-btn.save { background: var(--primary); color: var(--background); }
-        
+        .modal-btn.danger { background: var(--error); color: white; }
+
+        .status-select { width: 100%; padding: 12px; background: var(--surface-elevated); border: 2px solid transparent; border-radius: 10px; color: var(--text-primary); font-size: 14px; margin-bottom: 12px; cursor: pointer; }
+        .status-select:focus { outline: none; border-color: var(--primary); }
+
+        /* Toast notifications */
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface-elevated); color: var(--text-primary); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+        .toast.error { background: var(--error); }
+        .toast.success { background: var(--success); color: var(--background); }
+
         /* Small screen adjustments */
         @media (max-height: 700px) {
             .clock-date { display: none; }
@@ -289,88 +380,304 @@
             .bib-label { display: none; }
             .timing-header { display: none; }
         }
+
+        /* Landscape mode */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .app-container {
+                max-width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            #timing-view {
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                gap: 1vmin;
+                padding: 1vmin 2vmin;
+            }
+            .timing-header { width: 100%; order: 1; }
+            .clock-display { width: 35%; order: 2; text-align: left; }
+            .clock-time { font-size: clamp(24px, 5vw, 32px); }
+            .clock-date { display: none; }
+            .bib-section { width: 30%; order: 3; }
+            .bib-label { display: none; }
+            .bib-display { font-size: clamp(20px, 5vw, 28px); padding: 6px 10px; }
+            .timing-points { width: 30%; order: 4; flex-direction: column; gap: 4px; }
+            .timing-point { padding: 4px; font-size: 11px; }
+            .number-pad { width: 55%; order: 5; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+            .num-btn { font-size: clamp(16px, 4vw, 20px); }
+            .timestamp-btn { width: 40%; order: 6; padding: 8px; font-size: clamp(12px, 3vw, 16px); align-self: stretch; }
+            .tab-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding-bottom: var(--safe-bottom);
+            }
+            .view { padding-bottom: 60px !important; }
+
+            #results-view, #settings-view {
+                padding: 1vmin 2vmin;
+            }
+            .results-stats { flex-wrap: nowrap; }
+            .stat-card { min-width: 50px; padding: 6px; }
+            .stat-value { font-size: 14px; }
+            .stat-label { font-size: 8px; }
+        }
+
+        @media (orientation: landscape) and (min-height: 501px) {
+            .app-container {
+                max-width: 600px;
+            }
+        }
+
+        /* Skip link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary);
+            color: var(--background);
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Screen reader only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Sync styles */
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: var(--surface);
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .sync-indicator.connected { color: var(--success); }
+        .sync-indicator.disconnected { color: var(--text-tertiary); }
+        .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .race-id-display { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--primary); }
+
+        .race-id-input {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-elevated);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .race-id-input:focus { outline: none; border-color: var(--primary); }
+
+        .device-name-input {
+            width: 100%;
+            padding: 8px;
+            background: var(--surface-elevated);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        .device-name-input:focus { outline: none; border-color: var(--primary); }
+
+        .devices-list {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .device-badge {
+            padding: 4px 8px;
+            background: var(--surface-elevated);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .device-badge.self { background: rgba(0, 212, 255, 0.2); color: var(--primary); }
+        .device-badge.online { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+
+        /* Multi-device result items */
+        .result-item.grouped { flex-direction: column; align-items: stretch; gap: 8px; }
+        .result-item-main { display: flex; align-items: center; gap: 10px; width: 100%; }
+        .result-item-devices { display: none; padding-left: 10px; border-left: 2px solid var(--surface-elevated); margin-left: 25px; }
+        .result-item.expanded .result-item-devices { display: block; }
+        .device-time { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }
+        .device-time-name { color: var(--text-tertiary); min-width: 60px; }
+        .device-time-value { font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); }
+        .result-expand-btn { padding: 4px 8px; background: var(--surface-elevated); border: none; border-radius: 4px; color: var(--text-tertiary); font-size: 10px; cursor: pointer; margin-left: auto; }
+        .result-expand-btn:hover { color: var(--text-primary); }
+        .result-device-count { font-size: 10px; color: var(--text-tertiary); background: var(--surface-elevated); padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+        .result-averaged { color: var(--primary); font-size: 10px; margin-left: 4px; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div id="timing-view" class="view active">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="app-container" role="application" aria-label="Ski Race Timer">
+        <div id="timing-view" class="view active" id="main-content" role="main" aria-label="Timer view">
             <div class="timing-header">
-                <div class="gps-indicator">
-                    <div class="gps-dot" id="gps-dot"></div>
-                    <span id="gps-status">GPS Synced</span>
+                <div class="gps-indicator" role="status" aria-live="polite">
+                    <div class="gps-dot" id="gps-dot" aria-hidden="true"></div>
+                    <span id="gps-status">GPS Inactive</span>
                 </div>
+                <div class="sync-indicator disconnected" id="sync-indicator" style="display: none;">
+                    <div class="sync-dot"></div>
+                    <span id="sync-status">Offline</span>
+                    <span class="race-id-display" id="race-id-display"></span>
+                </div>
+                <button class="undo-btn" id="undo-btn" aria-label="Undo last timestamp">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+                    <span id="undo-text">Undo</span>
+                </button>
             </div>
             <div class="clock-display">
-                <div class="clock-time" id="clock-time">00:00:00.000</div>
-                <div class="clock-date" id="clock-date">Monday, January 13, 2025</div>
+                <div class="clock-time" id="clock-time" role="timer" aria-label="Current time">00:00:00.000</div>
+                <div class="clock-date" id="clock-date" aria-label="Current date">Monday, January 13, 2025</div>
+                <div class="time-sync-info" id="time-sync-info"></div>
             </div>
             <div class="bib-section">
                 <div class="bib-label" id="bib-label">BIB</div>
-                <div class="bib-display" id="bib-display">---</div>
+                <div class="bib-display" id="bib-display" role="status" aria-live="polite" aria-label="Bib number">---</div>
             </div>
-            <div class="timing-points">
-                <button class="timing-point start active" data-point="S" id="point-start">Start</button>
-                <button class="timing-point" data-point="I1">I1</button>
-                <button class="timing-point" data-point="I2">I2</button>
-                <button class="timing-point" data-point="I3">I3</button>
-                <button class="timing-point finish" data-point="F" id="point-finish">Finish</button>
+            <div class="timing-points" role="radiogroup" aria-label="Timing point selection">
+                <button class="timing-point start" data-point="S" id="point-start" role="radio" aria-checked="false">Start</button>
+                <button class="timing-point finish active" data-point="F" id="point-finish" role="radio" aria-checked="true">Finish</button>
             </div>
-            <div class="number-pad">
-                <button class="num-btn" data-num="1">1</button>
-                <button class="num-btn" data-num="2">2</button>
-                <button class="num-btn" data-num="3">3</button>
-                <button class="num-btn" data-num="4">4</button>
-                <button class="num-btn" data-num="5">5</button>
-                <button class="num-btn" data-num="6">6</button>
-                <button class="num-btn" data-num="7">7</button>
-                <button class="num-btn" data-num="8">8</button>
-                <button class="num-btn" data-num="9">9</button>
-                <button class="num-btn clear" id="btn-clear">C</button>
-                <button class="num-btn" data-num="0">0</button>
-                <button class="num-btn delete" id="btn-delete">⌫</button>
+            <div class="number-pad" role="group" aria-label="Number pad">
+                <button class="num-btn" data-num="1" aria-label="1">1</button>
+                <button class="num-btn" data-num="2" aria-label="2">2</button>
+                <button class="num-btn" data-num="3" aria-label="3">3</button>
+                <button class="num-btn" data-num="4" aria-label="4">4</button>
+                <button class="num-btn" data-num="5" aria-label="5">5</button>
+                <button class="num-btn" data-num="6" aria-label="6">6</button>
+                <button class="num-btn" data-num="7" aria-label="7">7</button>
+                <button class="num-btn" data-num="8" aria-label="8">8</button>
+                <button class="num-btn" data-num="9" aria-label="9">9</button>
+                <button class="num-btn clear" id="btn-clear" aria-label="Clear all">C</button>
+                <button class="num-btn" data-num="0" aria-label="0">0</button>
+                <button class="num-btn delete" id="btn-delete" aria-label="Delete last digit">⌫</button>
             </div>
-            <button class="timestamp-btn" id="timestamp-btn">TIMESTAMP</button>
+            <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">TIMESTAMP</button>
         </div>
 
-        <div id="results-view" class="view">
+        <div id="results-view" class="view" role="main" aria-label="Results view">
             <div class="results-header">
                 <h1 class="results-title" id="results-title">Results</h1>
                 <div class="results-actions" id="results-actions">
-                    <button class="action-btn" id="select-btn">Select</button>
-                    <button class="action-btn" id="export-btn">Export</button>
+                    <button class="action-btn" id="select-btn" aria-label="Select entries">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z"/></svg>
+                        <span>Select</span>
+                    </button>
+                    <button class="action-btn" id="export-csv-btn" aria-label="Export as CSV">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                        <span>CSV</span>
+                    </button>
+                    <button class="action-btn" id="export-json-btn" aria-label="Export as JSON">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                        <span>JSON</span>
+                    </button>
                 </div>
                 <div class="results-actions" id="select-actions" style="display: none;">
                     <button class="action-btn" id="cancel-select-btn">Cancel</button>
                     <button class="action-btn danger" id="delete-selected-btn">Delete</button>
                 </div>
             </div>
-            <div class="results-stats">
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" id="search-input" placeholder="Search bib..." aria-label="Search by bib number">
+                <select class="filter-select" id="filter-point" aria-label="Filter by timing point">
+                    <option value="">All Points</option>
+                    <option value="S">Start</option>
+                    <option value="F">Finish</option>
+                </select>
+                <select class="filter-select" id="filter-status" aria-label="Filter by status">
+                    <option value="">All Status</option>
+                    <option value="ok">OK</option>
+                    <option value="dns">DNS</option>
+                    <option value="dnf">DNF</option>
+                </select>
+            </div>
+            <div class="results-stats" role="region" aria-label="Statistics">
                 <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label" id="label-total">Total</div></div>
                 <div class="stat-card"><div class="stat-value" id="stat-racers">0</div><div class="stat-label" id="label-racers">Racers</div></div>
-                <div class="stat-card"><div class="stat-value" id="stat-event">--</div><div class="stat-label" id="label-event">Event</div></div>
+                <div class="stat-card success"><div class="stat-value" id="stat-finished">0</div><div class="stat-label" id="label-finished">Finished</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="stat-dns">0</div><div class="stat-label">DNS</div></div>
+                <div class="stat-card secondary"><div class="stat-value" id="stat-dnf">0</div><div class="stat-label">DNF</div></div>
             </div>
-            <div class="results-list" id="results-list"></div>
-            <div class="empty-state" id="empty-state">
-                <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+            <div class="results-stats" id="extended-stats" style="display: none;">
+                <div class="stat-card"><div class="stat-value" id="stat-fastest">--:--</div><div class="stat-label" id="label-fastest">Fastest</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-average">--:--</div><div class="stat-label" id="label-average">Average</div></div>
+            </div>
+            <div class="results-list" id="results-list" role="list" aria-label="Recorded times"></div>
+            <div class="empty-state" id="empty-state" role="status">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
                 <div class="empty-title" id="empty-title">No Times Recorded</div>
                 <div class="empty-text" id="empty-text">Recorded timestamps will appear here</div>
             </div>
         </div>
 
-        <div id="settings-view" class="view">
+        <div id="settings-view" class="view" role="main" aria-label="Settings view">
             <div class="settings-header"><h1 class="settings-title" id="settings-title">Settings</h1></div>
+            <div class="settings-section">
+                <div class="settings-section-title" id="sync-section-title">Multi-Device Sync</div>
+                <div class="settings-card">
+                    <div class="settings-row">
+                        <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
+                        <span class="settings-row-label" id="sync-enable-label">Enable Sync</span>
+                        <div id="toggle-sync" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sync')" onkeydown="handleToggleKey(event, 'sync')"></div>
+                    </div>
+                    <div class="settings-row" id="sync-settings-row" style="display: none; flex-direction: column; align-items: stretch; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="settings-row-icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div>
+                            <span class="settings-row-label" id="race-id-label">Race ID</span>
+                        </div>
+                        <input type="text" class="race-id-input" id="race-id-input" placeholder="RACE-001" maxlength="20" onchange="updateRaceId()">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                            <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+                            <span class="settings-row-label" id="device-name-label">Device Name</span>
+                        </div>
+                        <input type="text" class="device-name-input" id="device-name-input" placeholder="Timer 1" maxlength="20" onchange="updateDeviceName()">
+                        <div class="devices-list" id="devices-list"></div>
+                    </div>
+                    <div class="settings-row" id="sync-status-row" style="display: none;">
+                        <div class="settings-row-icon" style="color: var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></div>
+                        <span class="settings-row-label" id="sync-connection-status">Not connected</span>
+                        <span class="settings-row-value" id="sync-device-count">0 devices</span>
+                    </div>
+                </div>
+            </div>
             <div class="settings-section">
                 <div class="settings-section-title" id="gps-section-title">GPS Status</div>
                 <div class="settings-card">
                     <div class="settings-row">
-                        <div class="settings-row-icon" style="color: var(--success);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
-                        <span class="settings-row-label" id="settings-gps-status">GPS Synced</span>
-                        <button class="action-btn" onclick="simulateGPSSync()" id="sync-btn">Sync</button>
+                        <div class="settings-row-icon" style="color: var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+                        <span class="settings-row-label" id="settings-gps-status">GPS Inactive</span>
+                        <button class="action-btn" onclick="requestGPSPermission()" id="sync-btn">Enable GPS</button>
                     </div>
                     <div class="settings-row">
-                        <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></div>
+                        <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></div>
                         <span class="settings-row-label" id="accuracy-label">Accuracy</span>
-                        <span class="settings-row-value">±10ms</span>
+                        <span class="settings-row-value" id="gps-accuracy">--</span>
                     </div>
                 </div>
             </div>
@@ -378,19 +685,43 @@
                 <div class="settings-section-title" id="timing-section-title">Timing Settings</div>
                 <div class="settings-card">
                     <div class="settings-row">
-                        <div class="settings-row-icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+                        <div class="settings-row-icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
                         <span class="settings-row-label" id="auto-increment-label">Auto-increment Bib</span>
-                        <div id="toggle-auto" class="toggle on" onclick="toggleSetting(this)"></div>
+                        <div id="toggle-auto" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('auto')" onkeydown="handleToggleKey(event, 'auto')"></div>
                     </div>
                     <div class="settings-row">
-                        <div class="settings-row-icon" style="color: var(--secondary);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 15.998V22h6l14-14-6-6L0 15.998zm23.71-9.42L21.29.29a1.003 1.003 0 0 0-1.42 0L18 2.17 21.83 6l1.88-1.88a.996.996 0 0 0 0-1.42z"/></svg></div>
+                        <div class="settings-row-icon" style="color: var(--secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 15.998V22h6l14-14-6-6L0 15.998zm23.71-9.42L21.29.29a1.003 1.003 0 0 0-1.42 0L18 2.17 21.83 6l1.88-1.88a.996.996 0 0 0 0-1.42z"/></svg></div>
                         <span class="settings-row-label" id="haptic-label">Haptic Feedback</span>
-                        <div id="toggle-haptic" class="toggle on" onclick="toggleSetting(this)"></div>
+                        <div id="toggle-haptic" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('haptic')" onkeydown="handleToggleKey(event, 'haptic')"></div>
                     </div>
                     <div class="settings-row">
-                        <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></div>
+                        <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></div>
+                        <span class="settings-row-label" id="sound-label">Sound Feedback</span>
+                        <div id="toggle-sound" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sound')" onkeydown="handleToggleKey(event, 'sound')"></div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></div>
                         <span class="settings-row-label" id="language-label">Language</span>
                         <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()">EN</button>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title" id="backup-section-title">Data Backup</div>
+                <div class="settings-card">
+                    <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <span class="settings-row-label" id="backup-label">Backup & Restore Data</span>
+                        <div class="backup-section">
+                            <button class="backup-btn" onclick="exportBackup()" aria-label="Export backup">
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                                <span id="export-backup-text">Export</span>
+                            </button>
+                            <button class="backup-btn" onclick="document.getElementById('import-file').click()" aria-label="Import backup">
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                                <span id="import-backup-text">Import</span>
+                            </button>
+                            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importBackup(event)">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -398,64 +729,486 @@
                 <div class="settings-section-title" id="about-section-title">About</div>
                 <div class="settings-card">
                     <div class="about-card">
-                        <div class="about-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg></div>
+                        <div class="about-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg></div>
                         <h2 class="about-title">Ski Race Timer</h2>
                         <p class="about-subtitle">GPS-Synchronized Race Timing</p>
                         <div class="about-features">
-                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span>GPS-synced timestamps</span></div>
-                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.92 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.94 2.55 2 6.81 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5v-5l-2.28 2.28C6.92 18 5 15.21 5 12c0-4.08 3.05-7.44 7-7.93V2.05z"/></svg><span>Millisecond precision</span></div>
-                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg><span>CSV & JSON export</span></div>
-                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/></svg><span>Designed for outdoor use</span></div>
+                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span id="feature-gps">GPS-synced timestamps</span></div>
+                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.92 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.94 2.55 2 6.81 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5v-5l-2.28 2.28C6.92 18 5 15.21 5 12c0-4.08 3.05-7.44 7-7.93V2.05z"/></svg><span id="feature-precision">Millisecond precision</span></div>
+                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg><span id="feature-export">CSV & JSON export</span></div>
+                            <div class="about-feature"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/></svg><span id="feature-mobile">Designed for outdoor use</span></div>
                         </div>
-                        <p class="about-version">Version 1.0.0 • PWA</p>
+                        <p class="about-version">Version 2.0.0 • PWA</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <nav class="tab-bar">
-            <button class="tab-item active" data-view="timing-view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg><span id="tab-timer">Timer</span></button>
-            <button class="tab-item" data-view="results-view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span id="tab-results">Results</span></button>
-            <button class="tab-item" data-view="settings-view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span id="tab-settings">Settings</span></button>
+        <nav class="tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="tab-item active" data-view="timing-view" role="tab" aria-selected="true" aria-controls="timing-view">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+                <span id="tab-timer">Timer</span>
+            </button>
+            <button class="tab-item" data-view="results-view" role="tab" aria-selected="false" aria-controls="results-view">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                <span id="tab-results">Results</span>
+            </button>
+            <button class="tab-item" data-view="settings-view" role="tab" aria-selected="false" aria-controls="settings-view">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <span id="tab-settings">Settings</span>
+            </button>
         </nav>
 
-        <div id="confirmation-overlay" class="confirmation-overlay">
+        <div id="confirmation-overlay" class="confirmation-overlay" role="alertdialog" aria-labelledby="confirm-bib" aria-describedby="confirm-time">
             <div class="confirmation-card">
-                <svg class="confirmation-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                <svg class="confirmation-icon" id="confirm-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
                 <div class="confirmation-bib" id="confirm-bib">Bib 001</div>
                 <div class="confirmation-time" id="confirm-time">10:30:45.123</div>
+                <div class="confirmation-warning" id="confirm-warning" style="display: none;"></div>
             </div>
         </div>
 
-        <div id="edit-modal" class="modal-overlay">
+        <div id="edit-modal" class="modal-overlay" role="dialog" aria-labelledby="edit-modal-title">
             <div class="modal-card">
-                <div class="modal-title" id="edit-modal-title">Edit Bib Number</div>
+                <div class="modal-title" id="edit-modal-title">Edit Entry</div>
                 <div class="modal-subtitle" id="edit-modal-time">10:30:45.123</div>
+                <label class="sr-only" for="edit-bib-input">Bib number</label>
                 <input type="number" id="edit-bib-input" class="modal-input" placeholder="---" min="1" max="999">
+                <label class="sr-only" for="edit-status-select">Status</label>
+                <select id="edit-status-select" class="status-select">
+                    <option value="ok">OK</option>
+                    <option value="dns">DNS (Did Not Start)</option>
+                    <option value="dnf">DNF (Did Not Finish)</option>
+                </select>
                 <div class="modal-buttons">
                     <button class="modal-btn cancel" onclick="closeEditModal()" id="edit-cancel-btn">Cancel</button>
-                    <button class="modal-btn save" onclick="saveEditBib()" id="edit-save-btn">Save</button>
+                    <button class="modal-btn save" onclick="saveEditEntry()" id="edit-save-btn">Save</button>
                 </div>
             </div>
         </div>
+
+        <div id="confirm-delete-modal" class="modal-overlay" role="alertdialog" aria-labelledby="confirm-delete-title" aria-describedby="confirm-delete-text">
+            <div class="modal-card">
+                <div class="modal-title" id="confirm-delete-title">Delete Entry?</div>
+                <div class="modal-text" id="confirm-delete-text">Are you sure you want to delete this entry? This action cannot be undone.</div>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeConfirmDeleteModal()" id="confirm-delete-cancel">Cancel</button>
+                    <button class="modal-btn danger" onclick="confirmDelete()" id="confirm-delete-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="toast" role="alert" aria-live="polite"></div>
     </div>
 
     <script>
+        // Translations
         const translations = {
-            en: { gpsSync: 'GPS Synced', gpsSyncing: 'Syncing...', bib: 'BIB', timestamp: 'TIMESTAMP', start: 'Start', finish: 'Finish', results: 'Results', total: 'Total', racers: 'Racers', event: 'Event', select: 'Select', cancel: 'Cancel', delete: 'Delete', export: 'Export', noTimesRecorded: 'No Times Recorded', noTimesDesc: 'Recorded timestamps will appear here', noBib: 'No Bib', editBibNumber: 'Edit Bib Number', save: 'Save', settings: 'Settings', gpsStatus: 'GPS Status', sync: 'Sync', accuracy: 'Accuracy', timingSettings: 'Timing Settings', autoIncrementBib: 'Auto-increment Bib', hapticFeedback: 'Haptic Feedback', language: 'Language', about: 'About', timer: 'Timer' },
-            de: { gpsSync: 'GPS synchronisiert', gpsSyncing: 'Synchronisieren...', bib: 'STARTNR', timestamp: 'ZEITSTEMPEL', start: 'Start', finish: 'Ziel', results: 'Ergebnisse', total: 'Gesamt', racers: 'Fahrer', event: 'Event', select: 'Auswählen', cancel: 'Abbrechen', delete: 'Löschen', export: 'Exportieren', noTimesRecorded: 'Keine Zeiten erfasst', noTimesDesc: 'Erfasste Zeitstempel erscheinen hier', noBib: 'Keine Nr.', editBibNumber: 'Startnummer bearbeiten', save: 'Speichern', settings: 'Einstellungen', gpsStatus: 'GPS Status', sync: 'Sync', accuracy: 'Genauigkeit', timingSettings: 'Zeitmessung', autoIncrementBib: 'Startnr. automatisch erhöhen', hapticFeedback: 'Haptisches Feedback', language: 'Sprache', about: 'Über', timer: 'Timer' }
+            en: {
+                gpsSync: 'GPS Synced', gpsSyncing: 'Acquiring GPS...', gpsInactive: 'GPS Inactive', gpsError: 'GPS Error', gpsPermissionDenied: 'GPS permission denied. Check browser settings.', gpsUnavailable: 'GPS unavailable on this device', gpsTimeout: 'GPS signal timeout',
+                bib: 'BIB', timestamp: 'TIMESTAMP', start: 'Start', finish: 'Finish',
+                results: 'Results', total: 'Total', racers: 'Racers', finished: 'Finished', event: 'Event',
+                select: 'Select', cancel: 'Cancel', delete: 'Delete', export: 'Export',
+                noTimesRecorded: 'No Times Recorded', noTimesDesc: 'Recorded timestamps will appear here',
+                noBib: 'No Bib', editEntry: 'Edit Entry', save: 'Save',
+                settings: 'Settings', gpsStatus: 'GPS Status', enableGps: 'Enable GPS', accuracy: 'Accuracy',
+                timingSettings: 'Timing Settings', autoIncrementBib: 'Auto-increment Bib',
+                hapticFeedback: 'Haptic Feedback', soundFeedback: 'Sound Feedback', language: 'Language',
+                about: 'About', timer: 'Timer', undo: 'Undo', undone: 'Undone',
+                deleteEntry: 'Delete Entry?', deleteConfirmText: 'Are you sure you want to delete this entry? This action cannot be undone.',
+                deleteSelected: 'Delete Selected?', deleteSelectedText: 'Are you sure you want to delete the selected entries?',
+                duplicateWarning: 'Duplicate entry for this bib/point',
+                backup: 'Data Backup', backupRestore: 'Backup & Restore Data', exportBackup: 'Export', importBackup: 'Import',
+                backupSuccess: 'Backup exported successfully', importSuccess: 'Data imported successfully',
+                importError: 'Error importing data', noData: 'No data to export',
+                fastest: 'Fastest', average: 'Average', search: 'Search bib...',
+                allPoints: 'All Points', allStatus: 'All Status', ok: 'OK',
+                featureGps: 'GPS-synced timestamps', featurePrecision: 'Millisecond precision',
+                featureExport: 'CSV & JSON export', featureMobile: 'Designed for outdoor use',
+                pointS: 'S', pointF: 'F',
+                multiDeviceSync: 'Multi-Device Sync', enableSync: 'Enable Sync', raceId: 'Race ID', deviceName: 'Device Name',
+                syncConnected: 'Connected', syncDisconnected: 'Offline', syncConnecting: 'Connecting...', devices: 'devices',
+                averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected'
+            },
+            de: {
+                gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
+                bib: 'STARTNR', timestamp: 'ZEITSTEMPEL', start: 'Start', finish: 'Ziel',
+                results: 'Ergebnisse', total: 'Gesamt', racers: 'Fahrer', finished: 'Im Ziel', event: 'Event',
+                select: 'Auswählen', cancel: 'Abbrechen', delete: 'Löschen', export: 'Exportieren',
+                noTimesRecorded: 'Keine Zeiten erfasst', noTimesDesc: 'Erfasste Zeitstempel erscheinen hier',
+                noBib: 'Keine Nr.', editEntry: 'Eintrag bearbeiten', save: 'Speichern',
+                settings: 'Einstellungen', gpsStatus: 'GPS Status', enableGps: 'GPS aktivieren', accuracy: 'Genauigkeit',
+                timingSettings: 'Zeitmessung', autoIncrementBib: 'Startnr. automatisch erhöhen',
+                hapticFeedback: 'Haptisches Feedback', soundFeedback: 'Ton-Feedback', language: 'Sprache',
+                about: 'Über', timer: 'Timer', undo: 'Rückgängig', undone: 'Rückgängig gemacht',
+                deleteEntry: 'Eintrag löschen?', deleteConfirmText: 'Möchten Sie diesen Eintrag wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+                deleteSelected: 'Ausgewählte löschen?', deleteSelectedText: 'Möchten Sie die ausgewählten Einträge wirklich löschen?',
+                duplicateWarning: 'Doppelter Eintrag für diese Startnr./Punkt',
+                backup: 'Datensicherung', backupRestore: 'Daten sichern & wiederherstellen', exportBackup: 'Exportieren', importBackup: 'Importieren',
+                backupSuccess: 'Backup erfolgreich exportiert', importSuccess: 'Daten erfolgreich importiert',
+                importError: 'Fehler beim Importieren', noData: 'Keine Daten zum Exportieren',
+                fastest: 'Schnellste', average: 'Durchschnitt', search: 'Startnr. suchen...',
+                allPoints: 'Alle Punkte', allStatus: 'Alle Status', ok: 'OK',
+                featureGps: 'GPS-synchronisierte Zeiten', featurePrecision: 'Millisekunden-Präzision',
+                featureExport: 'CSV & JSON Export', featureMobile: 'Für Outdoor-Einsatz',
+                pointS: 'S', pointF: 'Z',
+                multiDeviceSync: 'Multi-Geräte-Sync', enableSync: 'Sync aktivieren', raceId: 'Rennen-ID', deviceName: 'Gerätename',
+                syncConnected: 'Verbunden', syncDisconnected: 'Offline', syncConnecting: 'Verbinde...', devices: 'Geräte',
+                averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden'
+            }
         };
-        let currentLang = localStorage.getItem('skiTimerLang') || 'en';
+
+        // State
+        let currentLang = localStorage.getItem('skiTimerLang') || 'de';
         let bibInput = '';
-        let selectedPoint = 'S';
+        let selectedPoint = 'F';
         let entries = JSON.parse(localStorage.getItem('skiTimerEntries') || '[]');
         let selectMode = false;
         let selectedEntries = new Set();
         let editingEntryId = null;
+        let deletingEntryId = null;
+        let deletingMultiple = false;
+        let lastAction = null;
+        let gpsWatchId = null;
+        let gpsAccuracy = null;
+        let audioContext = null;
 
+        // Settings persistence
+        const defaultSettings = { auto: true, haptic: true, sound: false, sync: false };
+        let settings = JSON.parse(localStorage.getItem('skiTimerSettings') || JSON.stringify(defaultSettings));
+
+        // Sync state
+        const deviceId = localStorage.getItem('skiTimerDeviceId') || generateDeviceId();
+        let deviceName = localStorage.getItem('skiTimerDeviceName') || 'Timer ' + deviceId.slice(-4);
+        let raceId = localStorage.getItem('skiTimerRaceId') || '';
+        let broadcastChannel = null;
+        let wsConnection = null;
+        let connectedDevices = new Map();
+        let syncEnabled = false;
+
+        function generateDeviceId() {
+            const id = 'dev_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('skiTimerDeviceId', id);
+            return id;
+        }
+
+        function updateRaceId() {
+            const input = document.getElementById('race-id-input');
+            raceId = input.value.toUpperCase().trim();
+            localStorage.setItem('skiTimerRaceId', raceId);
+            document.getElementById('race-id-display').textContent = raceId ? `[${raceId}]` : '';
+            if (settings.sync && raceId) {
+                initSync();
+            }
+        }
+
+        function updateDeviceName() {
+            const input = document.getElementById('device-name-input');
+            deviceName = input.value.trim() || 'Timer ' + deviceId.slice(-4);
+            localStorage.setItem('skiTimerDeviceName', deviceName);
+            broadcastPresence();
+        }
+
+        // Sync initialization
+        function initSync() {
+            if (!settings.sync || !raceId) {
+                cleanupSync();
+                return;
+            }
+
+            syncEnabled = true;
+            document.getElementById('sync-indicator').style.display = 'flex';
+            document.getElementById('sync-settings-row').style.display = 'flex';
+            document.getElementById('sync-status-row').style.display = 'flex';
+
+            // Initialize BroadcastChannel for same-browser tabs
+            if (!broadcastChannel) {
+                try {
+                    broadcastChannel = new BroadcastChannel('ski-timer-' + raceId);
+                    broadcastChannel.onmessage = handleBroadcastMessage;
+                    console.log('BroadcastChannel initialized for race:', raceId);
+                } catch (e) {
+                    console.log('BroadcastChannel not supported');
+                }
+            }
+
+            // Broadcast presence
+            broadcastPresence();
+            updateSyncStatus('connected');
+
+            // Request sync from other devices
+            broadcastMessage({ type: 'request-sync', deviceId, deviceName });
+        }
+
+        function cleanupSync() {
+            syncEnabled = false;
+            document.getElementById('sync-indicator').style.display = 'none';
+
+            if (broadcastChannel) {
+                broadcastChannel.close();
+                broadcastChannel = null;
+            }
+
+            if (wsConnection) {
+                wsConnection.close();
+                wsConnection = null;
+            }
+
+            connectedDevices.clear();
+            updateDevicesList();
+        }
+
+        function broadcastMessage(message) {
+            message.raceId = raceId;
+            message.timestamp = Date.now();
+
+            if (broadcastChannel) {
+                try {
+                    broadcastChannel.postMessage(message);
+                } catch (e) {
+                    console.log('Broadcast error:', e);
+                }
+            }
+
+            if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                wsConnection.send(JSON.stringify(message));
+            }
+        }
+
+        function broadcastPresence() {
+            if (!syncEnabled) return;
+            broadcastMessage({
+                type: 'presence',
+                deviceId,
+                deviceName,
+                online: true
+            });
+        }
+
+        function broadcastEntry(entry) {
+            if (!syncEnabled) return;
+            broadcastMessage({
+                type: 'entry',
+                entry: entry,
+                deviceId,
+                deviceName
+            });
+        }
+
+        function handleBroadcastMessage(event) {
+            const message = event.data;
+            if (message.deviceId === deviceId) return; // Ignore own messages
+            if (message.raceId !== raceId) return; // Ignore other races
+
+            switch (message.type) {
+                case 'presence':
+                    connectedDevices.set(message.deviceId, {
+                        name: message.deviceName,
+                        lastSeen: Date.now(),
+                        online: message.online
+                    });
+                    updateDevicesList();
+                    break;
+
+                case 'entry':
+                    // Add entry if it doesn't exist
+                    const exists = entries.some(e => e.id === message.entry.id);
+                    if (!exists) {
+                        entries.push(message.entry);
+                        localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                        updateResults();
+                        vibrate(20);
+                    }
+                    break;
+
+                case 'delete':
+                    entries = entries.filter(e => e.id !== message.entryId);
+                    localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                    updateResults();
+                    break;
+
+                case 'request-sync':
+                    // Send all entries to the requesting device
+                    connectedDevices.set(message.deviceId, {
+                        name: message.deviceName,
+                        lastSeen: Date.now(),
+                        online: true
+                    });
+                    updateDevicesList();
+                    broadcastMessage({
+                        type: 'sync-response',
+                        entries: entries,
+                        deviceId,
+                        deviceName,
+                        targetDevice: message.deviceId
+                    });
+                    break;
+
+                case 'sync-response':
+                    if (message.targetDevice === deviceId) {
+                        // Merge entries
+                        const existingIds = new Set(entries.map(e => e.id));
+                        const newEntries = message.entries.filter(e => !existingIds.has(e.id));
+                        if (newEntries.length > 0) {
+                            entries = [...entries, ...newEntries];
+                            localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                            updateResults();
+                            showToast(`Synced ${newEntries.length} entries`, 'success');
+                        }
+                    }
+                    break;
+            }
+        }
+
+        function updateSyncStatus(status) {
+            const indicator = document.getElementById('sync-indicator');
+            const statusEl = document.getElementById('sync-status');
+            const connStatusEl = document.getElementById('sync-connection-status');
+
+            indicator.classList.remove('connected', 'disconnected');
+
+            if (status === 'connected') {
+                indicator.classList.add('connected');
+                statusEl.textContent = t('syncConnected');
+                connStatusEl.textContent = t('syncConnected');
+            } else {
+                indicator.classList.add('disconnected');
+                statusEl.textContent = t('syncDisconnected');
+                connStatusEl.textContent = t('notConnected');
+            }
+        }
+
+        function updateDevicesList() {
+            const list = document.getElementById('devices-list');
+            const countEl = document.getElementById('sync-device-count');
+
+            // Clean up old devices (not seen in 30 seconds)
+            const now = Date.now();
+            for (const [id, device] of connectedDevices) {
+                if (now - device.lastSeen > 30000) {
+                    connectedDevices.delete(id);
+                }
+            }
+
+            const devices = Array.from(connectedDevices.entries());
+            countEl.textContent = `${devices.length + 1} ${t('devices')}`;
+
+            list.innerHTML = `<span class="device-badge self">${deviceName} (${t('syncConnected')})</span>` +
+                devices.map(([id, device]) =>
+                    `<span class="device-badge ${device.online ? 'online' : ''}">${device.name}</span>`
+                ).join('');
+        }
+
+        // Periodically broadcast presence
+        setInterval(() => {
+            if (syncEnabled) {
+                broadcastPresence();
+            }
+        }, 10000);
+
+        // Translation helper
         function t(key) { return translations[currentLang][key] || key; }
+
+        // Initialize audio context for sound feedback
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        // Play beep sound
+        function playBeep(frequency = 880, duration = 100) {
+            if (!settings.sound) return;
+            try {
+                const ctx = initAudio();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration / 1000);
+            } catch (e) {
+                console.log('Audio not available');
+            }
+        }
+
+        // GPS functionality
+        function requestGPSPermission() {
+            if (!navigator.geolocation) {
+                updateGPSStatus('error', t('gpsError'));
+                showToast('GPS not supported on this device', 'error');
+                return;
+            }
+
+            updateGPSStatus('searching', t('gpsSyncing'));
+            vibrate(15);
+
+            // Clear existing watch
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+            }
+
+            gpsWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    gpsAccuracy = position.coords.accuracy;
+                    updateGPSStatus('active', t('gpsSync'));
+                    document.getElementById('gps-accuracy').textContent = `±${Math.round(gpsAccuracy)}m`;
+                    document.getElementById('time-sync-info').textContent = `GPS accuracy: ±${Math.round(gpsAccuracy)}m`;
+                },
+                (error) => {
+                    console.log('GPS error:', error);
+                    updateGPSStatus('inactive', t('gpsInactive'));
+                    document.getElementById('gps-accuracy').textContent = '--';
+                    document.getElementById('time-sync-info').textContent = '';
+                    localStorage.removeItem('skiTimerGpsEnabled');
+                    if (error.code === 1) { // PERMISSION_DENIED
+                        showToast(t('gpsPermissionDenied'), 'error');
+                    } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                        showToast(t('gpsUnavailable'), 'error');
+                    } else if (error.code === 3) { // TIMEOUT
+                        showToast(t('gpsTimeout'), 'error');
+                    }
+                },
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+            );
+        }
+
+        function updateGPSStatus(status, text) {
+            const dot = document.getElementById('gps-dot');
+            const statusEl = document.getElementById('gps-status');
+            const settingsStatus = document.getElementById('settings-gps-status');
+            const syncBtn = document.getElementById('sync-btn');
+
+            dot.className = 'gps-dot';
+            if (status === 'active') {
+                dot.classList.add('active');
+                syncBtn.textContent = t('gpsSync');
+                syncBtn.disabled = true;
+            } else if (status === 'searching') {
+                dot.classList.add('searching');
+            } else {
+                syncBtn.textContent = t('enableGps');
+                syncBtn.disabled = false;
+            }
+
+            statusEl.textContent = text;
+            if (settingsStatus) settingsStatus.textContent = text;
+        }
+
+        // Check for duplicate entries
+        function checkDuplicate(bib, point) {
+            if (!bib) return false;
+            return entries.some(e => e.bib === bib && e.point === point);
+        }
+
+        // Update translations
         function updateTranslations() {
-            document.getElementById('gps-status').textContent = t('gpsSync');
+            document.getElementById('gps-status').textContent = gpsWatchId ? t('gpsSync') : t('gpsInactive');
             document.getElementById('bib-label').textContent = t('bib');
             document.getElementById('timestamp-btn').textContent = t('timestamp');
             document.getElementById('point-start').textContent = t('start');
@@ -463,79 +1216,817 @@
             document.getElementById('results-title').textContent = t('results');
             document.getElementById('label-total').textContent = t('total');
             document.getElementById('label-racers').textContent = t('racers');
-            document.getElementById('label-event').textContent = t('event');
-            document.getElementById('select-btn').textContent = t('select');
-            document.getElementById('export-btn').textContent = t('export');
+            document.getElementById('label-finished').textContent = t('finished');
+            document.getElementById('select-btn').querySelector('span').textContent = t('select');
             document.getElementById('cancel-select-btn').textContent = t('cancel');
             document.getElementById('delete-selected-btn').textContent = t('delete');
             document.getElementById('empty-title').textContent = t('noTimesRecorded');
             document.getElementById('empty-text').textContent = t('noTimesDesc');
             document.getElementById('settings-title').textContent = t('settings');
             document.getElementById('gps-section-title').textContent = t('gpsStatus');
-            document.getElementById('settings-gps-status').textContent = t('gpsSync');
-            document.getElementById('sync-btn').textContent = t('sync');
+            document.getElementById('settings-gps-status').textContent = gpsWatchId ? t('gpsSync') : t('gpsInactive');
+            document.getElementById('sync-btn').textContent = gpsWatchId ? t('gpsSync') : t('enableGps');
             document.getElementById('accuracy-label').textContent = t('accuracy');
             document.getElementById('timing-section-title').textContent = t('timingSettings');
             document.getElementById('auto-increment-label').textContent = t('autoIncrementBib');
             document.getElementById('haptic-label').textContent = t('hapticFeedback');
+            document.getElementById('sound-label').textContent = t('soundFeedback');
             document.getElementById('language-label').textContent = t('language');
             document.getElementById('about-section-title').textContent = t('about');
+            document.getElementById('backup-section-title').textContent = t('backup');
+            document.getElementById('backup-label').textContent = t('backupRestore');
+            document.getElementById('export-backup-text').textContent = t('exportBackup');
+            document.getElementById('import-backup-text').textContent = t('importBackup');
             document.getElementById('tab-timer').textContent = t('timer');
             document.getElementById('tab-results').textContent = t('results');
             document.getElementById('tab-settings').textContent = t('settings');
-            document.getElementById('edit-modal-title').textContent = t('editBibNumber');
+            document.getElementById('edit-modal-title').textContent = t('editEntry');
             document.getElementById('edit-cancel-btn').textContent = t('cancel');
             document.getElementById('edit-save-btn').textContent = t('save');
+            document.getElementById('confirm-delete-title').textContent = t('deleteEntry');
+            document.getElementById('confirm-delete-text').textContent = t('deleteConfirmText');
+            document.getElementById('confirm-delete-cancel').textContent = t('cancel');
+            document.getElementById('confirm-delete-btn').textContent = t('delete');
             document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
+            document.getElementById('undo-text').textContent = t('undo');
+            document.getElementById('search-input').placeholder = t('search');
+            document.getElementById('label-fastest').textContent = t('fastest');
+            document.getElementById('label-average').textContent = t('average');
+            document.getElementById('feature-gps').textContent = t('featureGps');
+            document.getElementById('feature-precision').textContent = t('featurePrecision');
+            document.getElementById('feature-export').textContent = t('featureExport');
+            document.getElementById('feature-mobile').textContent = t('featureMobile');
+
+            // Sync translations
+            document.getElementById('sync-section-title').textContent = t('multiDeviceSync');
+            document.getElementById('sync-enable-label').textContent = t('enableSync');
+            document.getElementById('race-id-label').textContent = t('raceId');
+            document.getElementById('device-name-label').textContent = t('deviceName');
+            document.getElementById('sync-connection-status').textContent = syncEnabled ? t('syncConnected') : t('notConnected');
+            updateDevicesList();
+
+            // Update filter options
+            const filterPoint = document.getElementById('filter-point');
+            filterPoint.options[0].text = t('allPoints');
+            filterPoint.options[1].text = t('start');
+            filterPoint.options[2].text = t('finish');
+
+            const filterStatus = document.getElementById('filter-status');
+            filterStatus.options[0].text = t('allStatus');
+            filterStatus.options[1].text = t('ok');
         }
-        function toggleLanguage() { currentLang = currentLang === 'en' ? 'de' : 'en'; localStorage.setItem('skiTimerLang', currentLang); updateTranslations(); updateResults(); vibrate(15); }
-        document.querySelectorAll('.tab-item').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); tab.classList.add('active'); document.getElementById(tab.dataset.view).classList.add('active'); vibrate(10); }); });
-        document.querySelectorAll('.timing-point').forEach(point => { point.addEventListener('click', () => { document.querySelectorAll('.timing-point').forEach(p => p.classList.remove('active')); point.classList.add('active'); selectedPoint = point.dataset.point; vibrate(15); }); });
-        document.querySelectorAll('.num-btn[data-num]').forEach(btn => { btn.addEventListener('click', () => { if (bibInput.length < 3) { bibInput += btn.dataset.num; updateBibDisplay(); vibrate(10); } }); });
-        document.getElementById('btn-clear').addEventListener('click', () => { bibInput = ''; updateBibDisplay(); vibrate(15); });
-        document.getElementById('btn-delete').addEventListener('click', () => { bibInput = bibInput.slice(0, -1); updateBibDisplay(); vibrate(15); });
-        function updateBibDisplay() { const display = document.getElementById('bib-display'); if (bibInput) { display.textContent = bibInput.padStart(3, '0'); display.classList.remove('empty'); } else { display.textContent = '---'; display.classList.add('empty'); } }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'de' : 'en';
+            localStorage.setItem('skiTimerLang', currentLang);
+            updateTranslations();
+            updateResults();
+            vibrate(15);
+        }
+
+        // Tab navigation
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-item').forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                document.getElementById(tab.dataset.view).classList.add('active');
+                vibrate(10);
+            });
+        });
+
+        // Timing point selection
+        document.querySelectorAll('.timing-point').forEach(point => {
+            point.addEventListener('click', () => {
+                document.querySelectorAll('.timing-point').forEach(p => {
+                    p.classList.remove('active');
+                    p.setAttribute('aria-checked', 'false');
+                });
+                point.classList.add('active');
+                point.setAttribute('aria-checked', 'true');
+                selectedPoint = point.dataset.point;
+                updateBibDisplay();
+                vibrate(15);
+            });
+        });
+
+        // Number pad
+        document.querySelectorAll('.num-btn[data-num]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (bibInput.length < 3) {
+                    bibInput += btn.dataset.num;
+                    updateBibDisplay();
+                    vibrate(10);
+                }
+            });
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            bibInput = '';
+            updateBibDisplay();
+            vibrate(15);
+        });
+
+        document.getElementById('btn-delete').addEventListener('click', () => {
+            bibInput = bibInput.slice(0, -1);
+            updateBibDisplay();
+            vibrate(15);
+        });
+
+        function updateBibDisplay() {
+            const display = document.getElementById('bib-display');
+            const bib = bibInput ? bibInput.padStart(3, '0') : null;
+
+            if (bibInput) {
+                display.textContent = bib;
+                display.classList.remove('empty');
+
+                // Check for duplicate
+                if (checkDuplicate(bib, selectedPoint)) {
+                    display.classList.add('duplicate');
+                    display.setAttribute('aria-label', `Bib number ${bib} - duplicate warning`);
+                } else {
+                    display.classList.remove('duplicate');
+                    display.setAttribute('aria-label', `Bib number ${bib}`);
+                }
+            } else {
+                display.textContent = '---';
+                display.classList.add('empty');
+                display.classList.remove('duplicate');
+                display.setAttribute('aria-label', 'No bib number entered');
+            }
+        }
+
+        // Timestamp button
         document.getElementById('timestamp-btn').addEventListener('click', () => {
-            const now = new Date(); const hasBib = bibInput.length > 0;
-            entries.push({ id: Date.now(), bib: hasBib ? bibInput.padStart(3, '0') : null, point: selectedPoint, timestamp: now.toISOString() });
+            const now = new Date();
+            const hasBib = bibInput.length > 0;
+            const bib = hasBib ? bibInput.padStart(3, '0') : null;
+            const isDuplicate = checkDuplicate(bib, selectedPoint);
+
+            const entry = {
+                id: Date.now(),
+                bib: bib,
+                point: selectedPoint,
+                timestamp: now.toISOString(),
+                status: 'ok',
+                deviceId: deviceId,
+                deviceName: deviceName
+            };
+
+            entries.push(entry);
             localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
-            document.getElementById('confirm-bib').textContent = hasBib ? 'Bib ' + bibInput.padStart(3, '0') : t('noBib');
+
+            // Broadcast to other devices
+            broadcastEntry(entry);
+
+            // Store for undo
+            lastAction = { type: 'add', entry: entry };
+            document.getElementById('undo-btn').classList.add('show');
+
+            // Show confirmation
+            const confirmIcon = document.getElementById('confirm-icon');
+            const confirmWarning = document.getElementById('confirm-warning');
+
+            document.getElementById('confirm-bib').textContent = hasBib ? 'Bib ' + bib : t('noBib');
             document.getElementById('confirm-time').textContent = formatTime(now);
+
+            if (isDuplicate) {
+                confirmIcon.classList.add('warning');
+                confirmIcon.innerHTML = '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>';
+                confirmWarning.textContent = t('duplicateWarning');
+                confirmWarning.style.display = 'block';
+            } else {
+                confirmIcon.classList.remove('warning');
+                confirmIcon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>';
+                confirmWarning.style.display = 'none';
+            }
+
             document.getElementById('confirmation-overlay').classList.add('show');
             vibrate([50, 30, 100]);
-            setTimeout(() => { document.getElementById('confirmation-overlay').classList.remove('show'); }, 1500);
-            if (document.getElementById('toggle-auto').classList.contains('on') && hasBib) { const nextBib = (parseInt(bibInput) + 1).toString(); if (nextBib.length <= 3) { bibInput = nextBib; updateBibDisplay(); } } else if (!hasBib) { bibInput = ''; updateBibDisplay(); }
+            playBeep(isDuplicate ? 440 : 880, 150);
+
+            setTimeout(() => {
+                document.getElementById('confirmation-overlay').classList.remove('show');
+            }, isDuplicate ? 2500 : 1500);
+
+            // Auto-increment
+            if (settings.auto && hasBib) {
+                const nextBib = (parseInt(bibInput) + 1).toString();
+                if (nextBib.length <= 3) {
+                    bibInput = nextBib;
+                    updateBibDisplay();
+                }
+            } else if (!hasBib) {
+                bibInput = '';
+                updateBibDisplay();
+            }
+
             updateResults();
         });
-        function updateClock() { const now = new Date(); document.getElementById('clock-time').textContent = formatTime(now); document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
-        function formatTime(date) { const d = new Date(date); return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + d.getMilliseconds().toString().padStart(3, '0'); }
-        function formatDate(date) { return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-        function getPointColor(point) { const colors = { 'S': 'var(--success)', 'I1': 'var(--primary)', 'I2': 'var(--primary)', 'I3': 'var(--primary)', 'F': 'var(--secondary)' }; return colors[point] || 'var(--text-secondary)'; }
-        function updateResults() {
-            const list = document.getElementById('results-list'); const empty = document.getElementById('empty-state'); const selectBtn = document.getElementById('select-btn');
-            document.getElementById('stat-total').textContent = entries.length;
-            document.getElementById('stat-racers').textContent = new Set(entries.filter(e => e.bib).map(e => e.bib)).size;
-            if (entries.length === 0) { list.style.display = 'none'; empty.style.display = 'flex'; selectBtn.disabled = true; if (selectMode) exitSelectMode(); return; }
-            list.style.display = 'block'; empty.style.display = 'none'; selectBtn.disabled = false;
-            const sorted = [...entries].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            list.innerHTML = sorted.map(entry => '<div class="result-item" data-id="' + entry.id + '"><div class="result-checkbox ' + (selectedEntries.has(entry.id) ? 'checked' : '') + '" onclick="toggleSelect(' + entry.id + ')"></div><div class="result-bib" onclick="openEditModal(' + entry.id + ')">' + (entry.bib || t('noBib')) + '</div><div class="result-point" style="background: ' + getPointColor(entry.point) + '20; color: ' + getPointColor(entry.point) + ';">' + entry.point + '</div><div class="result-info"><div class="result-time">' + formatTime(entry.timestamp) + '</div><div class="result-date">' + formatDate(entry.timestamp) + '</div></div><button class="result-delete" onclick="deleteEntry(' + entry.id + ')"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div>').join('');
+
+        // Undo functionality
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (!lastAction) return;
+
+            if (lastAction.type === 'add') {
+                entries = entries.filter(e => e.id !== lastAction.entry.id);
+                localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                showToast(t('undone'), 'success');
+            } else if (lastAction.type === 'delete') {
+                entries.push(lastAction.entry);
+                localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                showToast(t('undone'), 'success');
+            }
+
+            lastAction = null;
+            document.getElementById('undo-btn').classList.remove('show');
+            updateResults();
+            vibrate(20);
+        });
+
+        // Clock update
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = formatTime(now);
+            document.getElementById('clock-date').textContent = now.toLocaleDateString(currentLang === 'de' ? 'de-DE' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
-        function deleteEntry(id) { entries = entries.filter(e => e.id !== id); localStorage.setItem('skiTimerEntries', JSON.stringify(entries)); updateResults(); vibrate(20); }
-        document.getElementById('select-btn').addEventListener('click', () => { selectMode = true; selectedEntries.clear(); document.getElementById('results-list').classList.add('select-mode'); document.getElementById('results-actions').style.display = 'none'; document.getElementById('select-actions').style.display = 'flex'; updateResults(); vibrate(15); });
+
+        function formatTime(date) {
+            const d = new Date(date);
+            return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + d.getMilliseconds().toString().padStart(3, '0');
+        }
+
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString(currentLang === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getPointColor(point) {
+            const colors = { 'S': 'var(--success)', 'F': 'var(--secondary)' };
+            return colors[point] || 'var(--text-secondary)';
+        }
+
+        // Results and filtering
+        function getFilteredEntries() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            const pointFilter = document.getElementById('filter-point').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            return entries.filter(entry => {
+                const matchesSearch = !searchTerm || (entry.bib && entry.bib.includes(searchTerm));
+                const matchesPoint = !pointFilter || entry.point === pointFilter;
+                const matchesStatus = !statusFilter || (entry.status || 'ok') === statusFilter;
+                return matchesSearch && matchesPoint && matchesStatus;
+            });
+        }
+
+        function calculateStats() {
+            const racersWithBothTimes = {};
+
+            entries.forEach(entry => {
+                if (!entry.bib || entry.status !== 'ok') return;
+                if (!racersWithBothTimes[entry.bib]) {
+                    racersWithBothTimes[entry.bib] = {};
+                }
+                racersWithBothTimes[entry.bib][entry.point] = new Date(entry.timestamp).getTime();
+            });
+
+            const times = [];
+            Object.values(racersWithBothTimes).forEach(racer => {
+                if (racer.S && racer.F) {
+                    times.push(racer.F - racer.S);
+                }
+            });
+
+            if (times.length === 0) {
+                return { fastest: null, average: null };
+            }
+
+            const fastest = Math.min(...times);
+            const average = times.reduce((a, b) => a + b, 0) / times.length;
+
+            return { fastest, average };
+        }
+
+        function formatDuration(ms) {
+            if (!ms) return '--:--';
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            const remainingMs = ms % 1000;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}.${Math.floor(remainingMs / 10).toString().padStart(2, '0')}`;
+        }
+
+        function updateResults() {
+            const list = document.getElementById('results-list');
+            const empty = document.getElementById('empty-state');
+            const selectBtn = document.getElementById('select-btn');
+            const extendedStats = document.getElementById('extended-stats');
+
+            // Calculate stats
+            const uniqueRacers = new Set(entries.filter(e => e.bib).map(e => e.bib));
+            const finishedRacers = new Set(entries.filter(e => e.bib && e.point === 'F' && e.status === 'ok').map(e => e.bib));
+            const dnsCount = entries.filter(e => e.status === 'dns').length;
+            const dnfCount = entries.filter(e => e.status === 'dnf').length;
+
+            document.getElementById('stat-total').textContent = entries.length;
+            document.getElementById('stat-racers').textContent = uniqueRacers.size;
+            document.getElementById('stat-finished').textContent = finishedRacers.size;
+            document.getElementById('stat-dns').textContent = dnsCount;
+            document.getElementById('stat-dnf').textContent = dnfCount;
+
+            // Extended stats
+            const stats = calculateStats();
+            if (stats.fastest) {
+                extendedStats.style.display = 'flex';
+                document.getElementById('stat-fastest').textContent = formatDuration(stats.fastest);
+                document.getElementById('stat-average').textContent = formatDuration(stats.average);
+            } else {
+                extendedStats.style.display = 'none';
+            }
+
+            const filtered = getFilteredEntries();
+
+            if (entries.length === 0) {
+                list.style.display = 'none';
+                empty.style.display = 'flex';
+                selectBtn.disabled = true;
+                if (selectMode) exitSelectMode();
+                return;
+            }
+
+            list.style.display = 'block';
+            empty.style.display = 'none';
+            selectBtn.disabled = false;
+
+            const sorted = [...filtered].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            // Group entries by bib+point for multi-device view
+            if (syncEnabled) {
+                const grouped = new Map();
+                sorted.forEach(entry => {
+                    const key = `${entry.bib || 'none'}-${entry.point}`;
+                    if (!grouped.has(key)) {
+                        grouped.set(key, []);
+                    }
+                    grouped.get(key).push(entry);
+                });
+
+                list.innerHTML = Array.from(grouped.entries()).map(([key, groupEntries]) => {
+                    const firstEntry = groupEntries[0];
+                    const hasMultiple = groupEntries.length > 1;
+
+                    // Calculate average timestamp for multiple entries
+                    let displayTime = formatTime(firstEntry.timestamp);
+                    let avgLabel = '';
+                    if (hasMultiple) {
+                        const avgTimestamp = groupEntries.reduce((sum, e) => sum + new Date(e.timestamp).getTime(), 0) / groupEntries.length;
+                        displayTime = formatTime(new Date(avgTimestamp));
+                        avgLabel = `<span class="result-averaged">${t('averaged')}</span>`;
+                    }
+
+                    const statusBadge = firstEntry.status && firstEntry.status !== 'ok'
+                        ? `<span class="result-status ${firstEntry.status}">${firstEntry.status.toUpperCase()}</span>`
+                        : '';
+
+                    const deviceCount = hasMultiple ? `<span class="result-device-count">${groupEntries.length}x</span>` : '';
+
+                    const deviceTimes = groupEntries.map(e =>
+                        `<div class="device-time">
+                            <span class="device-time-name">${e.deviceName || 'Unknown'}</span>
+                            <span class="device-time-value">${formatTime(e.timestamp)}</span>
+                        </div>`
+                    ).join('');
+
+                    return `<div class="result-item ${hasMultiple ? 'grouped' : ''}" data-id="${firstEntry.id}" data-key="${key}" role="listitem">
+                        <div class="result-item-main">
+                            <div class="result-checkbox ${selectedEntries.has(firstEntry.id) ? 'checked' : ''}"
+                                 onclick="toggleSelect(${firstEntry.id})"
+                                 role="checkbox"
+                                 aria-checked="${selectedEntries.has(firstEntry.id)}"
+                                 tabindex="0"
+                                 onkeydown="if(event.key==='Enter'||event.key===' ')toggleSelect(${firstEntry.id})"></div>
+                            <div class="result-bib" onclick="openEditModal(${firstEntry.id})" tabindex="0" role="button">${firstEntry.bib || t('noBib')}</div>
+                            <div class="result-point" style="background: ${getPointColor(firstEntry.point)}20; color: ${getPointColor(firstEntry.point)};">${t('point' + firstEntry.point)}</div>
+                            <div class="result-info">
+                                <div class="result-time">${displayTime}${avgLabel}${deviceCount}${statusBadge}</div>
+                                <div class="result-date">${formatDate(firstEntry.timestamp)}</div>
+                            </div>
+                            ${hasMultiple ? `<button class="result-expand-btn" onclick="toggleExpandResult(this)" aria-label="Show details">${t('showDetails')}</button>` : ''}
+                            <button class="result-delete" onclick="promptDelete(${firstEntry.id})" aria-label="Delete entry">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                        ${hasMultiple ? `<div class="result-item-devices">${deviceTimes}</div>` : ''}
+                    </div>`;
+                }).join('');
+            } else {
+                // Standard non-grouped view
+                list.innerHTML = sorted.map(entry => {
+                    const statusBadge = entry.status && entry.status !== 'ok'
+                        ? `<span class="result-status ${entry.status}">${entry.status.toUpperCase()}</span>`
+                        : '';
+
+                    const deviceInfo = entry.deviceName ? `<span style="color: var(--text-tertiary); font-size: 10px; margin-left: 4px;">(${entry.deviceName})</span>` : '';
+
+                    return `<div class="result-item" data-id="${entry.id}" role="listitem">
+                        <div class="result-checkbox ${selectedEntries.has(entry.id) ? 'checked' : ''}"
+                             onclick="toggleSelect(${entry.id})"
+                             role="checkbox"
+                             aria-checked="${selectedEntries.has(entry.id)}"
+                             tabindex="0"
+                             onkeydown="if(event.key==='Enter'||event.key===' ')toggleSelect(${entry.id})"></div>
+                        <div class="result-bib" onclick="openEditModal(${entry.id})" tabindex="0" role="button" aria-label="Edit bib ${entry.bib || t('noBib')}">${entry.bib || t('noBib')}</div>
+                        <div class="result-point" style="background: ${getPointColor(entry.point)}20; color: ${getPointColor(entry.point)};">${t('point' + entry.point)}</div>
+                        <div class="result-info">
+                            <div class="result-time">${formatTime(entry.timestamp)}${deviceInfo}${statusBadge}</div>
+                            <div class="result-date">${formatDate(entry.timestamp)}</div>
+                        </div>
+                        <button class="result-delete" onclick="promptDelete(${entry.id})" aria-label="Delete entry">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        function toggleExpandResult(btn) {
+            const item = btn.closest('.result-item');
+            item.classList.toggle('expanded');
+            btn.textContent = item.classList.contains('expanded') ? t('hideDetails') : t('showDetails');
+        }
+
+        // Search and filter listeners
+        document.getElementById('search-input').addEventListener('input', updateResults);
+        document.getElementById('filter-point').addEventListener('change', updateResults);
+        document.getElementById('filter-status').addEventListener('change', updateResults);
+
+        // Delete with confirmation
+        function promptDelete(id) {
+            deletingEntryId = id;
+            deletingMultiple = false;
+            document.getElementById('confirm-delete-title').textContent = t('deleteEntry');
+            document.getElementById('confirm-delete-text').textContent = t('deleteConfirmText');
+            document.getElementById('confirm-delete-modal').classList.add('show');
+            vibrate(15);
+        }
+
+        function closeConfirmDeleteModal() {
+            document.getElementById('confirm-delete-modal').classList.remove('show');
+            deletingEntryId = null;
+            deletingMultiple = false;
+            vibrate(10);
+        }
+
+        function confirmDelete() {
+            if (deletingMultiple) {
+                const deletedEntries = entries.filter(e => selectedEntries.has(e.id));
+                entries = entries.filter(e => !selectedEntries.has(e.id));
+                lastAction = { type: 'deleteMultiple', entries: deletedEntries };
+            } else if (deletingEntryId) {
+                const entry = entries.find(e => e.id === deletingEntryId);
+                entries = entries.filter(e => e.id !== deletingEntryId);
+                lastAction = { type: 'delete', entry: entry };
+                document.getElementById('undo-btn').classList.add('show');
+            }
+
+            localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+            closeConfirmDeleteModal();
+            if (selectMode) exitSelectMode();
+            updateResults();
+            vibrate([20, 10, 50]);
+            playBeep(440, 100);
+        }
+
+        // Select mode
+        document.getElementById('select-btn').addEventListener('click', () => {
+            selectMode = true;
+            selectedEntries.clear();
+            document.getElementById('results-list').classList.add('select-mode');
+            document.getElementById('results-actions').style.display = 'none';
+            document.getElementById('select-actions').style.display = 'flex';
+            updateResults();
+            vibrate(15);
+        });
+
         document.getElementById('cancel-select-btn').addEventListener('click', exitSelectMode);
-        function exitSelectMode() { selectMode = false; selectedEntries.clear(); document.getElementById('results-list').classList.remove('select-mode'); document.getElementById('results-actions').style.display = 'flex'; document.getElementById('select-actions').style.display = 'none'; updateResults(); vibrate(15); }
-        function toggleSelect(id) { if (selectedEntries.has(id)) { selectedEntries.delete(id); } else { selectedEntries.add(id); } updateResults(); vibrate(10); }
-        document.getElementById('delete-selected-btn').addEventListener('click', () => { entries = entries.filter(e => !selectedEntries.has(e.id)); localStorage.setItem('skiTimerEntries', JSON.stringify(entries)); exitSelectMode(); vibrate([20, 10, 50]); });
-        document.getElementById('export-btn').addEventListener('click', () => { if (entries.length === 0) return; const sorted = [...entries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); const csv = 'Bib,Timestamp,TimingPoint\n' + sorted.map(e => (e.bib || '') + ',' + e.timestamp + ',' + e.point).join('\n'); const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'ski-times-' + new Date().toISOString().split('T')[0] + '.csv'; a.click(); URL.revokeObjectURL(url); vibrate([20, 30, 50]); });
-        function openEditModal(id) { if (selectMode) return; editingEntryId = id; const entry = entries.find(e => e.id === id); document.getElementById('edit-modal-time').textContent = formatTime(entry.timestamp); document.getElementById('edit-bib-input').value = entry.bib || ''; document.getElementById('edit-modal').classList.add('show'); vibrate(15); }
-        function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); editingEntryId = null; vibrate(10); }
-        function saveEditBib() { const input = document.getElementById('edit-bib-input').value; const entry = entries.find(e => e.id === editingEntryId); if (entry) { entry.bib = input ? input.padStart(3, '0') : null; localStorage.setItem('skiTimerEntries', JSON.stringify(entries)); updateResults(); } closeEditModal(); vibrate([20, 30]); }
-        function toggleSetting(el) { el.classList.toggle('on'); vibrate(15); }
-        function simulateGPSSync() { const dot = document.getElementById('gps-dot'); const status = document.getElementById('gps-status'); const settingsStatus = document.getElementById('settings-gps-status'); dot.style.background = 'var(--gps-searching)'; dot.style.boxShadow = '0 0 6px var(--gps-searching)'; status.textContent = t('gpsSyncing'); if (settingsStatus) settingsStatus.textContent = t('gpsSyncing'); setTimeout(() => { dot.style.background = 'var(--gps-active)'; dot.style.boxShadow = '0 0 6px var(--gps-active)'; status.textContent = t('gpsSync'); if (settingsStatus) settingsStatus.textContent = t('gpsSync'); vibrate([20, 30, 50]); }, 1500); vibrate(15); }
-        function vibrate(pattern) { if ('vibrate' in navigator && document.getElementById('toggle-haptic').classList.contains('on')) { navigator.vibrate(pattern); } }
-        document.addEventListener('touchend', (e) => { const now = Date.now(); if (now - (window.lastTouchEnd || 0) < 300) { e.preventDefault(); } window.lastTouchEnd = now; }, { passive: false });
-        updateTranslations(); updateBibDisplay(); updateResults(); updateClock(); setInterval(updateClock, 50);
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err)); }
+
+        function exitSelectMode() {
+            selectMode = false;
+            selectedEntries.clear();
+            document.getElementById('results-list').classList.remove('select-mode');
+            document.getElementById('results-actions').style.display = 'flex';
+            document.getElementById('select-actions').style.display = 'none';
+            updateResults();
+            vibrate(15);
+        }
+
+        function toggleSelect(id) {
+            if (selectedEntries.has(id)) {
+                selectedEntries.delete(id);
+            } else {
+                selectedEntries.add(id);
+            }
+            updateResults();
+            vibrate(10);
+        }
+
+        document.getElementById('delete-selected-btn').addEventListener('click', () => {
+            if (selectedEntries.size === 0) return;
+            deletingMultiple = true;
+            document.getElementById('confirm-delete-title').textContent = t('deleteSelected');
+            document.getElementById('confirm-delete-text').textContent = t('deleteSelectedText');
+            document.getElementById('confirm-delete-modal').classList.add('show');
+            vibrate(15);
+        });
+
+        // Export CSV
+        document.getElementById('export-csv-btn').addEventListener('click', () => {
+            if (entries.length === 0) {
+                showToast(t('noData'), 'error');
+                return;
+            }
+            const sorted = [...entries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const csv = 'Bib,Timestamp,TimingPoint,Status\n' + sorted.map(e => `${e.bib || ''},${e.timestamp},${e.point},${e.status || 'ok'}`).join('\n');
+            downloadFile(csv, 'text/csv', `ski-times-${new Date().toISOString().split('T')[0]}.csv`);
+            vibrate([20, 30, 50]);
+            playBeep(660, 100);
+        });
+
+        // Export JSON
+        document.getElementById('export-json-btn').addEventListener('click', () => {
+            if (entries.length === 0) {
+                showToast(t('noData'), 'error');
+                return;
+            }
+            const sorted = [...entries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const json = JSON.stringify(sorted, null, 2);
+            downloadFile(json, 'application/json', `ski-times-${new Date().toISOString().split('T')[0]}.json`);
+            vibrate([20, 30, 50]);
+            playBeep(660, 100);
+        });
+
+        function downloadFile(content, type, filename) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Backup export/import
+        function exportBackup() {
+            if (entries.length === 0) {
+                showToast(t('noData'), 'error');
+                return;
+            }
+            const backup = {
+                version: '2.0.0',
+                exportDate: new Date().toISOString(),
+                settings: settings,
+                language: currentLang,
+                entries: entries
+            };
+            const json = JSON.stringify(backup, null, 2);
+            downloadFile(json, 'application/json', `ski-timer-backup-${new Date().toISOString().split('T')[0]}.json`);
+            showToast(t('backupSuccess'), 'success');
+            vibrate([20, 30, 50]);
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const backup = JSON.parse(e.target.result);
+
+                    // Validate backup structure
+                    if (!backup.entries || !Array.isArray(backup.entries)) {
+                        throw new Error('Invalid backup format');
+                    }
+
+                    // Import entries
+                    entries = backup.entries;
+                    localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+
+                    // Import settings if available
+                    if (backup.settings) {
+                        settings = { ...defaultSettings, ...backup.settings };
+                        localStorage.setItem('skiTimerSettings', JSON.stringify(settings));
+                        applySettings();
+                    }
+
+                    // Import language if available
+                    if (backup.language) {
+                        currentLang = backup.language;
+                        localStorage.setItem('skiTimerLang', currentLang);
+                        updateTranslations();
+                    }
+
+                    updateResults();
+                    showToast(t('importSuccess'), 'success');
+                    vibrate([20, 30, 50]);
+                } catch (err) {
+                    console.error('Import error:', err);
+                    showToast(t('importError'), 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Edit modal
+        function openEditModal(id) {
+            if (selectMode) return;
+            editingEntryId = id;
+            const entry = entries.find(e => e.id === id);
+            document.getElementById('edit-modal-time').textContent = formatTime(entry.timestamp);
+            document.getElementById('edit-bib-input').value = entry.bib || '';
+            document.getElementById('edit-status-select').value = entry.status || 'ok';
+            document.getElementById('edit-modal').classList.add('show');
+            document.getElementById('edit-bib-input').focus();
+            vibrate(15);
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('show');
+            editingEntryId = null;
+            vibrate(10);
+        }
+
+        function saveEditEntry() {
+            const bibValue = document.getElementById('edit-bib-input').value;
+            const statusValue = document.getElementById('edit-status-select').value;
+            const entry = entries.find(e => e.id === editingEntryId);
+
+            if (entry) {
+                entry.bib = bibValue ? bibValue.padStart(3, '0') : null;
+                entry.status = statusValue;
+                localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                updateResults();
+            }
+            closeEditModal();
+            vibrate([20, 30]);
+        }
+
+        // Settings
+        function toggleSetting(setting) {
+            settings[setting] = !settings[setting];
+            localStorage.setItem('skiTimerSettings', JSON.stringify(settings));
+            applySettings();
+            vibrate(15);
+
+            // Initialize audio context on first sound enable (requires user interaction)
+            if (setting === 'sound' && settings.sound) {
+                initAudio();
+                playBeep(880, 100);
+            }
+        }
+
+        function handleToggleKey(event, setting) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleSetting(setting);
+            }
+        }
+
+        function applySettings() {
+            const toggleAuto = document.getElementById('toggle-auto');
+            const toggleHaptic = document.getElementById('toggle-haptic');
+            const toggleSound = document.getElementById('toggle-sound');
+            const toggleSync = document.getElementById('toggle-sync');
+
+            toggleAuto.classList.toggle('on', settings.auto);
+            toggleAuto.setAttribute('aria-checked', settings.auto);
+
+            toggleHaptic.classList.toggle('on', settings.haptic);
+            toggleHaptic.setAttribute('aria-checked', settings.haptic);
+
+            toggleSound.classList.toggle('on', settings.sound);
+            toggleSound.setAttribute('aria-checked', settings.sound);
+
+            toggleSync.classList.toggle('on', settings.sync);
+            toggleSync.setAttribute('aria-checked', settings.sync);
+
+            // Show/hide sync settings
+            const syncSettingsRow = document.getElementById('sync-settings-row');
+            const syncStatusRow = document.getElementById('sync-status-row');
+            if (settings.sync) {
+                syncSettingsRow.style.display = 'flex';
+                syncStatusRow.style.display = 'flex';
+                document.getElementById('race-id-input').value = raceId;
+                document.getElementById('device-name-input').value = deviceName;
+                document.getElementById('race-id-display').textContent = raceId ? `[${raceId}]` : '';
+                if (raceId) {
+                    initSync();
+                }
+            } else {
+                syncSettingsRow.style.display = 'none';
+                syncStatusRow.style.display = 'none';
+                cleanupSync();
+            }
+        }
+
+        function vibrate(pattern) {
+            if ('vibrate' in navigator && settings.haptic) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (type ? ' ' + type : '');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Prevent double-tap zoom
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - (window.lastTouchEnd || 0) < 300) {
+                e.preventDefault();
+            }
+            window.lastTouchEnd = now;
+        }, { passive: false });
+
+        // Keyboard navigation for bib editing
+        document.addEventListener('keydown', (e) => {
+            // Only handle if timing view is active and no modal is open
+            const timingView = document.getElementById('timing-view');
+            const editModal = document.getElementById('edit-modal');
+            const confirmModal = document.getElementById('confirm-delete-modal');
+
+            if (!timingView.classList.contains('active') ||
+                editModal.classList.contains('show') ||
+                confirmModal.classList.contains('show')) {
+                return;
+            }
+
+            // Number keys
+            if (e.key >= '0' && e.key <= '9' && bibInput.length < 3) {
+                bibInput += e.key;
+                updateBibDisplay();
+                vibrate(10);
+            } else if (e.key === 'Backspace') {
+                bibInput = bibInput.slice(0, -1);
+                updateBibDisplay();
+                vibrate(15);
+            } else if (e.key === 'Escape') {
+                bibInput = '';
+                updateBibDisplay();
+                vibrate(15);
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                document.getElementById('timestamp-btn').click();
+            }
+        });
+
+        // Close modals on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('edit-modal').classList.contains('show')) {
+                    closeEditModal();
+                }
+                if (document.getElementById('confirm-delete-modal').classList.contains('show')) {
+                    closeConfirmDeleteModal();
+                }
+            }
+        });
+
+        // Initialize
+        updateTranslations();
+        applySettings();
+        updateBibDisplay();
+        updateResults();
+        updateClock();
+        setInterval(updateClock, 50);
+
+        // Request GPS on load if previously enabled
+        if (localStorage.getItem('skiTimerGpsEnabled') === 'true') {
+            requestGPSPermission();
+        }
+
+        // Save GPS state
+        const originalRequestGPS = requestGPSPermission;
+        requestGPSPermission = function() {
+            localStorage.setItem('skiTimerGpsEnabled', 'true');
+            originalRequestGPS();
+        };
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+        }
     </script>
 </body>
 </html>
