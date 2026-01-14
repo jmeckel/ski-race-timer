@@ -1941,14 +1941,59 @@
             vibrate(15);
         });
 
+        // Helper function to get grouped/averaged entries for export
+        function getGroupedEntriesForExport() {
+            const grouped = new Map();
+            entries.forEach(entry => {
+                const key = `${entry.bib || 'none'}-${entry.point}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, []);
+                }
+                grouped.get(key).push(entry);
+            });
+
+            const result = [];
+            grouped.forEach((groupEntries, key) => {
+                if (groupEntries.length === 1) {
+                    // Single entry - use as is
+                    result.push({
+                        bib: groupEntries[0].bib || '',
+                        timestamp: groupEntries[0].timestamp,
+                        point: groupEntries[0].point,
+                        status: groupEntries[0].status || 'ok',
+                        deviceCount: 1
+                    });
+                } else {
+                    // Multiple entries - calculate average
+                    const timestamps = groupEntries.map(e => new Date(e.timestamp).getTime());
+                    const avgTimestamp = timestamps.reduce((a, b) => a + b, 0) / timestamps.length;
+                    result.push({
+                        bib: groupEntries[0].bib || '',
+                        timestamp: new Date(avgTimestamp).toISOString(),
+                        point: groupEntries[0].point,
+                        status: 'averaged',
+                        deviceCount: groupEntries.length,
+                        originalTimestamps: groupEntries.map(e => ({
+                            timestamp: e.timestamp,
+                            device: e.deviceName || 'Unknown'
+                        }))
+                    });
+                }
+            });
+
+            return result.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        }
+
         // Export CSV
         document.getElementById('export-csv-btn').addEventListener('click', () => {
             if (entries.length === 0) {
                 showToast(t('noData'), 'error');
                 return;
             }
-            const sorted = [...entries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            const csv = 'Bib,Timestamp,TimingPoint,Status\n' + sorted.map(e => `${e.bib || ''},${e.timestamp},${e.point},${e.status || 'ok'}`).join('\n');
+            const grouped = getGroupedEntriesForExport();
+            const csv = 'Bib,Timestamp,TimingPoint,Status,DeviceCount\n' + grouped.map(e =>
+                `${e.bib},${e.timestamp},${e.point},${e.status},${e.deviceCount}`
+            ).join('\n');
             downloadFile(csv, 'text/csv', `ski-times-${new Date().toISOString().split('T')[0]}.csv`);
             vibrate([20, 30, 50]);
             playBeep(660, 100);
@@ -1960,8 +2005,8 @@
                 showToast(t('noData'), 'error');
                 return;
             }
-            const sorted = [...entries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            const json = JSON.stringify(sorted, null, 2);
+            const grouped = getGroupedEntriesForExport();
+            const json = JSON.stringify(grouped, null, 2);
             downloadFile(json, 'application/json', `ski-times-${new Date().toISOString().split('T')[0]}.json`);
             vibrate([20, 30, 50]);
             playBeep(660, 100);
