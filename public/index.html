@@ -889,7 +889,14 @@
         } catch (e) {
             console.error('Error parsing saved settings:', e);
         }
-        let settings = { ...defaultSettings, ...savedSettings };
+        // Ensure each setting is explicitly boolean
+        let settings = {
+            auto: Boolean(savedSettings.auto ?? defaultSettings.auto),
+            haptic: Boolean(savedSettings.haptic ?? defaultSettings.haptic),
+            sound: Boolean(savedSettings.sound ?? defaultSettings.sound),
+            sync: Boolean(savedSettings.sync ?? defaultSettings.sync),
+            gps: Boolean(savedSettings.gps ?? defaultSettings.gps)
+        };
 
         // Sync state
         const deviceId = localStorage.getItem('skiTimerDeviceId') || generateDeviceId();
@@ -982,13 +989,42 @@
             statusEl.textContent = translations[currentLang].connecting || 'Connecting...';
             statusEl.style.color = 'var(--text-tertiary)';
 
-            // Initial fetch
+            // Push existing local entries to cloud first
+            pushExistingEntriesToCloud();
+
+            // Initial fetch (will merge with remote entries)
             fetchCloudEntries();
 
             // Start polling
             pollInterval = setInterval(fetchCloudEntries, POLL_INTERVAL_MS);
 
             console.log('Cloud sync polling initialized for race:', raceId);
+        }
+
+        async function pushExistingEntriesToCloud() {
+            if (!syncEnabled || !raceId || entries.length === 0) return;
+
+            console.log('Pushing', entries.length, 'existing entries to cloud');
+
+            // Push each local entry to the cloud
+            for (const entry of entries) {
+                // Only push entries from this device that don't already have sync info
+                if (!entry.syncedAt || entry.deviceId === deviceId) {
+                    try {
+                        await fetch(`${API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                entry: { ...entry, deviceId: entry.deviceId || deviceId },
+                                deviceId: entry.deviceId || deviceId,
+                                deviceName: entry.deviceName || deviceName
+                            })
+                        });
+                    } catch (e) {
+                        console.error('Error pushing entry to cloud:', e);
+                    }
+                }
+            }
         }
 
         async function fetchCloudEntries() {
@@ -2042,8 +2078,12 @@
         function toggleSetting(setting, event) {
             if (event) {
                 event.stopPropagation();
+                event.preventDefault();
             }
-            settings[setting] = !settings[setting];
+            // Only toggle the specific setting requested
+            const newValue = !settings[setting];
+            settings[setting] = newValue;
+            console.log('Toggle setting:', setting, '=', newValue, 'Full settings:', JSON.stringify(settings));
             localStorage.setItem('skiTimerSettings', JSON.stringify(settings));
             applySettings();
             vibrate(15);
