@@ -644,7 +644,7 @@
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
                         <span class="settings-row-label" id="sync-enable-label">Enable Sync</span>
-                        <div id="toggle-sync" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sync')" onkeydown="handleToggleKey(event, 'sync')"></div>
+                        <div id="toggle-sync" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sync', event)" onkeydown="handleToggleKey(event, 'sync')"></div>
                     </div>
                     <div class="settings-row" id="sync-settings-row" style="display: none; flex-direction: column; align-items: stretch; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -677,7 +677,7 @@
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
                         <span class="settings-row-label" id="gps-enable-label">Enable GPS</span>
-                        <div id="toggle-gps" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('gps')" onkeydown="handleToggleKey(event, 'gps')"></div>
+                        <div id="toggle-gps" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('gps', event)" onkeydown="handleToggleKey(event, 'gps')"></div>
                     </div>
                     <div class="settings-row" id="gps-status-row" style="display: none;">
                         <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></div>
@@ -692,17 +692,17 @@
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
                         <span class="settings-row-label" id="auto-increment-label">Auto-increment Bib</span>
-                        <div id="toggle-auto" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('auto')" onkeydown="handleToggleKey(event, 'auto')"></div>
+                        <div id="toggle-auto" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('auto', event)" onkeydown="handleToggleKey(event, 'auto')"></div>
                     </div>
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 15.998V22h6l14-14-6-6L0 15.998zm23.71-9.42L21.29.29a1.003 1.003 0 0 0-1.42 0L18 2.17 21.83 6l1.88-1.88a.996.996 0 0 0 0-1.42z"/></svg></div>
                         <span class="settings-row-label" id="haptic-label">Haptic Feedback</span>
-                        <div id="toggle-haptic" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('haptic')" onkeydown="handleToggleKey(event, 'haptic')"></div>
+                        <div id="toggle-haptic" class="toggle on" role="switch" aria-checked="true" tabindex="0" onclick="toggleSetting('haptic', event)" onkeydown="handleToggleKey(event, 'haptic')"></div>
                     </div>
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></div>
                         <span class="settings-row-label" id="sound-label">Sound Feedback</span>
-                        <div id="toggle-sound" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sound')" onkeydown="handleToggleKey(event, 'sound')"></div>
+                        <div id="toggle-sound" class="toggle" role="switch" aria-checked="false" tabindex="0" onclick="toggleSetting('sound', event)" onkeydown="handleToggleKey(event, 'sound')"></div>
                     </div>
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></div>
@@ -882,7 +882,14 @@
 
         // Settings persistence
         const defaultSettings = { auto: true, haptic: true, sound: false, sync: false, gps: false };
-        let settings = JSON.parse(localStorage.getItem('skiTimerSettings') || JSON.stringify(defaultSettings));
+        // Merge saved settings with defaults to ensure all keys exist
+        let savedSettings = {};
+        try {
+            savedSettings = JSON.parse(localStorage.getItem('skiTimerSettings') || '{}');
+        } catch (e) {
+            console.error('Error parsing saved settings:', e);
+        }
+        let settings = { ...defaultSettings, ...savedSettings };
 
         // Sync state
         const deviceId = localStorage.getItem('skiTimerDeviceId') || generateDeviceId();
@@ -1012,7 +1019,14 @@
 
             } catch (e) {
                 console.error('Cloud sync fetch error:', e);
-                statusEl.textContent = translations[currentLang].syncError || 'Sync error';
+                // Show more specific error message
+                if (e.message.includes('500')) {
+                    statusEl.textContent = 'KV not configured';
+                } else if (e.message.includes('Failed to fetch')) {
+                    statusEl.textContent = 'Offline';
+                } else {
+                    statusEl.textContent = translations[currentLang].syncError || 'Sync error';
+                }
                 statusEl.style.color = 'var(--error)';
                 updateSyncStatus('local');
             }
@@ -2025,7 +2039,10 @@
         }
 
         // Settings
-        function toggleSetting(setting) {
+        function toggleSetting(setting, event) {
+            if (event) {
+                event.stopPropagation();
+            }
             settings[setting] = !settings[setting];
             localStorage.setItem('skiTimerSettings', JSON.stringify(settings));
             applySettings();
