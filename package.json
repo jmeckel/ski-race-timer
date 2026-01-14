@@ -8,6 +8,6 @@
     "build": "echo 'Static site - no build needed'"
   },
   "dependencies": {
-    "@upstash/redis": "^1.28.0"
+    "ioredis": "^5.3.2"
   }
 }

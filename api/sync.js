@@ -1,13 +1,19 @@
-import { Redis } from '@upstash/redis';
+import Redis from 'ioredis';
 
-// Initialize Redis client from environment variables
-// Vercel Redis sets these automatically when connected
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+// Create Redis client - reuse connection across invocations
+let redis = null;
 
-// CORS headers for cross-origin requests
+function getRedis() {
+  if (!redis) {
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+  }
+  return redis;
+}
+
+// CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -23,7 +29,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Set CORS headers for all responses
+  // Set CORS headers
   Object.entries(corsHeaders).forEach(([key, value]) => {
     res.setHeader(key, value);
   });
@@ -35,14 +41,15 @@ export default async function handler(req, res) {
   }
 
   const redisKey = `race:${raceId}`;
+  const client = getRedis();
 
   try {
     if (req.method === 'GET') {
-      // Fetch all entries for this race
-      const data = await redis.get(redisKey);
+      const data = await client.get(redisKey);
+      const parsed = data ? JSON.parse(data) : { entries: [], lastUpdated: null };
       return res.status(200).json({
-        entries: data?.entries || [],
-        lastUpdated: data?.lastUpdated || null
+        entries: parsed.entries || [],
+        lastUpdated: parsed.lastUpdated || null
       });
     }
 
@@ -54,7 +61,8 @@ export default async function handler(req, res) {
       }
 
       // Get existing data
-      const existing = await redis.get(redisKey) || { entries: [], lastUpdated: null };
+      const existingData = await client.get(redisKey);
+      const existing = existingData ? JSON.parse(existingData) : { entries: [], lastUpdated: null };
 
       // Add device info to entry
       const enrichedEntry = {
@@ -64,7 +72,7 @@ export default async function handler(req, res) {
         syncedAt: Date.now()
       };
 
-      // Check for duplicates (same id from same device)
+      // Check for duplicates
       const isDuplicate = existing.entries.some(
         e => e.id === entry.id && e.deviceId === deviceId
       );
@@ -73,8 +81,8 @@ export default async function handler(req, res) {
         existing.entries.push(enrichedEntry);
         existing.lastUpdated = Date.now();
 
-        // Store with 24-hour expiry (races typically don't last longer)
-        await redis.set(redisKey, existing, { ex: 86400 });
+        // Store with 24-hour expiry
+        await client.set(redisKey, JSON.stringify(existing), 'EX', 86400);
       }
 
       return res.status(200).json({
