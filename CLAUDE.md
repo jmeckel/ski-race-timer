@@ -32,20 +32,40 @@ The app has three tab-based views:
 ### PWA Structure
 
 ```
-public/
-├── index.html      # Main application (HTML + CSS + JS)
-├── manifest.json   # PWA manifest
-├── sw.js           # Service worker (cache-first strategy)
-└── icons/          # App icons (72-512px PNG/SVG)
+.
+├── api/
+│   └── sync.js         # Vercel serverless function for cloud sync
+├── public/
+│   ├── index.html      # Main application (HTML + CSS + JS)
+│   ├── manifest.json   # PWA manifest
+│   ├── sw.js           # Service worker (cache-first strategy)
+│   └── icons/          # App icons (72-512px PNG/SVG)
+└── package.json        # Dependencies (@vercel/kv)
 ```
 
 ### Service Worker
 
-`sw.js` implements cache-first with network fallback. Cache version: `ski-race-timer-v1`. Updates require incrementing the cache version.
+`sw.js` implements cache-first with network fallback. Cache version: `ski-race-timer-v5`. Updates require incrementing the cache version.
+
+### Multi-Device Sync
+
+Cross-device sync uses Vercel KV (Redis) with polling:
+- **API endpoint**: `/api/sync.js` handles GET (fetch entries) and POST (add entry)
+- **Polling interval**: 2 seconds when sync is enabled
+- **BroadcastChannel**: Used for same-browser tab sync
+- **Race ID**: Unique identifier to group synced devices
 
 ## Key Implementation Details
 
-- **Translations**: Hardcoded in JavaScript object within index.html, toggled via `toggleLanguage()`
-- **GPS sync**: Currently simulated (visual indicator only)
+- **Translations**: Hardcoded in JavaScript object within index.html, toggled via `toggleLanguage()`. Default language: German
+- **GPS sync**: Uses Geolocation API for real GPS timestamps
 - **Haptic feedback**: Uses Navigator.vibrate() API
+- **Sound feedback**: Uses Web Audio API for beep sounds
 - **Mobile optimization**: Safe area insets for notches, touch-optimized, no user scaling
+
+## Vercel Setup
+
+To enable cloud sync, add Vercel KV to your project:
+1. In Vercel dashboard, go to Storage → Create Database → KV
+2. Connect it to your project
+3. The `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables are auto-configured

@@ -651,12 +651,17 @@
                             <div class="settings-row-icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div>
                             <span class="settings-row-label" id="race-id-label">Race ID</span>
                         </div>
-                        <input type="text" class="race-id-input" id="race-id-input" placeholder="RACE-001" maxlength="20" onchange="updateRaceId()">
+                        <input type="text" class="race-id-input" id="race-id-input" placeholder="RACE-001" maxlength="20" onchange="updateRaceId()" onblur="updateRaceId()" onkeydown="if(event.key==='Enter'){updateRaceId();this.blur();}">
                         <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                             <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
                             <span class="settings-row-label" id="device-name-label">Device Name</span>
                         </div>
-                        <input type="text" class="device-name-input" id="device-name-input" placeholder="Timer 1" maxlength="20" onchange="updateDeviceName()">
+                        <input type="text" class="device-name-input" id="device-name-input" placeholder="Timer 1" maxlength="20" onchange="updateDeviceName()" onblur="updateDeviceName()" onkeydown="if(event.key==='Enter'){updateDeviceName();this.blur();}">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--surface-elevated);">
+                            <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
+                            <span class="settings-row-label" id="cloud-sync-label">Cloud Sync</span>
+                            <span class="settings-row-value" id="cloud-sync-status" style="font-size: 11px;">Waiting...</span>
+                        </div>
                         <div class="devices-list" id="devices-list"></div>
                     </div>
                     <div class="settings-row" id="sync-status-row" style="display: none;">
@@ -828,7 +833,8 @@
                 pointS: 'S', pointF: 'F',
                 multiDeviceSync: 'Multi-Device Sync', enableSync: 'Enable Sync', raceId: 'Race ID', deviceName: 'Device Name',
                 syncConnected: 'Connected', syncDisconnected: 'Offline', syncConnecting: 'Connecting...', devices: 'devices',
-                averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected'
+                averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected',
+                connecting: 'Connecting...', connected: 'Connected', syncError: 'Sync error', syncReceived: 'Synced from cloud', cloudSync: 'Cloud Sync'
             },
             de: {
                 gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
@@ -854,7 +860,8 @@
                 pointS: 'S', pointF: 'Z',
                 multiDeviceSync: 'Multi-Geräte-Sync', enableSync: 'Sync aktivieren', raceId: 'Rennen-ID', deviceName: 'Gerätename',
                 syncConnected: 'Verbunden', syncDisconnected: 'Offline', syncConnecting: 'Verbinde...', devices: 'Geräte',
-                averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden'
+                averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden',
+                connecting: 'Verbinde...', connected: 'Verbunden', syncError: 'Sync-Fehler', syncReceived: 'Von Cloud synchronisiert', cloudSync: 'Cloud-Sync'
             }
         };
 
@@ -886,6 +893,12 @@
         let connectedDevices = new Map();
         let syncEnabled = false;
 
+        // Cloud sync state
+        let pollInterval = null;
+        let lastSyncTimestamp = 0;
+        const POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
+        const API_BASE = '/api/sync';
+
         function generateDeviceId() {
             const id = 'dev_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('skiTimerDeviceId', id);
@@ -910,6 +923,8 @@
         }
 
         // Sync initialization
+        let currentSyncRaceId = null;
+
         function initSync() {
             if (!settings.sync || !raceId) {
                 cleanupSync();
@@ -922,26 +937,140 @@
             document.getElementById('sync-status-row').style.display = 'flex';
 
             // Initialize BroadcastChannel for same-browser tabs
+            // Recreate if race ID changed
+            if (broadcastChannel && currentSyncRaceId !== raceId) {
+                broadcastChannel.close();
+                broadcastChannel = null;
+            }
+
             if (!broadcastChannel) {
                 try {
                     broadcastChannel = new BroadcastChannel('ski-timer-' + raceId);
                     broadcastChannel.onmessage = handleBroadcastMessage;
+                    currentSyncRaceId = raceId;
                     console.log('BroadcastChannel initialized for race:', raceId);
                 } catch (e) {
-                    console.log('BroadcastChannel not supported');
+                    console.log('BroadcastChannel not supported:', e);
                 }
             }
 
+            // Initialize cloud sync polling
+            initCloudSync();
+
             // Broadcast presence
             broadcastPresence();
-            updateSyncStatus('connected');
 
             // Request sync from other devices
             broadcastMessage({ type: 'request-sync', deviceId, deviceName });
         }
 
+        function initCloudSync() {
+            // Clear existing poll interval
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+
+            const statusEl = document.getElementById('cloud-sync-status');
+            statusEl.textContent = translations[currentLang].connecting || 'Connecting...';
+            statusEl.style.color = 'var(--text-tertiary)';
+
+            // Initial fetch
+            fetchCloudEntries();
+
+            // Start polling
+            pollInterval = setInterval(fetchCloudEntries, POLL_INTERVAL_MS);
+
+            console.log('Cloud sync polling initialized for race:', raceId);
+        }
+
+        async function fetchCloudEntries() {
+            if (!syncEnabled || !raceId) return;
+
+            const statusEl = document.getElementById('cloud-sync-status');
+
+            try {
+                const response = await fetch(`${API_BASE}?raceId=${encodeURIComponent(raceId)}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update status
+                statusEl.textContent = translations[currentLang].connected || 'Connected';
+                statusEl.style.color = 'var(--success)';
+                updateSyncStatus('connected');
+
+                // Merge remote entries with local entries
+                if (data.entries && data.entries.length > 0) {
+                    mergeCloudEntries(data.entries);
+                }
+
+                lastSyncTimestamp = data.lastUpdated || Date.now();
+
+            } catch (e) {
+                console.error('Cloud sync fetch error:', e);
+                statusEl.textContent = translations[currentLang].syncError || 'Sync error';
+                statusEl.style.color = 'var(--error)';
+                updateSyncStatus('local');
+            }
+        }
+
+        function mergeCloudEntries(cloudEntries) {
+            let hasNewEntries = false;
+
+            cloudEntries.forEach(cloudEntry => {
+                // Skip entries from this device (we already have them)
+                if (cloudEntry.deviceId === deviceId) return;
+
+                // Check if we already have this entry
+                const exists = entries.some(e =>
+                    e.id === cloudEntry.id && e.deviceId === cloudEntry.deviceId
+                );
+
+                if (!exists) {
+                    // Add device info if not present
+                    const enrichedEntry = {
+                        ...cloudEntry,
+                        deviceId: cloudEntry.deviceId || 'unknown',
+                        deviceName: cloudEntry.deviceName || 'Unknown Device'
+                    };
+                    entries.push(enrichedEntry);
+                    hasNewEntries = true;
+                }
+            });
+
+            if (hasNewEntries) {
+                saveEntries();
+                renderResults();
+                updateStats();
+                showToast(translations[currentLang].syncReceived || 'Synced from cloud');
+            }
+        }
+
+        async function sendEntryToCloud(entry) {
+            if (!syncEnabled || !raceId) return;
+
+            try {
+                await fetch(`${API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        entry,
+                        deviceId,
+                        deviceName
+                    })
+                });
+            } catch (e) {
+                console.error('Cloud sync send error:', e);
+            }
+        }
+
         function cleanupSync() {
             syncEnabled = false;
+            currentSyncRaceId = null;
             document.getElementById('sync-indicator').style.display = 'none';
 
             if (broadcastChannel) {
@@ -952,6 +1081,12 @@
             if (wsConnection) {
                 wsConnection.close();
                 wsConnection = null;
+            }
+
+            // Cleanup polling
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
             }
 
             connectedDevices.clear();
@@ -993,6 +1128,8 @@
                 deviceId,
                 deviceName
             });
+            // Send to cloud for cross-device sync
+            sendEntryToCloud(entry);
         }
 
         function handleBroadcastMessage(event) {
