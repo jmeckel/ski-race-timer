@@ -1,4 +1,11 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+// Initialize Redis client from environment variables
+// Vercel Redis sets these automatically when connected
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -10,9 +17,9 @@ const corsHeaders = {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
     return res.status(200).end();
   }
 
@@ -27,12 +34,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'raceId is required' });
   }
 
-  const kvKey = `race:${raceId}`;
+  const redisKey = `race:${raceId}`;
 
   try {
     if (req.method === 'GET') {
       // Fetch all entries for this race
-      const data = await kv.get(kvKey);
+      const data = await redis.get(redisKey);
       return res.status(200).json({
         entries: data?.entries || [],
         lastUpdated: data?.lastUpdated || null
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
       }
 
       // Get existing data
-      const existing = await kv.get(kvKey) || { entries: [], lastUpdated: null };
+      const existing = await redis.get(redisKey) || { entries: [], lastUpdated: null };
 
       // Add device info to entry
       const enrichedEntry = {
@@ -67,7 +74,7 @@ export default async function handler(req, res) {
         existing.lastUpdated = Date.now();
 
         // Store with 24-hour expiry (races typically don't last longer)
-        await kv.set(kvKey, existing, { ex: 86400 });
+        await redis.set(redisKey, existing, { ex: 86400 });
       }
 
       return res.status(200).json({
@@ -80,6 +87,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('Sync API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 }
