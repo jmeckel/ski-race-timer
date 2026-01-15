@@ -138,13 +138,14 @@ body {
 
 /* ===== Timer View ===== */
 .timer-view {
-  padding: 16px;
-  gap: 16px;
+  padding: 12px;
+  gap: 8px;
+  overflow-y: auto;
 }
 
 .clock-container {
   text-align: center;
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
 .bib-display {
@@ -152,7 +153,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px;
+  padding: 10px;
   background: var(--surface);
   border-radius: 12px;
 }
@@ -255,18 +256,18 @@ body {
 .number-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 8px;
+  gap: 6px;
+  padding: 4px;
 }
 
 .num-btn {
-  aspect-ratio: 1.2;
+  aspect-ratio: 1.5;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--text-primary);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
@@ -286,12 +287,12 @@ body {
 /* Timestamp Button */
 .timestamp-btn {
   width: 100%;
-  padding: 20px;
+  padding: 14px;
   border: none;
-  border-radius: 16px;
+  border-radius: 12px;
   background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
   color: white;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.2s;
