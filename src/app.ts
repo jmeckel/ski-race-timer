@@ -927,13 +927,21 @@ function updateSettingsInputs(): void {
   const state = store.getState();
   const { settings } = state;
 
-  (document.getElementById('simple-mode-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.simple));
-  (document.getElementById('gps-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.gps));
-  (document.getElementById('sync-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.sync));
-  (document.getElementById('auto-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.auto));
-  (document.getElementById('haptic-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.haptic));
-  (document.getElementById('sound-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.sound));
-  (document.getElementById('photo-toggle') as HTMLInputElement)?.setAttribute('checked', String(settings.photoCapture));
+  const simpleModeToggle = document.getElementById('simple-mode-toggle') as HTMLInputElement;
+  const gpsToggle = document.getElementById('gps-toggle') as HTMLInputElement;
+  const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+  const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
+  const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
+  const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement;
+  const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
+
+  if (simpleModeToggle) simpleModeToggle.checked = settings.simple;
+  if (gpsToggle) gpsToggle.checked = settings.gps;
+  if (syncToggle) syncToggle.checked = settings.sync;
+  if (autoToggle) autoToggle.checked = settings.auto;
+  if (hapticToggle) hapticToggle.checked = settings.haptic;
+  if (soundToggle) soundToggle.checked = settings.sound;
+  if (photoToggle) photoToggle.checked = settings.photoCapture;
 
   const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
   if (raceIdInput) raceIdInput.value = state.raceId;
