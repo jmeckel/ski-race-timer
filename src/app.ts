@@ -897,11 +897,7 @@ function updateGpsIndicator(): void {
   }
 
   if (text) {
-    if (state.gpsStatus === 'active' && state.gpsAccuracy) {
-      text.textContent = `${state.gpsAccuracy.toFixed(0)}m`;
-    } else {
-      text.textContent = t(`gps${state.gpsStatus.charAt(0).toUpperCase() + state.gpsStatus.slice(1)}`, state.currentLang);
-    }
+    text.textContent = 'GPS';
   }
 }
 
