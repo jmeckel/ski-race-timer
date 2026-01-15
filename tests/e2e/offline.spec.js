@@ -77,16 +77,18 @@ test.describe('Data Persistence', () => {
     // Toggle language
     await page.click('[data-view="settings-view"]');
     const langToggle = page.locator('#lang-toggle');
-    const initialText = await langToggle.textContent();
+    const initialActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
     await langToggle.click();
+    const toggledActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
 
     // Reload
     await page.reload();
     await page.click('[data-view="settings-view"]');
 
     // Language should persist
-    const newText = await page.locator('#lang-toggle').textContent();
-    expect(newText).not.toBe(initialText);
+    const afterReloadActiveLang = await page.locator('#lang-toggle .lang-option.active').getAttribute('data-lang');
+    expect(afterReloadActiveLang).toBe(toggledActiveLang);
+    expect(afterReloadActiveLang).not.toBe(initialActiveLang);
   });
 });
 

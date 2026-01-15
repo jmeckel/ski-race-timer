@@ -45,31 +45,35 @@ test.describe('Language Toggle', () => {
 
   test('should toggle between languages', async ({ page }) => {
     const langToggle = page.locator('#lang-toggle');
-    const initialText = await langToggle.textContent();
+
+    // Get initial active language
+    const initialActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
 
     await langToggle.click();
 
-    const newText = await langToggle.textContent();
-    expect(newText).not.toBe(initialText);
+    // Active language should have changed
+    const newActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+    expect(newActiveLang).not.toBe(initialActiveLang);
   });
 
   test('should persist language after toggle', async ({ page }) => {
     const langToggle = page.locator('#lang-toggle');
 
-    // Get initial state
-    const initialText = await langToggle.textContent();
+    // Get initial active language
+    const initialActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
 
     // Toggle
     await langToggle.click();
-    const toggledText = await langToggle.textContent();
+    const toggledActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
 
     // Reload
     await page.reload();
     await page.click('[data-view="settings-view"]');
 
     // Should stay toggled
-    const afterReloadText = await page.locator('#lang-toggle').textContent();
-    expect(afterReloadText).toBe(toggledText);
+    const afterReloadActiveLang = await page.locator('#lang-toggle .lang-option.active').getAttribute('data-lang');
+    expect(afterReloadActiveLang).toBe(toggledActiveLang);
+    expect(afterReloadActiveLang).not.toBe(initialActiveLang);
   });
 });
 

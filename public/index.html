@@ -71,8 +71,8 @@
         .tab-item span { font-size: 10px; font-weight: 500; }
         .tab-item.active { color: var(--primary); }
         .tab-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-        .view { display: none; flex: 1; min-height: 0; overflow: hidden; }
-        .view.active { display: flex; flex-direction: column; }
+        .view { display: none; flex: 1; min-height: 0; overflow: hidden; position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
+        .view.active { display: flex; flex-direction: column; position: relative; top: 0; left: 0; visibility: visible; }
 
         /* Timing View - uses flexbox to distribute space */
         #timing-view {
@@ -318,8 +318,10 @@
         .toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: var(--text-secondary); border-radius: 50%; top: 2px; left: 2px; transition: all 0.3s; }
         .toggle.on { background: var(--primary); }
         .toggle.on::after { left: 20px; background: white; }
-        .lang-toggle { padding: 6px 12px; background: var(--surface-elevated); border: none; border-radius: 6px; color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer; }
+        .lang-toggle { padding: 4px 8px; background: var(--surface-elevated); border: none; border-radius: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; gap: 4px; align-items: center; }
         .lang-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .lang-toggle .lang-option { padding: 2px 6px; border-radius: 4px; }
+        .lang-toggle .lang-option.active { background: var(--primary); color: var(--background); }
         .about-card { padding: 16px; text-align: center; }
         .about-icon { width: 48px; height: 48px; margin: 0 auto 12px; color: var(--primary); }
         .about-icon svg { width: 100%; height: 100%; }
@@ -722,7 +724,7 @@
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></div>
                         <span class="settings-row-label" id="language-label">Language</span>
-                        <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()">EN</button>
+                        <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()"><span class="lang-option" data-lang="de">DE</span><span class="lang-option" data-lang="en">EN</span></button>
                     </div>
                 </div>
             </div>
@@ -826,7 +828,7 @@
         const translations = {
             en: {
                 gpsSync: 'GPS Synced', gpsSyncing: 'Acquiring GPS...', gpsInactive: 'GPS Inactive', gpsError: 'GPS Error', gpsPermissionDenied: 'GPS permission denied. Check browser settings.', gpsUnavailable: 'GPS unavailable on this device', gpsTimeout: 'GPS signal timeout',
-                bib: 'BIB', timestamp: 'TIMESTAMP', start: 'Start', finish: 'Finish',
+                bib: 'BIB', timestamp: 'Record Time', start: 'Start', finish: 'Finish',
                 results: 'Results', total: 'Total', racers: 'Racers', finished: 'Finished', event: 'Event',
                 select: 'Select', cancel: 'Cancel', delete: 'Delete', export: 'Export',
                 noTimesRecorded: 'No Times Recorded', noTimesDesc: 'Recorded timestamps will appear here',
@@ -857,7 +859,7 @@
             },
             de: {
                 gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
-                bib: 'STARTNR', timestamp: 'ZEITSTEMPEL', start: 'Start', finish: 'Ziel',
+                bib: 'STARTNR', timestamp: 'Zeit nehmen', start: 'Start', finish: 'Ziel',
                 results: 'Ergebnisse', total: 'Gesamt', racers: 'Fahrer', finished: 'Im Ziel', event: 'Event',
                 select: 'Auswählen', cancel: 'Abbrechen', delete: 'Löschen', export: 'Exportieren',
                 noTimesRecorded: 'Keine Zeiten erfasst', noTimesDesc: 'Erfasste Zeitstempel erscheinen hier',
@@ -1580,7 +1582,10 @@
             document.getElementById('confirm-delete-text').textContent = t('deleteConfirmText');
             document.getElementById('confirm-delete-cancel').textContent = t('cancel');
             document.getElementById('confirm-delete-btn').textContent = t('delete');
-            document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
+            // Update language toggle active state
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.lang === currentLang);
+            });
             document.getElementById('undo-text').textContent = t('undo');
             document.getElementById('clear-all-text').textContent = t('clearAll');
             document.getElementById('export-text').textContent = t('export');
@@ -2607,8 +2612,17 @@
         applySettings();
         updateBibDisplay();
         updateResults();
-        updateClock();
-        setInterval(updateClock, 100); // 10 FPS - sufficient for ms display, better battery life
+        // Start clock with requestAnimationFrame for smooth ms display
+        let lastClockUpdate = 0;
+        function clockLoop(timestamp) {
+            // Update every frame for smooth ms display
+            if (timestamp - lastClockUpdate >= 16) { // ~60 FPS
+                updateClock();
+                lastClockUpdate = timestamp;
+            }
+            requestAnimationFrame(clockLoop);
+        }
+        requestAnimationFrame(clockLoop);
 
         // Register service worker
         if ('serviceWorker' in navigator) {
