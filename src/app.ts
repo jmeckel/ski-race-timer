@@ -179,7 +179,7 @@ async function recordTimestamp(): Promise<void> {
     // Create entry
     const entry: Entry = {
       id: generateEntryId(state.deviceId),
-      bib: state.bibInput.padStart(3, '0'),
+      bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
       point: state.selectedPoint,
       timestamp: new Date().toISOString(),
       status: 'ok',
@@ -209,11 +209,15 @@ async function recordTimestamp(): Promise<void> {
     // Sync to cloud
     syncService.broadcastEntry(entry);
 
-    // Auto-increment bib if enabled
-    if (state.settings.auto) {
-      const nextBib = String(parseInt(state.bibInput || '0', 10) + 1);
+    // Auto-increment bib if enabled and a bib was entered
+    if (state.settings.auto && state.bibInput) {
+      const nextBib = String(parseInt(state.bibInput, 10) + 1);
       store.setBibInput(nextBib);
+    } else if (!state.bibInput) {
+      // Keep empty if no bib was entered
+      store.setBibInput('');
     } else {
+      // Clear bib if auto-increment is off
       store.setBibInput('');
     }
 
