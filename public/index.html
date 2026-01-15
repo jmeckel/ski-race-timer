@@ -834,7 +834,8 @@
                 multiDeviceSync: 'Multi-Device Sync', enableSync: 'Enable Sync', raceId: 'Race ID', deviceName: 'Device Name',
                 syncConnected: 'Connected', syncDisconnected: 'Offline', syncConnecting: 'Connecting...', devices: 'devices',
                 averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected',
-                connecting: 'Connecting...', connected: 'Connected', syncError: 'Sync error', syncReceived: 'Synced from cloud', cloudSync: 'Cloud Sync'
+                connecting: 'Connecting...', connected: 'Connected', syncError: 'Sync error', syncReceived: 'Synced from cloud', cloudSync: 'Cloud Sync',
+                enterRaceId: 'Enter Race ID', needsRaceId: 'Needs Race ID'
             },
             de: {
                 gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
@@ -861,7 +862,8 @@
                 multiDeviceSync: 'Multi-Geräte-Sync', enableSync: 'Sync aktivieren', raceId: 'Rennen-ID', deviceName: 'Gerätename',
                 syncConnected: 'Verbunden', syncDisconnected: 'Offline', syncConnecting: 'Verbinde...', devices: 'Geräte',
                 averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden',
-                connecting: 'Verbinde...', connected: 'Verbunden', syncError: 'Sync-Fehler', syncReceived: 'Von Cloud synchronisiert', cloudSync: 'Cloud-Sync'
+                connecting: 'Verbinde...', connected: 'Verbunden', syncError: 'Sync-Fehler', syncReceived: 'Von Cloud synchronisiert', cloudSync: 'Cloud-Sync',
+                enterRaceId: 'Rennen-ID eingeben', needsRaceId: 'Rennen-ID fehlt'
             }
         };
 
@@ -2190,6 +2192,11 @@
                 document.getElementById('race-id-display').textContent = raceId ? `[${raceId}]` : '';
                 if (raceId) {
                     initSync();
+                } else {
+                    // Show message that Race ID is needed
+                    document.getElementById('cloud-sync-status').textContent = translations[currentLang].enterRaceId || 'Enter Race ID';
+                    document.getElementById('cloud-sync-status').style.color = 'var(--text-tertiary)';
+                    document.getElementById('sync-connection-status').textContent = translations[currentLang].needsRaceId || 'Needs Race ID';
                 }
             } else {
                 syncSettingsRow.style.display = 'none';
