@@ -127,6 +127,8 @@ export class Clock {
       if (timeStr !== this.lastTimeStr) {
         this.updateDigits(timeStr);
         this.lastTimeStr = timeStr;
+      } else if (this.tickCount % 60 === 1) {
+        console.log('timeStr unchanged:', timeStr, '=', this.lastTimeStr);
       }
 
       // Update date once per second (when seconds change)
@@ -148,6 +150,11 @@ export class Clock {
    */
   private updateDigits(timeStr: string): void {
     const digits = this.timeElement.querySelectorAll('.clock-digit');
+
+    // Debug: check if elements exist
+    if (this.tickCount % 60 === 1) {
+      console.log('updateDigits: digits count =', digits.length, 'timeElement in DOM =', document.contains(this.timeElement));
+    }
 
     for (let i = 0; i < timeStr.length && i < digits.length; i++) {
       const digit = digits[i] as HTMLSpanElement;
