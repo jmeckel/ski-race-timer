@@ -1494,7 +1494,8 @@
             document.getElementById('gps-section-title').textContent = t('gpsStatus');
             document.getElementById('gps-enable-label').textContent = t('enableGps');
             document.getElementById('settings-gps-status').textContent = gpsWatchId ? t('gpsSync') : t('gpsInactive');
-            document.getElementById('accuracy-label').textContent = t('accuracy');
+            const accuracyLabel = document.getElementById('accuracy-label');
+            if (accuracyLabel) accuracyLabel.textContent = t('accuracy');
             document.getElementById('timing-section-title').textContent = t('timingSettings');
             document.getElementById('auto-increment-label').textContent = t('autoIncrementBib');
             document.getElementById('haptic-label').textContent = t('hapticFeedback');

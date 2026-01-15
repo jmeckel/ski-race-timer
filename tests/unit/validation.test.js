@@ -36,6 +36,9 @@ function sanitizeString(str, maxLength) {
 }
 
 function safeJsonParse(str, defaultValue) {
+  if (str === null || str === undefined || str === '') {
+    return defaultValue;
+  }
   try {
     const parsed = JSON.parse(str);
     return parsed;

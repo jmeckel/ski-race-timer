@@ -15,6 +15,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "test:e2e:prod": "TEST_ENV=production playwright test",
+    "test:e2e:prod:headed": "TEST_ENV=production playwright test --headed",
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {

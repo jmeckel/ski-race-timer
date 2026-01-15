@@ -15,7 +15,7 @@ const mockRedisData = new Map();
 
 const createMockRedis = () => ({
   get: vi.fn((key) => Promise.resolve(mockRedisData.get(key) || null)),
-  set: vi.fn((key, value) => {
+  set: vi.fn((key, value, ...args) => {
     mockRedisData.set(key, value);
     return Promise.resolve('OK');
   }),
@@ -55,6 +55,9 @@ function sanitizeString(str, maxLength) {
 }
 
 function safeJsonParse(str, defaultValue) {
+  if (str === null || str === undefined || str === '') {
+    return defaultValue;
+  }
   try {
     return JSON.parse(str);
   } catch (e) {
