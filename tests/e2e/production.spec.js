@@ -283,9 +283,8 @@ test.describe('Production PWA - Results View', () => {
     await expect(results).toHaveCount(1);
   });
 
-  test('should have export buttons', async ({ page }) => {
-    await expect(page.locator('#export-csv-btn')).toBeVisible();
-    await expect(page.locator('#export-json-btn')).toBeVisible();
+  test('should have export button', async ({ page }) => {
+    await expect(page.locator('#export-horology-btn')).toBeVisible();
   });
 });
 

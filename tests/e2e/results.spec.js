@@ -20,7 +20,7 @@ test.describe('Results View', () => {
     }
 
     // Navigate to Results tab
-    await page.click('[data-view="results"]');
+    await page.click('[data-view="results-view"]');
     await page.waitForSelector('.results-list');
   });
 
@@ -52,7 +52,7 @@ test.describe('Results View', () => {
       // Clear localStorage and reload
       await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
       await page.reload();
-      await page.click('[data-view="results"]');
+      await page.click('[data-view="results-view"]');
 
       await expect(page.locator('.empty-state')).toBeVisible();
     });
@@ -88,7 +88,7 @@ test.describe('Results View', () => {
       await page.waitForTimeout(500);
 
       // Go back to results
-      await page.click('[data-view="results"]');
+      await page.click('[data-view="results-view"]');
 
       // Filter by Start only
       await page.selectOption('#filter-point', 'S');
@@ -222,33 +222,25 @@ test.describe('Results Export', () => {
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
 
-    await page.click('[data-view="results"]');
+    await page.click('[data-view="results-view"]');
   });
 
-  test('should export CSV', async ({ page }) => {
+  test('should export Race Horology CSV', async ({ page }) => {
     // Listen for download
     const downloadPromise = page.waitForEvent('download');
 
-    await page.click('#export-csv-btn');
+    await page.click('#export-horology-btn');
 
     const download = await downloadPromise;
+    expect(download.suggestedFilename()).toContain('race-horology');
     expect(download.suggestedFilename()).toContain('.csv');
-  });
-
-  test('should export JSON', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download');
-
-    await page.click('#export-json-btn');
-
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toContain('.json');
   });
 });
 
 test.describe('Results View - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="results"]');
+    await page.click('[data-view="results-view"]');
   });
 
   test('should have accessible list structure', async ({ page }) => {
@@ -261,7 +253,7 @@ test.describe('Results View - Accessibility', () => {
     await page.click('[data-view="timer"]');
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
-    await page.click('[data-view="results"]');
+    await page.click('[data-view="results-view"]');
 
     // Tab to first result
     await page.keyboard.press('Tab');

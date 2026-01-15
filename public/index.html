@@ -589,13 +589,9 @@
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z"/></svg>
                         <span>Select</span>
                     </button>
-                    <button class="action-btn" id="export-csv-btn" aria-label="Export as CSV">
+                    <button class="action-btn" id="export-horology-btn" aria-label="Export for Race Horology">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                        <span>CSV</span>
-                    </button>
-                    <button class="action-btn" id="export-json-btn" aria-label="Export as JSON">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                        <span>JSON</span>
+                        <span data-translate="exportHorology">Race Horology</span>
                     </button>
                 </div>
                 <div class="results-actions" id="select-actions" style="display: none;">
@@ -829,7 +825,8 @@
                 fastest: 'Fastest', average: 'Average', search: 'Search bib...',
                 allPoints: 'All Points', allStatus: 'All Status', ok: 'OK',
                 featureGps: 'GPS-synced timestamps', featurePrecision: 'Millisecond precision',
-                featureExport: 'CSV & JSON export', featureMobile: 'Designed for outdoor use',
+                featureExport: 'Race Horology export', featureMobile: 'Designed for outdoor use',
+                exportHorology: 'Race Horology',
                 pointS: 'S', pointF: 'F',
                 multiDeviceSync: 'Multi-Device Sync', enableSync: 'Enable Sync', raceId: 'Race ID', deviceName: 'Device Name',
                 syncConnected: 'Connected', syncDisconnected: 'Offline', syncConnecting: 'Connecting...', devices: 'devices',
@@ -857,7 +854,8 @@
                 fastest: 'Schnellste', average: 'Durchschnitt', search: 'Startnr. suchen...',
                 allPoints: 'Alle Punkte', allStatus: 'Alle Status', ok: 'OK',
                 featureGps: 'GPS-synchronisierte Zeiten', featurePrecision: 'Millisekunden-Präzision',
-                featureExport: 'CSV & JSON Export', featureMobile: 'Für Outdoor-Einsatz',
+                featureExport: 'Race Horology Export', featureMobile: 'Für Outdoor-Einsatz',
+                exportHorology: 'Race Horology',
                 pointS: 'S', pointF: 'Z',
                 multiDeviceSync: 'Multi-Geräte-Sync', enableSync: 'Sync aktivieren', raceId: 'Rennen-ID', deviceName: 'Gerätename',
                 syncConnected: 'Verbunden', syncDisconnected: 'Offline', syncConnecting: 'Verbinde...', devices: 'Geräte',
@@ -2066,30 +2064,91 @@
             return result.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         }
 
-        // Export CSV
-        document.getElementById('export-csv-btn').addEventListener('click', () => {
+        // Export for Race Horology
+        // Format: Startnummer;Durchgang;Startzeit;Zielzeit;Laufzeit
+        // Time format: HH:MM:SS,cc (centiseconds, comma as decimal separator)
+        document.getElementById('export-horology-btn').addEventListener('click', () => {
             if (entries.length === 0) {
                 showToast(t('noData'), 'error');
                 return;
             }
-            const grouped = getGroupedEntriesForExport();
-            const csv = 'Bib,Timestamp,TimingPoint,Status,DeviceCount\n' + grouped.map(e =>
-                `${e.bib},${e.timestamp},${e.point},${e.status},${e.deviceCount}`
-            ).join('\n');
-            downloadFile(csv, 'text/csv', `ski-times-${new Date().toISOString().split('T')[0]}.csv`);
-            vibrate([20, 30, 50]);
-            playBeep(660, 100);
-        });
 
-        // Export JSON
-        document.getElementById('export-json-btn').addEventListener('click', () => {
-            if (entries.length === 0) {
-                showToast(t('noData'), 'error');
-                return;
+            // Format time as HH:MM:SS,cc for Race Horology
+            function formatHorologyTime(isoTimestamp) {
+                if (!isoTimestamp) return '';
+                const date = new Date(isoTimestamp);
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                const centiseconds = String(Math.floor(date.getMilliseconds() / 10)).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds},${centiseconds}`;
             }
-            const grouped = getGroupedEntriesForExport();
-            const json = JSON.stringify(grouped, null, 2);
-            downloadFile(json, 'application/json', `ski-times-${new Date().toISOString().split('T')[0]}.json`);
+
+            // Calculate elapsed time in MM:SS,cc format
+            function formatElapsedTime(startTime, finishTime) {
+                if (!startTime || !finishTime) return '';
+                const elapsed = new Date(finishTime) - new Date(startTime);
+                if (elapsed < 0) return '';
+                const totalSeconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const centiseconds = Math.floor((elapsed % 1000) / 10);
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(centiseconds).padStart(2, '0')}`;
+            }
+
+            // Group entries by bib to find start/finish pairs
+            const bibMap = new Map();
+            entries.forEach(e => {
+                const bib = e.bib || '0';
+                if (!bibMap.has(bib)) {
+                    bibMap.set(bib, { starts: [], finishes: [] });
+                }
+                if (e.point === 'S') {
+                    bibMap.get(bib).starts.push(e.timestamp);
+                } else if (e.point === 'F') {
+                    bibMap.get(bib).finishes.push(e.timestamp);
+                }
+            });
+
+            // Build Race Horology CSV rows
+            const rows = [];
+            bibMap.forEach((times, bib) => {
+                // Sort times chronologically
+                times.starts.sort((a, b) => new Date(a) - new Date(b));
+                times.finishes.sort((a, b) => new Date(a) - new Date(b));
+
+                // Match starts with finishes (first start with first finish = run 1, etc.)
+                const maxRuns = Math.max(times.starts.length, times.finishes.length);
+                for (let run = 0; run < maxRuns; run++) {
+                    const startTime = times.starts[run] || '';
+                    const finishTime = times.finishes[run] || '';
+                    const elapsed = formatElapsedTime(startTime, finishTime);
+
+                    rows.push({
+                        bib: bib,
+                        run: run + 1,
+                        startTime: formatHorologyTime(startTime),
+                        finishTime: formatHorologyTime(finishTime),
+                        elapsed: elapsed
+                    });
+                }
+            });
+
+            // Sort by bib number, then by run
+            rows.sort((a, b) => {
+                const bibA = parseInt(a.bib) || 0;
+                const bibB = parseInt(b.bib) || 0;
+                if (bibA !== bibB) return bibA - bibB;
+                return a.run - b.run;
+            });
+
+            // Generate CSV with semicolon separator (Race Horology default)
+            const header = 'Startnummer;Durchgang;Startzeit;Zielzeit;Laufzeit';
+            const csv = header + '\n' + rows.map(r =>
+                `${r.bib};${r.run};${r.startTime};${r.finishTime};${r.elapsed}`
+            ).join('\n');
+
+            downloadFile(csv, 'text/csv', `race-horology-${new Date().toISOString().split('T')[0]}.csv`);
             vibrate([20, 30, 50]);
             playBeep(660, 100);
         });
