@@ -2416,7 +2416,7 @@
             const gpsSection = document.getElementById('gps-section');
             const timingSection = document.getElementById('timing-section');
             const backupSection = document.getElementById('backup-section');
-            const timingPointsRow = document.querySelector('.timing-points');
+            const startButton = document.getElementById('point-start');
             const searchFilterBar = document.querySelector('.search-filter-bar');
 
             if (settings.simple) {
@@ -2424,7 +2424,7 @@
                 if (gpsSection) gpsSection.style.display = 'none';
                 if (timingSection) timingSection.style.display = 'none';
                 if (backupSection) backupSection.style.display = 'none';
-                if (timingPointsRow) timingPointsRow.style.display = 'none';
+                if (startButton) startButton.style.display = 'none';
                 if (searchFilterBar) searchFilterBar.style.display = 'none';
 
                 // Hide advanced actions (Select button)
@@ -2458,7 +2458,7 @@
                 if (gpsSection) gpsSection.style.display = '';
                 if (timingSection) timingSection.style.display = '';
                 if (backupSection) backupSection.style.display = '';
-                if (timingPointsRow) timingPointsRow.style.display = '';
+                if (startButton) startButton.style.display = '';
                 if (searchFilterBar) searchFilterBar.style.display = '';
 
                 // Show advanced actions

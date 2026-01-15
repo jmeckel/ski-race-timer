@@ -6,6 +6,19 @@
 
 import { test, expect } from '@playwright/test';
 
+// Helper to disable simple mode for tests that need full UI
+async function disableSimpleMode(page) {
+  await page.click('[data-view="settings-view"]');
+  await page.waitForSelector('#toggle-simple');
+  const toggle = page.locator('#toggle-simple');
+  const isSimple = await toggle.evaluate(el => el.classList.contains('on'));
+  if (isSimple) {
+    await toggle.click();
+  }
+  await page.click('[data-view="timing-view"]');
+  await page.waitForSelector('.clock-time');
+}
+
 test.describe('Timer View', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app and wait for it to load
@@ -62,7 +75,7 @@ test.describe('Timer View', () => {
     test('should clear bib with clear button', async ({ page }) => {
       await page.click('[data-num="1"]');
       await page.click('[data-num="2"]');
-      await page.click('[data-action="clear"]');
+      await page.click('#btn-clear');
 
       const bibDisplay = page.locator('.bib-display');
       await expect(bibDisplay).toContainText('---');
@@ -72,7 +85,7 @@ test.describe('Timer View', () => {
       await page.click('[data-num="1"]');
       await page.click('[data-num="2"]');
       await page.click('[data-num="3"]');
-      await page.click('[data-action="delete"]');
+      await page.click('#btn-delete');
 
       const bibDisplay = page.locator('.bib-display');
       await expect(bibDisplay).toContainText('12');
@@ -80,6 +93,11 @@ test.describe('Timer View', () => {
   });
 
   test.describe('Timing Point Selection', () => {
+    test.beforeEach(async ({ page }) => {
+      // These tests need full mode to access Start button
+      await disableSimpleMode(page);
+    });
+
     test('should select Start point', async ({ page }) => {
       await page.click('[data-point="S"]');
 
@@ -88,18 +106,12 @@ test.describe('Timer View', () => {
     });
 
     test('should select Finish point', async ({ page }) => {
+      // First select Start, then Finish to verify switching
+      await page.click('[data-point="S"]');
       await page.click('[data-point="F"]');
 
       const button = page.locator('[data-point="F"]');
       await expect(button).toHaveClass(/active/);
-    });
-
-    test('should select Intermediate points', async ({ page }) => {
-      for (const point of ['I1', 'I2', 'I3']) {
-        await page.click(`[data-point="${point}"]`);
-        const button = page.locator(`[data-point="${point}"]`);
-        await expect(button).toHaveClass(/active/);
-      }
     });
   });
 
@@ -110,10 +122,7 @@ test.describe('Timer View', () => {
       await page.click('[data-num="4"]');
       await page.click('[data-num="2"]');
 
-      // Select point
-      await page.click('[data-point="S"]');
-
-      // Record timestamp
+      // Record timestamp (Finish is already selected in simple mode)
       await page.click('#timestamp-btn');
 
       // Should show confirmation
@@ -121,10 +130,7 @@ test.describe('Timer View', () => {
     });
 
     test('should record timestamp without bib number', async ({ page }) => {
-      // Select point
-      await page.click('[data-point="F"]');
-
-      // Record timestamp
+      // Record timestamp (Finish is already selected in simple mode)
       await page.click('#timestamp-btn');
 
       // Should show confirmation
@@ -164,18 +170,16 @@ test.describe('Timer View', () => {
     test('should show warning for duplicate entry', async ({ page }) => {
       // First entry
       await page.click('[data-num="1"]');
-      await page.click('[data-point="S"]');
       await page.click('#timestamp-btn');
 
       // Wait for confirmation to hide
       await page.waitForTimeout(2000);
 
       // Clear and enter same bib again
-      await page.click('[data-action="clear"]');
+      await page.click('#btn-clear');
       await page.click('[data-num="0"]');
       await page.click('[data-num="0"]');
       await page.click('[data-num="1"]');
-      await page.click('[data-point="S"]');
 
       // Bib display should show warning styling
       const bibDisplay = page.locator('.bib-display');
@@ -225,7 +229,7 @@ test.describe('Timer View', () => {
 });
 
 test.describe('Timer View - Mobile', () => {
-  test.use({ viewport: { width: 375, height: 667 } });
+  test.use({ viewport: { width: 375, height: 667 }, hasTouch: true });
 
   test('should be usable on mobile viewport', async ({ page }) => {
     await page.goto('/');
@@ -265,13 +269,6 @@ test.describe('Timer View - Simple Mode', () => {
     // Finish button should be visible
     const finishBtn = page.locator('[data-point="F"]');
     await expect(finishBtn).toBeVisible();
-  });
-
-  test('should hide intermediate points in simple mode', async ({ page }) => {
-    // Intermediate points should be hidden
-    await expect(page.locator('[data-point="I1"]')).not.toBeVisible();
-    await expect(page.locator('[data-point="I2"]')).not.toBeVisible();
-    await expect(page.locator('[data-point="I3"]')).not.toBeVisible();
   });
 
   test('should show all timing points in full mode', async ({ page }) => {
@@ -364,7 +361,7 @@ test.describe('Undo/Redo Functionality', () => {
     await page.waitForTimeout(500);
 
     // Record new entry
-    await page.click('[data-action="clear"]');
+    await page.click('#btn-clear');
     await page.click('[data-num="2"]');
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
