@@ -1096,10 +1096,11 @@
 
             if (hasNewEntries) {
                 saveEntries();
-                renderResults();
-                updateStats();
-                showToast(translations[currentLang].syncReceived || 'Synced from cloud');
+                showToast(t('syncReceived') || 'Synced from cloud');
             }
+            // Always refresh the display after merging
+            renderResults();
+            updateStats();
         }
 
         async function sendEntryToCloud(entry) {
@@ -2194,9 +2195,11 @@
                     initSync();
                 } else {
                     // Show message that Race ID is needed
-                    document.getElementById('cloud-sync-status').textContent = translations[currentLang].enterRaceId || 'Enter Race ID';
-                    document.getElementById('cloud-sync-status').style.color = 'var(--text-tertiary)';
-                    document.getElementById('sync-connection-status').textContent = translations[currentLang].needsRaceId || 'Needs Race ID';
+                    const cloudStatus = document.getElementById('cloud-sync-status');
+                    const connStatus = document.getElementById('sync-connection-status');
+                    if (cloudStatus) cloudStatus.textContent = t('enterRaceId') || 'Enter Race ID';
+                    if (cloudStatus) cloudStatus.style.color = 'var(--text-tertiary)';
+                    if (connStatus) connStatus.textContent = t('needsRaceId') || 'Needs Race ID';
                 }
             } else {
                 syncSettingsRow.style.display = 'none';
