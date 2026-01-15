@@ -616,11 +616,11 @@
             <div class="results-stats" role="region" aria-label="Statistics">
                 <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label" id="label-total">Total</div></div>
                 <div class="stat-card"><div class="stat-value" id="stat-racers">0</div><div class="stat-label" id="label-racers">Racers</div></div>
-                <div class="stat-card success"><div class="stat-value" id="stat-finished">0</div><div class="stat-label" id="label-finished">Finished</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="stat-dns">0</div><div class="stat-label">DNS</div></div>
-                <div class="stat-card secondary"><div class="stat-value" id="stat-dnf">0</div><div class="stat-label">DNF</div></div>
+                <div class="stat-card success" data-stat-advanced><div class="stat-value" id="stat-finished">0</div><div class="stat-label" id="label-finished">Finished</div></div>
+                <div class="stat-card warning" data-stat-advanced><div class="stat-value" id="stat-dns">0</div><div class="stat-label">DNS</div></div>
+                <div class="stat-card secondary" data-stat-advanced><div class="stat-value" id="stat-dnf">0</div><div class="stat-label">DNF</div></div>
             </div>
-            <div class="results-stats" id="extended-stats" style="display: none;">
+            <div class="results-stats" id="extended-stats" data-stat-advanced style="display: none;">
                 <div class="stat-card"><div class="stat-value" id="stat-fastest">--:--</div><div class="stat-label" id="label-fastest">Fastest</div></div>
                 <div class="stat-card"><div class="stat-value" id="stat-average">--:--</div><div class="stat-label" id="label-average">Average</div></div>
             </div>
@@ -635,6 +635,16 @@
         <div id="settings-view" class="view" role="main" aria-label="Settings view">
             <div class="settings-header"><h1 class="settings-title" id="settings-title">Settings</h1></div>
             <div class="settings-section">
+                <div class="settings-section-title" id="mode-section-title">Mode</div>
+                <div class="settings-card">
+                    <div class="settings-row">
+                        <div class="settings-row-icon" style="color: var(--primary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+                        <span class="settings-row-label" id="simple-mode-label">Simple Mode</span>
+                        <div id="toggle-simple" class="toggle on" role="switch" aria-checked="true" tabindex="0"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section" id="sync-section">
                 <div class="settings-section-title" id="sync-section-title">Multi-Device Sync</div>
                 <div class="settings-card">
                     <div class="settings-row">
@@ -667,7 +677,7 @@
                     </div>
                 </div>
             </div>
-            <div class="settings-section">
+            <div class="settings-section" id="gps-section">
                 <div class="settings-section-title" id="gps-section-title">GPS Status</div>
                 <div class="settings-card">
                     <div class="settings-row">
@@ -682,7 +692,7 @@
                     </div>
                 </div>
             </div>
-            <div class="settings-section">
+            <div class="settings-section" id="timing-section">
                 <div class="settings-section-title" id="timing-section-title">Timing Settings</div>
                 <div class="settings-card">
                     <div class="settings-row">
@@ -700,6 +710,11 @@
                         <span class="settings-row-label" id="sound-label">Sound Feedback</span>
                         <div id="toggle-sound" class="toggle" role="switch" aria-checked="false" tabindex="0"></div>
                     </div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title" id="language-section-title">Language</div>
+                <div class="settings-card">
                     <div class="settings-row">
                         <div class="settings-row-icon" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></div>
                         <span class="settings-row-label" id="language-label">Language</span>
@@ -707,7 +722,7 @@
                     </div>
                 </div>
             </div>
-            <div class="settings-section">
+            <div class="settings-section" id="backup-section">
                 <div class="settings-section-title" id="backup-section-title">Data Backup</div>
                 <div class="settings-card">
                     <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
@@ -832,7 +847,8 @@
                 syncConnected: 'Connected', syncDisconnected: 'Offline', syncConnecting: 'Connecting...', devices: 'devices',
                 averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected',
                 connecting: 'Connecting...', connected: 'Connected', syncError: 'Sync error', syncReceived: 'Synced from cloud', cloudSync: 'Cloud Sync',
-                enterRaceId: 'Enter Race ID', needsRaceId: 'Needs Race ID'
+                enterRaceId: 'Enter Race ID', needsRaceId: 'Needs Race ID',
+                mode: 'Mode', simpleMode: 'Simple Mode'
             },
             de: {
                 gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
@@ -861,7 +877,8 @@
                 syncConnected: 'Verbunden', syncDisconnected: 'Offline', syncConnecting: 'Verbinde...', devices: 'Geräte',
                 averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden',
                 connecting: 'Verbinde...', connected: 'Verbunden', syncError: 'Sync-Fehler', syncReceived: 'Von Cloud synchronisiert', cloudSync: 'Cloud-Sync',
-                enterRaceId: 'Rennen-ID eingeben', needsRaceId: 'Rennen-ID fehlt'
+                enterRaceId: 'Rennen-ID eingeben', needsRaceId: 'Rennen-ID fehlt',
+                mode: 'Modus', simpleMode: 'Einfacher Modus'
             }
         };
 
@@ -896,7 +913,7 @@
         let audioContext = null;
 
         // Settings persistence
-        const defaultSettings = { auto: true, haptic: true, sound: false, sync: false, gps: false };
+        const defaultSettings = { auto: true, haptic: true, sound: false, sync: false, gps: false, simple: true };
         // Merge saved settings with defaults to ensure all keys exist
         let savedSettings = {};
         try {
@@ -910,7 +927,8 @@
             haptic: Boolean(savedSettings.haptic ?? defaultSettings.haptic),
             sound: Boolean(savedSettings.sound ?? defaultSettings.sound),
             sync: Boolean(savedSettings.sync ?? defaultSettings.sync),
-            gps: Boolean(savedSettings.gps ?? defaultSettings.gps)
+            gps: Boolean(savedSettings.gps ?? defaultSettings.gps),
+            simple: Boolean(savedSettings.simple ?? defaultSettings.simple)
         };
 
         // Sync state
@@ -1489,6 +1507,9 @@
             document.getElementById('empty-title').textContent = t('noTimesRecorded');
             document.getElementById('empty-text').textContent = t('noTimesDesc');
             document.getElementById('settings-title').textContent = t('settings');
+            document.getElementById('mode-section-title').textContent = t('mode');
+            document.getElementById('simple-mode-label').textContent = t('simpleMode');
+            document.getElementById('language-section-title').textContent = t('language');
             document.getElementById('gps-section-title').textContent = t('gpsStatus');
             document.getElementById('gps-enable-label').textContent = t('enableGps');
             document.getElementById('settings-gps-status').textContent = gpsWatchId ? t('gpsSync') : t('gpsInactive');
@@ -2294,6 +2315,7 @@
             const toggleSound = document.getElementById('toggle-sound');
             const toggleSync = document.getElementById('toggle-sync');
             const toggleGps = document.getElementById('toggle-gps');
+            const toggleSimple = document.getElementById('toggle-simple');
 
             toggleAuto.classList.toggle('on', settings.auto);
             toggleAuto.setAttribute('aria-checked', settings.auto);
@@ -2310,10 +2332,67 @@
             toggleGps.classList.toggle('on', settings.gps);
             toggleGps.setAttribute('aria-checked', settings.gps);
 
+            toggleSimple.classList.toggle('on', settings.simple);
+            toggleSimple.setAttribute('aria-checked', settings.simple);
+
+            // Simple mode: show/hide UI elements
+            const gpsSection = document.getElementById('gps-section');
+            const timingSection = document.getElementById('timing-section');
+            const backupSection = document.getElementById('backup-section');
+            const startButton = document.getElementById('point-start');
+            const searchFilterBar = document.querySelector('.search-filter-bar');
+            const advancedStats = document.querySelectorAll('.stat-item:not([data-simple])');
+
+            if (settings.simple) {
+                // Hide sections in simple mode
+                if (gpsSection) gpsSection.style.display = 'none';
+                if (timingSection) timingSection.style.display = 'none';
+                if (backupSection) backupSection.style.display = 'none';
+                if (startButton) startButton.style.display = 'none';
+                if (searchFilterBar) searchFilterBar.style.display = 'none';
+
+                // Hide advanced stats (finished, dns, dnf, fastest, average)
+                document.querySelectorAll('[data-stat-advanced]').forEach(el => el.style.display = 'none');
+
+                // Force GPS on in simple mode
+                if (!settings.gps) {
+                    settings.gps = true;
+                    localStorage.setItem('skiTimerSettings', JSON.stringify(settings));
+                    requestGPSPermission();
+                }
+
+                // Ensure Finish is selected
+                if (selectedPoint !== 'F') {
+                    selectedPoint = 'F';
+                    document.querySelectorAll('.timing-point').forEach(p => {
+                        p.classList.remove('active');
+                        p.setAttribute('aria-checked', 'false');
+                    });
+                    const finishBtn = document.getElementById('point-finish');
+                    if (finishBtn) {
+                        finishBtn.classList.add('active');
+                        finishBtn.setAttribute('aria-checked', 'true');
+                    }
+                }
+            } else {
+                // Show all sections in full mode
+                if (gpsSection) gpsSection.style.display = '';
+                if (timingSection) timingSection.style.display = '';
+                if (backupSection) backupSection.style.display = '';
+                if (startButton) startButton.style.display = '';
+                if (searchFilterBar) searchFilterBar.style.display = '';
+
+                // Show advanced stats
+                document.querySelectorAll('[data-stat-advanced]').forEach(el => el.style.display = '');
+            }
+
             // Show/hide GPS status row
             const gpsStatusRow = document.getElementById('gps-status-row');
-            if (settings.gps) {
+            if (settings.gps && !settings.simple) {
                 gpsStatusRow.style.display = 'flex';
+                requestGPSPermission();
+            } else if (settings.gps && settings.simple) {
+                gpsStatusRow.style.display = 'none';
                 requestGPSPermission();
             } else {
                 gpsStatusRow.style.display = 'none';
@@ -2434,6 +2513,7 @@
             }, { capture: true });
         }
 
+        setupToggle('toggle-simple', 'simple');
         setupToggle('toggle-sync', 'sync');
         setupToggle('toggle-gps', 'gps');
         setupToggle('toggle-auto', 'auto');
