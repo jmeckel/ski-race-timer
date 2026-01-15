@@ -78,11 +78,7 @@ export class Clock {
    * Start the clock
    */
   start(): void {
-    if (this.isRunning) {
-      console.log('Clock already running');
-      return;
-    }
-    console.log('Clock starting');
+    if (this.isRunning) return;
     this.isRunning = true;
     this.tick();
   }
@@ -91,7 +87,6 @@ export class Clock {
    * Stop the clock
    */
   stop(): void {
-    console.log('Clock stopping', new Error().stack);
     this.isRunning = false;
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
@@ -99,36 +94,21 @@ export class Clock {
     }
   }
 
-  private tickCount = 0;
-
   /**
    * Clock tick using requestAnimationFrame
    */
   private tick = (): void => {
-    if (!this.isRunning) {
-      console.log('Clock tick called but isRunning is false');
-      return;
-    }
-
-    this.tickCount++;
-    // Log every ~60 frames (about 1 second)
-    if (this.tickCount % 60 === 0) {
-      console.log('Clock tick', this.tickCount);
-    }
+    if (!this.isRunning) return;
 
     try {
-      // Use GPS timestamp if available, otherwise use Date.now()
-      const gpsTimestamp = gpsService.getTimestamp();
-      const now = gpsTimestamp ? new Date(gpsTimestamp) : new Date();
-
+      // Always use Date.now() for display - GPS timestamp is only for recording entries
+      const now = new Date();
       const timeStr = formatTime(now);
 
       // Only update changed digits
       if (timeStr !== this.lastTimeStr) {
         this.updateDigits(timeStr);
         this.lastTimeStr = timeStr;
-      } else if (this.tickCount % 60 === 1) {
-        console.log('timeStr unchanged:', timeStr, '=', this.lastTimeStr);
       }
 
       // Update date once per second (when seconds change)
@@ -151,11 +131,6 @@ export class Clock {
   private updateDigits(timeStr: string): void {
     const digits = this.timeElement.querySelectorAll('.clock-digit');
 
-    // Debug: check if elements exist
-    if (this.tickCount % 60 === 1) {
-      console.log('updateDigits: digits count =', digits.length, 'timeElement in DOM =', document.contains(this.timeElement));
-    }
-
     for (let i = 0; i < timeStr.length && i < digits.length; i++) {
       const digit = digits[i] as HTMLSpanElement;
       const newChar = timeStr[i];
@@ -163,7 +138,7 @@ export class Clock {
       if (digit.textContent !== newChar) {
         digit.textContent = newChar;
 
-        // Optional: Add subtle animation on change
+        // Subtle animation on change
         digit.style.transform = 'scale(1.02)';
         requestAnimationFrame(() => {
           digit.style.transform = 'scale(1)';
