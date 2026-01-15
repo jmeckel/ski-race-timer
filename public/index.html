@@ -585,13 +585,17 @@
             <div class="results-header">
                 <h1 class="results-title" id="results-title">Results</h1>
                 <div class="results-actions" id="results-actions">
-                    <button class="action-btn" id="select-btn" aria-label="Select entries">
+                    <button class="action-btn" id="select-btn" data-advanced-action aria-label="Select entries">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z"/></svg>
                         <span>Select</span>
                     </button>
+                    <button class="action-btn danger" id="clear-all-btn" aria-label="Clear all results">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <span id="clear-all-text">Clear All</span>
+                    </button>
                     <button class="action-btn" id="export-horology-btn" aria-label="Export for Race Horology">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                        <span data-translate="exportHorology">Race Horology</span>
+                        <span id="export-text">Export</span>
                     </button>
                 </div>
                 <div class="results-actions" id="select-actions" style="display: none;">
@@ -848,7 +852,8 @@
                 averaged: 'avg', showDetails: 'Details', hideDetails: 'Hide', notConnected: 'Not connected',
                 connecting: 'Connecting...', connected: 'Connected', syncError: 'Sync error', syncReceived: 'Synced from cloud', cloudSync: 'Cloud Sync',
                 enterRaceId: 'Enter Race ID', needsRaceId: 'Needs Race ID',
-                mode: 'Mode', simpleMode: 'Simple Mode'
+                mode: 'Mode', simpleMode: 'Simple Mode',
+                clearAll: 'Clear All', clearAllConfirm: 'Clear All Results?', clearAllText: 'Are you sure you want to delete all results? This cannot be undone.'
             },
             de: {
                 gpsSync: 'GPS synchronisiert', gpsSyncing: 'GPS wird ermittelt...', gpsInactive: 'GPS inaktiv', gpsError: 'GPS Fehler', gpsPermissionDenied: 'GPS-Zugriff verweigert. Browsereinstellungen prüfen.', gpsUnavailable: 'GPS auf diesem Gerät nicht verfügbar', gpsTimeout: 'GPS-Signal Zeitüberschreitung',
@@ -878,7 +883,8 @@
                 averaged: 'Ø', showDetails: 'Details', hideDetails: 'Ausblenden', notConnected: 'Nicht verbunden',
                 connecting: 'Verbinde...', connected: 'Verbunden', syncError: 'Sync-Fehler', syncReceived: 'Von Cloud synchronisiert', cloudSync: 'Cloud-Sync',
                 enterRaceId: 'Rennen-ID eingeben', needsRaceId: 'Rennen-ID fehlt',
-                mode: 'Modus', simpleMode: 'Einfacher Modus'
+                mode: 'Modus', simpleMode: 'Einfacher Modus',
+                clearAll: 'Alle löschen', clearAllConfirm: 'Alle Ergebnisse löschen?', clearAllText: 'Möchten Sie wirklich alle Ergebnisse löschen? Dies kann nicht rückgängig gemacht werden.'
             }
         };
 
@@ -907,6 +913,7 @@
         let editingEntryId = null;
         let deletingEntryId = null;
         let deletingMultiple = false;
+        let clearingAll = false;
         let lastAction = null;
         let gpsWatchId = null;
         let gpsAccuracy = null;
@@ -1537,6 +1544,8 @@
             document.getElementById('confirm-delete-btn').textContent = t('delete');
             document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
             document.getElementById('undo-text').textContent = t('undo');
+            document.getElementById('clear-all-text').textContent = t('clearAll');
+            document.getElementById('export-text').textContent = t('export');
             document.getElementById('search-input').placeholder = t('search');
             document.getElementById('label-fastest').textContent = t('fastest');
             document.getElementById('label-average').textContent = t('average');
@@ -1727,6 +1736,10 @@
                 showToast(t('undone'), 'success');
             } else if (lastAction.type === 'delete') {
                 entries.push(lastAction.entry);
+                localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
+                showToast(t('undone'), 'success');
+            } else if (lastAction.type === 'deleteMultiple' || lastAction.type === 'clearAll') {
+                entries = entries.concat(lastAction.entries);
                 localStorage.setItem('skiTimerEntries', JSON.stringify(entries));
                 showToast(t('undone'), 'success');
             }
@@ -1977,11 +1990,31 @@
             document.getElementById('confirm-delete-modal').classList.remove('show');
             deletingEntryId = null;
             deletingMultiple = false;
+            clearingAll = false;
             vibrate(10);
         }
 
+        function promptClearAll() {
+            if (entries.length === 0) {
+                showToast(t('noData'), 'error');
+                return;
+            }
+            clearingAll = true;
+            deletingMultiple = false;
+            deletingEntryId = null;
+            document.getElementById('confirm-delete-title').textContent = t('clearAllConfirm');
+            document.getElementById('confirm-delete-text').textContent = t('clearAllText');
+            document.getElementById('confirm-delete-modal').classList.add('show');
+            vibrate(15);
+        }
+
         function confirmDelete() {
-            if (deletingMultiple) {
+            if (clearingAll) {
+                const allEntries = [...entries];
+                entries = [];
+                lastAction = { type: 'clearAll', entries: allEntries };
+                document.getElementById('undo-btn').classList.add('show');
+            } else if (deletingMultiple) {
                 const deletedEntries = entries.filter(e => selectedEntries.has(e.id));
                 entries = entries.filter(e => !selectedEntries.has(e.id));
                 lastAction = { type: 'deleteMultiple', entries: deletedEntries };
@@ -2010,6 +2043,9 @@
             updateResults();
             vibrate(15);
         });
+
+        // Clear all results
+        document.getElementById('clear-all-btn').addEventListener('click', promptClearAll);
 
         document.getElementById('cancel-select-btn').addEventListener('click', exitSelectMode);
 
@@ -2339,17 +2375,19 @@
             const gpsSection = document.getElementById('gps-section');
             const timingSection = document.getElementById('timing-section');
             const backupSection = document.getElementById('backup-section');
-            const startButton = document.getElementById('point-start');
+            const timingPointsRow = document.querySelector('.timing-points');
             const searchFilterBar = document.querySelector('.search-filter-bar');
-            const advancedStats = document.querySelectorAll('.stat-item:not([data-simple])');
 
             if (settings.simple) {
                 // Hide sections in simple mode
                 if (gpsSection) gpsSection.style.display = 'none';
                 if (timingSection) timingSection.style.display = 'none';
                 if (backupSection) backupSection.style.display = 'none';
-                if (startButton) startButton.style.display = 'none';
+                if (timingPointsRow) timingPointsRow.style.display = 'none';
                 if (searchFilterBar) searchFilterBar.style.display = 'none';
+
+                // Hide advanced actions (Select button)
+                document.querySelectorAll('[data-advanced-action]').forEach(el => el.style.display = 'none');
 
                 // Hide advanced stats (finished, dns, dnf, fastest, average)
                 document.querySelectorAll('[data-stat-advanced]').forEach(el => el.style.display = 'none');
@@ -2379,8 +2417,11 @@
                 if (gpsSection) gpsSection.style.display = '';
                 if (timingSection) timingSection.style.display = '';
                 if (backupSection) backupSection.style.display = '';
-                if (startButton) startButton.style.display = '';
+                if (timingPointsRow) timingPointsRow.style.display = '';
                 if (searchFilterBar) searchFilterBar.style.display = '';
+
+                // Show advanced actions
+                document.querySelectorAll('[data-advanced-action]').forEach(el => el.style.display = '');
 
                 // Show advanced stats
                 document.querySelectorAll('[data-stat-advanced]').forEach(el => el.style.display = '');
