@@ -1017,9 +1017,6 @@ function applySettings(): void {
 function getPointColor(point: TimingPoint): string {
   const colors: Record<TimingPoint, string> = {
     'S': 'var(--success)',
-    'I1': 'var(--primary)',
-    'I2': 'var(--primary)',
-    'I3': 'var(--primary)',
     'F': 'var(--secondary)'
   };
   return colors[point];

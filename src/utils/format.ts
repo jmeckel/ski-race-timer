@@ -60,9 +60,6 @@ export function escapeHtml(str: string): string {
 export function getPointColor(point: TimingPoint): string {
   const colors: Record<TimingPoint, string> = {
     'S': 'var(--success)',
-    'I1': 'var(--primary)',
-    'I2': 'var(--primary)',
-    'I3': 'var(--primary)',
     'F': 'var(--secondary)'
   };
   return colors[point] || 'var(--text-secondary)';
@@ -73,8 +70,8 @@ export function getPointColor(point: TimingPoint): string {
  */
 export function getPointLabel(point: TimingPoint, lang: Language = 'de'): string {
   const labels: Record<Language, Record<TimingPoint, string>> = {
-    en: { S: 'Start', I1: 'Int 1', I2: 'Int 2', I3: 'Int 3', F: 'Finish' },
-    de: { S: 'Start', I1: 'Int 1', I2: 'Int 2', I3: 'Int 3', F: 'Ziel' }
+    en: { S: 'Start', F: 'Finish' },
+    de: { S: 'Start', F: 'Ziel' }
   };
   return labels[lang][point];
 }

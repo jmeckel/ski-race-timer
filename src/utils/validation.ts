@@ -1,7 +1,7 @@
 import type { Entry, Settings, TimingPoint, EntryStatus, DataSchema, SyncQueueItem } from '../types';
 import { SCHEMA_VERSION } from '../types';
 
-const VALID_POINTS: TimingPoint[] = ['S', 'I1', 'I2', 'I3', 'F'];
+const VALID_POINTS: TimingPoint[] = ['S', 'F'];
 const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq'];
 
 /**

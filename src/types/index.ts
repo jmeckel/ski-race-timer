@@ -1,5 +1,5 @@
 // Timing point types
-export type TimingPoint = 'S' | 'I1' | 'I2' | 'I3' | 'F';
+export type TimingPoint = 'S' | 'F';
 
 // Entry status types
 export type EntryStatus = 'ok' | 'dns' | 'dnf' | 'dsq';
