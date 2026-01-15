@@ -12,7 +12,7 @@ export const translations: Record<Language, Translations> = {
     finish: 'Finish',
     bib: 'Bib',
     point: 'Point',
-    time: 'Time',
+    time: 'Record time',
     lastRecorded: 'Last recorded',
 
     // Results View
@@ -112,7 +112,7 @@ export const translations: Record<Language, Translations> = {
     finish: 'Ziel',
     bib: 'Startnr.',
     point: 'Punkt',
-    time: 'Zeit',
+    time: 'Zeit erfassen',
     lastRecorded: 'Zuletzt erfasst',
 
     // Results View
