@@ -1,6 +1,7 @@
 import type { Entry } from '../types';
 import { formatTime, formatBib, getPointColor, escapeHtml, debounce } from '../utils';
 import { store } from '../store';
+import { t } from '../i18n/translations';
 
 // Virtual list configuration
 const ITEM_HEIGHT = 72; // Height of each result item in pixels
@@ -131,6 +132,12 @@ export class VirtualList {
     if (this.filteredEntries.length === 0) {
       this.renderEmpty();
       return;
+    }
+
+    // Remove empty state if present
+    const emptyState = this.contentContainer.querySelector('.empty-state');
+    if (emptyState) {
+      emptyState.remove();
     }
 
     // Calculate visible range
@@ -276,12 +283,13 @@ export class VirtualList {
     }
     this.visibleItems.clear();
 
+    const state = store.getState();
     this.contentContainer.innerHTML = `
       <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
         </svg>
-        <span id="empty-state-text">No entries recorded</span>
+        <span id="empty-state-text">${t('noEntries', state.currentLang)}</span>
       </div>
     `;
   }
