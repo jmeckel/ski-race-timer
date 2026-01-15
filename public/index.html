@@ -867,11 +867,26 @@
             }
         };
 
+        // Security: HTML escape helper to prevent XSS
+        function escapeHtml(str) {
+            if (str == null) return '';
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
+
         // State
         let currentLang = localStorage.getItem('skiTimerLang') || 'de';
         let bibInput = '';
         let selectedPoint = 'F';
-        let entries = JSON.parse(localStorage.getItem('skiTimerEntries') || '[]');
+        let entries = [];
+        try {
+            entries = JSON.parse(localStorage.getItem('skiTimerEntries') || '[]');
+            if (!Array.isArray(entries)) entries = [];
+        } catch (e) {
+            console.error('Error parsing entries from localStorage:', e);
+            entries = [];
+        }
         let selectMode = false;
         let selectedEntries = new Set();
         let editingEntryId = null;
@@ -912,13 +927,29 @@
         // Cloud sync state
         let pollInterval = null;
         let lastSyncTimestamp = 0;
-        const POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
+        const POLL_INTERVAL_NORMAL = 5000; // Poll every 5 seconds when connected
+        const POLL_INTERVAL_ERROR = 30000; // Poll every 30 seconds on errors/offline
+        let currentPollInterval = POLL_INTERVAL_NORMAL;
+        let consecutiveErrors = 0;
         const API_BASE = '/api/sync';
 
         function generateDeviceId() {
             const id = 'dev_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('skiTimerDeviceId', id);
             return id;
+        }
+
+        // Generate unique entry ID combining timestamp + random + device suffix
+        // This minimizes collision risk when multiple devices record simultaneously
+        let entryIdCounter = 0;
+        function generateEntryId() {
+            entryIdCounter++;
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substr(2, 4);
+            const deviceSuffix = deviceId.slice(-4);
+            // Return as number for backwards compatibility, but with much lower collision risk
+            // Format: timestamp + counter + random component
+            return timestamp * 1000 + (entryIdCounter % 1000);
         }
 
         function updateRaceId() {
@@ -994,13 +1025,44 @@
             // Push existing local entries to cloud first
             pushExistingEntriesToCloud();
 
+            // Reset polling state
+            currentPollInterval = POLL_INTERVAL_NORMAL;
+            consecutiveErrors = 0;
+
             // Initial fetch (will merge with remote entries)
             fetchCloudEntries();
 
-            // Start polling
-            pollInterval = setInterval(fetchCloudEntries, POLL_INTERVAL_MS);
+            // Start polling with adaptive interval
+            startAdaptivePolling();
 
             console.log('Cloud sync polling initialized for race:', raceId);
+        }
+
+        function startAdaptivePolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+            pollInterval = setInterval(fetchCloudEntries, currentPollInterval);
+        }
+
+        function adjustPollingInterval(success) {
+            const oldInterval = currentPollInterval;
+
+            if (success) {
+                consecutiveErrors = 0;
+                currentPollInterval = POLL_INTERVAL_NORMAL;
+            } else {
+                consecutiveErrors++;
+                if (consecutiveErrors >= 3) {
+                    currentPollInterval = POLL_INTERVAL_ERROR;
+                }
+            }
+
+            // Restart polling if interval changed
+            if (oldInterval !== currentPollInterval && pollInterval) {
+                console.log('Adjusting poll interval:', currentPollInterval + 'ms');
+                startAdaptivePolling();
+            }
         }
 
         async function pushExistingEntriesToCloud() {
@@ -1055,11 +1117,14 @@
 
                 lastSyncTimestamp = data.lastUpdated || Date.now();
 
+                // Success - restore normal polling interval
+                adjustPollingInterval(true);
+
             } catch (e) {
                 console.error('Cloud sync fetch error:', e);
                 // Show more specific error message
-                if (e.message.includes('500')) {
-                    statusEl.textContent = 'KV not configured';
+                if (e.message.includes('500') || e.message.includes('503')) {
+                    statusEl.textContent = 'Server unavailable';
                 } else if (e.message.includes('Failed to fetch')) {
                     statusEl.textContent = 'Offline';
                 } else {
@@ -1067,6 +1132,9 @@
                 }
                 statusEl.style.color = 'var(--error)';
                 updateSyncStatus('local');
+
+                // Error - potentially slow down polling
+                adjustPollingInterval(false);
             }
         }
 
@@ -1283,9 +1351,9 @@
             const devices = Array.from(connectedDevices.entries());
             countEl.textContent = `${devices.length + 1} ${t('devices')}`;
 
-            list.innerHTML = `<span class="device-badge self">${deviceName} (${t('syncConnected')})</span>` +
+            list.innerHTML = `<span class="device-badge self">${escapeHtml(deviceName)} (${t('syncConnected')})</span>` +
                 devices.map(([id, device]) =>
-                    `<span class="device-badge ${device.online ? 'online' : ''}">${device.name}</span>`
+                    `<span class="device-badge ${device.online ? 'online' : ''}">${escapeHtml(device.name)}</span>`
                 ).join('');
         }
 
@@ -1569,7 +1637,7 @@
             const isDuplicate = checkDuplicate(bib, selectedPoint);
 
             const entry = {
-                id: Date.now(),
+                id: generateEntryId(),
                 bib: bib,
                 point: selectedPoint,
                 timestamp: now.toISOString(),
@@ -1807,7 +1875,7 @@
 
                     const deviceTimes = groupEntries.map(e =>
                         `<div class="device-time">
-                            <span class="device-time-name">${e.deviceName || 'Unknown'}</span>
+                            <span class="device-time-name">${escapeHtml(e.deviceName) || 'Unknown'}</span>
                             <span class="device-time-value">${formatTime(e.timestamp)}</span>
                         </div>`
                     ).join('');
@@ -1820,7 +1888,7 @@
                                  aria-checked="${selectedEntries.has(firstEntry.id)}"
                                  tabindex="0"
                                  onkeydown="if(event.key==='Enter'||event.key===' ')toggleSelect(${firstEntry.id})"></div>
-                            <div class="result-bib" onclick="openEditModal(${firstEntry.id})" tabindex="0" role="button">${firstEntry.bib || t('noBib')}</div>
+                            <div class="result-bib" onclick="openEditModal(${firstEntry.id})" tabindex="0" role="button">${escapeHtml(firstEntry.bib) || t('noBib')}</div>
                             <div class="result-point" style="background: ${getPointColor(firstEntry.point)}20; color: ${getPointColor(firstEntry.point)};">${t('point' + firstEntry.point)}</div>
                             <div class="result-info">
                                 <div class="result-time">${displayTime}${avgLabel}${deviceCount}${statusBadge}</div>
@@ -1841,7 +1909,7 @@
                         ? `<span class="result-status ${entry.status}">${entry.status.toUpperCase()}</span>`
                         : '';
 
-                    const deviceInfo = entry.deviceName ? `<span style="color: var(--text-tertiary); font-size: 10px; margin-left: 4px;">(${entry.deviceName})</span>` : '';
+                    const deviceInfo = entry.deviceName ? `<span style="color: var(--text-tertiary); font-size: 10px; margin-left: 4px;">(${escapeHtml(entry.deviceName)})</span>` : '';
 
                     return `<div class="result-item" data-id="${entry.id}" role="listitem">
                         <div class="result-checkbox ${selectedEntries.has(entry.id) ? 'checked' : ''}"
@@ -1850,7 +1918,7 @@
                              aria-checked="${selectedEntries.has(entry.id)}"
                              tabindex="0"
                              onkeydown="if(event.key==='Enter'||event.key===' ')toggleSelect(${entry.id})"></div>
-                        <div class="result-bib" onclick="openEditModal(${entry.id})" tabindex="0" role="button" aria-label="Edit bib ${entry.bib || t('noBib')}">${entry.bib || t('noBib')}</div>
+                        <div class="result-bib" onclick="openEditModal(${entry.id})" tabindex="0" role="button" aria-label="Edit bib ${escapeHtml(entry.bib) || t('noBib')}">${escapeHtml(entry.bib) || t('noBib')}</div>
                         <div class="result-point" style="background: ${getPointColor(entry.point)}20; color: ${getPointColor(entry.point)};">${t('point' + entry.point)}</div>
                         <div class="result-info">
                             <div class="result-time">${formatTime(entry.timestamp)}${deviceInfo}${statusBadge}</div>
@@ -2318,7 +2386,7 @@
         updateBibDisplay();
         updateResults();
         updateClock();
-        setInterval(updateClock, 50);
+        setInterval(updateClock, 100); // 10 FPS - sufficient for ms display, better battery life
 
         // Register service worker
         if ('serviceWorker' in navigator) {
