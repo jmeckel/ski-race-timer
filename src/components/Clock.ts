@@ -78,7 +78,11 @@ export class Clock {
    * Start the clock
    */
   start(): void {
-    if (this.isRunning) return;
+    if (this.isRunning) {
+      console.log('Clock already running');
+      return;
+    }
+    console.log('Clock starting');
     this.isRunning = true;
     this.tick();
   }
@@ -87,6 +91,7 @@ export class Clock {
    * Stop the clock
    */
   stop(): void {
+    console.log('Clock stopping', new Error().stack);
     this.isRunning = false;
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
@@ -94,11 +99,22 @@ export class Clock {
     }
   }
 
+  private tickCount = 0;
+
   /**
    * Clock tick using requestAnimationFrame
    */
   private tick = (): void => {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {
+      console.log('Clock tick called but isRunning is false');
+      return;
+    }
+
+    this.tickCount++;
+    // Log every ~60 frames (about 1 second)
+    if (this.tickCount % 60 === 0) {
+      console.log('Clock tick', this.tickCount);
+    }
 
     try {
       // Use GPS timestamp if available, otherwise use Date.now()
