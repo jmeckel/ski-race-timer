@@ -21,6 +21,7 @@ const STORAGE_KEYS = {
   DEVICE_ID: 'skiTimerDeviceId',
   DEVICE_NAME: 'skiTimerDeviceName',
   RACE_ID: 'skiTimerRaceId',
+  LAST_SYNCED_RACE_ID: 'skiTimerLastSyncedRaceId',
   SYNC_QUEUE: 'skiTimerSyncQueue',
   SCHEMA_VERSION: 'skiTimerSchemaVersion'
 } as const;
@@ -103,6 +104,7 @@ class Store {
     const lang = (localStorage.getItem(STORAGE_KEYS.LANG) || 'de') as Language;
     const deviceName = localStorage.getItem(STORAGE_KEYS.DEVICE_NAME) || 'Timer 1';
     const raceId = localStorage.getItem(STORAGE_KEYS.RACE_ID) || '';
+    const lastSyncedRaceId = localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
 
     return {
       // UI State
@@ -129,6 +131,7 @@ class Store {
       deviceId,
       deviceName,
       raceId,
+      lastSyncedRaceId,
       syncStatus: 'disconnected',
       syncQueue,
       connectedDevices: new Map(),
@@ -193,6 +196,7 @@ class Store {
       localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
       localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
       localStorage.setItem(STORAGE_KEYS.RACE_ID, this.state.raceId);
+      localStorage.setItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID, this.state.lastSyncedRaceId);
       localStorage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(this.state.syncQueue));
       localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
     } catch (e) {
@@ -508,6 +512,14 @@ class Store {
 
   setRaceId(raceId: string) {
     this.setState({ raceId });
+  }
+
+  setLastSyncedRaceId(raceId: string) {
+    this.setState({ lastSyncedRaceId: raceId });
+  }
+
+  markCurrentRaceAsSynced() {
+    this.setState({ lastSyncedRaceId: this.state.raceId });
   }
 
   setDeviceName(name: string) {

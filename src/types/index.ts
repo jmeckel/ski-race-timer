@@ -95,6 +95,7 @@ export interface AppState {
   deviceId: string;
   deviceName: string;
   raceId: string;
+  lastSyncedRaceId: string;
   syncStatus: SyncStatus;
   syncQueue: SyncQueueItem[];
   connectedDevices: Map<string, DeviceInfo>;

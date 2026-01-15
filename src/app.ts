@@ -303,6 +303,58 @@ function updateLastRecorded(entry: Entry): void {
 }
 
 /**
+ * Show race change dialog
+ */
+function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('race-change-modal');
+    if (!modal) {
+      resolve('cancel');
+      return;
+    }
+
+    const title = modal.querySelector('.modal-title') as HTMLElement;
+    const text = modal.querySelector('.modal-text') as HTMLElement;
+    const exportBtn = document.getElementById('race-change-export-btn');
+    const deleteBtn = document.getElementById('race-change-delete-btn');
+    const keepBtn = document.getElementById('race-change-keep-btn');
+    const cancelBtn = modal.querySelector('[data-action="cancel"]');
+
+    if (type === 'synced') {
+      if (title) title.textContent = t('raceChangeTitle', lang);
+      if (text) text.textContent = t('raceChangeSyncedText', lang);
+      if (exportBtn) exportBtn.style.display = '';
+      if (keepBtn) keepBtn.style.display = 'none';
+    } else {
+      if (title) title.textContent = t('raceChangeTitle', lang);
+      if (text) text.textContent = t('raceChangeUnsyncedText', lang);
+      if (exportBtn) exportBtn.style.display = 'none';
+      if (keepBtn) keepBtn.style.display = '';
+    }
+
+    const cleanup = () => {
+      modal.classList.remove('show');
+      exportBtn?.removeEventListener('click', handleExport);
+      deleteBtn?.removeEventListener('click', handleDelete);
+      keepBtn?.removeEventListener('click', handleKeep);
+      cancelBtn?.removeEventListener('click', handleCancel);
+    };
+
+    const handleExport = () => { cleanup(); resolve('export'); };
+    const handleDelete = () => { cleanup(); resolve('delete'); };
+    const handleKeep = () => { cleanup(); resolve('keep'); };
+    const handleCancel = () => { cleanup(); resolve('cancel'); };
+
+    exportBtn?.addEventListener('click', handleExport);
+    deleteBtn?.addEventListener('click', handleDelete);
+    keepBtn?.addEventListener('click', handleKeep);
+    cancelBtn?.addEventListener('click', handleCancel);
+
+    modal.classList.add('show');
+  });
+}
+
+/**
  * Initialize results view
  */
 function initResultsView(): void {
@@ -512,10 +564,45 @@ function initSettingsView(): void {
   // Race ID input
   const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
   if (raceIdInput) {
-    raceIdInput.addEventListener('change', () => {
-      store.setRaceId(raceIdInput.value.trim());
-      if (store.getState().settings.sync) {
+    raceIdInput.addEventListener('change', async () => {
+      const newRaceId = raceIdInput.value.trim();
+      const state = store.getState();
+      const hasEntries = state.entries.length > 0;
+      const wasPreviouslySynced = state.lastSyncedRaceId !== '';
+      const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
+
+      if (hasEntries && isChangingRace) {
+        if (wasPreviouslySynced) {
+          // Was synced with another race - ask to export or delete
+          const action = await showRaceChangeDialog('synced', state.currentLang);
+          if (action === 'export') {
+            exportResults();
+            store.clearAllEntries();
+          } else if (action === 'delete') {
+            store.clearAllEntries();
+          } else {
+            // Cancelled - restore old race ID
+            raceIdInput.value = state.raceId;
+            return;
+          }
+        } else {
+          // Not previously synced - ask to keep or delete
+          const action = await showRaceChangeDialog('unsynced', state.currentLang);
+          if (action === 'delete') {
+            store.clearAllEntries();
+          } else if (action === 'cancel') {
+            // Cancelled - restore old race ID
+            raceIdInput.value = state.raceId;
+            return;
+          }
+          // 'keep' - do nothing with entries
+        }
+      }
+
+      store.setRaceId(newRaceId);
+      if (state.settings.sync && newRaceId) {
         syncService.initialize();
+        store.markCurrentRaceAsSynced();
       }
     });
   }

@@ -388,6 +388,24 @@
     </div>
   </div>
 
+  <!-- Race Change Modal -->
+  <div class="modal-overlay" id="race-change-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Change Race</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text">You have existing results. What would you like to do?</p>
+      </div>
+      <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="race-change-keep-btn" data-i18n="keepResults">Keep</button>
+        <button class="modal-btn primary" id="race-change-export-btn" data-i18n="export">Export</button>
+        <button class="modal-btn danger" id="race-change-delete-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

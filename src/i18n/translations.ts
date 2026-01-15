@@ -103,6 +103,12 @@ export const translations: Record<Language, Translations> = {
     photoError: 'Photo capture failed',
     viewPhoto: 'View Photo',
 
+    // Race Change
+    raceChangeTitle: 'Change Race',
+    raceChangeSyncedText: 'You have results from another race. Export or delete them before switching?',
+    raceChangeUnsyncedText: 'You have existing results. Keep them or delete before switching?',
+    keepResults: 'Keep',
+
     // Misc
     version: 'Version',
     devices: 'Devices',
@@ -211,6 +217,12 @@ export const translations: Record<Language, Translations> = {
     photoCaptured: 'Foto aufgenommen',
     photoError: 'Foto-Aufnahme fehlgeschlagen',
     viewPhoto: 'Foto anzeigen',
+
+    // Race Change
+    raceChangeTitle: 'Rennen wechseln',
+    raceChangeSyncedText: 'Es gibt Ergebnisse von einem anderen Rennen. Exportieren oder löschen?',
+    raceChangeUnsyncedText: 'Es gibt bestehende Ergebnisse. Behalten oder löschen?',
+    keepResults: 'Behalten',
 
     // Misc
     version: 'Version',
