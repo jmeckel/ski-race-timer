@@ -498,10 +498,14 @@ function initSettingsView(): void {
   // Language toggle
   const langToggle = document.getElementById('lang-toggle');
   if (langToggle) {
-    langToggle.addEventListener('click', () => {
-      const newLang = store.getState().currentLang === 'de' ? 'en' : 'de';
-      store.setLanguage(newLang);
-      updateTranslations();
+    langToggle.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const lang = target.getAttribute('data-lang') as 'de' | 'en';
+      if (lang && lang !== store.getState().currentLang) {
+        store.setLanguage(lang);
+        updateTranslations();
+        updateLangToggle();
+      }
     });
   }
 
@@ -936,6 +940,22 @@ function updateSettingsInputs(): void {
 
   const deviceNameInput = document.getElementById('device-name-input') as HTMLInputElement;
   if (deviceNameInput) deviceNameInput.value = state.deviceName;
+
+  // Update language toggle
+  updateLangToggle();
+}
+
+/**
+ * Update language toggle UI
+ */
+function updateLangToggle(): void {
+  const lang = store.getState().currentLang;
+  const langToggle = document.getElementById('lang-toggle');
+  if (langToggle) {
+    langToggle.querySelectorAll('.lang-option').forEach(opt => {
+      opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
+    });
+  }
 }
 
 /**

@@ -541,6 +541,28 @@ body {
   border-color: var(--primary);
 }
 
+/* Language Toggle */
+.lang-toggle {
+  display: flex;
+  background: var(--surface-elevated);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.lang-option {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lang-option.active {
+  background: var(--primary);
+  color: var(--background);
+}
+
 /* ===== Tab Bar ===== */
 .tab-bar {
   display: flex;
