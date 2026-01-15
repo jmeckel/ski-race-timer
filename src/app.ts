@@ -189,8 +189,8 @@ async function recordTimestamp(): Promise<void> {
       gpsCoords
     };
 
-    // Check for duplicate
-    const isDuplicate = state.entries.some(
+    // Check for duplicate (only if bib is entered)
+    const isDuplicate = entry.bib && state.entries.some(
       e => e.bib === entry.bib && e.point === entry.point
     );
 
