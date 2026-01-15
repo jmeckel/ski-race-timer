@@ -1980,6 +1980,7 @@
         function promptDelete(id) {
             deletingEntryId = id;
             deletingMultiple = false;
+            clearingAll = false;
             document.getElementById('confirm-delete-title').textContent = t('deleteEntry');
             document.getElementById('confirm-delete-text').textContent = t('deleteConfirmText');
             document.getElementById('confirm-delete-modal').classList.add('show');
@@ -2072,6 +2073,8 @@
         document.getElementById('delete-selected-btn').addEventListener('click', () => {
             if (selectedEntries.size === 0) return;
             deletingMultiple = true;
+            clearingAll = false;
+            deletingEntryId = null;
             document.getElementById('confirm-delete-title').textContent = t('deleteSelected');
             document.getElementById('confirm-delete-text').textContent = t('deleteSelectedText');
             document.getElementById('confirm-delete-modal').classList.add('show');
