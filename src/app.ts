@@ -785,7 +785,7 @@ function updateBibDisplay(): void {
   const state = store.getState();
   const bibValue = document.querySelector('.bib-value');
   if (bibValue) {
-    bibValue.textContent = state.bibInput.padStart(3, '0') || '---';
+    bibValue.textContent = state.bibInput ? state.bibInput.padStart(3, '0') : '---';
   }
 
   // Update timestamp button pulse
