@@ -16,6 +16,9 @@ export class Clock {
 
   constructor(container: HTMLElement) {
     this.container = container;
+    // Clear container in case of re-initialization
+    this.container.innerHTML = '';
+
     this.timeElement = this.createTimeElement();
     this.dateElement = this.createDateElement();
 
@@ -97,25 +100,30 @@ export class Clock {
   private tick = (): void => {
     if (!this.isRunning) return;
 
-    // Use GPS timestamp if available, otherwise use Date.now()
-    const gpsTimestamp = gpsService.getTimestamp();
-    const now = gpsTimestamp ? new Date(gpsTimestamp) : new Date();
+    try {
+      // Use GPS timestamp if available, otherwise use Date.now()
+      const gpsTimestamp = gpsService.getTimestamp();
+      const now = gpsTimestamp ? new Date(gpsTimestamp) : new Date();
 
-    const timeStr = formatTime(now);
+      const timeStr = formatTime(now);
 
-    // Only update changed digits
-    if (timeStr !== this.lastTimeStr) {
-      this.updateDigits(timeStr);
-      this.lastTimeStr = timeStr;
+      // Only update changed digits
+      if (timeStr !== this.lastTimeStr) {
+        this.updateDigits(timeStr);
+        this.lastTimeStr = timeStr;
+      }
+
+      // Update date once per second (when seconds change)
+      const seconds = now.getSeconds();
+      if (seconds === 0 || !this.dateElement.textContent) {
+        const state = store.getState();
+        this.dateElement.textContent = formatDate(now, state.currentLang);
+      }
+    } catch (error) {
+      console.error('Clock tick error:', error);
     }
 
-    // Update date once per second (when seconds change)
-    const seconds = now.getSeconds();
-    if (seconds === 0 || !this.dateElement.textContent) {
-      const state = store.getState();
-      this.dateElement.textContent = formatDate(now, state.currentLang);
-    }
-
+    // Always schedule next frame to keep clock running
     this.animationId = requestAnimationFrame(this.tick);
   };
 

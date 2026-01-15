@@ -56,6 +56,12 @@ export function initApp(): void {
  * Initialize clock component
  */
 function initClock(): void {
+  // Clean up existing clock if re-initializing
+  if (clock) {
+    clock.destroy();
+    clock = null;
+  }
+
   const container = document.getElementById('clock-container');
   if (container) {
     clock = new Clock(container);
