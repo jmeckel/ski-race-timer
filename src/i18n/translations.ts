@@ -88,6 +88,15 @@ export const translations: Record<Language, Translations> = {
     importData: 'Import Data',
     exportData: 'Export Data',
 
+    // Settings descriptions
+    simpleModeDesc: 'Simplified interface for basic timing',
+    cloudSyncDesc: 'Sync with other devices',
+    gpsDesc: 'Use GPS for accurate timestamps',
+    autoIncrementDesc: 'Increase bib number after recording',
+    photoCaptureDesc: 'Capture photo on timestamp',
+    hapticFeedbackDesc: 'Vibration on actions',
+    soundFeedbackDesc: 'Audio confirmation',
+
     // Photo
     photoCapture: 'Photo Capture',
     photoCaptured: 'Photo captured',
@@ -187,6 +196,15 @@ export const translations: Record<Language, Translations> = {
     restore: 'Wiederherstellen',
     importData: 'Daten importieren',
     exportData: 'Daten exportieren',
+
+    // Settings descriptions
+    simpleModeDesc: 'Vereinfachte Oberfläche für einfache Zeitmessung',
+    cloudSyncDesc: 'Mit anderen Geräten synchronisieren',
+    gpsDesc: 'GPS für genaue Zeitstempel verwenden',
+    autoIncrementDesc: 'Startnummer nach Erfassung erhöhen',
+    photoCaptureDesc: 'Foto bei Zeiterfassung aufnehmen',
+    hapticFeedbackDesc: 'Vibration bei Aktionen',
+    soundFeedbackDesc: 'Akustische Bestätigung',
 
     // Photo
     photoCapture: 'Foto aufnehmen',
