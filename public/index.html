@@ -58,13 +58,19 @@
             max-width: 430px;
             margin: 0 auto;
             height: 100%;
-            max-height: 100%;
             display: flex;
             flex-direction: column;
             background: linear-gradient(135deg, var(--background) 0%, rgba(21, 27, 35, 0.5) 50%, var(--background) 100%);
             padding-top: var(--safe-top);
             padding-bottom: var(--safe-bottom);
             overflow: hidden;
+            position: relative;
+        }
+        .views-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
         }
         .tab-bar {
             display: flex;
@@ -72,20 +78,30 @@
             border-top: 1px solid var(--surface-elevated);
             padding: 6px 0;
             flex-shrink: 0;
+            z-index: 100;
         }
         .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; background: none; border: none; color: var(--text-tertiary); cursor: pointer; transition: color 0.2s; }
         .tab-item svg { width: 22px; height: 22px; }
         .tab-item span { font-size: 10px; font-weight: 500; }
         .tab-item.active { color: var(--primary); }
         .tab-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-        .view { display: none; flex: 1; min-height: 0; overflow: hidden; max-height: 100%; }
-        .view.active { display: flex; flex-direction: column; overflow: hidden; }
+        .view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--background);
+        }
+        .view.active { display: flex; z-index: 1; }
 
         /* Timing View - uses flexbox to distribute space */
         #timing-view {
             padding: 2vmin;
             gap: 1.5vmin;
-            overflow: hidden;
         }
         .timing-header {
             display: flex;
@@ -549,7 +565,8 @@
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     <div class="app-container" role="application" aria-label="Ski Race Timer">
-        <div id="timing-view" class="view active" id="main-content" role="main" aria-label="Timer view">
+        <div class="views-container">
+            <div id="timing-view" class="view active" id="main-content" role="main" aria-label="Timer view">
             <div class="timing-header">
                 <div class="gps-indicator" role="status" aria-live="polite">
                     <div class="gps-dot" id="gps-dot" aria-hidden="true"></div>
@@ -776,6 +793,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
 
         <nav class="tab-bar" role="tablist" aria-label="Main navigation">
