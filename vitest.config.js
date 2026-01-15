@@ -1,18 +1,24 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
   test: {
     // Use jsdom for DOM simulation
     environment: 'jsdom',
 
     // Setup files run before each test file
-    setupFiles: ['./tests/setup.js'],
+    setupFiles: ['./tests/setup.js', './tests/setup.ts'],
 
-    // Test file patterns
+    // Test file patterns - include both JS and TS
     include: [
-      'tests/unit/**/*.test.js',
-      'tests/api/**/*.test.js',
-      'tests/integration/**/*.test.js'
+      'tests/unit/**/*.test.{js,ts}',
+      'tests/api/**/*.test.{js,ts}',
+      'tests/integration/**/*.test.{js,ts}'
     ],
 
     // Exclude E2E tests (handled by Playwright)
@@ -23,8 +29,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
-      include: ['api/**/*.js', 'public/**/*.js'],
-      exclude: ['tests/**/*', 'node_modules/**/*']
+      include: ['api/**/*.js', 'public/**/*.js', 'src/**/*.ts'],
+      exclude: ['tests/**/*', 'node_modules/**/*', 'src/**/*.d.ts']
     },
 
     // Global test timeout
@@ -34,6 +40,9 @@ export default defineConfig({
     reporters: ['verbose'],
 
     // Watch mode configuration
-    watch: false
+    watch: false,
+
+    // Globals for describe, it, expect etc
+    globals: true
   }
 });

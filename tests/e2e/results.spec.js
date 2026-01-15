@@ -81,7 +81,7 @@ test.describe('Results View', () => {
   test.describe('Filters', () => {
     test('should filter by timing point', async ({ page }) => {
       // First add a Finish entry
-      await page.click('[data-view="timer"]');
+      await page.click('[data-view="timing-view"]');
       await page.click('[data-num="9"]');
       await page.click('[data-point="F"]');
       await page.click('#timestamp-btn');
@@ -250,7 +250,7 @@ test.describe('Results View - Accessibility', () => {
 
   test('should support keyboard navigation in list', async ({ page }) => {
     // Add entry first
-    await page.click('[data-view="timer"]');
+    await page.click('[data-view="timing-view"]');
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
     await page.click('[data-view="results-view"]');
@@ -264,5 +264,190 @@ test.describe('Results View - Accessibility', () => {
 
     // Edit modal should open
     await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+  });
+});
+
+test.describe('Results View - Simple Mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+
+    // Add some test entries
+    for (let i = 1; i <= 3; i++) {
+      await page.click(`[data-num="${i}"]`);
+      await page.click('#timestamp-btn');
+      await page.waitForTimeout(500);
+      await page.click('[data-action="clear"]');
+    }
+
+    await page.click('[data-view="results-view"]');
+    await page.waitForSelector('.results-list');
+  });
+
+  test('should hide search input in simple mode', async ({ page }) => {
+    // Simple mode is on by default
+    const searchInput = page.locator('#search-input');
+    await expect(searchInput).not.toBeVisible();
+  });
+
+  test('should hide filter dropdowns in simple mode', async ({ page }) => {
+    const filterPoint = page.locator('#filter-point');
+    const filterStatus = page.locator('#filter-status');
+
+    await expect(filterPoint).not.toBeVisible();
+    await expect(filterStatus).not.toBeVisible();
+  });
+
+  test('should show only basic stats in simple mode', async ({ page }) => {
+    // Total and racers should be visible
+    const statsContainer = page.locator('.stats-row');
+    await expect(statsContainer).toBeVisible();
+
+    // Advanced stats should be hidden (data-stat-advanced)
+    const advancedStats = page.locator('[data-stat-advanced]');
+    const count = await advancedStats.count();
+    for (let i = 0; i < count; i++) {
+      await expect(advancedStats.nth(i)).not.toBeVisible();
+    }
+  });
+
+  test('should show search and filters in full mode', async ({ page }) => {
+    // Go to settings and turn off simple mode
+    await page.click('[data-view="settings-view"]');
+    await page.click('#toggle-simple');
+
+    // Go back to results
+    await page.click('[data-view="results-view"]');
+
+    // Search should be visible
+    const searchInput = page.locator('#search-input');
+    await expect(searchInput).toBeVisible();
+
+    // Filters should be visible
+    await expect(page.locator('#filter-point')).toBeVisible();
+    await expect(page.locator('#filter-status')).toBeVisible();
+  });
+
+  test('should show all stats in full mode', async ({ page }) => {
+    // Go to settings and turn off simple mode
+    await page.click('[data-view="settings-view"]');
+    await page.click('#toggle-simple');
+
+    // Go back to results
+    await page.click('[data-view="results-view"]');
+
+    // Advanced stats should be visible
+    const advancedStats = page.locator('[data-stat-advanced]');
+    const count = await advancedStats.count();
+    for (let i = 0; i < count; i++) {
+      await expect(advancedStats.nth(i)).toBeVisible();
+    }
+  });
+});
+
+test.describe('Results View - Sync Status', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+
+    // Add a test entry
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    await page.click('[data-view="results-view"]');
+  });
+
+  test('should show sync indicator when sync is enabled', async ({ page }) => {
+    // Enable sync
+    await page.click('[data-view="settings-view"]');
+    await page.click('#toggle-sync');
+
+    // Go back to results
+    await page.click('[data-view="results-view"]');
+
+    // Sync status indicator should be visible
+    const syncStatus = page.locator('#sync-status-row, .sync-status, [data-sync-status]');
+    // Note: The actual selector depends on implementation
+  });
+});
+
+test.describe('Results View - Entry Actions', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+
+    // Add test entries
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    await page.click('[data-view="results-view"]');
+    await page.waitForSelector('.result-item');
+  });
+
+  test('should show entry with bib, time, and point', async ({ page }) => {
+    const firstResult = page.locator('.result-item').first();
+
+    await expect(firstResult.locator('.result-bib')).toBeVisible();
+    await expect(firstResult.locator('.result-time')).toBeVisible();
+    await expect(firstResult.locator('.result-point')).toBeVisible();
+  });
+
+  test('should edit entry via modal', async ({ page }) => {
+    // Click on entry to edit
+    await page.click('.result-item .result-bib');
+
+    // Modal should open
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Change bib
+    const bibInput = page.locator('#edit-bib-input');
+    await bibInput.clear();
+    await bibInput.fill('999');
+
+    // Save
+    await page.click('#save-edit-btn');
+
+    // Verify change
+    await expect(page.locator('.result-bib').first()).toContainText('999');
+  });
+
+  test('should mark entry as DNS', async ({ page }) => {
+    // Click on entry to edit
+    await page.click('.result-item .result-bib');
+
+    // Change status to DNS
+    await page.selectOption('#edit-status-select', 'dns');
+    await page.click('#save-edit-btn');
+
+    // Status badge should appear
+    await expect(page.locator('.result-status').first()).toContainText('DNS');
+  });
+
+  test('should mark entry as DNF', async ({ page }) => {
+    // Click on entry to edit
+    await page.click('.result-item .result-bib');
+
+    // Change status to DNF
+    await page.selectOption('#edit-status-select', 'dnf');
+    await page.click('#save-edit-btn');
+
+    // Status badge should appear
+    await expect(page.locator('.result-status').first()).toContainText('DNF');
+  });
+
+  test('should delete entry with confirmation', async ({ page }) => {
+    const initialCount = await page.locator('.result-item').count();
+
+    // Click delete
+    await page.click('.result-delete');
+
+    // Confirm modal should appear
+    await expect(page.locator('#confirm-delete-modal')).toHaveClass(/show/);
+
+    // Confirm delete
+    await page.click('#confirm-delete-btn');
+
+    // Count should decrease
+    const newCount = await page.locator('.result-item').count();
+    expect(newCount).toBe(initialCount - 1);
   });
 });

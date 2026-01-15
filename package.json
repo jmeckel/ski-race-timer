@@ -1,12 +1,14 @@
 {
   "name": "ski-race-timer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "GPS-synchronized race timing for ski races",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npx serve public",
-    "build": "echo 'Static site - no build needed'",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
@@ -17,17 +19,23 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:prod": "TEST_ENV=production playwright test",
     "test:e2e:prod:headed": "TEST_ENV=production playwright test --headed",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "ioredis": "^5.3.2"
   },
   "devDependencies": {
-    "vitest": "^1.2.0",
+    "@playwright/test": "^1.41.0",
     "@testing-library/dom": "^9.3.4",
-    "jsdom": "^23.2.0",
+    "@types/node": "^20.11.0",
+    "@upstash/ratelimit": "^1.0.0",
     "@vitest/coverage-v8": "^1.2.0",
-    "@playwright/test": "^1.41.0"
+    "jsdom": "^23.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-plugin-pwa": "^0.17.4",
+    "vitest": "^1.2.0"
   },
   "engines": {
     "node": ">=18.0.0"

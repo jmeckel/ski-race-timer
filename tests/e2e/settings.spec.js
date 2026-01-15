@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Settings View', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await page.click('[data-view="settings-view"]');
     await page.waitForSelector('.settings-section');
   });
 
@@ -72,7 +72,7 @@ test.describe('Settings View', () => {
 
       // Reload page
       await page.reload();
-      await page.click('[data-view="settings"]');
+      await page.click('[data-view="settings-view"]');
 
       // Setting should persist
       const toggleAfter = page.locator('#toggle-auto');
@@ -130,7 +130,7 @@ test.describe('Settings View', () => {
 
       // Verify saved
       await page.reload();
-      await page.click('[data-view="settings"]');
+      await page.click('[data-view="settings-view"]');
       await page.click('#toggle-sync');
 
       await expect(page.locator('#race-id-input')).toHaveValue('RACE2024');
@@ -146,7 +146,7 @@ test.describe('Settings View', () => {
 
       // Verify saved
       await page.reload();
-      await page.click('[data-view="settings"]');
+      await page.click('[data-view="settings-view"]');
       await page.click('#toggle-sync');
 
       await expect(page.locator('#device-name-input')).toHaveValue('Timer Alpha');
@@ -192,7 +192,7 @@ test.describe('Settings View', () => {
       await page.click('[data-view="timer"]');
       await page.click('#timestamp-btn');
       await page.waitForTimeout(500);
-      await page.click('[data-view="settings"]');
+      await page.click('[data-view="settings-view"]');
 
       // Listen for download
       const downloadPromise = page.waitForEvent('download');
@@ -217,7 +217,7 @@ test.describe('Settings - Toggle Independence', () => {
     await page.goto('/');
     await page.evaluate(() => localStorage.removeItem('skiTimerSettings'));
     await page.reload();
-    await page.click('[data-view="settings"]');
+    await page.click('[data-view="settings-view"]');
   });
 
   test('should toggle GPS without affecting sync', async ({ page }) => {
@@ -268,7 +268,7 @@ test.describe('Settings - Toggle Independence', () => {
 test.describe('Settings - Keyboard Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await page.click('[data-view="settings-view"]');
   });
 
   test('should toggle with Enter key', async ({ page }) => {
@@ -308,7 +308,7 @@ test.describe('Settings - Mobile', () => {
 
   test('should display all settings on mobile', async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await page.click('[data-view="settings-view"]');
 
     await expect(page.locator('#toggle-auto')).toBeVisible();
     await expect(page.locator('#toggle-haptic')).toBeVisible();
@@ -319,11 +319,112 @@ test.describe('Settings - Mobile', () => {
 
   test('should tap toggles on touch device', async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await page.click('[data-view="settings-view"]');
 
     const toggle = page.locator('#toggle-sound');
     await toggle.tap();
 
     await expect(toggle).toHaveClass(/on/);
+  });
+});
+
+test.describe('Simple Mode Settings', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.click('[data-view="settings-view"]');
+  });
+
+  test('should be on by default', async ({ page }) => {
+    const toggle = page.locator('#toggle-simple');
+    await expect(toggle).toHaveClass(/on/);
+  });
+
+  test('should hide advanced settings in simple mode', async ({ page }) => {
+    // Verify simple mode is on
+    const toggle = page.locator('#toggle-simple');
+    await expect(toggle).toHaveClass(/on/);
+
+    // GPS section, Timing section, and Backup section should be hidden
+    await expect(page.locator('#gps-section')).not.toBeVisible();
+    await expect(page.locator('#timing-section')).not.toBeVisible();
+    await expect(page.locator('#backup-section')).not.toBeVisible();
+  });
+
+  test('should show all settings when simple mode is off', async ({ page }) => {
+    // Turn off simple mode
+    await page.click('#toggle-simple');
+
+    // Verify toggle is off
+    const toggle = page.locator('#toggle-simple');
+    await expect(toggle).not.toHaveClass(/on/);
+
+    // All sections should be visible
+    await expect(page.locator('#gps-section')).toBeVisible();
+    await expect(page.locator('#timing-section')).toBeVisible();
+    await expect(page.locator('#backup-section')).toBeVisible();
+  });
+
+  test('should toggle between simple and full mode', async ({ page }) => {
+    const toggle = page.locator('#toggle-simple');
+
+    // Start in simple mode
+    await expect(toggle).toHaveClass(/on/);
+    await expect(page.locator('#gps-section')).not.toBeVisible();
+
+    // Toggle to full mode
+    await toggle.click();
+    await expect(toggle).not.toHaveClass(/on/);
+    await expect(page.locator('#gps-section')).toBeVisible();
+
+    // Toggle back to simple mode
+    await toggle.click();
+    await expect(toggle).toHaveClass(/on/);
+    await expect(page.locator('#gps-section')).not.toBeVisible();
+  });
+
+  test('should persist simple mode setting', async ({ page }) => {
+    // Turn off simple mode
+    await page.click('#toggle-simple');
+
+    // Reload
+    await page.reload();
+    await page.click('[data-view="settings-view"]');
+
+    // Should remain off
+    const toggle = page.locator('#toggle-simple');
+    await expect(toggle).not.toHaveClass(/on/);
+  });
+
+  test('should force GPS on in simple mode', async ({ page }) => {
+    // First, turn off simple mode and disable GPS
+    await page.click('#toggle-simple');
+
+    // Turn GPS off if it's on
+    const gpsToggle = page.locator('#toggle-gps');
+    const isGpsOn = await gpsToggle.evaluate(el => el.classList.contains('on'));
+    if (isGpsOn) {
+      await gpsToggle.click();
+    }
+
+    // Turn simple mode back on - GPS should be forced on
+    await page.click('#toggle-simple');
+
+    // Reload and check GPS is on
+    await page.reload();
+    await page.click('[data-view="settings-view"]');
+
+    // Turn off simple mode to see GPS status
+    await page.click('#toggle-simple');
+
+    await expect(page.locator('#toggle-gps')).toHaveClass(/on/);
+  });
+
+  test('should keep cloud sync and language visible in simple mode', async ({ page }) => {
+    // Verify simple mode is on
+    await expect(page.locator('#toggle-simple')).toHaveClass(/on/);
+
+    // Cloud sync and language should still be visible
+    await expect(page.locator('#toggle-sync')).toBeVisible();
+    await expect(page.locator('#lang-toggle')).toBeVisible();
   });
 });

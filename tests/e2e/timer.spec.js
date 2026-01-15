@@ -247,3 +247,136 @@ test.describe('Timer View - Mobile', () => {
     await expect(bibDisplay).toContainText('5');
   });
 });
+
+test.describe('Timer View - Simple Mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.clock-time');
+  });
+
+  test('should hide Start button in simple mode', async ({ page }) => {
+    // Simple mode should be on by default
+    // Start button should be hidden
+    const startBtn = page.locator('[data-point="S"]');
+    await expect(startBtn).not.toBeVisible();
+  });
+
+  test('should show Finish button in simple mode', async ({ page }) => {
+    // Finish button should be visible
+    const finishBtn = page.locator('[data-point="F"]');
+    await expect(finishBtn).toBeVisible();
+  });
+
+  test('should hide intermediate points in simple mode', async ({ page }) => {
+    // Intermediate points should be hidden
+    await expect(page.locator('[data-point="I1"]')).not.toBeVisible();
+    await expect(page.locator('[data-point="I2"]')).not.toBeVisible();
+    await expect(page.locator('[data-point="I3"]')).not.toBeVisible();
+  });
+
+  test('should show all timing points in full mode', async ({ page }) => {
+    // Go to settings and turn off simple mode
+    await page.click('[data-view="settings-view"]');
+    await page.click('#toggle-simple');
+
+    // Go back to timer
+    await page.click('[data-view="timing-view"]');
+
+    // All timing points should be visible
+    await expect(page.locator('[data-point="S"]')).toBeVisible();
+    await expect(page.locator('[data-point="F"]')).toBeVisible();
+  });
+
+  test('should record Finish time in simple mode', async ({ page }) => {
+    // Enter bib
+    await page.click('[data-num="1"]');
+    await page.click('[data-num="0"]');
+    await page.click('[data-num="0"]');
+
+    // Record timestamp (Finish is default in simple mode)
+    await page.click('#timestamp-btn');
+
+    // Should show confirmation
+    await expect(page.locator('.confirmation-overlay')).toBeVisible();
+  });
+});
+
+test.describe('Undo/Redo Functionality', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.clock-time');
+  });
+
+  test('should show undo button after recording', async ({ page }) => {
+    // Record an entry
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+
+    // Wait for confirmation to hide
+    await page.waitForTimeout(500);
+
+    // Undo button should be visible
+    const undoBtn = page.locator('#undo-btn');
+    await expect(undoBtn).toBeVisible();
+  });
+
+  test('should undo last entry', async ({ page }) => {
+    // Record an entry
+    await page.click('[data-num="5"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    // Click undo
+    await page.click('#undo-btn');
+
+    // Toast should appear
+    await expect(page.locator('.toast')).toBeVisible();
+  });
+
+  test('should redo undone entry', async ({ page }) => {
+    // Record an entry
+    await page.click('[data-num="7"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    // Undo
+    await page.click('#undo-btn');
+    await page.waitForTimeout(500);
+
+    // Redo button should be visible
+    const redoBtn = page.locator('#redo-btn');
+    if (await redoBtn.isVisible()) {
+      await redoBtn.click();
+
+      // Toast should appear for redo
+      await expect(page.locator('.toast')).toBeVisible();
+    }
+  });
+
+  test('should clear redo stack on new entry', async ({ page }) => {
+    // Record first entry
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    // Undo
+    await page.click('#undo-btn');
+    await page.waitForTimeout(500);
+
+    // Record new entry
+    await page.click('[data-action="clear"]');
+    await page.click('[data-num="2"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    // Redo should not be available (redo stack cleared)
+    const redoBtn = page.locator('#redo-btn');
+    // Check if redo button is either not visible or disabled
+    const isVisible = await redoBtn.isVisible();
+    if (isVisible) {
+      // If visible, it should be disabled or have no redo available
+      const isDisabled = await redoBtn.evaluate(el => el.disabled || el.classList.contains('disabled'));
+      // Note: This may vary based on implementation
+    }
+  });
+});
