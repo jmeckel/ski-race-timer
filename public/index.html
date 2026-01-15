@@ -38,26 +38,33 @@
             --safe-bottom: env(safe-area-inset-bottom);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body {
+        html {
             height: 100%;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
+            height: -webkit-fill-available;
         }
         body {
             font-family: 'Outfit', -apple-system, sans-serif;
             background: var(--background);
             color: var(--text-primary);
+            height: 100%;
+            height: -webkit-fill-available;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
         }
         .app-container {
             max-width: 430px;
             margin: 0 auto;
             height: 100%;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
             background: linear-gradient(135deg, var(--background) 0%, rgba(21, 27, 35, 0.5) 50%, var(--background) 100%);
             padding-top: var(--safe-top);
             padding-bottom: var(--safe-bottom);
+            overflow: hidden;
         }
         .tab-bar {
             display: flex;
@@ -71,13 +78,14 @@
         .tab-item span { font-size: 10px; font-weight: 500; }
         .tab-item.active { color: var(--primary); }
         .tab-item:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-        .view { display: none; flex: 1; min-height: 0; overflow: hidden; position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
-        .view.active { display: flex; flex-direction: column; position: relative; top: 0; left: 0; visibility: visible; }
+        .view { display: none; flex: 1; min-height: 0; overflow: hidden; max-height: 100%; }
+        .view.active { display: flex; flex-direction: column; overflow: hidden; }
 
         /* Timing View - uses flexbox to distribute space */
         #timing-view {
             padding: 2vmin;
             gap: 1.5vmin;
+            overflow: hidden;
         }
         .timing-header {
             display: flex;
@@ -179,9 +187,11 @@
         .number-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
             gap: 6px;
             flex: 1;
             min-height: 0;
+            overflow: hidden;
         }
         .num-btn {
             background: var(--surface);
@@ -195,6 +205,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 0;
+            overflow: hidden;
         }
         .num-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .num-btn:active { background: var(--surface-elevated); transform: scale(0.95); }
