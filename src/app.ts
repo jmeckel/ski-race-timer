@@ -2,7 +2,7 @@ import { store } from './store';
 import { Clock, VirtualList, showToast, PullToRefresh } from './components';
 import { syncService, gpsService, cameraService, captureTimingPhoto } from './services';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
-import { generateEntryId } from './utils';
+import { generateEntryId, getPointLabel } from './utils';
 import { t } from './i18n/translations';
 import type { Entry, TimingPoint, Language } from './types';
 
@@ -289,7 +289,8 @@ function updateLastRecorded(entry: Entry): void {
 
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    pointEl.textContent = entry.point;
+    const state = store.getState();
+    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
     pointEl.style.background = `${getPointColor(entry.point)}20`;
     pointEl.style.color = getPointColor(entry.point);
   }
