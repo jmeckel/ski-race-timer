@@ -733,12 +733,12 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   }
 
   // Update sync status
-  if (changedKeys.includes('syncStatus')) {
+  if (changedKeys.includes('syncStatus') || changedKeys.includes('settings')) {
     updateSyncStatusIndicator();
   }
 
   // Update GPS status
-  if (changedKeys.includes('gpsStatus')) {
+  if (changedKeys.includes('gpsStatus') || changedKeys.includes('settings')) {
     updateGpsIndicator();
   }
 
@@ -848,8 +848,14 @@ function updateEntryCountBadge(): void {
  */
 function updateSyncStatusIndicator(): void {
   const state = store.getState();
+  const indicator = document.getElementById('sync-indicator');
   const dot = document.querySelector('.sync-dot');
   const text = document.querySelector('.sync-status-text');
+
+  // Show indicator when sync is enabled
+  if (indicator) {
+    indicator.style.display = state.settings.sync ? 'flex' : 'none';
+  }
 
   if (dot) {
     dot.classList.remove('connected', 'error', 'offline');
@@ -872,8 +878,14 @@ function updateSyncStatusIndicator(): void {
  */
 function updateGpsIndicator(): void {
   const state = store.getState();
+  const indicator = document.getElementById('gps-indicator');
   const dot = document.querySelector('.gps-dot');
   const text = document.querySelector('.gps-status-text');
+
+  // Show indicator when GPS is enabled
+  if (indicator) {
+    indicator.style.display = state.settings.gps ? 'flex' : 'none';
+  }
 
   if (dot) {
     dot.classList.remove('active', 'searching');
