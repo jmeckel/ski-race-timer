@@ -379,6 +379,11 @@ function initResultsView(): void {
     }
   });
 
+  // Load initial entries
+  const state = store.getState();
+  virtualList.setEntries(state.entries);
+  updateStats();
+
   // Initialize pull-to-refresh
   const resultsContainer = document.querySelector('.results-view');
   if (resultsContainer) {
