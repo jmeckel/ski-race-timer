@@ -169,10 +169,6 @@ export class VirtualList {
 
       // Update selection state
       item.classList.toggle('selected', isSelected);
-      const checkbox = item.querySelector('.result-checkbox') as HTMLInputElement;
-      if (checkbox) {
-        checkbox.checked = isSelected;
-      }
     }
 
     // Remove items no longer visible
@@ -213,8 +209,6 @@ export class VirtualList {
     const pointColor = getPointColor(entry.point);
 
     item.innerHTML = `
-      <input type="checkbox" class="result-checkbox" aria-label="Select entry"
-        style="width: 20px; height: 20px; accent-color: var(--primary);">
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
         ${escapeHtml(bibStr)}
       </div>
@@ -245,12 +239,6 @@ export class VirtualList {
     `;
 
     // Event listeners
-    const checkbox = item.querySelector('.result-checkbox') as HTMLInputElement;
-    checkbox.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.options.onItemSelect?.(entry, checkbox.checked);
-    });
-
     const deleteBtn = item.querySelector('.result-delete') as HTMLButtonElement;
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
