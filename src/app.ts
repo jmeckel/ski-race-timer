@@ -306,9 +306,12 @@ function updateLastRecorded(entry: Entry): void {
  * Show race change dialog
  */
 function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
+  console.log('showRaceChangeDialog called:', { type, lang });
   return new Promise((resolve) => {
     const modal = document.getElementById('race-change-modal');
+    console.log('Modal element:', modal);
     if (!modal) {
+      console.log('Modal not found!');
       resolve('cancel');
       return;
     }
@@ -350,7 +353,9 @@ function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Prom
     keepBtn?.addEventListener('click', handleKeep);
     cancelBtn?.addEventListener('click', handleCancel);
 
+    console.log('Adding show class to modal');
     modal.classList.add('show');
+    console.log('Modal classes after add:', modal.classList.toString());
   });
 }
 
@@ -570,6 +575,8 @@ function initSettingsView(): void {
       const hasEntries = state.entries.length > 0;
       const wasPreviouslySynced = state.lastSyncedRaceId !== '';
       const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
+
+      console.log('Race ID change:', { newRaceId, currentRaceId: state.raceId, hasEntries, wasPreviouslySynced, isChangingRace, entriesCount: state.entries.length });
 
       if (hasEntries && isChangingRace) {
         if (wasPreviouslySynced) {
