@@ -820,7 +820,7 @@ function openPhotoViewer(entry: Entry): void {
   const pointEl = document.getElementById('photo-viewer-point');
   const timeEl = document.getElementById('photo-viewer-time');
 
-  if (image) image.src = entry.photo;
+  if (image) image.src = `data:image/jpeg;base64,${entry.photo}`;
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
     pointEl.textContent = entry.point;
