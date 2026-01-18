@@ -121,6 +121,65 @@ describe('VirtualList Component', () => {
 
       list.destroy();
     });
+
+    it('should invalidate cache when entry photo is added', () => {
+      const list = new VirtualList({ container });
+      const entry = createEntry(1);
+
+      list.setEntries([entry]);
+
+      // Verify no photo button initially
+      expect(container.querySelector('.result-photo-btn')).toBeNull();
+
+      // Update entry with photo
+      const updatedEntry = { ...entry, photo: 'base64data' };
+      list.setEntries([updatedEntry]);
+
+      // Verify photo button now exists
+      expect(container.querySelector('.result-photo-btn')).not.toBeNull();
+
+      list.destroy();
+    });
+
+    it('should invalidate cache when entry photo is removed', () => {
+      const list = new VirtualList({ container });
+      const entry = { ...createEntry(1), photo: 'base64data' };
+
+      list.setEntries([entry]);
+
+      // Verify photo button exists
+      expect(container.querySelector('.result-photo-btn')).not.toBeNull();
+
+      // Update entry without photo
+      const updatedEntry = { ...entry, photo: undefined };
+      list.setEntries([updatedEntry]);
+
+      // Verify photo button is gone
+      expect(container.querySelector('.result-photo-btn')).toBeNull();
+
+      list.destroy();
+    });
+
+    it('should invalidate cache when entry status changes', () => {
+      const list = new VirtualList({ container });
+      const entry = createEntry(1);
+
+      list.setEntries([entry]);
+
+      // Verify no status badge initially (status is 'ok')
+      expect(container.querySelector('.result-status')).toBeNull();
+
+      // Update entry with DNS status
+      const updatedEntry = { ...entry, status: 'dns' as const };
+      list.setEntries([updatedEntry]);
+
+      // Verify status badge now exists
+      const statusBadge = container.querySelector('.result-status');
+      expect(statusBadge).not.toBeNull();
+      expect(statusBadge?.textContent).toContain('DNS');
+
+      list.destroy();
+    });
   });
 
   describe('applyFilters', () => {
@@ -239,14 +298,26 @@ describe('VirtualList Component', () => {
       list.destroy();
     });
 
-    it('should render photo indicator when entry has photo', () => {
+    it('should render photo button when entry has photo', () => {
       const list = new VirtualList({ container });
       const entry = { ...createEntry(1), photo: 'base64data' };
 
       list.setEntries([entry]);
 
-      const photoIndicator = container.querySelector('.result-photo-indicator');
-      expect(photoIndicator).not.toBeNull();
+      const photoBtn = container.querySelector('.result-photo-btn');
+      expect(photoBtn).not.toBeNull();
+
+      list.destroy();
+    });
+
+    it('should not render photo button when entry has no photo', () => {
+      const list = new VirtualList({ container });
+      const entry = createEntry(1);
+
+      list.setEntries([entry]);
+
+      const photoBtn = container.querySelector('.result-photo-btn');
+      expect(photoBtn).toBeNull();
 
       list.destroy();
     });
@@ -306,6 +377,38 @@ describe('VirtualList Component', () => {
       checkbox.click();
 
       expect(onItemSelect).toHaveBeenCalledWith(entry, true);
+
+      list.destroy();
+    });
+
+    it('should call onViewPhoto when photo button is clicked', () => {
+      const onViewPhoto = vi.fn();
+      const list = new VirtualList({ container, onViewPhoto });
+      const entry = { ...createEntry(1), photo: 'base64data' };
+
+      list.setEntries([entry]);
+
+      const photoBtn = container.querySelector('.result-photo-btn') as HTMLElement;
+      photoBtn.click();
+
+      expect(onViewPhoto).toHaveBeenCalledWith(entry);
+
+      list.destroy();
+    });
+
+    it('should not propagate click event from photo button to item', () => {
+      const onItemClick = vi.fn();
+      const onViewPhoto = vi.fn();
+      const list = new VirtualList({ container, onItemClick, onViewPhoto });
+      const entry = { ...createEntry(1), photo: 'base64data' };
+
+      list.setEntries([entry]);
+
+      const photoBtn = container.querySelector('.result-photo-btn') as HTMLElement;
+      photoBtn.click();
+
+      expect(onViewPhoto).toHaveBeenCalledWith(entry);
+      expect(onItemClick).not.toHaveBeenCalled();
 
       list.destroy();
     });
