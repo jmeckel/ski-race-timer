@@ -689,6 +689,17 @@ body {
   color: white;
 }
 
+.modal-btn.text-danger {
+  background: transparent;
+  color: var(--error);
+  opacity: 0.8;
+}
+
+.modal-btn.text-danger:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* ===== Photo Viewer Modal ===== */
 .photo-viewer-content {
   max-width: 90vw;

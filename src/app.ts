@@ -659,10 +659,15 @@ function initModals(): void {
     saveEditBtn.addEventListener('click', handleSaveEdit);
   }
 
-  // Photo viewer close button
+  // Photo viewer close buttons (X and footer Close)
   const photoViewerCloseBtn = document.getElementById('photo-viewer-close-btn');
   if (photoViewerCloseBtn) {
     photoViewerCloseBtn.addEventListener('click', closePhotoViewer);
+  }
+
+  const photoViewerCloseFooterBtn = document.getElementById('photo-viewer-close-footer-btn');
+  if (photoViewerCloseFooterBtn) {
+    photoViewerCloseFooterBtn.addEventListener('click', closePhotoViewer);
   }
 
   // Photo viewer delete button
