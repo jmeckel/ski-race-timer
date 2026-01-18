@@ -589,9 +589,9 @@ function initSettingsView(): void {
           const action = await showRaceChangeDialog('synced', state.currentLang);
           if (action === 'export') {
             exportResults();
-            store.clearAllEntries();
+            store.clearAll();
           } else if (action === 'delete') {
-            store.clearAllEntries();
+            store.clearAll();
           } else {
             // Cancelled - restore old race ID
             raceIdInput.value = state.raceId;
@@ -601,7 +601,7 @@ function initSettingsView(): void {
           // Not previously synced - ask to keep or delete
           const action = await showRaceChangeDialog('unsynced', state.currentLang);
           if (action === 'delete') {
-            store.clearAllEntries();
+            store.clearAll();
           } else if (action === 'cancel') {
             // Cancelled - restore old race ID
             raceIdInput.value = state.raceId;
