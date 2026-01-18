@@ -139,13 +139,15 @@ body {
 /* ===== Timer View ===== */
 .timer-view {
   padding: 12px;
-  gap: 8px;
-  overflow-y: auto;
+  gap: 6px;
+  overflow: hidden;
+  height: 100%;
 }
 
 .clock-container {
   text-align: center;
-  padding: 8px 0;
+  padding: 4px 0;
+  flex-shrink: 0;
 }
 
 .bib-display {
@@ -153,9 +155,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
   background: var(--surface);
   border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .bib-label {
@@ -176,7 +179,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 6px 16px;
   background: var(--surface-elevated);
   border-radius: 8px;
   font-size: 0.875rem;
@@ -184,6 +187,7 @@ body {
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity 0.3s, transform 0.3s;
+  flex-shrink: 0;
 }
 
 .last-recorded.visible {
@@ -213,12 +217,13 @@ body {
   display: flex;
   gap: 8px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .timing-point-btn {
   flex: 1;
   max-width: 80px;
-  padding: 12px 8px;
+  padding: 10px 8px;
   border: 2px solid var(--surface-elevated);
   border-radius: 12px;
   background: var(--surface);
@@ -256,12 +261,14 @@ body {
 .number-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 4px;
   padding: 4px;
+  flex: 1;
+  min-height: 0;
 }
 
 .num-btn {
-  aspect-ratio: 1.5;
   border: none;
   border-radius: 10px;
   background: var(--surface);
@@ -271,6 +278,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
+  min-height: 0;
 }
 
 .num-btn:active {
@@ -287,7 +295,7 @@ body {
 /* Timestamp Button */
 .timestamp-btn {
   width: 100%;
-  padding: 24px;
+  padding: 20px;
   border: none;
   border-radius: 16px;
   background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
@@ -297,6 +305,7 @@ body {
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.2s;
   box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  flex-shrink: 0;
 }
 
 .timestamp-btn:active {
@@ -826,17 +835,61 @@ body {
 }
 
 /* ===== Responsive ===== */
-@media (max-height: 600px) {
+@media (max-height: 700px) {
+  .timer-view {
+    gap: 4px;
+    padding: 8px;
+  }
+
   .clock-container {
-    padding: 8px 0;
+    padding: 2px 0;
   }
 
   .number-pad {
-    gap: 4px;
+    gap: 3px;
   }
 
   .num-btn {
+    font-size: 1.125rem;
+    border-radius: 8px;
+  }
+
+  .timestamp-btn {
+    padding: 16px;
     font-size: 1.25rem;
+  }
+
+  .bib-display {
+    padding: 6px;
+  }
+
+  .bib-value {
+    font-size: 1.75rem;
+  }
+
+  .timing-point-btn {
+    padding: 8px 6px;
+  }
+}
+
+@media (max-height: 600px) {
+  .timer-view {
+    gap: 3px;
+    padding: 6px;
+  }
+
+  .number-pad {
+    gap: 2px;
+  }
+
+  .num-btn {
+    font-size: 1rem;
+  }
+
+  .timestamp-btn {
+    padding: 14px;
+    font-size: 1.125rem;
+    border-radius: 12px;
   }
 }
 
