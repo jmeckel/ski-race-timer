@@ -376,7 +376,8 @@ function initResultsView(): void {
       } else {
         store.toggleEntrySelection(entry.id);
       }
-    }
+    },
+    onViewPhoto: (entry) => openPhotoViewer(entry)
   });
 
   // Load initial entries
@@ -657,6 +658,28 @@ function initModals(): void {
   if (saveEditBtn) {
     saveEditBtn.addEventListener('click', handleSaveEdit);
   }
+
+  // Photo viewer close button
+  const photoViewerCloseBtn = document.getElementById('photo-viewer-close-btn');
+  if (photoViewerCloseBtn) {
+    photoViewerCloseBtn.addEventListener('click', closePhotoViewer);
+  }
+
+  // Photo viewer delete button
+  const photoViewerDeleteBtn = document.getElementById('photo-viewer-delete-btn');
+  if (photoViewerDeleteBtn) {
+    photoViewerDeleteBtn.addEventListener('click', deletePhoto);
+  }
+
+  // Photo viewer modal overlay click to close
+  const photoViewerModal = document.getElementById('photo-viewer-modal');
+  if (photoViewerModal) {
+    photoViewerModal.addEventListener('click', (e) => {
+      if (e.target === photoViewerModal) {
+        closePhotoViewer();
+      }
+    });
+  }
 }
 
 /**
@@ -773,6 +796,67 @@ function closeAllModals(): void {
   document.querySelectorAll('.modal-overlay.show').forEach(modal => {
     modal.classList.remove('show');
   });
+}
+
+// Track current entry being viewed in photo viewer
+let currentPhotoEntryId: string | null = null;
+
+/**
+ * Open photo viewer modal
+ */
+function openPhotoViewer(entry: Entry): void {
+  const modal = document.getElementById('photo-viewer-modal');
+  if (!modal || !entry.photo) return;
+
+  currentPhotoEntryId = entry.id;
+
+  const image = document.getElementById('photo-viewer-image') as HTMLImageElement;
+  const bibEl = document.getElementById('photo-viewer-bib');
+  const pointEl = document.getElementById('photo-viewer-point');
+  const timeEl = document.getElementById('photo-viewer-time');
+
+  if (image) image.src = entry.photo;
+  if (bibEl) bibEl.textContent = entry.bib || '---';
+  if (pointEl) {
+    pointEl.textContent = entry.point;
+    const pointColor = getPointColor(entry.point);
+    pointEl.style.background = pointColor;
+    pointEl.style.color = 'var(--background)';
+  }
+  if (timeEl) {
+    const date = new Date(entry.timestamp);
+    timeEl.textContent = formatTimeDisplay(date);
+  }
+
+  modal.classList.add('show');
+}
+
+/**
+ * Close photo viewer modal
+ */
+function closePhotoViewer(): void {
+  const modal = document.getElementById('photo-viewer-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+  currentPhotoEntryId = null;
+}
+
+/**
+ * Delete photo from entry
+ */
+function deletePhoto(): void {
+  if (!currentPhotoEntryId) return;
+
+  const state = store.getState();
+
+  // Update entry to remove photo
+  store.updateEntry(currentPhotoEntryId, { photo: undefined });
+
+  // Close modal and show toast
+  closePhotoViewer();
+  showToast(t('photoDeleted', state.currentLang), 'success');
+  feedbackDelete();
 }
 
 /**

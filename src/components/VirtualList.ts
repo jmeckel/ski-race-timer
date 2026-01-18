@@ -13,6 +13,7 @@ interface VirtualListOptions {
   onItemClick?: (entry: Entry, event: MouseEvent) => void;
   onItemDelete?: (entry: Entry) => void;
   onItemSelect?: (entry: Entry, selected: boolean) => void;
+  onViewPhoto?: (entry: Entry) => void;
 }
 
 export class VirtualList {
@@ -224,12 +225,12 @@ export class VirtualList {
         </span>
       ` : ''}
       ${entry.photo ? `
-        <span class="result-photo-indicator" style="color: var(--primary);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <button class="result-photo-btn" aria-label="View photo" style="background: none; border: none; color: var(--primary); padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
           </svg>
-        </span>
+        </button>
       ` : ''}
       <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 8px; cursor: pointer; opacity: 0.7;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -244,6 +245,14 @@ export class VirtualList {
       e.stopPropagation();
       this.options.onItemDelete?.(entry);
     });
+
+    const photoBtn = item.querySelector('.result-photo-btn') as HTMLButtonElement | null;
+    if (photoBtn) {
+      photoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.options.onViewPhoto?.(entry);
+      });
+    }
 
     item.addEventListener('click', (e) => {
       this.options.onItemClick?.(entry, e);

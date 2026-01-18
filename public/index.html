@@ -395,6 +395,19 @@
         .status-select { width: 100%; padding: 12px; background: var(--surface-elevated); border: 2px solid transparent; border-radius: 10px; color: var(--text-primary); font-size: 14px; margin-bottom: 12px; cursor: pointer; }
         .status-select:focus { outline: none; border-color: var(--primary); }
 
+        /* Photo Viewer Modal */
+        .photo-viewer-card { max-width: 90vw; width: auto; max-height: 85vh; display: flex; flex-direction: column; }
+        .photo-viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .photo-viewer-header .modal-title { margin-bottom: 0; }
+        .photo-viewer-close { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .photo-viewer-close:hover { color: var(--text-primary); background: var(--surface-elevated); }
+        .photo-viewer-image-container { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: var(--background); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+        .photo-viewer-image { max-width: 100%; max-height: 50vh; object-fit: contain; }
+        .photo-viewer-metadata { display: flex; gap: 12px; align-items: center; justify-content: center; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; }
+        .photo-viewer-bib { font-size: 1.25rem; font-weight: 600; }
+        .photo-viewer-point { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: var(--success); color: var(--background); }
+        .photo-viewer-time { font-size: 0.875rem; color: var(--text-secondary); }
+
         /* Toast notifications */
         .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface-elevated); color: var(--text-primary); padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .toast.show { opacity: 1; }
@@ -846,6 +859,30 @@
                 <div class="modal-buttons">
                     <button class="modal-btn cancel" onclick="closeConfirmDeleteModal()" id="confirm-delete-cancel">Cancel</button>
                     <button class="modal-btn danger" onclick="confirmDelete()" id="confirm-delete-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="photo-viewer-modal" class="modal-overlay" role="dialog" aria-labelledby="photo-viewer-title">
+            <div class="modal-card photo-viewer-card">
+                <div class="photo-viewer-header">
+                    <div class="modal-title" id="photo-viewer-title" data-i18n="viewPhoto">View Photo</div>
+                    <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="photo-viewer-image-container">
+                    <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Captured photo">
+                </div>
+                <div class="photo-viewer-metadata">
+                    <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
+                    <span class="photo-viewer-point" id="photo-viewer-point">S</span>
+                    <span class="photo-viewer-time" id="photo-viewer-time">00:00:00.000</span>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn danger" id="photo-viewer-delete-btn" data-i18n="deletePhoto">Delete Photo</button>
                 </div>
             </div>
         </div>

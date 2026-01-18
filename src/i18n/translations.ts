@@ -102,6 +102,10 @@ export const translations: Record<Language, Translations> = {
     photoCaptured: 'Photo captured',
     photoError: 'Photo capture failed',
     viewPhoto: 'View Photo',
+    deletePhoto: 'Delete Photo',
+    photoFor: 'Photo for Bib',
+    noPhotoAvailable: 'No photo available',
+    photoDeleted: 'Photo deleted',
 
     // Race Change
     raceChangeTitle: 'Change Race',
@@ -217,6 +221,10 @@ export const translations: Record<Language, Translations> = {
     photoCaptured: 'Foto aufgenommen',
     photoError: 'Foto-Aufnahme fehlgeschlagen',
     viewPhoto: 'Foto anzeigen',
+    deletePhoto: 'Foto löschen',
+    photoFor: 'Foto für Startnr.',
+    noPhotoAvailable: 'Kein Foto verfügbar',
+    photoDeleted: 'Foto gelöscht',
 
     // Race Change
     raceChangeTitle: 'Rennen wechseln',
