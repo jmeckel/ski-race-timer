@@ -689,6 +689,84 @@ body {
   color: white;
 }
 
+/* ===== Photo Viewer Modal ===== */
+.photo-viewer-content {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.photo-viewer-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.photo-viewer-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+}
+
+.photo-viewer-image-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 16px;
+}
+
+.photo-viewer-image {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
+}
+
+.photo-viewer-metadata {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px 16px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.photo-viewer-bib {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.photo-viewer-point {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--success);
+  color: var(--background);
+}
+
+.photo-viewer-time {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
 /* ===== Confirmation Overlay ===== */
 .confirmation-overlay {
   position: fixed;

@@ -406,6 +406,31 @@
     </div>
   </div>
 
+  <!-- Photo Viewer Modal -->
+  <div class="modal-overlay" id="photo-viewer-modal">
+    <div class="modal-content photo-viewer-content">
+      <div class="modal-header photo-viewer-header">
+        <h2 class="modal-title" data-i18n="viewPhoto">View Photo</h2>
+        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="photo-viewer-image-container">
+        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Captured photo">
+      </div>
+      <div class="photo-viewer-metadata">
+        <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
+        <span class="photo-viewer-point" id="photo-viewer-point">S</span>
+        <span class="photo-viewer-time" id="photo-viewer-time">00:00:00.000</span>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn danger" id="photo-viewer-delete-btn" data-i18n="deletePhoto">Delete Photo</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
