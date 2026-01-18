@@ -76,6 +76,28 @@ export class VirtualList {
    * Set entries to display
    */
   setEntries(entries: Entry[]): void {
+    // Detect changed entries and invalidate their cached DOM elements
+    for (const entry of entries) {
+      const oldEntry = this.entries.find(e => e.id === entry.id);
+      if (oldEntry) {
+        // Check if entry data changed (compare relevant fields)
+        const hasChanged =
+          oldEntry.bib !== entry.bib ||
+          oldEntry.point !== entry.point ||
+          oldEntry.status !== entry.status ||
+          oldEntry.photo !== entry.photo;
+
+        if (hasChanged) {
+          // Remove cached item so it gets re-created
+          const cachedItem = this.visibleItems.get(entry.id);
+          if (cachedItem) {
+            cachedItem.remove();
+            this.visibleItems.delete(entry.id);
+          }
+        }
+      }
+    }
+
     this.entries = entries;
     this.applyFilters();
   }
