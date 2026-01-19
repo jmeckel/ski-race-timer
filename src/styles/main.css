@@ -33,18 +33,13 @@
 }
 
 html {
-  /* iOS PWA height fix: use -webkit-fill-available with fallbacks */
   height: 100%;
-  height: -webkit-fill-available;
   /* Use surface color so safe area shows tab bar color, not black */
   background: var(--surface);
 }
 
 body {
-  /* iOS PWA height fix: multiple fallbacks for full viewport */
   height: 100%;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
   overflow: hidden;
   font-family: 'Outfit', -apple-system, sans-serif;
   background: var(--background);
@@ -54,14 +49,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Modern viewport units for browsers that support them */
-@supports (height: 100dvh) {
+/* iOS PWA standalone mode fix for bottom gap */
+/* The min-height hack: add safe-area-inset-top to prevent bottom white bar */
+@media all and (display-mode: standalone) {
   html {
-    height: 100dvh;
+    min-height: calc(100% + env(safe-area-inset-top));
   }
   body {
-    height: 100dvh;
-    min-height: 100dvh;
+    min-height: calc(100% + env(safe-area-inset-top));
   }
 }
 
