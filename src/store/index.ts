@@ -32,6 +32,7 @@ const DEFAULT_SETTINGS: Settings = {
   haptic: true,
   sound: false,
   sync: false,
+  syncPhotos: false,  // Sync photos disabled by default - must be enabled separately
   gps: false,
   simple: true,
   photoCapture: false

@@ -3,6 +3,8 @@ import type { Entry, SyncResponse, DeviceInfo } from '../types';
 import { isValidEntry } from '../utils/validation';
 import { fetchWithTimeout } from '../utils/errors';
 import { photoStorage } from './photoStorage';
+import { t } from '../i18n/translations';
+import { getPointLabel } from '../utils/format';
 
 // API configuration
 const API_BASE = '/api/sync';
@@ -199,19 +201,27 @@ class SyncService {
 
   /**
    * Process photos from cloud entries - store in IndexedDB and set marker
+   * Only processes photos if syncPhotos setting is enabled
    */
   private async processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
+    const state = store.getState();
     const processedEntries: Entry[] = [];
 
     for (const entry of entries) {
       if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
-        // Entry has full photo data from cloud - save to IndexedDB
-        const saved = await photoStorage.savePhoto(entry.id, entry.photo);
-        if (saved) {
-          // Replace full photo with marker
-          processedEntries.push({ ...entry, photo: 'indexeddb' });
+        // Entry has full photo data from cloud
+        if (state.settings.syncPhotos) {
+          // Save to IndexedDB when photo sync is enabled
+          const saved = await photoStorage.savePhoto(entry.id, entry.photo);
+          if (saved) {
+            // Replace full photo with marker
+            processedEntries.push({ ...entry, photo: 'indexeddb' });
+          } else {
+            // Failed to save - keep entry without photo
+            processedEntries.push({ ...entry, photo: undefined });
+          }
         } else {
-          // Failed to save - keep entry without photo
+          // Photo sync disabled - discard incoming photo data
           processedEntries.push({ ...entry, photo: undefined });
         }
       } else {
@@ -325,7 +335,8 @@ class SyncService {
         const processedEntries = await this.processCloudPhotos(cloudEntries);
         const added = store.mergeCloudEntries(processedEntries, deletedIds);
         if (added > 0) {
-          this.showSyncToast(`Synced ${added} entries from cloud`);
+          const lang = store.getState().currentLang;
+          this.showSyncToast(t('syncedEntriesFromCloud', lang).replace('{count}', String(added)));
         }
       }
 
@@ -392,9 +403,9 @@ class SyncService {
     if (!state.settings.sync || !state.raceId) return false;
 
     try {
-      // Prepare entry for sync - load photo from IndexedDB if needed
+      // Prepare entry for sync - load photo from IndexedDB if syncPhotos is enabled
       let entryToSync = { ...entry };
-      if (entry.photo === 'indexeddb') {
+      if (state.settings.syncPhotos && entry.photo === 'indexeddb') {
         const photoData = await photoStorage.getPhoto(entry.id);
         if (photoData) {
           entryToSync = { ...entry, photo: photoData };
@@ -402,6 +413,9 @@ class SyncService {
           // Photo not found in IndexedDB, send without photo
           entryToSync = { ...entry, photo: undefined };
         }
+      } else if (entry.photo) {
+        // syncPhotos is disabled - strip photo data from sync
+        entryToSync = { ...entry, photo: undefined };
       }
 
       const response = await fetchWithTimeout(
@@ -425,16 +439,21 @@ class SyncService {
       // Parse response to check for flags and warnings
       try {
         const data = await response.json();
+        const lang = store.getState().currentLang;
+
         if (data.photoSkipped) {
-          this.showSyncToast('Photo too large for sync', 'warning');
+          this.showSyncToast(t('photoTooLarge', lang), 'warning');
         }
 
         // Check for cross-device duplicate warning
         if (data.crossDeviceDuplicate) {
           const dup = data.crossDeviceDuplicate;
-          const pointLabel = dup.point === 'S' ? 'Start' : 'Finish';
+          const pointLabel = getPointLabel(dup.point, lang);
           this.showSyncToast(
-            `Duplicate: Bib ${dup.bib} ${pointLabel} already recorded by ${dup.deviceName}`,
+            t('crossDeviceDuplicate', lang)
+              .replace('{bib}', dup.bib)
+              .replace('{point}', pointLabel)
+              .replace('{device}', dup.deviceName),
             'warning',
             5000
           );
@@ -620,6 +639,83 @@ class SyncService {
       console.error('Check race exists error:', error);
       return { exists: false, entryCount: 0 };
     }
+  }
+
+  /**
+   * Get photo sync statistics for the warning modal
+   * Returns counts and sizes for photos to upload and download
+   */
+  async getPhotoSyncStats(): Promise<{
+    uploadCount: number;
+    uploadSize: number;
+    downloadCount: number;
+    downloadSize: number;
+    totalSize: number;
+  }> {
+    const state = store.getState();
+    let uploadCount = 0;
+    let uploadSize = 0;
+    let downloadCount = 0;
+    let downloadSize = 0;
+
+    // Count local photos to upload (entries with photo='indexeddb' from this device)
+    for (const entry of state.entries) {
+      if (entry.photo === 'indexeddb' && entry.deviceId === state.deviceId) {
+        const photoData = await photoStorage.getPhoto(entry.id);
+        if (photoData) {
+          uploadCount++;
+          // Estimate size: base64 is ~4/3 of original, string length is bytes
+          uploadSize += photoData.length;
+        }
+      }
+    }
+
+    // Estimate photos to download from cloud
+    // Fetch current cloud entries to count photos from other devices
+    if (state.settings.sync && state.raceId) {
+      try {
+        const params = new URLSearchParams({
+          raceId: state.raceId,
+          deviceId: state.deviceId,
+          deviceName: state.deviceName
+        });
+        const response = await fetchWithTimeout(`${API_BASE}?${params}`, {
+          headers: getAuthHeaders()
+        }, FETCH_TIMEOUT);
+
+        if (response.ok) {
+          const data = await response.json();
+          const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
+
+          for (const cloudEntry of cloudEntries) {
+            // Count photos from other devices that we don't have locally
+            if (cloudEntry.photo &&
+                cloudEntry.photo !== 'indexeddb' &&
+                cloudEntry.photo.length > 20 &&
+                cloudEntry.deviceId !== state.deviceId) {
+              // Check if we already have this entry locally
+              const localEntry = state.entries.find(e =>
+                e.id === cloudEntry.id && e.deviceId === cloudEntry.deviceId
+              );
+              if (!localEntry || !localEntry.photo) {
+                downloadCount++;
+                downloadSize += cloudEntry.photo.length;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch cloud entries for photo stats:', error);
+      }
+    }
+
+    return {
+      uploadCount,
+      uploadSize,
+      downloadCount,
+      downloadSize,
+      totalSize: uploadSize + downloadSize
+    };
   }
 }
 

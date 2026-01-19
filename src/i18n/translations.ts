@@ -129,6 +129,19 @@ export const translations: Record<Language, Translations> = {
 
     // Photo sync
     photoTooLarge: 'Photo too large for sync',
+    syncedEntriesFromCloud: 'Synced {count} entries from cloud',
+    crossDeviceDuplicate: 'Duplicate: Bib {bib} {point} already recorded by {device}',
+
+    // Photo sync settings
+    syncPhotos: 'Sync Photos',
+    syncPhotosDesc: 'Share photos across devices via cloud',
+    syncPhotosWarning: 'Enable Photo Sync',
+    syncPhotosWarningText: 'Enabling photo sync will transfer the following data:',
+    photosToUpload: 'Photos to upload',
+    photosToDownload: 'Photos to download',
+    totalDataVolume: 'Total data volume',
+    enableSync: 'Enable Sync',
+    noPhotosToSync: 'No photos to sync',
 
     // Race Management
     admin: 'Admin',
@@ -326,6 +339,19 @@ export const translations: Record<Language, Translations> = {
 
     // Photo sync
     photoTooLarge: 'Foto zu groß für Sync',
+    syncedEntriesFromCloud: '{count} Einträge aus Cloud synchronisiert',
+    crossDeviceDuplicate: 'Duplikat: Startnr. {bib} {point} bereits von {device} erfasst',
+
+    // Photo sync settings
+    syncPhotos: 'Fotos synchronisieren',
+    syncPhotosDesc: 'Fotos über Cloud mit anderen Geräten teilen',
+    syncPhotosWarning: 'Foto-Sync aktivieren',
+    syncPhotosWarningText: 'Aktivierung der Foto-Synchronisierung überträgt folgende Daten:',
+    photosToUpload: 'Fotos hochzuladen',
+    photosToDownload: 'Fotos herunterzuladen',
+    totalDataVolume: 'Gesamtes Datenvolumen',
+    enableSync: 'Sync aktivieren',
+    noPhotosToSync: 'Keine Fotos zu synchronisieren',
 
     // Race Management
     admin: 'Admin',

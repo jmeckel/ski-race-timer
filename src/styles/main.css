@@ -720,6 +720,15 @@ body {
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggle-switch input:disabled + .toggle-slider::before {
+  cursor: not-allowed;
+}
+
 /* Text Input */
 .text-input {
   width: 100%;
@@ -1004,6 +1013,48 @@ body {
 .modal-btn.text-danger:hover {
   opacity: 1;
   background: rgba(239, 68, 68, 0.1);
+}
+
+/* ===== Photo Sync Stats ===== */
+.photo-sync-stats {
+  margin-top: 16px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.photo-sync-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--surface);
+}
+
+.photo-sync-stat:last-child {
+  border-bottom: none;
+}
+
+.photo-sync-stat.total {
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--text-secondary);
+  border-bottom: none;
+}
+
+.photo-sync-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.photo-sync-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.photo-sync-stat.total .photo-sync-label,
+.photo-sync-stat.total .photo-sync-value {
+  font-weight: 700;
+  color: var(--primary);
 }
 
 /* ===== Photo Viewer Modal ===== */

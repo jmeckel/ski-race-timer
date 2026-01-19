@@ -44,7 +44,7 @@ export function isValidSettings(settings: unknown): settings is Settings {
   const s = settings as Record<string, unknown>;
 
   // All settings should be booleans
-  const booleanKeys = ['auto', 'haptic', 'sound', 'sync', 'gps', 'simple', 'photoCapture'];
+  const booleanKeys = ['auto', 'haptic', 'sound', 'sync', 'syncPhotos', 'gps', 'simple', 'photoCapture'];
   for (const key of booleanKeys) {
     if (key in s && typeof s[key] !== 'boolean') return false;
   }
@@ -147,6 +147,7 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
     haptic: true,
     sound: false,
     sync: false,
+    syncPhotos: false,  // Sync photos disabled by default
     gps: false,
     simple: true,
     photoCapture: false
@@ -184,6 +185,7 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
       haptic: typeof s.haptic === 'boolean' ? s.haptic : defaultSettings.haptic,
       sound: typeof s.sound === 'boolean' ? s.sound : defaultSettings.sound,
       sync: typeof s.sync === 'boolean' ? s.sync : defaultSettings.sync,
+      syncPhotos: typeof s.syncPhotos === 'boolean' ? s.syncPhotos : defaultSettings.syncPhotos,
       gps: typeof s.gps === 'boolean' ? s.gps : defaultSettings.gps,
       simple: typeof s.simple === 'boolean' ? s.simple : defaultSettings.simple,
       photoCapture: typeof s.photoCapture === 'boolean' ? s.photoCapture : defaultSettings.photoCapture

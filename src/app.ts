@@ -760,10 +760,40 @@ function initSettingsView(): void {
       }
 
       store.updateSettings({ sync: syncToggle.checked });
+
+      // Update sync photos toggle state
+      const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+      if (syncPhotosToggle) {
+        syncPhotosToggle.disabled = !syncToggle.checked;
+        if (!syncToggle.checked) {
+          // Disable photo sync when main sync is disabled
+          syncPhotosToggle.checked = false;
+          store.updateSettings({ syncPhotos: false });
+        }
+      }
+
       if (syncToggle.checked && state.raceId) {
         syncService.initialize();
       } else {
         syncService.cleanup();
+      }
+    });
+  }
+
+  // Sync photos toggle
+  const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+  if (syncPhotosToggle) {
+    syncPhotosToggle.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+
+      if (target.checked) {
+        // User is enabling photo sync - show warning modal
+        e.preventDefault();
+        target.checked = false; // Revert toggle until confirmed
+        await showPhotoSyncWarningModal();
+      } else {
+        // Disabling photo sync - no confirmation needed
+        store.updateSettings({ syncPhotos: false });
       }
     });
   }
@@ -1556,6 +1586,13 @@ function updateSettingsInputs(): void {
   if (soundToggle) soundToggle.checked = settings.sound;
   if (photoToggle) photoToggle.checked = settings.photoCapture;
 
+  // Update sync photos toggle (enabled only when sync is enabled)
+  const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+  if (syncPhotosToggle) {
+    syncPhotosToggle.checked = settings.syncPhotos;
+    syncPhotosToggle.disabled = !settings.sync;
+  }
+
   const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
   if (raceIdInput) raceIdInput.value = state.raceId;
 
@@ -1858,6 +1895,9 @@ function initRaceManagement(): void {
   if (confirmDeleteRaceBtn) {
     confirmDeleteRaceBtn.addEventListener('click', handleConfirmDeleteRace);
   }
+
+  // Photo sync modal setup
+  setupPhotoSyncModal();
 }
 
 /**
@@ -2078,6 +2118,99 @@ function handleAuthExpired(event: CustomEvent<{ message: string }>): void {
   });
 
   feedbackWarning();
+}
+
+/**
+ * Format bytes to human readable format
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+/**
+ * Show photo sync warning modal with statistics
+ */
+async function showPhotoSyncWarningModal(): Promise<void> {
+  const modal = document.getElementById('photo-sync-modal');
+  if (!modal) return;
+
+  const lang = store.getState().currentLang;
+
+  // Show loading state
+  const uploadCountEl = document.getElementById('photos-upload-count');
+  const downloadCountEl = document.getElementById('photos-download-count');
+  const totalSizeEl = document.getElementById('photos-total-size');
+
+  if (uploadCountEl) uploadCountEl.textContent = t('loading', lang);
+  if (downloadCountEl) downloadCountEl.textContent = t('loading', lang);
+  if (totalSizeEl) totalSizeEl.textContent = t('loading', lang);
+
+  modal.classList.add('show');
+
+  // Get photo sync statistics
+  const stats = await syncService.getPhotoSyncStats();
+
+  // Update modal with stats
+  if (uploadCountEl) uploadCountEl.textContent = String(stats.uploadCount);
+  if (downloadCountEl) downloadCountEl.textContent = String(stats.downloadCount);
+  if (totalSizeEl) totalSizeEl.textContent = formatBytes(stats.totalSize);
+
+  // Update confirm button based on whether there are photos to sync
+  const confirmBtn = document.getElementById('photo-sync-confirm-btn');
+  if (confirmBtn) {
+    const hasPhotos = stats.uploadCount > 0 || stats.downloadCount > 0;
+    confirmBtn.textContent = hasPhotos ? t('enableSync', lang) : t('enableSync', lang);
+  }
+}
+
+/**
+ * Setup photo sync modal event handlers
+ */
+function setupPhotoSyncModal(): void {
+  const modal = document.getElementById('photo-sync-modal');
+  const cancelBtn = document.getElementById('photo-sync-cancel-btn');
+  const confirmBtn = document.getElementById('photo-sync-confirm-btn');
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (modal) modal.classList.remove('show');
+    });
+  }
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      // Enable photo sync
+      store.updateSettings({ syncPhotos: true });
+
+      // Update toggle
+      const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+      if (syncPhotosToggle) syncPhotosToggle.checked = true;
+
+      // Close modal
+      if (modal) modal.classList.remove('show');
+
+      // Force a sync to start transferring photos
+      const state = store.getState();
+      if (state.settings.sync && state.raceId) {
+        syncService.forceRefresh();
+      }
+
+      feedbackSuccess();
+    });
+  }
+
+  // Close on overlay click
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('show');
+      }
+    });
+  }
 }
 
 /**

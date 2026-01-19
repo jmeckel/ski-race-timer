@@ -34,6 +34,7 @@ export interface Settings {
   haptic: boolean;      // Haptic feedback
   sound: boolean;       // Sound feedback
   sync: boolean;        // Cloud sync enabled
+  syncPhotos: boolean;  // Sync photos to cloud
   gps: boolean;         // GPS enabled
   simple: boolean;      // Simple mode
   photoCapture: boolean; // Photo capture on timestamp

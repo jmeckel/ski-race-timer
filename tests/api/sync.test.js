@@ -286,6 +286,25 @@ async function handler(req, res, redis) {
         e => e.id === entry.id && e.deviceId === sanitizedDeviceId
       );
 
+      // Check for cross-device duplicate (same bib+point from different device)
+      let crossDeviceDuplicate = null;
+      if (enrichedEntry.bib && !isDuplicate) {
+        const existingWithSameBibPoint = existing.entries.find(
+          e => e.bib === enrichedEntry.bib &&
+               e.point === enrichedEntry.point &&
+               e.deviceId !== sanitizedDeviceId
+        );
+        if (existingWithSameBibPoint) {
+          crossDeviceDuplicate = {
+            bib: existingWithSameBibPoint.bib,
+            point: existingWithSameBibPoint.point,
+            deviceId: existingWithSameBibPoint.deviceId,
+            deviceName: existingWithSameBibPoint.deviceName,
+            timestamp: existingWithSameBibPoint.timestamp
+          };
+        }
+      }
+
       if (!isDuplicate) {
         existing.entries.push(enrichedEntry);
         existing.lastUpdated = Date.now();
@@ -304,14 +323,20 @@ async function handler(req, res, redis) {
       // Get highest bib
       const highestBib = await getHighestBib(redis, normalizedRaceId);
 
-      return mockRes.status(200).json({
+      const response = {
         success: true,
         entries: existing.entries,
         lastUpdated: existing.lastUpdated,
         deviceCount,
         highestBib,
         photoSkipped
-      });
+      };
+
+      if (crossDeviceDuplicate) {
+        response.crossDeviceDuplicate = crossDeviceDuplicate;
+      }
+
+      return mockRes.status(200).json(response);
     }
 
     return mockRes.status(405).json({ error: 'Method not allowed' });
@@ -886,6 +911,231 @@ describe('API: /api/sync', () => {
 
       expect(result.status).toBe(200);
       expect(result.body.photoSkipped).toBe(false);
+    });
+  });
+
+  describe('Cross-Device Duplicate Detection', () => {
+    const baseEntry = {
+      bib: '001',
+      point: 'S',
+      timestamp: '2024-01-01T12:00:00.000Z',
+      status: 'ok'
+    };
+
+    it('should not flag duplicate when same device posts same entry twice', async () => {
+      // First entry from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-1' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001 },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Same entry from same device (duplicate by ID)
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-1' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001 },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.crossDeviceDuplicate).toBeUndefined();
+    });
+
+    it('should detect cross-device duplicate for same bib+point', async () => {
+      // First entry from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-2' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001 },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Same bib+point from different device (different ID)
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-2' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200002 },
+          deviceId: 'dev_2',
+          deviceName: 'Timer 2'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.crossDeviceDuplicate).toBeDefined();
+      expect(result.body.crossDeviceDuplicate.bib).toBe('001');
+      expect(result.body.crossDeviceDuplicate.point).toBe('S');
+      expect(result.body.crossDeviceDuplicate.deviceName).toBe('Timer 1');
+    });
+
+    it('should not flag cross-device duplicate for same bib different point', async () => {
+      // Start entry from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-3' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001, point: 'S' },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Finish entry from device 2 (different point)
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-3' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200002, point: 'F' },
+          deviceId: 'dev_2',
+          deviceName: 'Timer 2'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.crossDeviceDuplicate).toBeUndefined();
+    });
+
+    it('should not flag cross-device duplicate for different bib same point', async () => {
+      // Bib 001 from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-4' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001, bib: '001' },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Bib 002 from device 2 (different bib)
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-4' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200002, bib: '002' },
+          deviceId: 'dev_2',
+          deviceName: 'Timer 2'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.crossDeviceDuplicate).toBeUndefined();
+    });
+
+    it('should still allow the entry when cross-device duplicate is detected', async () => {
+      // First entry from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-5' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001 },
+          deviceId: 'dev_1',
+          deviceName: 'Timer 1'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Same bib+point from different device
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-5' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200002 },
+          deviceId: 'dev_2',
+          deviceName: 'Timer 2'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.entries).toHaveLength(2); // Both entries are stored
+    });
+
+    it('should return crossDeviceDuplicate with correct deviceId', async () => {
+      // First entry from device 1
+      const req1 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-6' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200001 },
+          deviceId: 'device-abc-123',
+          deviceName: 'Start Timer'
+        }
+      };
+      await handler(req1, {}, mockRedis);
+
+      // Same bib+point from different device
+      const req2 = {
+        method: 'POST',
+        query: { raceId: 'CROSS-DUP-6' },
+        body: {
+          entry: { ...baseEntry, id: 1704067200002 },
+          deviceId: 'device-xyz-456',
+          deviceName: 'Backup Timer'
+        }
+      };
+      const result = await handler(req2, {}, mockRedis);
+
+      expect(result.body.crossDeviceDuplicate).toBeDefined();
+      expect(result.body.crossDeviceDuplicate.deviceId).toBe('device-abc-123');
+      expect(result.body.crossDeviceDuplicate.deviceName).toBe('Start Timer');
+    });
+  });
+
+  describe('Atomic Operations', () => {
+    it('should handle concurrent entries without data loss', async () => {
+      // Simulate multiple rapid entries
+      const promises = [];
+      for (let i = 0; i < 5; i++) {
+        const req = {
+          method: 'POST',
+          query: { raceId: 'ATOMIC-TEST' },
+          body: {
+            entry: {
+              id: 1704067200000 + i,
+              bib: String(i + 1).padStart(3, '0'),
+              point: 'S',
+              timestamp: new Date(Date.now() + i * 100).toISOString()
+            },
+            deviceId: `dev_${i}`,
+            deviceName: `Timer ${i}`
+          }
+        };
+        promises.push(handler(req, {}, mockRedis));
+      }
+
+      const results = await Promise.all(promises);
+
+      // All should succeed
+      results.forEach(result => {
+        expect(result.status).toBe(200);
+        expect(result.body.success).toBe(true);
+      });
+
+      // Verify final count
+      const getReq = { method: 'GET', query: { raceId: 'ATOMIC-TEST' } };
+      const finalResult = await handler(getReq, {}, mockRedis);
+      expect(finalResult.body.entries.length).toBe(5);
     });
   });
 });
