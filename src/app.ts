@@ -9,6 +9,17 @@ import type { Entry, TimingPoint, Language, RaceInfo } from './types';
 // Admin API configuration
 const ADMIN_API_BASE = '/api/admin/races';
 
+/**
+ * Get authorization headers for admin API requests
+ */
+function getAdminAuthHeaders(): HeadersInit {
+  const pin = sessionStorage.getItem('adminPin');
+  if (pin) {
+    return { 'Authorization': `Bearer ${pin}` };
+  }
+  return {};
+}
+
 // DOM Elements cache
 let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
@@ -1697,7 +1708,10 @@ function handleAdminPinVerify(): void {
   const enteredPinHash = simpleHash(enteredPin);
 
   if (enteredPinHash === storedPinHash) {
-    // PIN correct - close PIN modal and open race management
+    // PIN correct - store PIN for API auth (session only, cleared on tab close)
+    sessionStorage.setItem('adminPin', enteredPin);
+
+    // Close PIN modal and open race management
     modal.classList.remove('show');
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
@@ -1741,8 +1755,18 @@ async function loadRaceList(): Promise<void> {
   listContainer.querySelectorAll('.race-item').forEach(item => item.remove());
 
   try {
-    const response = await fetch(ADMIN_API_BASE);
+    const response = await fetch(ADMIN_API_BASE, {
+      headers: getAdminAuthHeaders()
+    });
     if (!response.ok) {
+      if (response.status === 401) {
+        // Auth failed - clear stored PIN and close modal
+        sessionStorage.removeItem('adminPin');
+        const modal = document.getElementById('race-management-modal');
+        if (modal) modal.classList.remove('show');
+        showToast(t('incorrectPin', lang), 'error');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
@@ -1839,10 +1863,19 @@ async function handleConfirmDeleteRace(): Promise<void> {
 
   try {
     const response = await fetch(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAdminAuthHeaders()
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Auth failed - clear stored PIN and close modal
+        sessionStorage.removeItem('adminPin');
+        const modal = document.getElementById('race-management-modal');
+        if (modal) modal.classList.remove('show');
+        showToast(t('incorrectPin', lang), 'error');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
