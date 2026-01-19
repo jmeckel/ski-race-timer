@@ -1321,33 +1321,68 @@ const ADMIN_PIN_KEY = 'skiTimerAdminPin';
 let pendingRaceDelete: string | null = null;
 
 /**
+ * Validate PIN format: exactly 4 digits
+ */
+function isValidPin(pin: string): boolean {
+  return /^\d{4}$/.test(pin);
+}
+
+/**
+ * Filter input to only allow numeric digits
+ */
+function filterNumericInput(input: HTMLInputElement): void {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g, '');
+  });
+}
+
+/**
+ * Update PIN status display
+ */
+function updatePinStatusDisplay(): void {
+  const lang = store.getState().currentLang;
+  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const statusEl = document.getElementById('admin-pin-status');
+  const btnTextEl = document.getElementById('change-pin-btn-text');
+
+  if (statusEl) {
+    statusEl.textContent = storedPinHash ? t('pinSet', lang) : t('pinNotSet', lang);
+  }
+  if (btnTextEl) {
+    btnTextEl.textContent = storedPinHash ? t('changePin', lang) : t('setPin', lang);
+  }
+}
+
+/**
  * Initialize race management
  */
 function initRaceManagement(): void {
-  // Admin PIN input
-  const adminPinInput = document.getElementById('admin-pin-input') as HTMLInputElement;
-  if (adminPinInput) {
-    // Load existing PIN
-    const storedPin = localStorage.getItem(ADMIN_PIN_KEY);
-    if (storedPin) {
-      adminPinInput.value = '****'; // Indicate PIN is set
-    }
+  // Update PIN status display
+  updatePinStatusDisplay();
 
-    adminPinInput.addEventListener('change', () => {
-      const pin = adminPinInput.value.trim();
-      if (pin && pin !== '****') {
-        // Store simple hash of PIN
-        const pinHash = simpleHash(pin);
-        localStorage.setItem(ADMIN_PIN_KEY, pinHash);
-        adminPinInput.value = '****';
-        showToast(t('pinSaved', store.getState().currentLang), 'success');
-      } else if (!pin) {
-        // Clear PIN
-        localStorage.removeItem(ADMIN_PIN_KEY);
-        showToast(t('pinCleared', store.getState().currentLang), 'success');
-      }
-    });
+  // Change PIN button
+  const changePinBtn = document.getElementById('change-pin-btn');
+  if (changePinBtn) {
+    changePinBtn.addEventListener('click', handleChangePinClick);
   }
+
+  // Save PIN button
+  const savePinBtn = document.getElementById('save-pin-btn');
+  if (savePinBtn) {
+    savePinBtn.addEventListener('click', handleSavePin);
+  }
+
+  // Filter numeric input for all PIN fields
+  const pinInputs = [
+    'admin-pin-verify-input',
+    'current-pin-input',
+    'new-pin-input',
+    'confirm-pin-input'
+  ];
+  pinInputs.forEach(id => {
+    const input = document.getElementById(id) as HTMLInputElement;
+    if (input) filterNumericInput(input);
+  });
 
   // Manage races button
   const manageRacesBtn = document.getElementById('manage-races-btn');
@@ -1391,6 +1426,129 @@ function initRaceManagement(): void {
   if (confirmDeleteRaceBtn) {
     confirmDeleteRaceBtn.addEventListener('click', handleConfirmDeleteRace);
   }
+}
+
+/**
+ * Handle change PIN button click
+ */
+function handleChangePinClick(): void {
+  const lang = store.getState().currentLang;
+  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const modal = document.getElementById('change-pin-modal');
+  const modalTitle = document.getElementById('change-pin-modal-title');
+  const currentPinRow = document.getElementById('current-pin-row');
+  const currentPinInput = document.getElementById('current-pin-input') as HTMLInputElement;
+  const newPinInput = document.getElementById('new-pin-input') as HTMLInputElement;
+  const confirmPinInput = document.getElementById('confirm-pin-input') as HTMLInputElement;
+
+  if (!modal) return;
+
+  // Clear all inputs and errors
+  if (currentPinInput) currentPinInput.value = '';
+  if (newPinInput) newPinInput.value = '';
+  if (confirmPinInput) confirmPinInput.value = '';
+  hideAllPinErrors();
+
+  // Show/hide current PIN field based on whether PIN is already set
+  if (storedPinHash) {
+    // Changing existing PIN - show current PIN field
+    if (currentPinRow) currentPinRow.style.display = 'block';
+    if (modalTitle) modalTitle.textContent = t('changePin', lang);
+  } else {
+    // Setting new PIN - hide current PIN field
+    if (currentPinRow) currentPinRow.style.display = 'none';
+    if (modalTitle) modalTitle.textContent = t('setPin', lang);
+  }
+
+  modal.classList.add('show');
+
+  // Focus appropriate input
+  if (storedPinHash && currentPinInput) {
+    currentPinInput.focus();
+  } else if (newPinInput) {
+    newPinInput.focus();
+  }
+}
+
+/**
+ * Hide all PIN error messages
+ */
+function hideAllPinErrors(): void {
+  const errorIds = ['current-pin-error', 'pin-mismatch-error', 'pin-format-error'];
+  errorIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+/**
+ * Handle save PIN button click
+ */
+function handleSavePin(): void {
+  const lang = store.getState().currentLang;
+  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const currentPinInput = document.getElementById('current-pin-input') as HTMLInputElement;
+  const newPinInput = document.getElementById('new-pin-input') as HTMLInputElement;
+  const confirmPinInput = document.getElementById('confirm-pin-input') as HTMLInputElement;
+  const currentPinError = document.getElementById('current-pin-error');
+  const pinMismatchError = document.getElementById('pin-mismatch-error');
+  const pinFormatError = document.getElementById('pin-format-error');
+
+  hideAllPinErrors();
+
+  // If PIN already exists, verify current PIN first
+  if (storedPinHash) {
+    const currentPin = currentPinInput?.value || '';
+    const currentPinHash = simpleHash(currentPin);
+
+    if (currentPinHash !== storedPinHash) {
+      if (currentPinError) currentPinError.style.display = 'block';
+      if (currentPinInput) {
+        currentPinInput.value = '';
+        currentPinInput.focus();
+      }
+      feedbackWarning();
+      return;
+    }
+  }
+
+  const newPin = newPinInput?.value || '';
+  const confirmPin = confirmPinInput?.value || '';
+
+  // Validate new PIN format (exactly 4 digits)
+  if (!isValidPin(newPin)) {
+    if (pinFormatError) pinFormatError.style.display = 'block';
+    if (newPinInput) {
+      newPinInput.focus();
+    }
+    feedbackWarning();
+    return;
+  }
+
+  // Verify PINs match
+  if (newPin !== confirmPin) {
+    if (pinMismatchError) pinMismatchError.style.display = 'block';
+    if (confirmPinInput) {
+      confirmPinInput.value = '';
+      confirmPinInput.focus();
+    }
+    feedbackWarning();
+    return;
+  }
+
+  // Save new PIN
+  const pinHash = simpleHash(newPin);
+  localStorage.setItem(ADMIN_PIN_KEY, pinHash);
+
+  // Close modal and show success
+  const modal = document.getElementById('change-pin-modal');
+  if (modal) modal.classList.remove('show');
+
+  showToast(t('pinSaved', lang), 'success');
+  feedbackSuccess();
+
+  // Update status display
+  updatePinStatusDisplay();
 }
 
 /**
@@ -1446,13 +1604,9 @@ function handleManageRacesClick(): void {
   const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
 
   if (!storedPinHash) {
-    // No PIN set - show message to set PIN first
+    // No PIN set - prompt to set PIN first
     showToast(t('setPinFirst', store.getState().currentLang), 'warning');
-    const adminPinInput = document.getElementById('admin-pin-input') as HTMLInputElement;
-    if (adminPinInput) {
-      adminPinInput.focus();
-      adminPinInput.value = '';
-    }
+    handleChangePinClick(); // Open the set PIN modal
     return;
   }
 
