@@ -47,6 +47,30 @@ async function authenticateWithPin(pin: string): Promise<{ success: boolean; err
   return result;
 }
 
+/**
+ * Close modal with animation
+ * Adds closing class, waits for animation, then removes show class
+ */
+function closeModal(modal: HTMLElement | null): void {
+  if (!modal || !modal.classList.contains('show')) return;
+
+  modal.classList.add('closing');
+
+  // Wait for animation to complete (150ms)
+  setTimeout(() => {
+    modal.classList.remove('show', 'closing');
+  }, 150);
+}
+
+/**
+ * Close all open modals with animation
+ */
+function closeAllModalsAnimated(): void {
+  document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+    closeModal(modal as HTMLElement);
+  });
+}
+
 // DOM Elements cache
 let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
@@ -415,7 +439,7 @@ function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Prom
     }
 
     const cleanup = () => {
-      modal.classList.remove('show');
+      closeModal(modal);
       exportBtn?.removeEventListener('click', handleExport);
       deleteBtn?.removeEventListener('click', handleDelete);
       keepBtn?.removeEventListener('click', handleKeep);
@@ -964,11 +988,11 @@ function handleSaveEdit(): void {
 }
 
 /**
- * Close all modals
+ * Close all modals with animation
  */
 function closeAllModals(): void {
   document.querySelectorAll('.modal-overlay.show').forEach(modal => {
-    modal.classList.remove('show');
+    closeModal(modal as HTMLElement);
   });
 }
 
@@ -1011,9 +1035,7 @@ function openPhotoViewer(entry: Entry): void {
  */
 function closePhotoViewer(): void {
   const modal = document.getElementById('photo-viewer-modal');
-  if (modal) {
-    modal.classList.remove('show');
-  }
+  closeModal(modal);
   currentPhotoEntryId = null;
 }
 
@@ -1658,7 +1680,7 @@ function initRaceManagement(): void {
   if (raceDeletedOkBtn) {
     raceDeletedOkBtn.addEventListener('click', () => {
       const modal = document.getElementById('race-deleted-modal');
-      if (modal) modal.classList.remove('show');
+      closeModal(modal);
     });
   }
 
@@ -1812,7 +1834,7 @@ async function handleSavePin(): Promise<void> {
 
     // Close modal and show success
     const modal = document.getElementById('change-pin-modal');
-    if (modal) modal.classList.remove('show');
+    closeModal(modal);
 
     showToast(t('pinSaved', lang), 'success');
     feedbackSuccess();
@@ -1992,7 +2014,7 @@ async function handleAdminPinVerify(): Promise<void> {
 
   if (result.success) {
     // PIN correct - open race management
-    modal.classList.remove('show');
+    closeModal(modal);
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
     openRaceManagementModal();
@@ -2062,7 +2084,7 @@ async function handleRaceJoinPinVerify(): Promise<void> {
 
   if (result.success) {
     // PIN correct
-    modal.classList.remove('show');
+    closeModal(modal);
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
     pinVerifyResolver(true);
@@ -2083,7 +2105,7 @@ function cancelRaceJoinPinVerify(): void {
   const modal = document.getElementById('admin-pin-modal');
   const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
 
-  if (modal) modal.classList.remove('show');
+  closeModal(modal);
   if (pinInput) pinInput.value = '';
 
   if (pinVerifyResolver) {
@@ -2129,7 +2151,7 @@ async function loadRaceList(): Promise<void> {
       if (response.status === 401) {
         // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
-        if (modal) modal.classList.remove('show');
+        closeModal(modal);
         showToast(t('authError', lang), 'error');
         console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
@@ -2225,7 +2247,7 @@ async function handleConfirmDeleteRace(): Promise<void> {
 
   // Close confirmation modal
   const confirmModal = document.getElementById('delete-race-confirm-modal');
-  if (confirmModal) confirmModal.classList.remove('show');
+  closeModal(confirmModal);
 
   try {
     const response = await fetchWithTimeout(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
@@ -2237,7 +2259,7 @@ async function handleConfirmDeleteRace(): Promise<void> {
       if (response.status === 401) {
         // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
-        if (modal) modal.classList.remove('show');
+        closeModal(modal);
         showToast(t('authError', lang), 'error');
         console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
