@@ -7,6 +7,7 @@ const MAX_RACE_ID_LENGTH = 50;
 const MAX_DEVICE_NAME_LENGTH = 100;
 const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds - device considered inactive after this
+const MAX_ATOMIC_RETRIES = 5; // Max retries for atomic operations
 
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
@@ -188,7 +189,7 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
   return activeCount;
 }
 
-// Update highest bib if new bib is higher
+// Update highest bib if new bib is higher (atomic with WATCH)
 async function updateHighestBib(client, normalizedRaceId, bib) {
   if (!bib) return;
 
@@ -197,13 +198,169 @@ async function updateHighestBib(client, normalizedRaceId, bib) {
 
   const highestBibKey = `race:${normalizedRaceId}:highestBib`;
 
-  // Get current highest
-  const currentHighest = await client.get(highestBibKey);
-  const currentNum = parseInt(currentHighest, 10) || 0;
+  // Use WATCH for atomic compare-and-set
+  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
+    await client.watch(highestBibKey);
 
-  if (bibNum > currentNum) {
-    await client.set(highestBibKey, String(bibNum), 'EX', CACHE_EXPIRY_SECONDS);
+    const currentHighest = await client.get(highestBibKey);
+    const currentNum = parseInt(currentHighest, 10) || 0;
+
+    if (bibNum <= currentNum) {
+      await client.unwatch();
+      return; // No update needed
+    }
+
+    const multi = client.multi();
+    multi.set(highestBibKey, String(bibNum), 'EX', CACHE_EXPIRY_SECONDS);
+    const result = await multi.exec();
+
+    if (result !== null) {
+      return; // Success
+    }
+    // WATCH detected change, retry
   }
+  console.warn('updateHighestBib: max retries exceeded');
+}
+
+/**
+ * Atomically add entry to race data using WATCH/MULTI/EXEC
+ * Returns { success, existing, isDuplicate, crossDeviceDuplicate, error }
+ */
+async function atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId) {
+  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
+    // Watch the key for changes
+    await client.watch(redisKey);
+
+    // Read current data
+    const existingData = await client.get(redisKey);
+    const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+
+    // Ensure entries is an array
+    if (!Array.isArray(existing.entries)) {
+      existing.entries = [];
+    }
+
+    // Check entry limit
+    if (existing.entries.length >= MAX_ENTRIES_PER_RACE) {
+      await client.unwatch();
+      return {
+        success: false,
+        error: `Maximum entries limit (${MAX_ENTRIES_PER_RACE}) reached for this race`,
+        existing
+      };
+    }
+
+    // Check for duplicates (same entry from same device)
+    const entryId = String(enrichedEntry.id);
+    const isDuplicate = existing.entries.some(
+      e => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
+    );
+
+    // Check for cross-device duplicates (same bib + same point from different device)
+    let crossDeviceDuplicate = null;
+    if (enrichedEntry.bib) {
+      const existingMatch = existing.entries.find(
+        e => e.bib === enrichedEntry.bib &&
+             e.point === enrichedEntry.point &&
+             e.deviceId !== sanitizedDeviceId
+      );
+      if (existingMatch) {
+        crossDeviceDuplicate = {
+          bib: existingMatch.bib,
+          point: existingMatch.point,
+          deviceName: existingMatch.deviceName || 'Unknown device',
+          timestamp: existingMatch.timestamp
+        };
+      }
+    }
+
+    if (isDuplicate) {
+      await client.unwatch();
+      return { success: true, existing, isDuplicate: true, crossDeviceDuplicate };
+    }
+
+    // Add entry and update timestamp
+    existing.entries.push(enrichedEntry);
+    existing.lastUpdated = Date.now();
+
+    // Atomic write with MULTI/EXEC
+    const multi = client.multi();
+    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
+    const result = await multi.exec();
+
+    if (result !== null) {
+      // Success - transaction committed
+      return { success: true, existing, isDuplicate: false, crossDeviceDuplicate };
+    }
+
+    // WATCH detected concurrent modification, retry
+    console.log(`atomicAddEntry: retry ${retry + 1}/${MAX_ATOMIC_RETRIES} due to concurrent modification`);
+  }
+
+  // Max retries exceeded
+  return {
+    success: false,
+    error: 'Concurrent modification conflict, please retry',
+    existing: null
+  };
+}
+
+/**
+ * Atomically delete entry from race data using WATCH/MULTI/EXEC
+ * Returns { success, wasRemoved, existing, error }
+ */
+async function atomicDeleteEntry(client, redisKey, entryIdStr, sanitizedDeviceId) {
+  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
+    // Watch the key for changes
+    await client.watch(redisKey);
+
+    // Read current data
+    const existingData = await client.get(redisKey);
+    const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+
+    // Ensure entries is an array
+    if (!Array.isArray(existing.entries)) {
+      existing.entries = [];
+    }
+
+    // Filter out the entry to delete
+    const originalLength = existing.entries.length;
+    existing.entries = existing.entries.filter(e => {
+      const idMatch = String(e.id) === entryIdStr;
+      // If deviceId provided, only delete entries from that device
+      if (sanitizedDeviceId) {
+        return !(idMatch && e.deviceId === sanitizedDeviceId);
+      }
+      return !idMatch;
+    });
+
+    const wasRemoved = existing.entries.length < originalLength;
+
+    if (!wasRemoved) {
+      await client.unwatch();
+      return { success: true, wasRemoved: false, existing };
+    }
+
+    // Update timestamp and write atomically
+    existing.lastUpdated = Date.now();
+
+    const multi = client.multi();
+    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
+    const result = await multi.exec();
+
+    if (result !== null) {
+      return { success: true, wasRemoved: true, existing };
+    }
+
+    // WATCH detected concurrent modification, retry
+    console.log(`atomicDeleteEntry: retry ${retry + 1}/${MAX_ATOMIC_RETRIES} due to concurrent modification`);
+  }
+
+  return {
+    success: false,
+    error: 'Concurrent modification conflict, please retry',
+    existing: null
+  };
 }
 
 // Get highest bib for race
@@ -358,28 +515,9 @@ export default async function handler(req, res) {
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
       const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
 
-      // Get existing data
-      const existingData = await client.get(redisKey);
-      const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
-
-      // Ensure entries is an array
-      if (!Array.isArray(existing.entries)) {
-        existing.entries = [];
-      }
-
-      // Check entry limit
-      if (existing.entries.length >= MAX_ENTRIES_PER_RACE) {
-        return res.status(400).json({
-          error: `Maximum entries limit (${MAX_ENTRIES_PER_RACE}) reached for this race`
-        });
-      }
-
-      // Convert ID to string for consistency
-      const entryId = String(entry.id);
-
       // Build enriched entry with only allowed fields
       const enrichedEntry = {
-        id: entryId,
+        id: String(entry.id),
         bib: sanitizeString(entry.bib, 10),
         point: entry.point,
         timestamp: entry.timestamp,
@@ -409,41 +547,19 @@ export default async function handler(req, res) {
         };
       }
 
-      // Check for duplicates (same entry from same device)
-      const isDuplicate = existing.entries.some(
-        e => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
-      );
+      // Atomically add entry using WATCH/MULTI/EXEC to prevent race conditions
+      const addResult = await atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId);
 
-      // Check for cross-device duplicates (same bib + same point from different device)
-      let crossDeviceDuplicate = null;
-      if (enrichedEntry.bib) {
-        const existingMatch = existing.entries.find(
-          e => e.bib === enrichedEntry.bib &&
-               e.point === enrichedEntry.point &&
-               e.deviceId !== sanitizedDeviceId
-        );
-        if (existingMatch) {
-          crossDeviceDuplicate = {
-            bib: existingMatch.bib,
-            point: existingMatch.point,
-            deviceName: existingMatch.deviceName || 'Unknown device',
-            timestamp: existingMatch.timestamp
-          };
-        }
-      }
-
-      if (!isDuplicate) {
-        existing.entries.push(enrichedEntry);
-        existing.lastUpdated = Date.now();
-
-        // Store with expiry
-        await client.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
+      if (!addResult.success) {
+        return res.status(addResult.error?.includes('limit') ? 400 : 409).json({
+          error: addResult.error
+        });
       }
 
       // Update device heartbeat
       await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
 
-      // Update highest bib
+      // Update highest bib (also atomic)
       await updateHighestBib(client, normalizedRaceId, enrichedEntry.bib);
 
       // Get active device count
@@ -454,12 +570,12 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        entries: existing.entries,
-        lastUpdated: existing.lastUpdated,
+        entries: addResult.existing.entries,
+        lastUpdated: addResult.existing.lastUpdated,
         deviceCount,
         highestBib,
         photoSkipped,
-        crossDeviceDuplicate
+        crossDeviceDuplicate: addResult.crossDeviceDuplicate
       });
     }
 
@@ -474,32 +590,11 @@ export default async function handler(req, res) {
       const entryIdStr = String(entryId);
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
 
-      // Get existing data
-      const existingData = await client.get(redisKey);
-      const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+      // Atomically delete entry using WATCH/MULTI/EXEC
+      const deleteResult = await atomicDeleteEntry(client, redisKey, entryIdStr, sanitizedDeviceId);
 
-      // Ensure entries is an array
-      if (!Array.isArray(existing.entries)) {
-        existing.entries = [];
-      }
-
-      // Remove the entry from the entries array
-      const originalLength = existing.entries.length;
-      existing.entries = existing.entries.filter(e => {
-        const idMatch = String(e.id) === entryIdStr;
-        // If deviceId provided, only delete entries from that device
-        // If no deviceId, delete all entries with matching id
-        if (sanitizedDeviceId) {
-          return !(idMatch && e.deviceId === sanitizedDeviceId);
-        }
-        return !idMatch;
-      });
-
-      const wasRemoved = existing.entries.length < originalLength;
-
-      if (wasRemoved) {
-        existing.lastUpdated = Date.now();
-        await client.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
+      if (!deleteResult.success) {
+        return res.status(409).json({ error: deleteResult.error });
       }
 
       // Add to deleted entries set (tracks all deleted IDs for sync)
@@ -520,7 +615,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        deleted: wasRemoved,
+        deleted: deleteResult.wasRemoved,
         entryId: entryIdStr,
         deviceCount
       });
