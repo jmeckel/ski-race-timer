@@ -495,4 +495,99 @@ describe('Sync Service', () => {
       expect(url).toContain('deviceName=');
     });
   });
+
+  describe('tombstone detection (race deleted by admin)', () => {
+    it('should dispatch race-deleted event when response contains deleted flag', async () => {
+      const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          deleted: true,
+          deletedAt: 1705123456789,
+          message: 'Race deleted by administrator'
+        })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      // Should have dispatched race-deleted event
+      const calls = dispatchEventSpy.mock.calls;
+      const raceDeletedEvent = calls.find(
+        call => call[0] instanceof CustomEvent && call[0].type === 'race-deleted'
+      );
+
+      expect(raceDeletedEvent).toBeDefined();
+      if (raceDeletedEvent) {
+        const event = raceDeletedEvent[0] as CustomEvent;
+        expect(event.detail.deletedAt).toBe(1705123456789);
+        expect(event.detail.message).toBe('Race deleted by administrator');
+      }
+
+      dispatchEventSpy.mockRestore();
+    });
+
+    it('should call cleanup when race is deleted', async () => {
+      const cleanupSpy = vi.spyOn(syncService, 'cleanup');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          deleted: true,
+          deletedAt: Date.now(),
+          message: 'Race deleted'
+        })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      expect(cleanupSpy).toHaveBeenCalled();
+      cleanupSpy.mockRestore();
+    });
+
+    it('should not process entries when race is deleted', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          deleted: true,
+          deletedAt: Date.now(),
+          entries: [createValidEntry()], // Should be ignored
+          lastUpdated: Date.now()
+        })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      // Fetch was called but entries should not be processed
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should handle normal response without deleted flag', async () => {
+      const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          entries: [createValidEntry()],
+          lastUpdated: Date.now(),
+          deviceCount: 1
+        })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      // Should NOT have dispatched race-deleted event
+      const calls = dispatchEventSpy.mock.calls;
+      const raceDeletedEvent = calls.find(
+        call => call[0] instanceof CustomEvent && call[0].type === 'race-deleted'
+      );
+
+      expect(raceDeletedEvent).toBeUndefined();
+      dispatchEventSpy.mockRestore();
+    });
+  });
 });

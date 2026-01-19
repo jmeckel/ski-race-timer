@@ -1,10 +1,10 @@
 /* ===== CSS Variables ===== */
-/* Skiteam Oberhaching color scheme: red, grey, white, black */
+/* Skiteam Oberhaching color scheme with blue primary for actions */
 :root {
-  --primary: #E31837;
-  --primary-dark: #C41230;
-  --secondary: #E31837;
-  --secondary-light: #FF3D5A;
+  --primary: #3B82F6;           /* Blue - primary actions */
+  --primary-dark: #2563EB;      /* Darker blue for depth */
+  --secondary: #E31837;         /* Red - brand accent, Finish point */
+  --secondary-light: #60A5FA;   /* Light blue for gradients */
   --accent: #FFFFFF;
   --background: #0D0D0D;
   --surface: #1A1A1A;
@@ -125,8 +125,8 @@ body {
 
 .entry-count-badge {
   padding: 2px 8px;
-  background: var(--primary);
-  color: var(--background);
+  background: var(--secondary);
+  color: white;
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -162,23 +162,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 12px;
+  padding: 12px 16px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 14px;
   flex-shrink: 0;
 }
 
 .bib-label {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .bib-value {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  min-width: 80px;
+  min-width: 100px;
 }
 
 /* Last Recorded Entry Display */
@@ -239,7 +240,11 @@ body {
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timing-point-btn:active {
+  transform: scale(0.95);
 }
 
 .timing-point-btn.active {
@@ -281,13 +286,15 @@ body {
   font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
   min-height: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .num-btn:active {
   background: var(--surface-elevated);
-  transform: scale(0.95);
+  transform: scale(0.95) translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .num-btn.action {
@@ -296,24 +303,31 @@ body {
   font-size: 0.875rem;
 }
 
+.num-btn.action:active {
+  background: var(--surface);
+}
+
 /* Timestamp Button */
 .timestamp-btn {
   width: 100%;
-  padding: 40px 20px;
+  padding: 56px 24px;
   border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%);
   color: white;
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(227, 24, 55, 0.3);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease-out, background 0.2s ease;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
   flex-shrink: 0;
+  position: relative;
 }
 
 .timestamp-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 /* Pulse animation when ready to record */
@@ -323,11 +337,40 @@ body {
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(227, 24, 55, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
   50% {
-    box-shadow: 0 4px 24px rgba(227, 24, 55, 0.6);
+    box-shadow: 0 4px 24px rgba(59, 130, 246, 0.6);
   }
+}
+
+/* Flash animation when time is recorded */
+@keyframes recordFlash {
+  0% { background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(96, 165, 250, 0.8) 100%); }
+  100% { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%); }
+}
+
+.timestamp-btn.flash {
+  animation: recordFlash 0.3s ease-out;
+}
+
+/* Photo capture icon on timestamp button */
+.timestamp-photo-icon {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  opacity: 0.85;
+}
+
+.timestamp-photo-icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.timestamp-btn.photo-enabled .timestamp-photo-icon {
+  display: block;
 }
 
 /* ===== Results View ===== */
@@ -358,6 +401,13 @@ body {
   background: var(--background);
   color: var(--text-primary);
   font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .search-input::placeholder {
@@ -371,6 +421,13 @@ body {
   background: var(--background);
   color: var(--text-primary);
   font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .stats-row {
@@ -423,11 +480,19 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, box-shadow 0.15s ease;
 }
 
 .action-btn:active {
+  transform: scale(0.97);
   background: var(--primary);
+  color: white;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .action-btn.danger {
@@ -446,7 +511,7 @@ body {
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--primary);
-  color: var(--background);
+  color: white;
   font-weight: 600;
 }
 
@@ -517,7 +582,7 @@ body {
   background: var(--surface-elevated);
   border-radius: 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toggle-slider::before {
@@ -529,7 +594,8 @@ body {
   top: 4px;
   background: white;
   border-radius: 50%;
-  transition: transform 0.2s;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -538,6 +604,7 @@ body {
 
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 /* Text Input */
@@ -549,11 +616,13 @@ body {
   background: var(--background);
   color: var(--text-primary);
   font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .text-input:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* Race Exists Indicator */
@@ -595,12 +664,16 @@ body {
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease, transform 0.15s ease;
+}
+
+.lang-option:active {
+  transform: scale(0.95);
 }
 
 .lang-option.active {
   background: var(--primary);
-  color: var(--background);
+  color: white;
 }
 
 /* ===== Tab Bar ===== */
@@ -609,6 +682,7 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--surface-elevated);
   padding-bottom: env(safe-area-inset-bottom);
+  position: relative;
 }
 
 .tab-btn {
@@ -623,16 +697,43 @@ body {
   color: var(--text-tertiary);
   font-size: 0.75rem;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
+  position: relative;
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 40px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 0 0 2px 2px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn:active {
+  transform: scale(0.95);
 }
 
 .tab-btn.active {
   color: var(--primary);
 }
 
+.tab-btn.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
 .tab-btn svg {
   width: 24px;
   height: 24px;
+  transition: transform 0.2s ease;
+}
+
+.tab-btn.active svg {
+  transform: scale(1.05);
 }
 
 /* ===== Modal ===== */
@@ -663,11 +764,11 @@ body {
 @keyframes modalIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(10px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -700,7 +801,11 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, box-shadow 0.15s ease;
+}
+
+.modal-btn:active {
+  transform: scale(0.97);
 }
 
 .modal-btn.secondary {
@@ -708,14 +813,30 @@ body {
   color: var(--text-primary);
 }
 
+.modal-btn.secondary:active {
+  background: var(--surface);
+}
+
 .modal-btn.primary {
   background: var(--primary);
-  color: var(--background);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.modal-btn.primary:active {
+  background: var(--primary-dark);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.4);
 }
 
 .modal-btn.danger {
   background: var(--error);
   color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.modal-btn.danger:active {
+  background: #DC2626;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
 }
 
 .modal-btn.text-danger {
@@ -943,7 +1064,7 @@ body {
   left: 0;
   padding: 12px 16px;
   background: var(--primary);
-  color: var(--background);
+  color: white;
   z-index: 10000;
   transition: top 0.2s;
 }
@@ -973,16 +1094,16 @@ body {
   }
 
   .timestamp-btn {
-    padding: 32px 16px;
-    font-size: 1.25rem;
+    padding: 44px 20px;
+    font-size: 1.75rem;
   }
 
   .bib-display {
-    padding: 6px;
+    padding: 10px 14px;
   }
 
   .bib-value {
-    font-size: 1.75rem;
+    font-size: 2.25rem;
   }
 
   .timing-point-btn {
@@ -1005,9 +1126,9 @@ body {
   }
 
   .timestamp-btn {
-    padding: 28px 14px;
-    font-size: 1.125rem;
-    border-radius: 12px;
+    padding: 36px 16px;
+    font-size: 1.5rem;
+    border-radius: 16px;
   }
 }
 
@@ -1024,6 +1145,89 @@ body {
   .number-pad {
     width: 50%;
   }
+}
+
+/* ===== Race Management ===== */
+.race-management-content {
+  max-width: 400px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.race-management-content .modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.race-list {
+  padding: 8px;
+  min-height: 100px;
+}
+
+.race-list-loading,
+.race-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.race-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-elevated);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.race-item:last-child {
+  margin-bottom: 0;
+}
+
+.race-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.race-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.race-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.race-delete-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--error);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.race-delete-btn:active {
+  transform: scale(0.95);
+  background: #DC2626;
 }
 
 /* ===== Print Styles ===== */

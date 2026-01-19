@@ -267,6 +267,18 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      // Check for tombstone (race deleted by admin)
+      const tombstoneKey = `race:${normalizedRaceId}:deleted`;
+      const tombstoneData = await client.get(tombstoneKey);
+      if (tombstoneData) {
+        const tombstone = safeJsonParse(tombstoneData, {});
+        return res.status(200).json({
+          deleted: true,
+          deletedAt: tombstone.deletedAt || Date.now(),
+          message: tombstone.message || 'Race deleted by administrator'
+        });
+      }
+
       // Handle checkOnly query - just check if race exists
       if (req.query.checkOnly === 'true') {
         const data = await client.get(redisKey);
@@ -300,6 +312,18 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      // Check for tombstone (race deleted by admin)
+      const tombstoneKey = `race:${normalizedRaceId}:deleted`;
+      const tombstoneData = await client.get(tombstoneKey);
+      if (tombstoneData) {
+        const tombstone = safeJsonParse(tombstoneData, {});
+        return res.status(200).json({
+          deleted: true,
+          deletedAt: tombstone.deletedAt || Date.now(),
+          message: tombstone.message || 'Race deleted by administrator'
+        });
+      }
+
       const { entry, deviceId, deviceName } = req.body || {};
 
       // Validate entry

@@ -174,6 +174,20 @@ class SyncService {
         throw new Error('Invalid data structure');
       }
 
+      // Check if race was deleted by admin
+      if (data.deleted) {
+        console.log('Race was deleted by admin, dispatching race-deleted event');
+        window.dispatchEvent(new CustomEvent('race-deleted', {
+          detail: {
+            raceId: state.raceId,
+            deletedAt: data.deletedAt,
+            message: data.message
+          }
+        }));
+        this.cleanup();
+        return;
+      }
+
       const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
 
       // Update sync status

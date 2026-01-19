@@ -130,6 +130,18 @@ export interface SyncResponse {
   highestBib?: number;
   raceExists?: boolean;
   photoSkipped?: boolean;
+  // Tombstone response when race is deleted by admin
+  deleted?: boolean;
+  deletedAt?: number;
+  message?: string;
+}
+
+// Race info for admin race management
+export interface RaceInfo {
+  raceId: string;
+  entryCount: number;
+  deviceCount: number;
+  lastUpdated: number | null;
 }
 
 // Export format types

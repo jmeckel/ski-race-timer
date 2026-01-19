@@ -4,7 +4,10 @@ import { syncService, gpsService, cameraService, captureTimingPhoto } from './se
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel } from './utils';
 import { t } from './i18n/translations';
-import type { Entry, TimingPoint, Language } from './types';
+import type { Entry, TimingPoint, Language, RaceInfo } from './types';
+
+// Admin API configuration
+const ADMIN_API_BASE = '/api/admin/races';
 
 // DOM Elements cache
 let clock: Clock | null = null;
@@ -29,6 +32,7 @@ export function initApp(): void {
   initResultsView();
   initSettingsView();
   initModals();
+  initRaceManagement();
 
   // Subscribe to state changes
   store.subscribe(handleStateChange);
@@ -44,6 +48,9 @@ export function initApp(): void {
   if (settings.photoCapture) {
     cameraService.initialize();
   }
+
+  // Listen for race deleted events from sync service
+  window.addEventListener('race-deleted', handleRaceDeleted as EventListener);
 
   // Resume audio context on first interaction
   document.addEventListener('click', resumeAudio, { once: true });
@@ -959,6 +966,11 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
     updateGpsIndicator();
   }
 
+  // Update photo capture indicator on timestamp button
+  if (changedKeys.includes('settings')) {
+    updatePhotoCaptureIndicator();
+  }
+
   // Update undo button
   if (changedKeys.includes('undoStack')) {
     updateUndoButton();
@@ -976,6 +988,7 @@ function updateUI(): void {
   updateEntryCountBadge();
   updateSyncStatusIndicator();
   updateGpsIndicator();
+  updatePhotoCaptureIndicator();
   updateUndoButton();
   updateSettingsInputs();
   updateTranslations();
@@ -1126,6 +1139,17 @@ function updateGpsIndicator(): void {
 
   if (text) {
     text.textContent = 'GPS';
+  }
+}
+
+/**
+ * Update photo capture indicator on timestamp button
+ */
+function updatePhotoCaptureIndicator(): void {
+  const state = store.getState();
+  const timestampBtn = document.getElementById('timestamp-btn');
+  if (timestampBtn) {
+    timestampBtn.classList.toggle('photo-enabled', state.settings.photoCapture);
   }
 }
 
@@ -1287,5 +1311,341 @@ function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): 
   } else {
     indicator.classList.add('new');
     textEl.textContent = t('raceNew', lang);
+  }
+}
+
+// ===== Race Management Functions =====
+
+// Store admin PIN hash in localStorage
+const ADMIN_PIN_KEY = 'skiTimerAdminPin';
+let pendingRaceDelete: string | null = null;
+
+/**
+ * Initialize race management
+ */
+function initRaceManagement(): void {
+  // Admin PIN input
+  const adminPinInput = document.getElementById('admin-pin-input') as HTMLInputElement;
+  if (adminPinInput) {
+    // Load existing PIN
+    const storedPin = localStorage.getItem(ADMIN_PIN_KEY);
+    if (storedPin) {
+      adminPinInput.value = '****'; // Indicate PIN is set
+    }
+
+    adminPinInput.addEventListener('change', () => {
+      const pin = adminPinInput.value.trim();
+      if (pin && pin !== '****') {
+        // Store simple hash of PIN
+        const pinHash = simpleHash(pin);
+        localStorage.setItem(ADMIN_PIN_KEY, pinHash);
+        adminPinInput.value = '****';
+        showToast(t('pinSaved', store.getState().currentLang), 'success');
+      } else if (!pin) {
+        // Clear PIN
+        localStorage.removeItem(ADMIN_PIN_KEY);
+        showToast(t('pinCleared', store.getState().currentLang), 'success');
+      }
+    });
+  }
+
+  // Manage races button
+  const manageRacesBtn = document.getElementById('manage-races-btn');
+  if (manageRacesBtn) {
+    manageRacesBtn.addEventListener('click', handleManageRacesClick);
+  }
+
+  // Admin PIN modal verify button
+  const adminPinVerifyBtn = document.getElementById('admin-pin-verify-btn');
+  if (adminPinVerifyBtn) {
+    adminPinVerifyBtn.addEventListener('click', handleAdminPinVerify);
+  }
+
+  // Admin PIN modal input - verify on Enter
+  const adminPinVerifyInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+  if (adminPinVerifyInput) {
+    adminPinVerifyInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleAdminPinVerify();
+      }
+    });
+  }
+
+  // Race deleted modal OK button
+  const raceDeletedOkBtn = document.getElementById('race-deleted-ok-btn');
+  if (raceDeletedOkBtn) {
+    raceDeletedOkBtn.addEventListener('click', () => {
+      const modal = document.getElementById('race-deleted-modal');
+      if (modal) modal.classList.remove('show');
+    });
+  }
+
+  // Refresh races button
+  const refreshRacesBtn = document.getElementById('refresh-races-btn');
+  if (refreshRacesBtn) {
+    refreshRacesBtn.addEventListener('click', loadRaceList);
+  }
+
+  // Confirm delete race button
+  const confirmDeleteRaceBtn = document.getElementById('confirm-delete-race-btn');
+  if (confirmDeleteRaceBtn) {
+    confirmDeleteRaceBtn.addEventListener('click', handleConfirmDeleteRace);
+  }
+}
+
+/**
+ * Simple hash function for PIN (not cryptographically secure, but adequate for local UI protection)
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Handle race deleted event from sync service
+ */
+function handleRaceDeleted(event: CustomEvent<{ raceId: string; deletedAt: number; message: string }>): void {
+  const { raceId, message } = event.detail;
+  const lang = store.getState().currentLang;
+
+  // Update modal text
+  const textEl = document.getElementById('race-deleted-text');
+  if (textEl) {
+    textEl.textContent = `${t('raceDeletedFor', lang)} "${raceId}". ${message || t('raceDeletedText', lang)}`;
+  }
+
+  // Show modal
+  const modal = document.getElementById('race-deleted-modal');
+  if (modal) {
+    modal.classList.add('show');
+  }
+
+  // Disable sync and clear race ID
+  store.updateSettings({ sync: false });
+  store.setRaceId('');
+
+  // Update UI
+  const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+  if (syncToggle) syncToggle.checked = false;
+
+  const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
+  if (raceIdInput) raceIdInput.value = '';
+
+  feedbackWarning();
+}
+
+/**
+ * Handle manage races button click
+ */
+function handleManageRacesClick(): void {
+  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+
+  if (!storedPinHash) {
+    // No PIN set - show message to set PIN first
+    showToast(t('setPinFirst', store.getState().currentLang), 'warning');
+    const adminPinInput = document.getElementById('admin-pin-input') as HTMLInputElement;
+    if (adminPinInput) {
+      adminPinInput.focus();
+      adminPinInput.value = '';
+    }
+    return;
+  }
+
+  // Show PIN verification modal
+  const modal = document.getElementById('admin-pin-modal');
+  const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+  const errorEl = document.getElementById('admin-pin-error');
+
+  if (modal && pinInput && errorEl) {
+    pinInput.value = '';
+    errorEl.style.display = 'none';
+    modal.classList.add('show');
+    pinInput.focus();
+  }
+}
+
+/**
+ * Handle admin PIN verification
+ */
+function handleAdminPinVerify(): void {
+  const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+  const errorEl = document.getElementById('admin-pin-error');
+  const modal = document.getElementById('admin-pin-modal');
+
+  if (!pinInput || !modal) return;
+
+  const enteredPin = pinInput.value.trim();
+  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const enteredPinHash = simpleHash(enteredPin);
+
+  if (enteredPinHash === storedPinHash) {
+    // PIN correct - close PIN modal and open race management
+    modal.classList.remove('show');
+    pinInput.value = '';
+    if (errorEl) errorEl.style.display = 'none';
+    openRaceManagementModal();
+  } else {
+    // PIN incorrect
+    if (errorEl) errorEl.style.display = 'block';
+    pinInput.value = '';
+    pinInput.focus();
+    feedbackWarning();
+  }
+}
+
+/**
+ * Open race management modal and load race list
+ */
+function openRaceManagementModal(): void {
+  const modal = document.getElementById('race-management-modal');
+  if (modal) {
+    modal.classList.add('show');
+    loadRaceList();
+  }
+}
+
+/**
+ * Load and display race list from admin API
+ */
+async function loadRaceList(): Promise<void> {
+  const listContainer = document.getElementById('race-list');
+  const loadingEl = document.getElementById('race-list-loading');
+  const emptyEl = document.getElementById('race-list-empty');
+  const lang = store.getState().currentLang;
+
+  if (!listContainer) return;
+
+  // Show loading
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Remove existing race items
+  listContainer.querySelectorAll('.race-item').forEach(item => item.remove());
+
+  try {
+    const response = await fetch(ADMIN_API_BASE);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const races: RaceInfo[] = data.races || [];
+
+    // Hide loading
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (races.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    // Render race items
+    races.forEach(race => {
+      const raceItem = createRaceItem(race, lang);
+      listContainer.appendChild(raceItem);
+    });
+
+  } catch (error) {
+    console.error('Failed to load race list:', error);
+    if (loadingEl) loadingEl.style.display = 'none';
+    showToast(t('loadError', lang), 'error');
+  }
+}
+
+/**
+ * Create a race item element
+ */
+function createRaceItem(race: RaceInfo, lang: Language): HTMLElement {
+  const item = document.createElement('div');
+  item.className = 'race-item';
+  item.setAttribute('data-race-id', race.raceId);
+
+  const info = document.createElement('div');
+  info.className = 'race-info';
+
+  const raceIdEl = document.createElement('span');
+  raceIdEl.className = 'race-id';
+  raceIdEl.textContent = race.raceId.toUpperCase();
+
+  const meta = document.createElement('span');
+  meta.className = 'race-meta';
+  const entriesText = race.entryCount === 1 ? t('entry', lang) : t('entries', lang);
+  const devicesText = race.deviceCount === 1 ? t('device', lang) : t('devices', lang);
+  meta.textContent = `${race.entryCount} ${entriesText}, ${race.deviceCount} ${devicesText}`;
+
+  info.appendChild(raceIdEl);
+  info.appendChild(meta);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'race-delete-btn danger';
+  deleteBtn.textContent = t('delete', lang);
+  deleteBtn.addEventListener('click', () => promptDeleteRace(race.raceId));
+
+  item.appendChild(info);
+  item.appendChild(deleteBtn);
+
+  return item;
+}
+
+/**
+ * Prompt to delete a race
+ */
+function promptDeleteRace(raceId: string): void {
+  const lang = store.getState().currentLang;
+  pendingRaceDelete = raceId;
+
+  const modal = document.getElementById('delete-race-confirm-modal');
+  const textEl = document.getElementById('delete-race-confirm-text');
+
+  if (textEl) {
+    textEl.textContent = `${t('confirmDeleteRaceText', lang)} "${raceId.toUpperCase()}"?`;
+  }
+
+  if (modal) {
+    modal.classList.add('show');
+  }
+}
+
+/**
+ * Handle confirm delete race
+ */
+async function handleConfirmDeleteRace(): Promise<void> {
+  if (!pendingRaceDelete) return;
+
+  const raceId = pendingRaceDelete;
+  const lang = store.getState().currentLang;
+
+  // Close confirmation modal
+  const confirmModal = document.getElementById('delete-race-confirm-modal');
+  if (confirmModal) confirmModal.classList.remove('show');
+
+  try {
+    const response = await fetch(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      showToast(`${t('raceDeletedSuccess', lang)} ${raceId.toUpperCase()}`, 'success');
+      feedbackDelete();
+      // Refresh the list
+      loadRaceList();
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (error) {
+    console.error('Failed to delete race:', error);
+    showToast(t('deleteError', lang), 'error');
+  } finally {
+    pendingRaceDelete = null;
   }
 }

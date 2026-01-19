@@ -61,6 +61,27 @@
         <!-- Clock -->
         <div class="clock-container" id="clock-container"></div>
 
+        <!-- Timing Points -->
+        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
+          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
+            <span data-i18n="start">Start</span>
+          </button>
+          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
+            <span data-i18n="finish">Finish</span>
+          </button>
+        </div>
+
+        <!-- Timestamp Button -->
+        <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">
+          <span data-i18n="time">TIME</span>
+          <span class="timestamp-photo-icon" id="timestamp-photo-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </span>
+        </button>
+
         <!-- Last Recorded -->
         <div class="last-recorded" id="last-recorded">
           <span data-i18n="lastRecorded">Last recorded:</span>
@@ -73,16 +94,6 @@
         <div class="bib-display">
           <span class="bib-label" data-i18n="bib">Bib</span>
           <span class="bib-value">---</span>
-        </div>
-
-        <!-- Timing Points -->
-        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
-          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
-            <span data-i18n="start">Start</span>
-          </button>
-          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
-            <span data-i18n="finish">Finish</span>
-          </button>
         </div>
 
         <!-- Number Pad -->
@@ -106,11 +117,6 @@
             </svg>
           </button>
         </div>
-
-        <!-- Timestamp Button -->
-        <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">
-          <span data-i18n="time">TIME</span>
-        </button>
       </div>
 
       <!-- Results View -->
@@ -317,6 +323,31 @@
           </div>
         </div>
 
+        <!-- Admin Section -->
+        <div class="settings-section">
+          <div class="settings-section-title" data-i18n="admin">Admin</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="adminPin">Admin PIN</span>
+              <span class="setting-description" data-i18n="adminPinDesc">Required to manage races</span>
+            </div>
+            <input type="password" class="text-input" id="admin-pin-input" placeholder="****" maxlength="8" style="max-width: 100px; text-align: center;">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="manageRaces">Manage Races</span>
+              <span class="setting-description" data-i18n="manageRacesDesc">View and delete synced races</span>
+            </div>
+            <button class="action-btn" id="manage-races-btn" style="flex: 0; padding: 8px 16px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <span data-i18n="manage">Manage</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Version -->
         <div class="settings-section">
           <div class="setting-row" style="justify-content: center; color: var(--text-tertiary); font-size: 0.75rem;">
@@ -456,6 +487,78 @@
       <div class="modal-footer">
         <button class="modal-btn text-danger" id="photo-viewer-delete-btn" data-i18n="deletePhoto">Delete Photo</button>
         <button class="modal-btn primary" id="photo-viewer-close-footer-btn" data-i18n="close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Deleted Modal -->
+  <div class="modal-overlay" id="race-deleted-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="raceDeleted">Race Deleted</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="race-deleted-text" data-i18n="raceDeletedText">This race has been deleted by an administrator.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn primary" id="race-deleted-ok-btn" data-i18n="ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Management Modal -->
+  <div class="modal-overlay" id="race-management-modal">
+    <div class="modal-content race-management-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
+      </div>
+      <div class="modal-body">
+        <div class="race-list" id="race-list">
+          <div class="race-list-loading" id="race-list-loading">
+            <span data-i18n="loading">Loading...</span>
+          </div>
+          <div class="race-list-empty" id="race-list-empty" style="display: none;">
+            <span data-i18n="noRaces">No active races</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="close">Close</button>
+        <button class="modal-btn secondary" id="refresh-races-btn" data-i18n="refresh">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin PIN Modal -->
+  <div class="modal-overlay" id="admin-pin-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="admin-pin-modal-title" data-i18n="enterAdminPin">Enter Admin PIN</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="admin-pin-modal-text" data-i18n="enterPinText">Enter the admin PIN to access race management.</p>
+        <input type="password" class="text-input" id="admin-pin-verify-input" placeholder="****" maxlength="8" style="margin-top: 12px; text-align: center; font-size: 1.25rem; letter-spacing: 0.2em;">
+        <p class="admin-pin-error" id="admin-pin-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="incorrectPin">Incorrect PIN</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="admin-pin-verify-btn" data-i18n="verify">Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Race Confirmation Modal -->
+  <div class="modal-overlay" id="delete-race-confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="confirmDeleteRace">Delete Race</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="delete-race-confirm-text">Are you sure you want to delete this race?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn danger" id="confirm-delete-race-btn" data-i18n="delete">Delete</button>
       </div>
     </div>
   </div>

@@ -126,7 +126,35 @@ export const translations: Record<Language, Translations> = {
     entriesInCloud: 'entries in cloud',
 
     // Photo sync
-    photoTooLarge: 'Photo too large for sync'
+    photoTooLarge: 'Photo too large for sync',
+
+    // Race Management
+    admin: 'Admin',
+    adminPin: 'Admin PIN',
+    adminPinDesc: 'Required to manage races',
+    manageRaces: 'Manage Races',
+    manageRacesDesc: 'View and delete synced races',
+    manage: 'Manage',
+    enterAdminPin: 'Enter Admin PIN',
+    enterPinText: 'Enter the admin PIN to access race management.',
+    incorrectPin: 'Incorrect PIN',
+    verify: 'Verify',
+    setPinFirst: 'Please set an Admin PIN first',
+    pinSaved: 'Admin PIN saved',
+    pinCleared: 'Admin PIN cleared',
+    loading: 'Loading...',
+    noRaces: 'No active races',
+    refresh: 'Refresh',
+    raceDeleted: 'Race Deleted',
+    raceDeletedText: 'This race has been deleted by an administrator.',
+    raceDeletedFor: 'Race deleted:',
+    raceDeletedSuccess: 'Race deleted:',
+    confirmDeleteRace: 'Delete Race',
+    confirmDeleteRaceText: 'Are you sure you want to delete race',
+    loadError: 'Failed to load races',
+    deleteError: 'Failed to delete race',
+    entry: 'entry',
+    device: 'device'
   },
 
   de: {
@@ -254,7 +282,35 @@ export const translations: Record<Language, Translations> = {
     entriesInCloud: 'Einträge in Cloud',
 
     // Photo sync
-    photoTooLarge: 'Foto zu groß für Sync'
+    photoTooLarge: 'Foto zu groß für Sync',
+
+    // Race Management
+    admin: 'Admin',
+    adminPin: 'Admin-PIN',
+    adminPinDesc: 'Erforderlich für Rennverwaltung',
+    manageRaces: 'Rennen verwalten',
+    manageRacesDesc: 'Synchronisierte Rennen anzeigen und löschen',
+    manage: 'Verwalten',
+    enterAdminPin: 'Admin-PIN eingeben',
+    enterPinText: 'Geben Sie die Admin-PIN ein, um die Rennverwaltung zu öffnen.',
+    incorrectPin: 'Falsche PIN',
+    verify: 'Bestätigen',
+    setPinFirst: 'Bitte zuerst Admin-PIN festlegen',
+    pinSaved: 'Admin-PIN gespeichert',
+    pinCleared: 'Admin-PIN gelöscht',
+    loading: 'Laden...',
+    noRaces: 'Keine aktiven Rennen',
+    refresh: 'Aktualisieren',
+    raceDeleted: 'Rennen gelöscht',
+    raceDeletedText: 'Dieses Rennen wurde von einem Administrator gelöscht.',
+    raceDeletedFor: 'Rennen gelöscht:',
+    raceDeletedSuccess: 'Rennen gelöscht:',
+    confirmDeleteRace: 'Rennen löschen',
+    confirmDeleteRaceText: 'Möchten Sie das Rennen wirklich löschen',
+    loadError: 'Fehler beim Laden der Rennen',
+    deleteError: 'Fehler beim Löschen des Rennens',
+    entry: 'Eintrag',
+    device: 'Gerät'
   }
 };
 
