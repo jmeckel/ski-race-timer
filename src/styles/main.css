@@ -34,8 +34,7 @@
 
 html {
   height: 100%;
-  /* Use surface color so safe area shows tab bar color, not black */
-  background: var(--surface);
+  background: var(--background);
 }
 
 body {
@@ -47,17 +46,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* iOS PWA standalone mode fix for bottom gap */
-/* The min-height hack: add safe-area-inset-top to prevent bottom white bar */
-@media all and (display-mode: standalone) {
-  html {
-    min-height: calc(100% + env(safe-area-inset-top));
-  }
-  body {
-    min-height: calc(100% + env(safe-area-inset-top));
-  }
 }
 
 /* ===== Ripple Effect ===== */
@@ -100,13 +88,19 @@ body {
 }
 
 /* ===== App Container ===== */
+/* Use position: fixed to properly fill viewport in iOS PWA standalone mode */
 .app {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding-top: var(--safe-top);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--background);
 }
 
@@ -775,7 +769,6 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--surface-elevated);
   flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tab-btn {
