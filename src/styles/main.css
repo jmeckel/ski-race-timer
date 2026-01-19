@@ -225,7 +225,6 @@ body {
 .timing-points {
   display: flex;
   gap: 8px;
-  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -310,7 +309,7 @@ body {
 /* Timestamp Button */
 .timestamp-btn {
   width: 100%;
-  padding: 56px 24px;
+  padding: 42px 24px;
   border: none;
   border-radius: 20px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%);
@@ -1094,7 +1093,7 @@ body {
   }
 
   .timestamp-btn {
-    padding: 44px 20px;
+    padding: 33px 20px;
     font-size: 1.75rem;
   }
 
@@ -1126,7 +1125,7 @@ body {
   }
 
   .timestamp-btn {
-    padding: 36px 16px;
+    padding: 27px 16px;
     font-size: 1.5rem;
     border-radius: 16px;
   }

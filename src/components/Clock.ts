@@ -10,6 +10,7 @@ export class Clock {
   private container: HTMLElement;
   private timeElement: HTMLElement;
   private dateElement: HTMLElement;
+  private dateRow: HTMLElement;
   private lastTimeStr = '';
   private animationId: number | null = null;
   private isRunning = false;
@@ -20,10 +21,24 @@ export class Clock {
     this.container.innerHTML = '';
 
     this.timeElement = this.createTimeElement();
-    this.dateElement = this.createDateElement();
+    this.dateRow = this.createDateRow();
+    this.dateElement = this.dateRow.querySelector('.clock-date') as HTMLElement;
 
     this.container.appendChild(this.timeElement);
-    this.container.appendChild(this.dateElement);
+    this.container.appendChild(this.dateRow);
+
+    // Move timing points into the date row
+    this.moveTimingPointsToDateRow();
+  }
+
+  /**
+   * Move timing points from their original location into the date row
+   */
+  private moveTimingPointsToDateRow(): void {
+    const timingPoints = document.getElementById('timing-points');
+    if (timingPoints && this.dateRow) {
+      this.dateRow.appendChild(timingPoints);
+    }
   }
 
   /**
@@ -60,18 +75,29 @@ export class Clock {
   }
 
   /**
-   * Create date display element
+   * Create date row with date and timing points container
    */
-  private createDateElement(): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'clock-date';
-    el.style.cssText = `
+  private createDateRow(): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'clock-date-row';
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding: 0 8px;
+      width: 100%;
+    `;
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'clock-date';
+    dateEl.style.cssText = `
       font-size: 0.875rem;
       color: var(--text-secondary);
-      margin-top: 4px;
-      text-align: center;
     `;
-    return el;
+
+    row.appendChild(dateEl);
+    return row;
   }
 
   /**
