@@ -175,30 +175,37 @@ async function recordTimestamp(): Promise<void> {
   const state = store.getState();
 
   if (state.isRecording) return;
+
+  // CRITICAL: Capture timestamp IMMEDIATELY before any async operations
+  const preciseTimestamp = new Date().toISOString();
+  const gpsCoords = gpsService.getCoordinates();
+
   store.setRecording(true);
 
   try {
-    // Capture photo if enabled
-    let photo: string | null = null;
-    if (state.settings.photoCapture) {
-      photo = await captureTimingPhoto();
-    }
-
-    // Get GPS coordinates if available
-    const gpsCoords = gpsService.getCoordinates();
-
-    // Create entry
+    // Create entry with precise timestamp (captured before photo)
     const entry: Entry = {
       id: generateEntryId(state.deviceId),
       bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
       point: state.selectedPoint,
-      timestamp: new Date().toISOString(),
+      timestamp: preciseTimestamp,
       status: 'ok',
       deviceId: state.deviceId,
       deviceName: state.deviceName,
-      photo: photo || undefined,
       gpsCoords
     };
+
+    // Capture photo asynchronously - don't block timestamp recording
+    if (state.settings.photoCapture) {
+      captureTimingPhoto()
+        .then(photo => {
+          if (photo) {
+            // Update entry with photo after capture completes
+            store.updateEntry(entry.id, { photo });
+          }
+        })
+        .catch(err => console.error('Photo capture failed:', err));
+    }
 
     // Check for duplicate (only if bib is entered)
     const isDuplicate = entry.bib && state.entries.some(
