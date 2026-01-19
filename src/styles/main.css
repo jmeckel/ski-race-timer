@@ -95,7 +95,6 @@ body {
   max-width: 430px;
   margin: 0 auto;
   padding-top: var(--safe-top);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ===== Main Content ===== */
@@ -763,6 +762,7 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--surface-elevated);
   flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tab-btn {
