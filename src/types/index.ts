@@ -5,7 +5,7 @@ export type TimingPoint = 'S' | 'F';
 export type EntryStatus = 'ok' | 'dns' | 'dnf' | 'dsq';
 
 // Sync status types
-export type SyncStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'offline';
+export type SyncStatus = 'disconnected' | 'connecting' | 'connected' | 'syncing' | 'error' | 'offline';
 
 // Language types
 export type Language = 'en' | 'de';

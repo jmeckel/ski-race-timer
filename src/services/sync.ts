@@ -203,6 +203,12 @@ class SyncService {
     const state = store.getState();
     if (!state.settings.sync || !state.raceId) return;
 
+    // Set syncing status to show activity indicator
+    const previousStatus = state.syncStatus;
+    if (previousStatus === 'connected' || previousStatus === 'connecting') {
+      store.setSyncStatus('syncing');
+    }
+
     try {
       // Include deviceId and deviceName for heartbeat tracking
       const params = new URLSearchParams({

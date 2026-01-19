@@ -1386,9 +1386,11 @@ function updateSyncStatusIndicator(): void {
   }
 
   if (dot) {
-    dot.classList.remove('connected', 'error', 'offline');
+    dot.classList.remove('connected', 'error', 'offline', 'syncing');
     if (state.syncStatus === 'connected') {
       dot.classList.add('connected');
+    } else if (state.syncStatus === 'syncing') {
+      dot.classList.add('syncing');
     } else if (state.syncStatus === 'error') {
       dot.classList.add('error');
     } else if (state.syncStatus === 'offline') {

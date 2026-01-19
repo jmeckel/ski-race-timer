@@ -52,6 +52,7 @@ export const translations: Record<Language, Translations> = {
     // Sync
     connected: 'Connected',
     connecting: 'Connecting...',
+    syncing: 'Syncing...',
     offline: 'Offline',
     syncError: 'Sync error',
     syncReceived: 'Synced from cloud',
@@ -247,6 +248,7 @@ export const translations: Record<Language, Translations> = {
     // Sync
     connected: 'Verbunden',
     connecting: 'Verbinde...',
+    syncing: 'Synchronisiere...',
     offline: 'Offline',
     syncError: 'Sync-Fehler',
     syncReceived: 'Von Cloud synchronisiert',
