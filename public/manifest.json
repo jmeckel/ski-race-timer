@@ -1,6 +1,6 @@
 {
   "name": "Ski Race Timer",
-  "short_name": "RaceTimer",
+  "short_name": "Ski Race Timer",
   "description": "GPS-synchronisierte Zeitmessung für Skirennen",
   "start_url": "/",
   "display": "standalone",

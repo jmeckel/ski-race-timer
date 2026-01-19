@@ -30,7 +30,7 @@ export default defineConfig({
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'Ski Race Timer',
-        short_name: 'Ski Timer',
+        short_name: 'Ski Race Timer',
         description: 'GPS-synchronized race timing for ski races',
         theme_color: '#0D0D0D',
         background_color: '#0D0D0D',
