@@ -1251,7 +1251,7 @@
         function isValidCloudEntry(entry) {
             if (!entry || typeof entry !== 'object') return false;
             if (typeof entry.id !== 'number' || entry.id <= 0) return false;
-            if (!['S', 'I1', 'I2', 'I3', 'F'].includes(entry.point)) return false;
+            if (!['S', 'F'].includes(entry.point)) return false;
             if (!entry.timestamp) return false;
             return true;
         }

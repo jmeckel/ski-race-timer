@@ -162,11 +162,6 @@ describe('Format Utilities', () => {
       expect(getPointColor('F')).toBe('var(--secondary)');
     });
 
-    it('should return primary color for intermediate points', () => {
-      expect(getPointColor('I1')).toBe('var(--primary)');
-      expect(getPointColor('I2')).toBe('var(--primary)');
-      expect(getPointColor('I3')).toBe('var(--primary)');
-    });
   });
 
   describe('getPointLabel', () => {
@@ -178,12 +173,6 @@ describe('Format Utilities', () => {
     it('should return English labels', () => {
       expect(getPointLabel('S', 'en')).toBe('Start');
       expect(getPointLabel('F', 'en')).toBe('Finish');
-    });
-
-    it('should return intermediate labels', () => {
-      expect(getPointLabel('I1', 'en')).toBe('Int 1');
-      expect(getPointLabel('I2', 'en')).toBe('Int 2');
-      expect(getPointLabel('I3', 'en')).toBe('Int 3');
     });
   });
 

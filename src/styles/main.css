@@ -254,10 +254,6 @@ body {
   --point-color: var(--secondary);
 }
 
-.timing-point-btn[data-point^="I"] {
-  --point-color: var(--primary);
-}
-
 .timing-point-btn.active {
   border-color: var(--point-color);
   color: var(--point-color);

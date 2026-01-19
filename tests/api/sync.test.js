@@ -59,7 +59,7 @@ function isValidEntry(entry) {
   if (typeof entry.id !== 'number' || entry.id <= 0) return false;
   if (entry.bib !== undefined && typeof entry.bib !== 'string') return false;
   if (entry.bib && entry.bib.length > 10) return false;
-  if (!['S', 'I1', 'I2', 'I3', 'F'].includes(entry.point)) return false;
+  if (!['S', 'F'].includes(entry.point)) return false;
   if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
   if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status)) return false;
   return true;

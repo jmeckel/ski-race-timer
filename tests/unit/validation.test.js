@@ -24,7 +24,7 @@ function isValidEntry(entry) {
   if (typeof entry.id !== 'number' || entry.id <= 0) return false;
   if (entry.bib !== undefined && typeof entry.bib !== 'string') return false;
   if (entry.bib && entry.bib.length > 10) return false;
-  if (!['S', 'I1', 'I2', 'I3', 'F'].includes(entry.point)) return false;
+  if (!['S', 'F'].includes(entry.point)) return false;
   if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
   if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status)) return false;
   return true;
@@ -156,7 +156,7 @@ describe('isValidEntry', () => {
     });
 
     it('should accept all valid timing points', () => {
-      ['S', 'I1', 'I2', 'I3', 'F'].forEach(point => {
+      ['S', 'F'].forEach(point => {
         expect(isValidEntry({ ...validEntry, point })).toBe(true);
       });
     });
@@ -324,8 +324,8 @@ describe('checkDuplicate', () => {
   });
 
   it('should return false for non-existing combination', () => {
-    expect(checkDuplicate(entries, '001', 'I1')).toBe(false);
     expect(checkDuplicate(entries, '003', 'S')).toBe(false);
+    expect(checkDuplicate(entries, '003', 'F')).toBe(false);
   });
 
   it('should return false for null bib', () => {

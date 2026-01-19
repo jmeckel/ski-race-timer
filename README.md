@@ -9,7 +9,7 @@ A GPS-synchronized Progressive Web App (PWA) for precise ski race timing. Design
 - **Offline-First** - Full functionality without internet connection
 - **PWA Support** - Install as native app on iOS and Android
 - **GPS Time Sync** - Optional GPS-based time synchronization
-- **Multiple Timing Points** - Start (S), Intermediate (I1-I3), Finish (F)
+- **Timing Points** - Start (S) and Finish (F)
 - **Data Export** - CSV and JSON export with averaged times
 - **Backup/Restore** - Full data backup and restore capability
 - **Bilingual** - English and German language support
@@ -156,9 +156,6 @@ Add a new entry.
 | Code | Description |
 |------|-------------|
 | S | Start |
-| I1 | Intermediate 1 |
-| I2 | Intermediate 2 |
-| I3 | Intermediate 3 |
 | F | Finish |
 
 ### Settings
@@ -198,7 +195,7 @@ const CACHE_NAME = 'ski-race-timer-v13';
 {
   id: Number,           // Timestamp-based unique ID
   bib: String,          // Racer bib number
-  point: String,        // Timing point (S/I1/I2/I3/F)
+  point: String,        // Timing point (S/F)
   timestamp: String,    // ISO 8601 timestamp
   status: String,       // Entry status (ok/dns/dnf/dsq)
   deviceId: String,     // Source device ID

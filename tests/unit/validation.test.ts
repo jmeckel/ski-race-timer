@@ -45,9 +45,6 @@ describe('Validation Utilities', () => {
 
     it('should validate all timing points', () => {
       expect(isValidEntry({ ...validEntry, point: 'S' })).toBe(true);
-      expect(isValidEntry({ ...validEntry, point: 'I1' })).toBe(true);
-      expect(isValidEntry({ ...validEntry, point: 'I2' })).toBe(true);
-      expect(isValidEntry({ ...validEntry, point: 'I3' })).toBe(true);
       expect(isValidEntry({ ...validEntry, point: 'F' })).toBe(true);
     });
 

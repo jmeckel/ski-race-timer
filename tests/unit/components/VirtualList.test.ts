@@ -204,13 +204,13 @@ describe('VirtualList Component', () => {
       const entries = [
         { ...createEntry(1), point: 'S' as const },
         { ...createEntry(2), point: 'F' as const },
-        { ...createEntry(3), point: 'I1' as const }
+        { ...createEntry(3), point: 'F' as const }
       ];
 
       list.setEntries(entries);
       list.applyFilters(undefined, 'F');
 
-      expect(list.getVisibleCount()).toBe(1);
+      expect(list.getVisibleCount()).toBe(2);
 
       list.destroy();
     });

@@ -247,12 +247,6 @@ describe('getPointColor', () => {
     expect(getPointColor('F')).toBe('var(--secondary)');
   });
 
-  it('should return default color for intermediate points', () => {
-    expect(getPointColor('I1')).toBe('var(--text-secondary)');
-    expect(getPointColor('I2')).toBe('var(--text-secondary)');
-    expect(getPointColor('I3')).toBe('var(--text-secondary)');
-  });
-
   it('should return default for unknown points', () => {
     expect(getPointColor('X')).toBe('var(--text-secondary)');
   });

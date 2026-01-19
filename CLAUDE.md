@@ -20,14 +20,14 @@ All application code lives in `/public/index.html` with inline CSS and JavaScrip
 ### Key Components
 
 The app has three tab-based views:
-1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Intermediate 1-3/Finish), number pad
+1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Finish), number pad
 2. **Results** - List of recorded times, CSV export, entry editing/deletion, statistics
 3. **Settings** - GPS sync status, auto-increment bib toggle, haptic feedback, language toggle (EN/DE)
 
 ### Data Storage
 
 - Uses browser LocalStorage with keys `skiTimerEntries` (race data) and `skiTimerLang` (language preference)
-- Entry format: `{ id, bib, point: 'S'|'I1'|'I2'|'I3'|'F', timestamp }`
+- Entry format: `{ id, bib, point: 'S'|'F', timestamp }`
 
 ### PWA Structure
 

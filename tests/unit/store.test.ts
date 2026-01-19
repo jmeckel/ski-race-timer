@@ -494,8 +494,8 @@ describe('Store', () => {
       store.setSelectedPoint('S');
       expect(store.getState().selectedPoint).toBe('S');
 
-      store.setSelectedPoint('I1');
-      expect(store.getState().selectedPoint).toBe('I1');
+      store.setSelectedPoint('F');
+      expect(store.getState().selectedPoint).toBe('F');
     });
 
     it('should set select mode', () => {
