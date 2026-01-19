@@ -52,6 +52,10 @@ export function initApp(): void {
   // Listen for race deleted events from sync service
   window.addEventListener('race-deleted', handleRaceDeleted as EventListener);
 
+  // Listen for storage errors and warnings
+  window.addEventListener('storage-error', handleStorageError as EventListener);
+  window.addEventListener('storage-warning', handleStorageWarning as EventListener);
+
   // Resume audio context on first interaction
   document.addEventListener('click', resumeAudio, { once: true });
   document.addEventListener('touchstart', resumeAudio, { once: true });
@@ -1614,6 +1618,42 @@ function handleRaceDeleted(event: CustomEvent<{ raceId: string; deletedAt: numbe
   if (raceIdInput) raceIdInput.value = '';
 
   feedbackWarning();
+}
+
+/**
+ * Handle storage error event - CRITICAL for data integrity
+ */
+function handleStorageError(event: CustomEvent<{ message: string; isQuotaError: boolean; entryCount: number }>): void {
+  const { isQuotaError, entryCount } = event.detail;
+  const lang = store.getState().currentLang;
+
+  if (isQuotaError) {
+    // Storage quota exceeded - this is critical
+    showToast(t('storageQuotaError', lang), 'error', 8000);
+  } else {
+    // General storage error
+    showToast(t('storageError', lang), 'error', 5000);
+  }
+
+  // Also trigger haptic feedback to ensure user notices
+  feedbackWarning();
+
+  console.error('Storage error:', event.detail, `Entries at risk: ${entryCount}`);
+}
+
+/**
+ * Handle storage warning event - storage is getting full
+ */
+function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number; percent: number }>): void {
+  const { percent } = event.detail;
+  const lang = store.getState().currentLang;
+
+  // Only show warning once per session to avoid spam
+  const warningShown = sessionStorage.getItem('storage-warning-shown');
+  if (!warningShown) {
+    showToast(`${t('storageWarning', lang)} (${percent}%)`, 'warning', 5000);
+    sessionStorage.setItem('storage-warning-shown', 'true');
+  }
 }
 
 /**

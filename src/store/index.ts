@@ -194,6 +194,9 @@ class Store {
   // Save state to localStorage
   private saveToStorage() {
     try {
+      // Check storage quota if available
+      this.checkStorageQuota();
+
       localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(this.state.entries));
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.state.settings));
       localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
@@ -204,7 +207,43 @@ class Store {
       localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
     } catch (e) {
       console.error('Failed to save to storage:', e);
+      // Notify user of storage failure - this is critical for a timing app
+      this.dispatchStorageError(e as Error);
     }
+  }
+
+  // Check storage quota and warn if running low
+  private async checkStorageQuota() {
+    if (navigator.storage?.estimate) {
+      try {
+        const { usage, quota } = await navigator.storage.estimate();
+        if (quota && usage) {
+          const usagePercent = usage / quota;
+          if (usagePercent > 0.9) {
+            // Storage is over 90% full - warn user
+            window.dispatchEvent(new CustomEvent('storage-warning', {
+              detail: { usage, quota, percent: Math.round(usagePercent * 100) }
+            }));
+          }
+        }
+      } catch (e) {
+        // Quota check failed, continue anyway
+        console.warn('Could not check storage quota:', e);
+      }
+    }
+  }
+
+  // Dispatch storage error event for UI notification
+  private dispatchStorageError(error: Error) {
+    window.dispatchEvent(new CustomEvent('storage-error', {
+      detail: {
+        message: error.message,
+        isQuotaError: error.name === 'QuotaExceededError' ||
+                      error.message.includes('quota') ||
+                      error.message.includes('storage'),
+        entryCount: this.state.entries.length
+      }
+    }));
   }
 
   // Push action to undo stack

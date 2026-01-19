@@ -163,7 +163,12 @@ export const translations: Record<Language, Translations> = {
     loadError: 'Failed to load races',
     deleteError: 'Failed to delete race',
     entry: 'entry',
-    device: 'device'
+    device: 'device',
+
+    // Storage errors
+    storageError: 'Failed to save data - check storage',
+    storageQuotaError: 'Storage full! Export data immediately',
+    storageWarning: 'Storage almost full'
   },
 
   de: {
@@ -328,7 +333,12 @@ export const translations: Record<Language, Translations> = {
     loadError: 'Fehler beim Laden der Rennen',
     deleteError: 'Fehler beim Löschen des Rennens',
     entry: 'Eintrag',
-    device: 'Gerät'
+    device: 'Gerät',
+
+    // Storage errors
+    storageError: 'Speichern fehlgeschlagen - Speicher prüfen',
+    storageQuotaError: 'Speicher voll! Daten sofort exportieren',
+    storageWarning: 'Speicher fast voll'
   }
 };
 
