@@ -1,21 +1,50 @@
 import { store } from './store';
 import { Clock, VirtualList, showToast, PullToRefresh } from './components';
 import { syncService, gpsService, cameraService, captureTimingPhoto } from './services';
+import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
-import { generateEntryId, getPointLabel } from './utils';
+import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
+import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import type { Entry, TimingPoint, Language, RaceInfo } from './types';
+
+// Initialize Vercel Speed Insights
+injectSpeedInsights();
 
 // Admin API configuration
 const ADMIN_API_BASE = '/api/admin/races';
-const SERVER_API_PIN = '1977'; // Fixed PIN for API authentication (must match Vercel ADMIN_PIN)
+const AUTH_TOKEN_KEY = 'skiTimerAuthToken'; // localStorage key for JWT auth token
 
 /**
- * Get authorization headers for admin API requests
- * Uses fixed server PIN - separate from user-configurable client PIN
+ * Get authorization headers for API requests
+ * Uses JWT token for authentication
  */
 function getAdminAuthHeaders(): HeadersInit {
-  return { 'Authorization': `Bearer ${SERVER_API_PIN}` };
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return {};
+}
+
+/**
+ * Check if user is authenticated (has valid token)
+ */
+function isAuthenticated(): boolean {
+  return hasAuthToken();
+}
+
+/**
+ * Authenticate with PIN and get JWT token
+ * Returns true if authentication succeeded
+ */
+async function authenticateWithPin(pin: string): Promise<{ success: boolean; error?: string; isNewPin?: boolean }> {
+  const result = await exchangePinForToken(pin);
+  if (result.success) {
+    updatePinStatusDisplay();
+  }
+  return result;
 }
 
 // DOM Elements cache
@@ -61,6 +90,9 @@ export function initApp(): void {
   // Listen for race deleted events from sync service
   window.addEventListener('race-deleted', handleRaceDeleted as EventListener);
 
+  // Listen for auth expired events from sync service
+  window.addEventListener('auth-expired', handleAuthExpired as EventListener);
+
   // Listen for storage errors and warnings
   window.addEventListener('storage-error', handleStorageError as EventListener);
   window.addEventListener('storage-warning', handleStorageWarning as EventListener);
@@ -68,6 +100,9 @@ export function initApp(): void {
   // Resume audio context on first interaction
   document.addEventListener('click', resumeAudio, { once: true });
   document.addEventListener('touchstart', resumeAudio, { once: true });
+
+  // Cleanup on page unload to prevent memory leaks
+  window.addEventListener('beforeunload', handleBeforeUnload);
 
   // Apply initial state
   applySettings();
@@ -210,14 +245,19 @@ async function recordTimestamp(): Promise<void> {
 
     // Capture photo asynchronously - don't block timestamp recording
     if (state.settings.photoCapture) {
+      // Capture entry ID in local const to prevent race condition
+      // This ensures photo attaches to correct entry even if multiple timestamps recorded rapidly
+      const entryId = entry.id;
       captureTimingPhoto()
         .then(photo => {
           if (photo) {
             // Update entry with photo after capture completes
-            store.updateEntry(entry.id, { photo });
+            store.updateEntry(entryId, { photo });
           }
         })
-        .catch(err => console.error('Photo capture failed:', err));
+        .catch(err => {
+          logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
+        });
     }
 
     // Check for duplicate (only if bib is entered)
@@ -240,8 +280,8 @@ async function recordTimestamp(): Promise<void> {
     // Sync to cloud
     syncService.broadcastEntry(entry);
 
-    // Auto-increment bib if enabled and a bib was entered
-    if (state.settings.auto && state.bibInput) {
+    // Auto-increment bib only on Finish (F) - Start keeps same bib for the racer
+    if (state.settings.auto && state.bibInput && state.selectedPoint === 'F') {
       const localNext = parseInt(state.bibInput, 10) + 1;
       // If sync is enabled, use the max of local next and cloud highest + 1
       const nextBib = state.settings.sync && state.cloudHighestBib > 0
@@ -251,10 +291,11 @@ async function recordTimestamp(): Promise<void> {
     } else if (!state.bibInput) {
       // Keep empty if no bib was entered
       store.setBibInput('');
-    } else {
+    } else if (!state.settings.auto) {
       // Clear bib if auto-increment is off
       store.setBibInput('');
     }
+    // If auto is on but point is Start, keep bib for finish recording
 
     // Update last recorded display
     updateLastRecorded(entry);
@@ -277,7 +318,8 @@ function showConfirmation(entry: Entry): void {
 
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    pointEl.textContent = entry.point;
+    const state = store.getState();
+    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
     pointEl.style.color = getPointColor(entry.point);
   }
   if (timeEl) {
@@ -285,6 +327,8 @@ function showConfirmation(entry: Entry): void {
     timeEl.textContent = formatTimeDisplay(date);
   }
 
+  // Set timing point for colored border (green=Start, orange=Finish)
+  overlay.dataset.point = entry.point;
   overlay.classList.add('show');
 
   setTimeout(() => {
@@ -481,9 +525,16 @@ function initResultsActions(): void {
   if (undoBtn) {
     undoBtn.addEventListener('click', () => {
       if (store.canUndo()) {
-        store.undo();
+        const result = store.undo();
         feedbackUndo();
         showToast(t('undone', store.getState().currentLang), 'success');
+
+        // Sync undo to cloud if it was an ADD_ENTRY (entry was removed)
+        const state = store.getState();
+        if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
+          const entry = result.data as Entry;
+          syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+        }
       }
     });
   }
@@ -664,8 +715,35 @@ function initSettingsView(): void {
         }
       }
 
-      store.setRaceId(newRaceId);
+      // Validate race ID format (allow empty to clear)
+      if (newRaceId && !isValidRaceId(newRaceId)) {
+        showToast(t('invalidRaceId', state.currentLang), 'error');
+        raceIdInput.value = state.raceId;
+        feedbackWarning();
+        return;
+      }
+
+      // Verify PIN before joining race if sync is enabled
       if (state.settings.sync && newRaceId) {
+        const pinVerified = await verifyPinForRaceJoin(state.currentLang);
+        if (!pinVerified) {
+          // PIN verification cancelled or failed - restore old race ID
+          raceIdInput.value = state.raceId;
+          return;
+        }
+      }
+
+      // Cleanup old sync service before changing race ID (fixes BroadcastChannel leak)
+      if (state.settings.sync && state.raceId) {
+        syncService.cleanup();
+      }
+
+      // Normalize race ID to lowercase (aligns with server-side normalization)
+      const normalizedRaceId = newRaceId.toLowerCase();
+      raceIdInput.value = normalizedRaceId; // Update UI to show normalized value
+
+      store.setRaceId(normalizedRaceId);
+      if (state.settings.sync && normalizedRaceId) {
         syncService.initialize();
         store.markCurrentRaceAsSynced();
       }
@@ -709,6 +787,15 @@ function initModals(): void {
   const saveEditBtn = document.getElementById('save-edit-btn');
   if (saveEditBtn) {
     saveEditBtn.addEventListener('click', handleSaveEdit);
+  }
+
+  // Edit bib input - numeric only validation
+  const editBibInput = document.getElementById('edit-bib-input') as HTMLInputElement;
+  if (editBibInput) {
+    editBibInput.addEventListener('input', () => {
+      // Remove non-numeric characters and limit to 3 digits
+      editBibInput.value = editBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
+    });
   }
 
   // Photo viewer close buttons (X and footer Close)
@@ -801,23 +888,53 @@ function promptDelete(entry: Entry): void {
 /**
  * Handle confirm delete
  */
-function handleConfirmDelete(): void {
+async function handleConfirmDelete(): Promise<void> {
   const modal = document.getElementById('confirm-modal');
   if (!modal) return;
 
   const action = modal.getAttribute('data-action');
   const entryId = modal.getAttribute('data-entry-id');
+  const state = store.getState();
 
   if (action === 'clearAll') {
+    // Get all entries before clearing to sync deletions
+    const entriesToDelete = [...state.entries];
     store.clearAll();
-    showToast(t('cleared', store.getState().currentLang), 'success');
+
+    // Sync deletions to cloud
+    if (state.settings.sync && state.raceId) {
+      for (const entry of entriesToDelete) {
+        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      }
+    }
+
+    showToast(t('cleared', state.currentLang), 'success');
   } else if (action === 'deleteSelected') {
-    const ids = Array.from(store.getState().selectedEntries);
+    const ids = Array.from(state.selectedEntries);
+
+    // Get entries before deleting to sync deletions
+    const entriesToDelete = state.entries.filter(e => ids.includes(e.id));
     store.deleteMultiple(ids);
-    showToast(t('deleted', store.getState().currentLang), 'success');
+
+    // Sync deletions to cloud
+    if (state.settings.sync && state.raceId) {
+      for (const entry of entriesToDelete) {
+        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      }
+    }
+
+    showToast(t('deleted', state.currentLang), 'success');
   } else if (entryId) {
+    // Get entry before deleting to sync deletion
+    const entryToDelete = state.entries.find(e => e.id === entryId);
     store.deleteEntry(entryId);
-    showToast(t('deleted', store.getState().currentLang), 'success');
+
+    // Sync deletion to cloud
+    if (state.settings.sync && state.raceId && entryToDelete) {
+      syncService.deleteEntryFromCloud(entryToDelete.id, entryToDelete.deviceId);
+    }
+
+    showToast(t('deleted', state.currentLang), 'success');
   }
 
   feedbackDelete();
@@ -875,7 +992,8 @@ function openPhotoViewer(entry: Entry): void {
   if (image) image.src = `data:image/jpeg;base64,${entry.photo}`;
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    pointEl.textContent = entry.point;
+    const state = store.getState();
+    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
     const pointColor = getPointColor(entry.point);
     pointEl.style.background = pointColor;
     pointEl.style.color = 'var(--background)';
@@ -917,6 +1035,40 @@ function deletePhoto(): void {
 }
 
 /**
+ * Convert ISO timestamp to Race Horology time format (HH:MM:SS,ss)
+ * Race Horology expects time-of-day format like ALGE timing devices
+ * Uses comma as decimal separator (European standard)
+ */
+function formatTimeForRaceHorology(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+  const hundredths = Math.floor(date.getMilliseconds() / 10).toString().padStart(2, '0');
+  return `${hours}:${minutes}:${seconds},${hundredths}`;
+}
+
+/**
+ * Escape a field for CSV export
+ * Prevents CSV injection attacks and handles special characters
+ */
+function escapeCSVField(field: string): string {
+  if (!field) return '';
+
+  // Prevent CSV injection by prefixing formula characters
+  if (/^[=+\-@]/.test(field)) {
+    field = "'" + field;
+  }
+
+  // Escape quotes and wrap in quotes if contains special chars (using semicolon as delimiter)
+  if (/[";,\n\r]/.test(field)) {
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+
+  return field;
+}
+
+/**
  * Export results
  */
 function exportResults(): void {
@@ -927,13 +1079,14 @@ function exportResults(): void {
   }
 
   // Create CSV content (Race Horology format)
+  // Headers: Startnummer (bib), Messpunkt (timing point), Zeit (time in HH:MM:SS.ss)
   const headers = ['Startnummer', 'Messpunkt', 'Zeit', 'Status', 'Gerät'];
   const rows = state.entries.map(entry => [
-    entry.bib,
-    entry.point,
-    entry.timestamp,
+    escapeCSVField(entry.bib),
+    entry.point === 'S' ? 'ST' : 'FT', // ST=Start, FT=Finish (standard timing designators)
+    formatTimeForRaceHorology(entry.timestamp),
     entry.status.toUpperCase(),
-    entry.deviceName || ''
+    escapeCSVField(entry.deviceName || '')
   ]);
 
   const csvContent = [
@@ -1260,6 +1413,9 @@ function updateTranslations(): void {
       (el as HTMLInputElement).placeholder = t(key, lang);
     }
   });
+
+  // Update dynamically set text that depends on language
+  updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
 }
 
 /**
@@ -1308,6 +1464,9 @@ function formatTimeDisplay(date: Date): string {
   return `${hours}:${minutes}:${seconds}.${ms}`;
 }
 
+// Track race exists state for language updates
+let lastRaceExistsState: { exists: boolean | null; entryCount: number } = { exists: null, entryCount: 0 };
+
 /**
  * Check if race exists in cloud
  */
@@ -1321,6 +1480,9 @@ async function checkRaceExists(raceId: string): Promise<void> {
  * Update race exists indicator UI
  */
 function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): void {
+  // Store state for language updates
+  lastRaceExistsState = { exists, entryCount };
+
   const indicator = document.getElementById('race-exists-indicator');
   const textEl = document.getElementById('race-exists-text');
   const lang = store.getState().currentLang;
@@ -1348,21 +1510,34 @@ function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): 
 
 // ===== Race Management Functions =====
 
-// Store admin PIN hash in localStorage
-const ADMIN_PIN_KEY = 'skiTimerAdminPin';
-const DEFAULT_ADMIN_PIN = '1977'; // Must match ADMIN_PIN in Vercel env
+const DEFAULT_ADMIN_PIN = '1111'; // Default client PIN (synced across devices)
 let pendingRaceDelete: string | null = null;
 
 /**
- * Initialize default admin PIN if not already set
+ * Initialize admin PIN - sync from cloud or set default
  */
-function initializeDefaultAdminPin(): void {
-  const existingPin = localStorage.getItem(ADMIN_PIN_KEY);
-  if (!existingPin) {
-    // Set default PIN hash
-    const defaultPinHash = simpleHash(DEFAULT_ADMIN_PIN);
-    localStorage.setItem(ADMIN_PIN_KEY, defaultPinHash);
-    console.log('Default admin PIN initialized');
+async function initializeAdminPin(): Promise<void> {
+  // If we already have a valid token, we're done
+  if (hasAuthToken()) {
+    console.log('Auth token already exists');
+    return;
+  }
+
+  // Try to authenticate with default PIN
+  // This will either:
+  // 1. Set the default PIN in Redis and return a token (if no PIN exists)
+  // 2. Authenticate with existing default PIN (if it matches)
+  // 3. Fail (if a different PIN is set in Redis)
+  const result = await authenticateWithPin(DEFAULT_ADMIN_PIN);
+  if (result.success) {
+    if (result.isNewPin) {
+      console.log('Default admin PIN initialized');
+    } else {
+      console.log('Authenticated with default PIN');
+    }
+  } else {
+    // A different PIN is set - user needs to authenticate manually
+    console.log('Custom PIN is set, manual authentication required');
   }
 }
 
@@ -1387,15 +1562,15 @@ function filterNumericInput(input: HTMLInputElement): void {
  */
 function updatePinStatusDisplay(): void {
   const lang = store.getState().currentLang;
-  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const authenticated = hasAuthToken();
   const statusEl = document.getElementById('admin-pin-status');
   const btnTextEl = document.getElementById('change-pin-btn-text');
 
   if (statusEl) {
-    statusEl.textContent = storedPinHash ? t('pinSet', lang) : t('pinNotSet', lang);
+    statusEl.textContent = authenticated ? t('pinSet', lang) : t('pinNotSet', lang);
   }
   if (btnTextEl) {
-    btnTextEl.textContent = storedPinHash ? t('changePin', lang) : t('setPin', lang);
+    btnTextEl.textContent = authenticated ? t('changePin', lang) : t('setPin', lang);
   }
 }
 
@@ -1403,10 +1578,13 @@ function updatePinStatusDisplay(): void {
  * Initialize race management
  */
 function initRaceManagement(): void {
-  // Initialize default admin PIN if not already set
-  initializeDefaultAdminPin();
+  // Initialize admin PIN (sync from cloud or set default) - fire and forget
+  initializeAdminPin().then(() => {
+    // Update PIN status display after sync completes
+    updatePinStatusDisplay();
+  });
 
-  // Update PIN status display
+  // Update PIN status display immediately (will be updated again after sync)
   updatePinStatusDisplay();
 
   // Change PIN button
@@ -1439,10 +1617,16 @@ function initRaceManagement(): void {
     manageRacesBtn.addEventListener('click', handleManageRacesClick);
   }
 
-  // Admin PIN modal verify button
+  // Admin PIN modal verify button - handles both race join and race management
   const adminPinVerifyBtn = document.getElementById('admin-pin-verify-btn');
   if (adminPinVerifyBtn) {
-    adminPinVerifyBtn.addEventListener('click', handleAdminPinVerify);
+    adminPinVerifyBtn.addEventListener('click', () => {
+      if (pinVerifyResolver) {
+        handleRaceJoinPinVerify();
+      } else {
+        handleAdminPinVerify();
+      }
+    });
   }
 
   // Admin PIN modal input - verify on Enter
@@ -1450,7 +1634,21 @@ function initRaceManagement(): void {
   if (adminPinVerifyInput) {
     adminPinVerifyInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        handleAdminPinVerify();
+        if (pinVerifyResolver) {
+          handleRaceJoinPinVerify();
+        } else {
+          handleAdminPinVerify();
+        }
+      }
+    });
+  }
+
+  // Admin PIN modal cancel - handle race join cancellation
+  const adminPinModal = document.getElementById('admin-pin-modal');
+  if (adminPinModal) {
+    adminPinModal.addEventListener('click', (e) => {
+      if (e.target === adminPinModal && pinVerifyResolver) {
+        cancelRaceJoinPinVerify();
       }
     });
   }
@@ -1482,7 +1680,7 @@ function initRaceManagement(): void {
  */
 function handleChangePinClick(): void {
   const lang = store.getState().currentLang;
-  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const authenticated = hasAuthToken();
   const modal = document.getElementById('change-pin-modal');
   const modalTitle = document.getElementById('change-pin-modal-title');
   const currentPinRow = document.getElementById('current-pin-row');
@@ -1499,7 +1697,7 @@ function handleChangePinClick(): void {
   hideAllPinErrors();
 
   // Show/hide current PIN field based on whether PIN is already set
-  if (storedPinHash) {
+  if (authenticated) {
     // Changing existing PIN - show current PIN field
     if (currentPinRow) currentPinRow.style.display = 'block';
     if (modalTitle) modalTitle.textContent = t('changePin', lang);
@@ -1512,7 +1710,7 @@ function handleChangePinClick(): void {
   modal.classList.add('show');
 
   // Focus appropriate input
-  if (storedPinHash && currentPinInput) {
+  if (authenticated && currentPinInput) {
     currentPinInput.focus();
   } else if (newPinInput) {
     newPinInput.focus();
@@ -1533,9 +1731,9 @@ function hideAllPinErrors(): void {
 /**
  * Handle save PIN button click
  */
-function handleSavePin(): void {
+async function handleSavePin(): Promise<void> {
   const lang = store.getState().currentLang;
-  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
+  const authenticated = hasAuthToken();
   const currentPinInput = document.getElementById('current-pin-input') as HTMLInputElement;
   const newPinInput = document.getElementById('new-pin-input') as HTMLInputElement;
   const confirmPinInput = document.getElementById('confirm-pin-input') as HTMLInputElement;
@@ -1545,12 +1743,13 @@ function handleSavePin(): void {
 
   hideAllPinErrors();
 
-  // If PIN already exists, verify current PIN first
-  if (storedPinHash) {
+  // If already authenticated (PIN exists), verify current PIN first
+  if (authenticated) {
     const currentPin = currentPinInput?.value || '';
-    const currentPinHash = simpleHash(currentPin);
 
-    if (currentPinHash !== storedPinHash) {
+    // Verify current PIN by trying to authenticate with it
+    const verifyResult = await exchangePinForToken(currentPin);
+    if (!verifyResult.success) {
       if (currentPinError) currentPinError.style.display = 'block';
       if (currentPinInput) {
         currentPinInput.value = '';
@@ -1585,32 +1784,57 @@ function handleSavePin(): void {
     return;
   }
 
-  // Save new PIN
-  const pinHash = simpleHash(newPin);
-  localStorage.setItem(ADMIN_PIN_KEY, pinHash);
+  // Update PIN in Redis via admin/pin API
+  const newPinHash = await hashPin(newPin);
+  try {
+    const response = await fetch('/api/admin/pin', {
+      method: 'POST',
+      headers: {
+        ...getAdminAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ pinHash: newPinHash })
+    });
 
-  // Close modal and show success
-  const modal = document.getElementById('change-pin-modal');
-  if (modal) modal.classList.remove('show');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-  showToast(t('pinSaved', lang), 'success');
-  feedbackSuccess();
+    // Clear old token and get new one with new PIN
+    clearAuthToken();
+    const authResult = await authenticateWithPin(newPin);
 
-  // Update status display
-  updatePinStatusDisplay();
+    if (!authResult.success) {
+      showToast(t('pinSyncFailed', lang), 'error');
+      feedbackWarning();
+      return;
+    }
+
+    // Close modal and show success
+    const modal = document.getElementById('change-pin-modal');
+    if (modal) modal.classList.remove('show');
+
+    showToast(t('pinSaved', lang), 'success');
+    feedbackSuccess();
+
+    // Update status display
+    updatePinStatusDisplay();
+  } catch (error) {
+    logWarning('Admin', 'handleSavePin', error, 'pinSyncFailed');
+    showToast(t('pinSyncFailed', lang), 'error');
+    feedbackWarning();
+  }
 }
 
 /**
- * Simple hash function for PIN (not cryptographically secure, but adequate for local UI protection)
+ * Cryptographically secure hash function for PIN using SHA-256
  */
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -1647,6 +1871,31 @@ function handleRaceDeleted(event: CustomEvent<{ raceId: string; deletedAt: numbe
 }
 
 /**
+ * Handle auth token expired event from sync service
+ */
+function handleAuthExpired(event: CustomEvent<{ message: string }>): void {
+  const { message } = event.detail;
+  const lang = store.getState().currentLang;
+
+  // Show toast notification about session expiry
+  showToast(message || 'Session expired. Please re-enter your PIN.', 'warning', 5000);
+
+  // Prompt for PIN re-authentication using existing modal
+  verifyPinForRaceJoin(lang).then((verified) => {
+    if (verified) {
+      // Re-initialize sync after successful authentication
+      const state = store.getState();
+      if (state.settings.sync && state.raceId) {
+        syncService.initialize();
+      }
+      showToast('Authentication successful', 'success');
+    }
+  });
+
+  feedbackWarning();
+}
+
+/**
  * Handle storage error event - CRITICAL for data integrity
  */
 function handleStorageError(event: CustomEvent<{ message: string; isQuotaError: boolean; entryCount: number }>): void {
@@ -1655,16 +1904,16 @@ function handleStorageError(event: CustomEvent<{ message: string; isQuotaError: 
 
   if (isQuotaError) {
     // Storage quota exceeded - this is critical
-    showToast(t('storageQuotaError', lang), 'error', 8000);
+    showToast(t('storageQuotaError', lang), 'error', TOAST_DURATION.CRITICAL);
   } else {
     // General storage error
-    showToast(t('storageError', lang), 'error', 5000);
+    showToast(t('storageError', lang), 'error', TOAST_DURATION.ERROR);
   }
 
   // Also trigger haptic feedback to ensure user notices
   feedbackWarning();
 
-  console.error('Storage error:', event.detail, `Entries at risk: ${entryCount}`);
+  console.error('[Storage] saveEntries:', event.detail.message, { entryCount, isQuotaError });
 }
 
 /**
@@ -1677,21 +1926,39 @@ function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number;
   // Only show warning once per session to avoid spam
   const warningShown = sessionStorage.getItem('storage-warning-shown');
   if (!warningShown) {
-    showToast(`${t('storageWarning', lang)} (${percent}%)`, 'warning', 5000);
+    showToast(`${t('storageWarning', lang)} (${percent}%)`, 'warning', TOAST_DURATION.WARNING);
     sessionStorage.setItem('storage-warning-shown', 'true');
   }
+}
+
+/**
+ * Handle page unload - cleanup to prevent memory leaks
+ */
+function handleBeforeUnload(): void {
+  // Cleanup clock component
+  if (clock) {
+    try {
+      clock.destroy();
+    } catch (e) {
+      console.warn('Clock cleanup error:', e);
+    }
+    clock = null;
+  }
+
+  // Cleanup sync service
+  syncService.cleanup();
+
+  // Cleanup camera service
+  cameraService.stop();
 }
 
 /**
  * Handle manage races button click
  */
 function handleManageRacesClick(): void {
-  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
-
-  if (!storedPinHash) {
-    // No PIN set - prompt to set PIN first
-    showToast(t('setPinFirst', store.getState().currentLang), 'warning');
-    handleChangePinClick(); // Open the set PIN modal
+  // If already authenticated with valid token, open directly
+  if (hasAuthToken()) {
+    openRaceManagementModal();
     return;
   }
 
@@ -1711,7 +1978,7 @@ function handleManageRacesClick(): void {
 /**
  * Handle admin PIN verification
  */
-function handleAdminPinVerify(): void {
+async function handleAdminPinVerify(): Promise<void> {
   const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
   const errorEl = document.getElementById('admin-pin-error');
   const modal = document.getElementById('admin-pin-modal');
@@ -1719,11 +1986,12 @@ function handleAdminPinVerify(): void {
   if (!pinInput || !modal) return;
 
   const enteredPin = pinInput.value.trim();
-  const storedPinHash = localStorage.getItem(ADMIN_PIN_KEY);
-  const enteredPinHash = simpleHash(enteredPin);
 
-  if (enteredPinHash === storedPinHash) {
-    // PIN correct - open race management (API uses separate fixed PIN)
+  // Authenticate via JWT token exchange
+  const result = await authenticateWithPin(enteredPin);
+
+  if (result.success) {
+    // PIN correct - open race management
     modal.classList.remove('show');
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
@@ -1734,6 +2002,93 @@ function handleAdminPinVerify(): void {
     pinInput.value = '';
     pinInput.focus();
     feedbackWarning();
+  }
+}
+
+// Resolver for PIN verification promise
+let pinVerifyResolver: ((verified: boolean) => void) | null = null;
+
+/**
+ * Show PIN verification modal and wait for result
+ * Used when joining a race with sync enabled
+ */
+function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
+  return new Promise((resolve) => {
+    // If already authenticated with valid token, allow without verification
+    if (hasAuthToken()) {
+      resolve(true);
+      return;
+    }
+
+    const modal = document.getElementById('admin-pin-modal');
+    const titleEl = document.getElementById('admin-pin-modal-title');
+    const textEl = document.getElementById('admin-pin-modal-text');
+    const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+    const errorEl = document.getElementById('admin-pin-error');
+
+    if (!modal || !pinInput) {
+      resolve(false);
+      return;
+    }
+
+    // Update modal text for race join context
+    if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
+    if (textEl) textEl.textContent = t('enterPinToJoinRace', lang);
+    if (errorEl) errorEl.style.display = 'none';
+    pinInput.value = '';
+
+    // Store resolver for the verify button handler
+    pinVerifyResolver = resolve;
+
+    modal.classList.add('show');
+    setTimeout(() => pinInput.focus(), 100);
+  });
+}
+
+/**
+ * Handle PIN verification for race join (called by verify button)
+ */
+async function handleRaceJoinPinVerify(): Promise<void> {
+  const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+  const errorEl = document.getElementById('admin-pin-error');
+  const modal = document.getElementById('admin-pin-modal');
+
+  if (!pinInput || !modal || !pinVerifyResolver) return;
+
+  const enteredPin = pinInput.value.trim();
+
+  // Authenticate via JWT token exchange
+  const result = await authenticateWithPin(enteredPin);
+
+  if (result.success) {
+    // PIN correct
+    modal.classList.remove('show');
+    pinInput.value = '';
+    if (errorEl) errorEl.style.display = 'none';
+    pinVerifyResolver(true);
+    pinVerifyResolver = null;
+  } else {
+    // PIN incorrect
+    if (errorEl) errorEl.style.display = 'block';
+    pinInput.value = '';
+    pinInput.focus();
+    feedbackWarning();
+  }
+}
+
+/**
+ * Cancel PIN verification for race join
+ */
+function cancelRaceJoinPinVerify(): void {
+  const modal = document.getElementById('admin-pin-modal');
+  const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+
+  if (modal) modal.classList.remove('show');
+  if (pinInput) pinInput.value = '';
+
+  if (pinVerifyResolver) {
+    pinVerifyResolver(false);
+    pinVerifyResolver = null;
   }
 }
 
@@ -1767,15 +2122,15 @@ async function loadRaceList(): Promise<void> {
   listContainer.querySelectorAll('.race-item').forEach(item => item.remove());
 
   try {
-    const response = await fetch(ADMIN_API_BASE, {
+    const response = await fetchWithTimeout(ADMIN_API_BASE, {
       headers: getAdminAuthHeaders()
-    });
+    }, 10000); // 10 second timeout for race list
     if (!response.ok) {
       if (response.status === 401) {
         // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
         if (modal) modal.classList.remove('show');
-        showToast('API authentication failed', 'error');
+        showToast(t('authError', lang), 'error');
         console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
@@ -1800,9 +2155,8 @@ async function loadRaceList(): Promise<void> {
     });
 
   } catch (error) {
-    console.error('Failed to load race list:', error);
+    logError('Admin', 'loadRaceList', error, 'loadError');
     if (loadingEl) loadingEl.style.display = 'none';
-    showToast(t('loadError', lang), 'error');
   }
 }
 
@@ -1874,17 +2228,17 @@ async function handleConfirmDeleteRace(): Promise<void> {
   if (confirmModal) confirmModal.classList.remove('show');
 
   try {
-    const response = await fetch(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
+    const response = await fetchWithTimeout(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
       method: 'DELETE',
       headers: getAdminAuthHeaders()
-    });
+    }, 10000); // 10 second timeout for delete
 
     if (!response.ok) {
       if (response.status === 401) {
         // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
         if (modal) modal.classList.remove('show');
-        showToast('API authentication failed', 'error');
+        showToast(t('authError', lang), 'error');
         console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
@@ -1898,11 +2252,10 @@ async function handleConfirmDeleteRace(): Promise<void> {
       // Refresh the list
       loadRaceList();
     } else {
-      throw new Error(result.error || 'Unknown error');
+      throw new Error(result.error || t('unknownError', lang));
     }
   } catch (error) {
-    console.error('Failed to delete race:', error);
-    showToast(t('deleteError', lang), 'error');
+    logError('Admin', 'deleteRace', error, 'deleteError');
   } finally {
     pendingRaceDelete = null;
   }

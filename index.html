@@ -7,7 +7,7 @@
   <meta name="description" content="GPS-synchronized ski race timing application">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Ski Timer">
+  <meta name="apple-mobile-web-app-title" content="Ski Race Timer">
   <link rel="manifest" href="/manifest.json">
   <!-- Favicons -->
   <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -39,7 +39,7 @@
   <div class="app" role="application" aria-label="Ski Race Timer">
     <!-- Header -->
     <header class="header">
-      <h1 class="header-title">Ski Timer</h1>
+      <h1 class="header-title">Ski Race Timer</h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
           <span class="sync-dot"></span>
@@ -48,7 +48,7 @@
         </div>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
           <span class="gps-dot"></span>
-          <span class="gps-status-text">GPS</span>
+          <span class="gps-status-text" data-i18n="gps">GPS</span>
         </div>
         <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
       </div>
@@ -255,7 +255,7 @@
         </div>
 
         <!-- GPS Settings -->
-        <div class="settings-section" data-advanced>
+        <div class="settings-section" data-advanced id="gps-section">
           <div class="settings-section-title" data-i18n="gps">GPS</div>
           <div class="setting-row">
             <div class="setting-label">
@@ -270,7 +270,7 @@
         </div>
 
         <!-- Timing Settings -->
-        <div class="settings-section" data-advanced>
+        <div class="settings-section" data-advanced id="timing-section">
           <div class="settings-section-title">Timing</div>
           <div class="setting-row">
             <div class="setting-label">
@@ -418,7 +418,7 @@
       <div class="modal-body">
         <div style="margin-bottom: 16px;">
           <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
-          <input type="text" class="text-input" id="edit-bib-input" maxlength="3">
+          <input type="text" class="text-input" id="edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div>
           <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="status">Status</label>
@@ -457,10 +457,10 @@
   <div class="modal-overlay" id="race-change-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Change Race</h2>
+        <h2 class="modal-title" data-i18n="raceChangeTitle">Change Race</h2>
       </div>
       <div class="modal-body">
-        <p class="modal-text">You have existing results. What would you like to do?</p>
+        <p class="modal-text" id="race-change-text" data-i18n="raceChangeUnsyncedText">You have existing results. Keep them or delete before switching?</p>
       </div>
       <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>

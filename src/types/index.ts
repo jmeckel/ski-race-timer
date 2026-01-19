@@ -134,6 +134,8 @@ export interface SyncResponse {
   deleted?: boolean;
   deletedAt?: number;
   message?: string;
+  // Deleted entry IDs for sync
+  deletedIds?: string[];
 }
 
 // Race info for admin race management

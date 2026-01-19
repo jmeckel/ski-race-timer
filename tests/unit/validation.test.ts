@@ -205,6 +205,12 @@ describe('Validation Utilities', () => {
       expect(isValidDeviceId('dev_abcdef123456')).toBe(true);
     });
 
+    it('should accept human-readable device IDs', () => {
+      expect(isValidDeviceId('dev_swift-fox-42')).toBe(true);
+      expect(isValidDeviceId('dev_alpine-glacier-99')).toBe(true);
+      expect(isValidDeviceId('dev_ice-peak-0')).toBe(true);
+    });
+
     it('should reject IDs not starting with dev_', () => {
       expect(isValidDeviceId('abc123')).toBe(false);
       expect(isValidDeviceId('device_abc')).toBe(false);

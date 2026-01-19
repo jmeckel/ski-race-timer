@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { validateAuth } from './lib/jwt.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
@@ -46,15 +47,18 @@ function getRedis() {
   return redis;
 }
 
-// CORS configuration - use environment variable or default to restrictive
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || '*';
+// CORS configuration - use environment variable or default to production domain
+const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
 }
+
+// Redis key for client PIN (same as admin/pin.js)
+const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Get client IP from request
 function getClientIP(req) {
@@ -265,6 +269,16 @@ export default async function handler(req, res) {
     });
   }
 
+  // Validate sync authorization (JWT or PIN hash)
+  const authResult = await validateAuth(req, client, CLIENT_PIN_KEY);
+  if (!authResult.valid) {
+    const status = authResult.expired ? 401 : 401;
+    return res.status(status).json({
+      error: authResult.error,
+      expired: authResult.expired || false
+    });
+  }
+
   try {
     if (req.method === 'GET') {
       // Check for tombstone (race deleted by admin)
@@ -297,6 +311,10 @@ export default async function handler(req, res) {
       const data = await client.get(redisKey);
       const parsed = safeJsonParse(data, { entries: [], lastUpdated: null });
 
+      // Get deleted entry IDs
+      const deletedKey = `race:${normalizedRaceId}:deleted_entries`;
+      const deletedIds = await client.smembers(deletedKey);
+
       // Get active device count
       const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
 
@@ -307,7 +325,8 @@ export default async function handler(req, res) {
         entries: Array.isArray(parsed.entries) ? parsed.entries : [],
         lastUpdated: parsed.lastUpdated || null,
         deviceCount,
-        highestBib
+        highestBib,
+        deletedIds: deletedIds || []
       });
     }
 
@@ -422,6 +441,69 @@ export default async function handler(req, res) {
         deviceCount,
         highestBib,
         photoSkipped
+      });
+    }
+
+    if (req.method === 'DELETE') {
+      const { entryId, deviceId } = req.body || {};
+
+      // Validate inputs
+      if (!entryId) {
+        return res.status(400).json({ error: 'entryId is required' });
+      }
+
+      const entryIdStr = String(entryId);
+      const sanitizedDeviceId = sanitizeString(deviceId, 50);
+
+      // Get existing data
+      const existingData = await client.get(redisKey);
+      const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+
+      // Ensure entries is an array
+      if (!Array.isArray(existing.entries)) {
+        existing.entries = [];
+      }
+
+      // Remove the entry from the entries array
+      const originalLength = existing.entries.length;
+      existing.entries = existing.entries.filter(e => {
+        const idMatch = String(e.id) === entryIdStr;
+        // If deviceId provided, only delete entries from that device
+        // If no deviceId, delete all entries with matching id
+        if (sanitizedDeviceId) {
+          return !(idMatch && e.deviceId === sanitizedDeviceId);
+        }
+        return !idMatch;
+      });
+
+      const wasRemoved = existing.entries.length < originalLength;
+
+      if (wasRemoved) {
+        existing.lastUpdated = Date.now();
+        await client.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
+      }
+
+      // Add to deleted entries set (tracks all deleted IDs for sync)
+      const deletedKey = `race:${normalizedRaceId}:deleted_entries`;
+      // Store as "entryId:deviceId" to uniquely identify
+      const deleteKey = sanitizedDeviceId ? `${entryIdStr}:${sanitizedDeviceId}` : entryIdStr;
+      await client.sadd(deletedKey, deleteKey);
+      await client.expire(deletedKey, CACHE_EXPIRY_SECONDS);
+
+      // Update device heartbeat
+      if (sanitizedDeviceId) {
+        const sanitizedDeviceName = sanitizeString(req.body?.deviceName, MAX_DEVICE_NAME_LENGTH);
+        await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
+      }
+
+      // Get active device count
+      const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
+
+      return res.status(200).json({
+        success: true,
+        deleted: wasRemoved,
+        entryId: entryIdStr,
+        deviceCount
       });
     }
 

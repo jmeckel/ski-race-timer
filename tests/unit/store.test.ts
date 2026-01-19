@@ -364,7 +364,7 @@ describe('Store', () => {
       const result = store.undo();
 
       expect(store.getState().entries).toHaveLength(0);
-      expect(result).toEqual(entry);
+      expect(result).toEqual({ type: 'ADD_ENTRY', data: entry });
     });
 
     it('should redo add entry', () => {

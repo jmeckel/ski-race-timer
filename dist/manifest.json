@@ -4,8 +4,8 @@
   "description": "GPS-synchronisierte Zeitmessung für Skirennen",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0E14",
-  "theme_color": "#0A0E14",
+  "background_color": "#0D0D0D",
+  "theme_color": "#0D0D0D",
   "orientation": "portrait",
   "icons": [
     {

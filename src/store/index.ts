@@ -9,7 +9,7 @@ import type {
   SyncQueueItem,
   DeviceInfo
 } from '../types';
-import { generateDeviceId } from '../utils/id';
+import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { isValidEntry, migrateSchema } from '../utils/validation';
 import { SCHEMA_VERSION } from '../types';
 
@@ -102,7 +102,11 @@ class Store {
 
     // Load other values
     const lang = (localStorage.getItem(STORAGE_KEYS.LANG) || 'de') as Language;
-    const deviceName = localStorage.getItem(STORAGE_KEYS.DEVICE_NAME) || 'Timer 1';
+    let deviceName = localStorage.getItem(STORAGE_KEYS.DEVICE_NAME);
+    if (!deviceName) {
+      deviceName = generateDeviceName();
+      localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, deviceName);
+    }
     const raceId = localStorage.getItem(STORAGE_KEYS.RACE_ID) || '';
     const lastSyncedRaceId = localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
 
@@ -352,7 +356,7 @@ class Store {
     return this.state.redoStack.length > 0;
   }
 
-  undo(): Entry | Entry[] | null {
+  undo(): { type: Action['type']; data: Entry | Entry[] } | null {
     if (!this.canUndo()) return null;
 
     const undoStack = [...this.state.undoStack];
@@ -396,7 +400,7 @@ class Store {
     }
 
     this.setState({ entries, undoStack, redoStack });
-    return result;
+    return result ? { type: action.type, data: result } : null;
   }
 
   redo(): Entry | Entry[] | null {
@@ -553,7 +557,13 @@ class Store {
   }
 
   setRaceId(raceId: string) {
-    this.setState({ raceId });
+    // Clear undo/redo stacks when changing to a different race
+    // This prevents undoing actions from a previous race
+    if (raceId !== this.state.raceId) {
+      this.setState({ raceId, undoStack: [], redoStack: [] });
+    } else {
+      this.setState({ raceId });
+    }
   }
 
   setLastSyncedRaceId(raceId: string) {
@@ -612,9 +622,10 @@ class Store {
 
   // ===== Merge Cloud Entries =====
 
-  mergeCloudEntries(cloudEntries: Entry[]): number {
+  mergeCloudEntries(cloudEntries: Entry[], deletedIds: string[] = []): number {
     let addedCount = 0;
     const existingIds = new Set(this.state.entries.map(e => `${e.id}-${e.deviceId}`));
+    const deletedSet = new Set(deletedIds);
     const newEntries: Entry[] = [];
 
     for (const entry of cloudEntries) {
@@ -623,6 +634,10 @@ class Store {
 
       // Skip entries from this device
       if (entry.deviceId === this.state.deviceId) continue;
+
+      // Skip entries that were deleted
+      const deleteKey = `${entry.id}:${entry.deviceId}`;
+      if (deletedSet.has(deleteKey) || deletedSet.has(entry.id)) continue;
 
       // Skip duplicates
       const key = `${entry.id}-${entry.deviceId}`;
@@ -640,6 +655,31 @@ class Store {
     }
 
     return addedCount;
+  }
+
+  // ===== Remove Deleted Cloud Entries =====
+
+  removeDeletedCloudEntries(deletedIds: string[]): number {
+    const deletedSet = new Set(deletedIds);
+    let removedCount = 0;
+
+    const entries = this.state.entries.filter(entry => {
+      // Check if entry matches any deleted ID pattern
+      const deleteKey = `${entry.id}:${entry.deviceId}`;
+      const isDeleted = deletedSet.has(deleteKey) || deletedSet.has(entry.id);
+
+      if (isDeleted) {
+        removedCount++;
+        return false;
+      }
+      return true;
+    });
+
+    if (removedCount > 0) {
+      this.setState({ entries });
+    }
+
+    return removedCount;
   }
 
   // ===== Export/Import =====

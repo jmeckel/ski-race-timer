@@ -1,5 +1,6 @@
 import type { Entry, Settings, TimingPoint, EntryStatus, DataSchema, SyncQueueItem } from '../types';
 import { SCHEMA_VERSION } from '../types';
+import { generateDeviceName } from './id';
 
 const VALID_POINTS: TimingPoint[] = ['S', 'F'];
 const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq'];
@@ -104,11 +105,15 @@ export function isValidDataSchema(data: unknown): data is DataSchema {
 }
 
 /**
- * Sanitize a string to prevent XSS
+ * Sanitize a string by removing potentially dangerous characters.
+ * Note: Always use escapeHtml() when rendering to HTML for XSS prevention.
  */
 export function sanitizeString(str: unknown, maxLength: number = 100): string {
   if (!str || typeof str !== 'string') return '';
-  return str.slice(0, maxLength).replace(/[<>]/g, '');
+  return str
+    .slice(0, maxLength)
+    .replace(/[<>"'&]/g, '') // Strip HTML-sensitive characters
+    .replace(/[\x00-\x1F\x7F]/g, ''); // Strip control characters
 }
 
 /**
@@ -154,7 +159,7 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
       entries: [],
       settings: defaultSettings,
       deviceId,
-      deviceName: 'Timer 1',
+      deviceName: generateDeviceName(),
       raceId: '',
       syncQueue: []
     };
@@ -196,7 +201,7 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
     entries,
     settings,
     deviceId: isValidDeviceId(d.deviceId) ? d.deviceId : deviceId,
-    deviceName: sanitizeString(d.deviceName, 100) || 'Timer 1',
+    deviceName: sanitizeString(d.deviceName, 100) || generateDeviceName(),
     raceId: isValidRaceId(d.raceId) ? d.raceId : '',
     syncQueue,
     lastExport: typeof d.lastExport === 'number' ? d.lastExport : undefined

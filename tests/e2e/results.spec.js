@@ -12,19 +12,27 @@ async function addTestEntries(page, count = 3) {
     await page.click(`[data-num="${i}"]`);
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
-    await page.click('#btn-clear');
+    await page.click('[data-action="clear"]');
   }
+}
+
+// Helper to click a toggle by clicking its label wrapper
+async function clickToggle(page, toggleSelector) {
+  await page.locator(`label:has(${toggleSelector})`).click();
+}
+
+// Helper to check if toggle is on
+async function isToggleOn(page, toggleSelector) {
+  return await page.locator(toggleSelector).isChecked();
 }
 
 // Helper to disable simple mode
 async function disableSimpleMode(page) {
-  await page.click('[data-view="settings-view"]');
-  const toggle = page.locator('#toggle-simple');
-  const isSimple = await toggle.evaluate(el => el.classList.contains('on'));
-  if (isSimple) {
-    await toggle.click();
+  await page.click('[data-view="settings"]');
+  if (await isToggleOn(page, '#simple-mode-toggle')) {
+    await clickToggle(page, '#simple-mode-toggle');
   }
-  await page.click('[data-view="results-view"]');
+  await page.click('[data-view="results"]');
 }
 
 test.describe('Results View', () => {
@@ -35,7 +43,7 @@ test.describe('Results View', () => {
     await addTestEntries(page, 3);
 
     // Navigate to Results tab
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
     await page.waitForSelector('.results-list');
   });
 
@@ -68,7 +76,7 @@ test.describe('Results View', () => {
       // Clear localStorage and reload
       await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
       await page.reload();
-      await page.click('[data-view="results-view"]');
+      await page.click('[data-view="results"]');
 
       await expect(page.locator('.empty-state')).toBeVisible();
     });
@@ -255,7 +263,7 @@ test.describe('Results Export', () => {
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
 
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
   });
 
   test('should export Race Horology CSV', async ({ page }) => {
@@ -273,7 +281,7 @@ test.describe('Results Export', () => {
 test.describe('Results View - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
   });
 
   test('should have accessible list structure', async ({ page }) => {
@@ -286,7 +294,7 @@ test.describe('Results View - Accessibility', () => {
     await page.click('[data-view="timing-view"]');
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
 
     // Click on the result bib to open edit modal
     await page.click('.result-item .result-bib');
@@ -303,7 +311,7 @@ test.describe('Results View - Simple Mode', () => {
     // Add some test entries
     await addTestEntries(page, 3);
 
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
     await page.waitForSelector('.results-list');
   });
 
@@ -340,11 +348,11 @@ test.describe('Results View - Simple Mode', () => {
 
   test('should show search and filters in full mode', async ({ page }) => {
     // Go to settings and turn off simple mode
-    await page.click('[data-view="settings-view"]');
-    await page.click('#toggle-simple');
+    await page.click('[data-view="settings"]');
+    await clickToggle(page, "#simple-mode-toggle");
 
     // Go back to results
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
 
     // Search should be visible
     const searchInput = page.locator('#search-input');
@@ -357,11 +365,11 @@ test.describe('Results View - Simple Mode', () => {
 
   test('should show all stats in full mode', async ({ page }) => {
     // Go to settings and turn off simple mode
-    await page.click('[data-view="settings-view"]');
-    await page.click('#toggle-simple');
+    await page.click('[data-view="settings"]');
+    await clickToggle(page, "#simple-mode-toggle");
 
     // Go back to results
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
 
     // Advanced stats should be visible
     const advancedStats = page.locator('[data-stat-advanced]');
@@ -381,7 +389,7 @@ test.describe('Results View - Entry Actions', () => {
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);
 
-    await page.click('[data-view="results-view"]');
+    await page.click('[data-view="results"]');
     await page.waitForSelector('.result-item');
   });
 
@@ -454,5 +462,102 @@ test.describe('Results View - Entry Actions', () => {
 
     // Should show empty state (no entries left)
     await expect(page.locator('.empty-state')).toBeVisible();
+  });
+});
+
+test.describe('Edit Bib Input Validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+
+    // Add a test entry
+    await page.click('[data-num="1"]');
+    await page.click('[data-num="2"]');
+    await page.click('[data-num="3"]');
+    await page.click('#timestamp-btn');
+    await page.waitForTimeout(500);
+
+    // Go to results
+    await page.click('[data-view="results"]');
+    await page.waitForSelector('.result-item');
+  });
+
+  test('should only accept numeric input in edit bib field', async ({ page }) => {
+    // Open edit modal
+    await page.click('.result-item .result-bib');
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Get the bib input
+    const bibInput = page.locator('#edit-bib-input');
+
+    // Clear and try to enter letters
+    await bibInput.clear();
+    await bibInput.fill('abc');
+
+    // Should be empty (letters filtered out)
+    await expect(bibInput).toHaveValue('');
+  });
+
+  test('should filter non-numeric characters from edit bib', async ({ page }) => {
+    // Open edit modal
+    await page.click('.result-item .result-bib');
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Get the bib input
+    const bibInput = page.locator('#edit-bib-input');
+
+    // Clear and try to enter mixed content
+    await bibInput.clear();
+    await bibInput.fill('1a2b3c');
+
+    // Should only have digits
+    await expect(bibInput).toHaveValue('123');
+  });
+
+  test('should limit edit bib to 3 digits', async ({ page }) => {
+    // Open edit modal
+    await page.click('.result-item .result-bib');
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Get the bib input
+    const bibInput = page.locator('#edit-bib-input');
+
+    // Clear and try to enter more than 3 digits
+    await bibInput.clear();
+    await bibInput.fill('12345');
+
+    // Should only have 3 digits
+    await expect(bibInput).toHaveValue('123');
+  });
+
+  test('should accept valid numeric bib in edit modal', async ({ page }) => {
+    // Open edit modal
+    await page.click('.result-item .result-bib');
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Get the bib input
+    const bibInput = page.locator('#edit-bib-input');
+
+    // Clear and enter valid bib
+    await bibInput.clear();
+    await bibInput.fill('099');
+
+    // Should accept the value
+    await expect(bibInput).toHaveValue('099');
+
+    // Save and verify
+    await page.click('#save-edit-btn');
+    await expect(page.locator('.result-bib').first()).toContainText('099');
+  });
+
+  test('should have numeric keyboard on mobile for edit bib', async ({ page }) => {
+    // Open edit modal
+    await page.click('.result-item .result-bib');
+    await expect(page.locator('#edit-modal')).toHaveClass(/show/);
+
+    // Check input attributes
+    const bibInput = page.locator('#edit-bib-input');
+    await expect(bibInput).toHaveAttribute('inputmode', 'numeric');
+    await expect(bibInput).toHaveAttribute('pattern', '[0-9]*');
+    await expect(bibInput).toHaveAttribute('maxlength', '3');
   });
 });

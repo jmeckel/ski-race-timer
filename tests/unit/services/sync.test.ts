@@ -72,6 +72,170 @@ function createValidEntry(overrides: Partial<Entry> = {}): Entry {
   };
 }
 
+// ============================================
+// Token Management Tests
+// ============================================
+
+describe('Token Management Functions', () => {
+  let hasAuthToken: typeof import('../../../src/services/sync').hasAuthToken;
+  let setAuthToken: typeof import('../../../src/services/sync').setAuthToken;
+  let clearAuthToken: typeof import('../../../src/services/sync').clearAuthToken;
+  let exchangePinForToken: typeof import('../../../src/services/sync').exchangePinForToken;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    localStorageMock.getItem.mockReturnValue(null);
+
+    // Reset module for clean state
+    vi.resetModules();
+    const module = await import('../../../src/services/sync');
+    hasAuthToken = module.hasAuthToken;
+    setAuthToken = module.setAuthToken;
+    clearAuthToken = module.clearAuthToken;
+    exchangePinForToken = module.exchangePinForToken;
+  });
+
+  describe('hasAuthToken', () => {
+    it('should return false when no token is stored', () => {
+      localStorageMock.getItem.mockReturnValue(null);
+      expect(hasAuthToken()).toBe(false);
+    });
+
+    it('should return true when token is stored', () => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'skiTimerAuthToken') return 'some-jwt-token';
+        return null;
+      });
+      expect(hasAuthToken()).toBe(true);
+    });
+
+    it('should return false for empty string token', () => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'skiTimerAuthToken') return '';
+        return null;
+      });
+      expect(hasAuthToken()).toBe(false);
+    });
+  });
+
+  describe('setAuthToken', () => {
+    it('should store token in localStorage', () => {
+      setAuthToken('test-jwt-token');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerAuthToken', 'test-jwt-token');
+    });
+
+    it('should overwrite existing token', () => {
+      setAuthToken('first-token');
+      setAuthToken('second-token');
+      expect(localStorageMock.setItem).toHaveBeenLastCalledWith('skiTimerAuthToken', 'second-token');
+    });
+  });
+
+  describe('clearAuthToken', () => {
+    it('should remove token from localStorage', () => {
+      clearAuthToken();
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('skiTimerAuthToken');
+    });
+  });
+
+  describe('exchangePinForToken', () => {
+    beforeEach(() => {
+      mockFetch.mockReset();
+    });
+
+    it('should return success with token on valid PIN', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          token: 'jwt-token-12345'
+        })
+      });
+
+      const result = await exchangePinForToken('1234');
+
+      expect(result.success).toBe(true);
+      expect(result.token).toBe('jwt-token-12345');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/auth/token',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: '1234' })
+        })
+      );
+    });
+
+    it('should store token in localStorage on success', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          token: 'jwt-token-12345'
+        })
+      });
+
+      await exchangePinForToken('1234');
+
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerAuthToken', 'jwt-token-12345');
+    });
+
+    it('should return isNewPin flag for first-time setup', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          token: 'jwt-token-12345',
+          isNewPin: true
+        })
+      });
+
+      const result = await exchangePinForToken('1234');
+
+      expect(result.success).toBe(true);
+      expect(result.isNewPin).toBe(true);
+    });
+
+    it('should return error for invalid PIN', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({
+          error: 'Invalid PIN'
+        })
+      });
+
+      const result = await exchangePinForToken('0000');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid PIN');
+    });
+
+    it('should handle network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await exchangePinForToken('1234');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Network error');
+    });
+
+    it('should handle missing token in response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true
+          // token missing
+        })
+      });
+
+      const result = await exchangePinForToken('1234');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('No token received');
+    });
+  });
+});
+
 describe('Sync Service', () => {
   let syncService: typeof import('../../../src/services/sync').syncService;
   let syncEntry: typeof import('../../../src/services/sync').syncEntry;
@@ -159,7 +323,8 @@ describe('Sync Service', () => {
       await syncService.forceRefresh();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/sync?raceId=RACE001')
+        expect.stringContaining('/api/sync?raceId=RACE001'),
+        expect.anything()
       );
     });
 
@@ -384,7 +549,8 @@ describe('Sync Service', () => {
       expect(result.exists).toBe(true);
       expect(result.entryCount).toBe(5);
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('checkOnly=true')
+        expect.stringContaining('checkOnly=true'),
+        expect.anything()
       );
     });
 

@@ -124,8 +124,12 @@ export class VirtualList {
       filtered = filtered.filter(e => e.status === statusFilter);
     }
 
-    // Sort by timestamp descending (newest first)
-    filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    // Sort by bib number descending (highest first)
+    filtered.sort((a, b) => {
+      const bibA = parseInt(a.bib, 10) || 0;
+      const bibB = parseInt(b.bib, 10) || 0;
+      return bibB - bibA;
+    });
 
     this.filteredEntries = filtered;
     this.updateContentHeight();
@@ -235,14 +239,21 @@ export class VirtualList {
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(entry.point)}
       </div>
-      <div class="result-time" style="flex: 1; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary);">
-        ${escapeHtml(timeStr)}
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+        <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
+          ${escapeHtml(timeStr)}
+        </div>
+        ${entry.deviceName ? `
+          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary);">
+            ${escapeHtml(entry.deviceName)}
+          </div>
+        ` : ''}
       </div>
       ${entry.status !== 'ok' ? `
-        <span class="result-status" style="padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
+        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
           ${escapeHtml(entry.status.toUpperCase())}
         </span>
       ` : ''}

@@ -3,20 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0A0E14">
+  <meta name="theme-color" content="#0D0D0D">
   <meta name="description" content="GPS-synchronized ski race timing application">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Ski Timer">
+  <meta name="apple-mobile-web-app-title" content="Ski Race Timer">
   <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96x96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ski Race Timer">
+  <meta property="og:description" content="GPS-synchronized ski race timing application">
+  <meta property="og:image" content="/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ski Race Timer">
+  <meta name="twitter:description" content="GPS-synchronized ski race timing application">
+  <meta name="twitter:image" content="/twitter-image.png">
   <title>Ski Race Timer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-Blbf_JA9.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-D8eZ75Ot.css">
+  <script type="module" crossorigin src="/assets/main-CXowxjWE.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-B5hXm5_0.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -25,15 +41,16 @@
   <div class="app" role="application" aria-label="Ski Race Timer">
     <!-- Header -->
     <header class="header">
-      <h1 class="header-title">Ski Timer</h1>
+      <h1 class="header-title">Ski Race Timer</h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
           <span class="sync-dot"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
+          <span class="sync-device-count" id="sync-device-count" style="display: none;"></span>
         </div>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
           <span class="gps-dot"></span>
-          <span class="gps-status-text">GPS</span>
+          <span class="gps-status-text" data-i18n="gps">GPS</span>
         </div>
         <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
       </div>
@@ -45,6 +62,27 @@
       <div class="view timer-view active">
         <!-- Clock -->
         <div class="clock-container" id="clock-container"></div>
+
+        <!-- Timing Points -->
+        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
+          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
+            <span data-i18n="start">Start</span>
+          </button>
+          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
+            <span data-i18n="finish">Finish</span>
+          </button>
+        </div>
+
+        <!-- Timestamp Button -->
+        <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">
+          <span data-i18n="time">TIME</span>
+          <span class="timestamp-photo-icon" id="timestamp-photo-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </span>
+        </button>
 
         <!-- Last Recorded -->
         <div class="last-recorded" id="last-recorded">
@@ -58,25 +96,6 @@
         <div class="bib-display">
           <span class="bib-label" data-i18n="bib">Bib</span>
           <span class="bib-value">---</span>
-        </div>
-
-        <!-- Timing Points -->
-        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
-          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
-            <span data-i18n="start">Start</span>
-          </button>
-          <button class="timing-point-btn" data-point="I1" role="radio" aria-checked="false" data-advanced style="display: none;">
-            Int 1
-          </button>
-          <button class="timing-point-btn" data-point="I2" role="radio" aria-checked="false" data-advanced style="display: none;">
-            Int 2
-          </button>
-          <button class="timing-point-btn" data-point="I3" role="radio" aria-checked="false" data-advanced style="display: none;">
-            Int 3
-          </button>
-          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
-            <span data-i18n="finish">Finish</span>
-          </button>
         </div>
 
         <!-- Number Pad -->
@@ -100,11 +119,6 @@
             </svg>
           </button>
         </div>
-
-        <!-- Timestamp Button -->
-        <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">
-          <span data-i18n="time">TIME</span>
-        </button>
       </div>
 
       <!-- Results View -->
@@ -117,9 +131,6 @@
               <option value="all" data-i18n="all">All</option>
               <option value="S">Start</option>
               <option value="F">Finish</option>
-              <option value="I1">Int 1</option>
-              <option value="I2">Int 2</option>
-              <option value="I3">Int 3</option>
             </select>
             <select class="filter-select" id="filter-status" aria-label="Filter by status">
               <option value="all" data-i18n="all">All</option>
@@ -188,7 +199,7 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="simpleMode">Simple Mode</span>
-              <span class="setting-description">Simplified interface for basic timing</span>
+              <span class="setting-description" data-i18n="simpleModeDesc">Simplified interface for basic timing</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="simple-mode-toggle" checked>
@@ -203,7 +214,7 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="cloudSync">Cloud Sync</span>
-              <span class="setting-description">Sync with other devices</span>
+              <span class="setting-description" data-i18n="cloudSyncDesc">Sync with other devices</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="sync-toggle">
@@ -213,6 +224,12 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="raceId">Race ID</span>
+              <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
+                <svg class="race-exists-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span class="race-exists-text" id="race-exists-text"></span>
+              </span>
             </div>
             <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 150px;">
           </div>
@@ -224,13 +241,28 @@
           </div>
         </div>
 
+        <!-- Photo Capture -->
+        <div class="settings-section">
+          <div class="settings-section-title" data-i18n="photoCapture">Photo Capture</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="photoCapture">Photo Capture</span>
+              <span class="setting-description" data-i18n="photoCaptureDesc">Capture photo on timestamp</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="photo-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
         <!-- GPS Settings -->
-        <div class="settings-section" data-advanced>
+        <div class="settings-section" data-advanced id="gps-section">
           <div class="settings-section-title" data-i18n="gps">GPS</div>
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="gps">GPS Sync</span>
-              <span class="setting-description">Use GPS for accurate timestamps</span>
+              <span class="setting-description" data-i18n="gpsDesc">Use GPS for accurate timestamps</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="gps-toggle">
@@ -240,25 +272,15 @@
         </div>
 
         <!-- Timing Settings -->
-        <div class="settings-section" data-advanced>
+        <div class="settings-section" data-advanced id="timing-section">
           <div class="settings-section-title">Timing</div>
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="autoIncrement">Auto-increment Bib</span>
-              <span class="setting-description">Increase bib number after recording</span>
+              <span class="setting-description" data-i18n="autoIncrementDesc">Increase bib number after recording</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="auto-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="photoCapture">Photo Capture</span>
-              <span class="setting-description">Capture photo on timestamp</span>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="photo-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -270,7 +292,7 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="hapticFeedback">Haptic Feedback</span>
-              <span class="setting-description">Vibration on actions</span>
+              <span class="setting-description" data-i18n="hapticFeedbackDesc">Vibration on actions</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="haptic-toggle" checked>
@@ -280,7 +302,7 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="soundFeedback">Sound Feedback</span>
-              <span class="setting-description">Audio confirmation</span>
+              <span class="setting-description" data-i18n="soundFeedbackDesc">Audio confirmation</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="sound-toggle">
@@ -296,14 +318,48 @@
             <div class="setting-label">
               <span class="setting-title" data-i18n="language">Language</span>
             </div>
-            <button class="modal-btn secondary" id="lang-toggle">DE / EN</button>
+            <div class="lang-toggle" id="lang-toggle">
+              <span class="lang-option active" data-lang="de">DE</span>
+              <span class="lang-option" data-lang="en">EN</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Section (hidden in simple mode) -->
+        <div class="settings-section" id="admin-section">
+          <div class="settings-section-title" data-i18n="admin">Admin</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="adminPin">Admin PIN</span>
+              <span class="setting-description" id="admin-pin-status" data-i18n="pinNotSet">Not set</span>
+            </div>
+            <button class="action-btn" id="change-pin-btn" style="flex: 0; padding: 8px 16px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+              <span id="change-pin-btn-text" data-i18n="setPin">Set PIN</span>
+            </button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="manageRaces">Manage Races</span>
+              <span class="setting-description" data-i18n="manageRacesDesc">View and delete synced races</span>
+            </div>
+            <button class="action-btn" id="manage-races-btn" style="flex: 0; padding: 8px 16px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <span data-i18n="manage">Manage</span>
+            </button>
           </div>
         </div>
 
         <!-- Version -->
         <div class="settings-section">
           <div class="setting-row" style="justify-content: center; color: var(--text-tertiary); font-size: 0.75rem;">
-            <span data-i18n="version">Version</span> 2.0.0
+            <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
           </div>
         </div>
       </div>
@@ -364,7 +420,7 @@
       <div class="modal-body">
         <div style="margin-bottom: 16px;">
           <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
-          <input type="text" class="text-input" id="edit-bib-input" maxlength="3">
+          <input type="text" class="text-input" id="edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div>
           <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="status">Status</label>
@@ -395,6 +451,152 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn danger" id="confirm-delete-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Change Modal -->
+  <div class="modal-overlay" id="race-change-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="raceChangeTitle">Change Race</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="race-change-text" data-i18n="raceChangeUnsyncedText">You have existing results. Keep them or delete before switching?</p>
+      </div>
+      <div class="modal-footer" style="flex-wrap: wrap; gap: 8px;">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="race-change-keep-btn" data-i18n="keepResults">Keep</button>
+        <button class="modal-btn primary" id="race-change-export-btn" data-i18n="export">Export</button>
+        <button class="modal-btn danger" id="race-change-delete-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Viewer Modal -->
+  <div class="modal-overlay" id="photo-viewer-modal">
+    <div class="modal-content photo-viewer-content">
+      <div class="modal-header photo-viewer-header">
+        <h2 class="modal-title" data-i18n="viewPhoto">View Photo</h2>
+        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="photo-viewer-image-container">
+        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Captured photo">
+      </div>
+      <div class="photo-viewer-metadata">
+        <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
+        <span class="photo-viewer-point" id="photo-viewer-point">S</span>
+        <span class="photo-viewer-time" id="photo-viewer-time">00:00:00.000</span>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn text-danger" id="photo-viewer-delete-btn" data-i18n="deletePhoto">Delete Photo</button>
+        <button class="modal-btn primary" id="photo-viewer-close-footer-btn" data-i18n="close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Deleted Modal -->
+  <div class="modal-overlay" id="race-deleted-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="raceDeleted">Race Deleted</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="race-deleted-text" data-i18n="raceDeletedText">This race has been deleted by an administrator.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn primary" id="race-deleted-ok-btn" data-i18n="ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Management Modal -->
+  <div class="modal-overlay" id="race-management-modal">
+    <div class="modal-content race-management-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
+      </div>
+      <div class="modal-body">
+        <div class="race-list" id="race-list">
+          <div class="race-list-loading" id="race-list-loading">
+            <span data-i18n="loading">Loading...</span>
+          </div>
+          <div class="race-list-empty" id="race-list-empty" style="display: none;">
+            <span data-i18n="noRaces">No active races</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="close">Close</button>
+        <button class="modal-btn secondary" id="refresh-races-btn" data-i18n="refresh">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin PIN Modal (for verifying PIN to access race management) -->
+  <div class="modal-overlay" id="admin-pin-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="admin-pin-modal-title" data-i18n="enterAdminPin">Enter Admin PIN</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="admin-pin-modal-text" data-i18n="enterPinText">Enter the admin PIN to access race management.</p>
+        <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="admin-pin-verify-input" placeholder="0000" maxlength="4" style="margin-top: 12px; text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
+        <p class="admin-pin-error" id="admin-pin-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="incorrectPin">Incorrect PIN</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="admin-pin-verify-btn" data-i18n="verify">Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set/Change PIN Modal -->
+  <div class="modal-overlay" id="change-pin-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="change-pin-modal-title" data-i18n="setPin">Set PIN</h2>
+      </div>
+      <div class="modal-body">
+        <div id="current-pin-row" style="display: none; margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="currentPin">Current PIN</label>
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="current-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
+          <p class="admin-pin-error" id="current-pin-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="incorrectPin">Incorrect PIN</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="newPin">New PIN (4 digits)</label>
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="new-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="confirmPin">Confirm PIN</label>
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="confirm-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
+          <p class="admin-pin-error" id="pin-mismatch-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="pinMismatch">PINs do not match</p>
+          <p class="admin-pin-error" id="pin-format-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="pinFormatError">PIN must be exactly 4 digits</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="save-pin-btn" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Race Confirmation Modal -->
+  <div class="modal-overlay" id="delete-race-confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="confirmDeleteRace">Delete Race</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" id="delete-race-confirm-text">Are you sure you want to delete this race?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn danger" id="confirm-delete-race-btn" data-i18n="delete">Delete</button>
       </div>
     </div>
   </div>

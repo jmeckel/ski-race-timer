@@ -9,12 +9,49 @@ export function generateEntryId(deviceId: string): string {
   return `${deviceId}-${timestamp}-${random}`;
 }
 
+// Word lists for human-readable device IDs
+const ADJECTIVES = [
+  'swift', 'bold', 'cool', 'fast', 'keen', 'wild', 'calm', 'warm',
+  'bright', 'sharp', 'quick', 'brave', 'fresh', 'grand', 'prime', 'clear',
+  'snow', 'ice', 'frost', 'peak', 'alpine', 'polar', 'winter', 'crisp'
+];
+
+const NOUNS = [
+  'fox', 'bear', 'wolf', 'hawk', 'eagle', 'tiger', 'lion', 'deer',
+  'pine', 'oak', 'cedar', 'birch', 'maple', 'spruce', 'aspen', 'willow',
+  'peak', 'ridge', 'slope', 'trail', 'summit', 'valley', 'glacier', 'cliff'
+];
+
 /**
- * Generate a unique device ID
+ * Capitalize first letter of a word
+ */
+function capitalize(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+/**
+ * Generate a unique device ID in human-readable format
+ * Format: dev_{adjective}-{noun}-{number}
+ * Example: dev_swift-fox-42
  * Persisted to localStorage for device identification
  */
 export function generateDeviceId(): string {
-  return `dev_${crypto.randomUUID().slice(0, 12)}`;
+  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const number = Math.floor(Math.random() * 100); // 0-99
+  return `dev_${adjective}-${noun}-${number}`;
+}
+
+/**
+ * Generate a human-readable device name for display
+ * Format: {Adjective} {Noun} {number}
+ * Example: "Swift Fox 42"
+ */
+export function generateDeviceName(): string {
+  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const number = Math.floor(Math.random() * 100); // 0-99
+  return `${capitalize(adjective)} ${capitalize(noun)} ${number}`;
 }
 
 /**

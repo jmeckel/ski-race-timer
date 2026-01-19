@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   generateEntryId,
   generateDeviceId,
+  generateDeviceName,
   parseEntryId,
   isNewIdFormat,
   migrateId,
@@ -63,28 +64,82 @@ describe('ID Utilities', () => {
       expect(id).toMatch(/^dev_/);
     });
 
-    it('should generate ID with alphanumeric suffix', () => {
+    it('should generate human-readable ID in adjective-noun-number format', () => {
       const id = generateDeviceId();
-      expect(id).toMatch(/^dev_[a-f0-9-]+$/);
+      // Format: dev_{adjective}-{noun}-{number}
+      expect(id).toMatch(/^dev_[a-z]+-[a-z]+-\d{1,2}$/);
     });
 
-    it('should generate unique IDs', () => {
+    it('should generate reasonably unique IDs', () => {
       const ids = new Set<string>();
 
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 50; i++) {
         ids.add(generateDeviceId());
       }
 
-      expect(ids.size).toBe(100);
+      // With 24*24*100 = 57600 combinations, 50 samples should be unique
+      expect(ids.size).toBe(50);
     });
 
-    it('should generate IDs of consistent length', () => {
-      const id1 = generateDeviceId();
-      const id2 = generateDeviceId();
+    it('should generate IDs of reasonable length', () => {
+      const id = generateDeviceId();
 
-      // Both should be around same length (dev_ + 12 chars)
-      expect(id1.length).toBeGreaterThan(15);
-      expect(Math.abs(id1.length - id2.length)).toBeLessThan(5);
+      // dev_ + adjective (3-7) + - + noun (3-7) + - + number (1-2)
+      // Min: dev_ice-fox-0 = 11, Max: dev_alpine-glacier-99 = 21
+      expect(id.length).toBeGreaterThanOrEqual(11);
+      expect(id.length).toBeLessThanOrEqual(25);
+    });
+
+    it('should be human-readable', () => {
+      const id = generateDeviceId();
+      const parts = id.replace('dev_', '').split('-');
+
+      expect(parts.length).toBe(3);
+      // Adjective and noun should be lowercase words
+      expect(parts[0]).toMatch(/^[a-z]+$/);
+      expect(parts[1]).toMatch(/^[a-z]+$/);
+      // Number should be 0-99
+      const num = parseInt(parts[2], 10);
+      expect(num).toBeGreaterThanOrEqual(0);
+      expect(num).toBeLessThan(100);
+    });
+  });
+
+  describe('generateDeviceName', () => {
+    it('should generate human-readable name with capitalized words', () => {
+      const name = generateDeviceName();
+      // Format: "Adjective Noun Number"
+      expect(name).toMatch(/^[A-Z][a-z]+ [A-Z][a-z]+ \d{1,2}$/);
+    });
+
+    it('should generate names with spaces between words', () => {
+      const name = generateDeviceName();
+      const parts = name.split(' ');
+      expect(parts.length).toBe(3);
+    });
+
+    it('should generate reasonably unique names', () => {
+      const names = new Set<string>();
+      for (let i = 0; i < 50; i++) {
+        names.add(generateDeviceName());
+      }
+      expect(names.size).toBe(50);
+    });
+
+    it('should have capitalized adjective and noun', () => {
+      const name = generateDeviceName();
+      const parts = name.split(' ');
+      // First letter uppercase, rest lowercase
+      expect(parts[0]).toMatch(/^[A-Z][a-z]+$/);
+      expect(parts[1]).toMatch(/^[A-Z][a-z]+$/);
+    });
+
+    it('should end with a number 0-99', () => {
+      const name = generateDeviceName();
+      const parts = name.split(' ');
+      const num = parseInt(parts[2], 10);
+      expect(num).toBeGreaterThanOrEqual(0);
+      expect(num).toBeLessThan(100);
     });
   });
 

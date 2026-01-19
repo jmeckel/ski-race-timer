@@ -56,6 +56,7 @@ export const translations: Record<Language, Translations> = {
     syncError: 'Sync error',
     syncReceived: 'Synced from cloud',
     raceId: 'Race ID',
+    invalidRaceId: 'Invalid Race ID. Use letters, numbers, hyphens, underscores only.',
     deviceName: 'Time Keeper ID',
     cloudSync: 'Cloud Sync',
     syncStatus: 'Sync Status',
@@ -130,18 +131,19 @@ export const translations: Record<Language, Translations> = {
 
     // Race Management
     admin: 'Admin',
-    adminPin: 'Admin PIN',
-    adminPinDesc: 'Required to manage races',
+    adminPin: 'Race Management PIN',
+    adminPinDesc: 'Required to manage and sync races',
     manageRaces: 'Manage Races',
     manageRacesDesc: 'View and delete synced races',
     manage: 'Manage',
-    enterAdminPin: 'Enter Admin PIN',
-    enterPinText: 'Enter the admin PIN to access race management.',
+    enterAdminPin: 'Enter Race Management PIN',
+    enterPinText: 'Enter your PIN to access race management.',
+    enterPinToJoinRace: 'Enter your PIN to join this race.',
     incorrectPin: 'Incorrect PIN',
     verify: 'Verify',
-    setPinFirst: 'Please set an Admin PIN first',
-    pinSaved: 'Admin PIN saved',
-    pinCleared: 'Admin PIN cleared',
+    setPinFirst: 'Please set a Race Management PIN first',
+    pinSaved: 'PIN saved',
+    pinCleared: 'PIN cleared',
     pinNotSet: 'Not set',
     pinSet: 'PIN set',
     setPin: 'Set PIN',
@@ -168,7 +170,30 @@ export const translations: Record<Language, Translations> = {
     // Storage errors
     storageError: 'Failed to save data - check storage',
     storageQuotaError: 'Storage full! Export data immediately',
-    storageWarning: 'Storage almost full'
+    storageWarning: 'Storage almost full',
+
+    // Network errors
+    networkError: 'Network error - check connection',
+    connectionFailed: 'Connection failed',
+    serverUnavailable: 'Server unavailable',
+    rateLimitError: 'Too many requests - please wait',
+    authError: 'Authentication failed',
+
+    // Sync errors
+    syncFailed: 'Sync failed',
+    pinSyncFailed: 'PIN not synced to cloud',
+
+    // Camera errors
+    cameraError: 'Camera error',
+    cameraPermissionDenied: 'Camera access denied',
+
+    // GPS errors
+    gpsError: 'GPS error',
+    gpsPermissionDenied: 'GPS access denied',
+    gpsUnavailable: 'GPS unavailable',
+
+    // Generic errors
+    unknownError: 'Unknown error'
   },
 
   de: {
@@ -226,6 +251,7 @@ export const translations: Record<Language, Translations> = {
     syncError: 'Sync-Fehler',
     syncReceived: 'Von Cloud synchronisiert',
     raceId: 'Rennen-ID',
+    invalidRaceId: 'Ungültige Rennen-ID. Nur Buchstaben, Zahlen, Bindestriche, Unterstriche.',
     deviceName: 'Zeitnehmer-ID',
     cloudSync: 'Cloud-Sync',
     syncStatus: 'Sync-Status',
@@ -293,25 +319,26 @@ export const translations: Record<Language, Translations> = {
     // Race exists indicator
     raceFound: 'Rennen gefunden',
     raceNew: 'Neues Rennen',
-    entriesInCloud: 'Einträge in Cloud',
+    entriesInCloud: 'Einträge in der Cloud',
 
     // Photo sync
     photoTooLarge: 'Foto zu groß für Sync',
 
     // Race Management
     admin: 'Admin',
-    adminPin: 'Admin-PIN',
-    adminPinDesc: 'Erforderlich für Rennverwaltung',
+    adminPin: 'Rennverwaltungs-PIN',
+    adminPinDesc: 'Erforderlich für Verwaltung und Sync',
     manageRaces: 'Rennen verwalten',
     manageRacesDesc: 'Synchronisierte Rennen anzeigen und löschen',
     manage: 'Verwalten',
-    enterAdminPin: 'Admin-PIN eingeben',
-    enterPinText: 'Geben Sie die Admin-PIN ein, um die Rennverwaltung zu öffnen.',
+    enterAdminPin: 'Rennverwaltungs-PIN eingeben',
+    enterPinText: 'Geben Sie Ihre PIN ein, um die Rennverwaltung zu öffnen.',
+    enterPinToJoinRace: 'Geben Sie Ihre PIN ein, um diesem Rennen beizutreten.',
     incorrectPin: 'Falsche PIN',
     verify: 'Bestätigen',
-    setPinFirst: 'Bitte zuerst Admin-PIN festlegen',
-    pinSaved: 'Admin-PIN gespeichert',
-    pinCleared: 'Admin-PIN gelöscht',
+    setPinFirst: 'Bitte zuerst Rennverwaltungs-PIN festlegen',
+    pinSaved: 'PIN gespeichert',
+    pinCleared: 'PIN gelöscht',
     pinNotSet: 'Nicht gesetzt',
     pinSet: 'PIN gesetzt',
     setPin: 'PIN setzen',
@@ -338,7 +365,30 @@ export const translations: Record<Language, Translations> = {
     // Storage errors
     storageError: 'Speichern fehlgeschlagen - Speicher prüfen',
     storageQuotaError: 'Speicher voll! Daten sofort exportieren',
-    storageWarning: 'Speicher fast voll'
+    storageWarning: 'Speicher fast voll',
+
+    // Network errors
+    networkError: 'Netzwerkfehler - Verbindung prüfen',
+    connectionFailed: 'Verbindung fehlgeschlagen',
+    serverUnavailable: 'Server nicht erreichbar',
+    rateLimitError: 'Zu viele Anfragen - bitte warten',
+    authError: 'Authentifizierung fehlgeschlagen',
+
+    // Sync errors
+    syncFailed: 'Synchronisierung fehlgeschlagen',
+    pinSyncFailed: 'PIN nicht in Cloud gespeichert',
+
+    // Camera errors
+    cameraError: 'Kamerafehler',
+    cameraPermissionDenied: 'Kamerazugriff verweigert',
+
+    // GPS errors
+    gpsError: 'GPS-Fehler',
+    gpsPermissionDenied: 'GPS-Zugriff verweigert',
+    gpsUnavailable: 'GPS nicht verfügbar',
+
+    // Generic errors
+    unknownError: 'Unbekannter Fehler'
   }
 };
 

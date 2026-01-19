@@ -1,9 +1,62 @@
 import { store } from '../store';
 import type { Entry, SyncResponse, DeviceInfo } from '../types';
 import { isValidEntry } from '../utils/validation';
+import { fetchWithTimeout } from '../utils/errors';
 
 // API configuration
 const API_BASE = '/api/sync';
+const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
+
+// Get auth headers for sync API requests (JWT token)
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return {};
+}
+
+// Check if we have a valid auth token
+export function hasAuthToken(): boolean {
+  return !!localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+// Store auth token
+export function setAuthToken(token: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+// Clear auth token (on expiry or logout)
+export function clearAuthToken(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+// Exchange PIN for JWT token
+export async function exchangePinForToken(pin: string): Promise<{ success: boolean; token?: string; error?: string; isNewPin?: boolean }> {
+  try {
+    const response = await fetch('/api/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Authentication failed' };
+    }
+
+    if (data.token) {
+      setAuthToken(data.token);
+      return { success: true, token: data.token, isNewPin: data.isNewPin };
+    }
+
+    return { success: false, error: 'No token received' };
+  } catch (error) {
+    console.error('Token exchange error:', error);
+    return { success: false, error: 'Network error' };
+  }
+}
 
 // Sync configuration
 const POLL_INTERVAL_NORMAL = 5000; // 5 seconds
@@ -11,6 +64,7 @@ const POLL_INTERVAL_ERROR = 30000; // 30 seconds on error
 const MAX_RETRIES = 5;
 const RETRY_BACKOFF_BASE = 2000; // 2 seconds
 const QUEUE_PROCESS_INTERVAL = 10000; // 10 seconds
+const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
 
 class SyncService {
   private pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -156,7 +210,30 @@ class SyncService {
         deviceId: state.deviceId,
         deviceName: state.deviceName
       });
-      const response = await fetch(`${API_BASE}?${params}`);
+      const response = await fetchWithTimeout(`${API_BASE}?${params}`, {
+        headers: getAuthHeaders()
+      }, FETCH_TIMEOUT);
+
+      // Handle authentication errors specially
+      if (response.status === 401) {
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          data = {};
+        }
+        if (data.expired) {
+          // Token expired - clear and notify user
+          clearAuthToken();
+          store.setSyncStatus('disconnected');
+          window.dispatchEvent(new CustomEvent('auth-expired', {
+            detail: { message: 'Session expired. Please re-enter your PIN.' }
+          }));
+          this.cleanup();
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${data.error || 'Unauthorized'}`);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -189,6 +266,7 @@ class SyncService {
       }
 
       const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
+      const deletedIds = Array.isArray(data.deletedIds) ? data.deletedIds : [];
 
       // Update sync status
       store.setSyncStatus('connected');
@@ -203,9 +281,14 @@ class SyncService {
         store.setCloudHighestBib(data.highestBib);
       }
 
-      // Merge remote entries
+      // Remove locally any entries that were deleted from cloud
+      if (deletedIds.length > 0) {
+        store.removeDeletedCloudEntries(deletedIds);
+      }
+
+      // Merge remote entries (excluding deleted ones)
       if (cloudEntries.length > 0) {
-        const added = store.mergeCloudEntries(cloudEntries);
+        const added = store.mergeCloudEntries(cloudEntries, deletedIds);
         if (added > 0) {
           this.showSyncToast(`Synced ${added} entries from cloud`);
         }
@@ -217,16 +300,52 @@ class SyncService {
       console.error('Cloud sync fetch error:', error);
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorName = error instanceof Error ? error.name : '';
 
-      if (errorMessage.includes('500') || errorMessage.includes('503')) {
+      if (errorName === 'FetchTimeoutError' || errorMessage.includes('timed out')) {
         store.setSyncStatus('error');
-      } else if (errorMessage.includes('Failed to fetch')) {
+      } else if (errorMessage.includes('500') || errorMessage.includes('503')) {
+        store.setSyncStatus('error');
+      } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
         store.setSyncStatus('offline');
       } else {
         store.setSyncStatus('error');
       }
 
       this.adjustPollingInterval(false);
+    }
+  }
+
+  /**
+   * Delete entry from cloud
+   */
+  async deleteEntryFromCloud(entryId: string, entryDeviceId?: string): Promise<boolean> {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return false;
+
+    try {
+      const response = await fetchWithTimeout(
+        `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({
+            entryId,
+            deviceId: entryDeviceId || state.deviceId,
+            deviceName: state.deviceName
+          })
+        },
+        FETCH_TIMEOUT
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Cloud sync delete error:', error);
+      return false;
     }
   }
 
@@ -238,17 +357,18 @@ class SyncService {
     if (!state.settings.sync || !state.raceId) return false;
 
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({
             entry,
             deviceId: state.deviceId,
             deviceName: state.deviceName
           })
-        }
+        },
+        FETCH_TIMEOUT
       );
 
       if (!response.ok) {
@@ -419,8 +539,10 @@ class SyncService {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`
+      const response = await fetchWithTimeout(
+        `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`,
+        { headers: getAuthHeaders() },
+        5000 // 5 second timeout for quick check
       );
 
       if (!response.ok) {

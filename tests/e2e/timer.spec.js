@@ -6,14 +6,22 @@
 
 import { test, expect } from '@playwright/test';
 
+// Helper to click a toggle by clicking its label wrapper
+async function clickToggle(page, toggleSelector) {
+  await page.locator(`label:has(${toggleSelector})`).click();
+}
+
+// Helper to check if toggle is on
+async function isToggleOn(page, toggleSelector) {
+  return await page.locator(toggleSelector).isChecked();
+}
+
 // Helper to disable simple mode for tests that need full UI
 async function disableSimpleMode(page) {
-  await page.click('[data-view="settings-view"]');
-  await page.waitForSelector('#toggle-simple');
-  const toggle = page.locator('#toggle-simple');
-  const isSimple = await toggle.evaluate(el => el.classList.contains('on'));
-  if (isSimple) {
-    await toggle.click();
+  await page.click('[data-view="settings"]');
+  await page.waitForSelector('#simple-mode-toggle');
+  if (await isToggleOn(page, '#simple-mode-toggle')) {
+    await clickToggle(page, '#simple-mode-toggle');
   }
   await page.click('[data-view="timing-view"]');
   await page.waitForSelector('.clock-time');
@@ -75,7 +83,7 @@ test.describe('Timer View', () => {
     test('should clear bib with clear button', async ({ page }) => {
       await page.click('[data-num="1"]');
       await page.click('[data-num="2"]');
-      await page.click('#btn-clear');
+      await page.click('[data-action="clear"]');
 
       const bibDisplay = page.locator('.bib-display');
       await expect(bibDisplay).toContainText('---');
@@ -176,7 +184,7 @@ test.describe('Timer View', () => {
       await page.waitForTimeout(2000);
 
       // Clear and enter same bib again
-      await page.click('#btn-clear');
+      await page.click('[data-action="clear"]');
       await page.click('[data-num="0"]');
       await page.click('[data-num="0"]');
       await page.click('[data-num="1"]');
@@ -273,8 +281,8 @@ test.describe('Timer View - Simple Mode', () => {
 
   test('should show all timing points in full mode', async ({ page }) => {
     // Go to settings and turn off simple mode
-    await page.click('[data-view="settings-view"]');
-    await page.click('#toggle-simple');
+    await page.click('[data-view="settings"]');
+    await clickToggle(page, "#simple-mode-toggle");
 
     // Go back to timer
     await page.click('[data-view="timing-view"]');
@@ -361,7 +369,7 @@ test.describe('Undo/Redo Functionality', () => {
     await page.waitForTimeout(500);
 
     // Record new entry
-    await page.click('#btn-clear');
+    await page.click('[data-action="clear"]');
     await page.click('[data-num="2"]');
     await page.click('#timestamp-btn');
     await page.waitForTimeout(500);

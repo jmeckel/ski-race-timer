@@ -4,88 +4,148 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for ski races. It's a static single-page application designed for mobile use in outdoor race conditions.
+Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for ski races. It's a TypeScript single-page application designed for mobile use in outdoor race conditions.
 
 ## Commands
 
-- **Start dev server**: `npm start` (runs `npx serve public`)
-- **Build**: No build step required - this is a static site
+- **Start dev server**: `npm start` or `npm run dev`
+- **Build**: `npm run build` (TypeScript compilation + Vite build)
+- **Run tests**: `npm test` (unit tests) or `npm run test:e2e` (Playwright E2E tests)
+- **Type check**: `npm run typecheck`
 
 ## Architecture
 
-### Single-File Application
+### Source Structure
 
-All application code lives in `/public/index.html` with inline CSS and JavaScript. This design choice minimizes HTTP requests and simplifies offline caching.
+```
+.
+├── api/                    # Vercel serverless functions
+│   ├── auth/
+│   │   └── token.js       # JWT token exchange endpoint
+│   ├── admin/
+│   │   ├── races.js       # Race management API
+│   │   └── pin.js         # PIN management API
+│   ├── lib/
+│   │   └── jwt.js         # Shared JWT utilities
+│   └── sync.js            # Cloud sync API
+├── src/
+│   ├── app.ts             # Main application logic
+│   ├── store/             # State management (Zustand-like)
+│   ├── services/          # GPS, sync, camera, feedback services
+│   ├── components/        # UI components (Clock, VirtualList, Toast)
+│   ├── utils/             # Validation, error handling utilities
+│   ├── i18n/              # Translations (EN/DE)
+│   └── types/             # TypeScript type definitions
+├── public/
+│   ├── icons/             # App icons (72-512px PNG)
+│   ├── manifest.json      # PWA manifest
+│   └── sw.js              # Service worker (cache-first)
+├── tests/
+│   ├── api/               # API unit tests (Vitest)
+│   ├── unit/              # Component/service unit tests
+│   └── e2e/               # Playwright E2E tests
+└── index.html             # Entry point
+```
 
 ### Key Components
 
 The app has three tab-based views:
 1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Finish), number pad
-2. **Results** - List of recorded times, CSV export, entry editing/deletion, statistics
-3. **Settings** - GPS sync status, auto-increment bib toggle, haptic feedback, language toggle (EN/DE)
+2. **Results** - List of recorded times, CSV export (Race Horology format), entry editing/deletion, photo thumbnails
+3. **Settings** - GPS sync, cloud sync, auto-increment bib, haptic/sound feedback, language toggle (EN/DE), photo capture, race management
 
 ### Data Storage
 
-- Uses browser LocalStorage with keys `skiTimerEntries` (race data) and `skiTimerLang` (language preference)
-- Entry format: `{ id, bib, point: 'S'|'F', timestamp }`
+- **LocalStorage keys**:
+  - `skiTimerEntries` - Race timing entries
+  - `skiTimerSettings` - User settings
+  - `skiTimerAuthToken` - JWT authentication token
+  - `skiTimerRaceId` - Current race ID
+  - `skiTimerDeviceId` - Unique device identifier
 
-### PWA Structure
-
-```
-.
-├── api/
-│   └── sync.js         # Vercel serverless function for cloud sync
-├── public/
-│   ├── index.html      # Main application (HTML + CSS + JS)
-│   ├── manifest.json   # PWA manifest
-│   ├── sw.js           # Service worker (cache-first strategy)
-│   └── icons/          # App icons (72-512px PNG/SVG)
-└── package.json        # Dependencies (@vercel/kv)
-```
-
-### Service Worker
-
-`sw.js` implements cache-first with network fallback. Cache version: `ski-race-timer-v5`. Updates require incrementing the cache version.
+- **Entry format**: `{ id, bib, point: 'S'|'F', timestamp, status, deviceId, deviceName, photo? }`
 
 ### Multi-Device Sync
 
-Cross-device sync uses Vercel KV (Redis) with polling:
-- **API endpoint**: `/api/sync.js` handles GET (fetch entries) and POST (add entry)
-- **Polling interval**: 2 seconds when sync is enabled
+Cross-device sync uses Redis (via ioredis) with polling:
+- **API endpoint**: `/api/sync` handles GET (fetch), POST (add), DELETE (remove)
+- **Polling interval**: 5 seconds (30 seconds on error)
 - **BroadcastChannel**: Used for same-browser tab sync
-- **Race ID**: Unique identifier to group synced devices
+- **Race ID**: Case-insensitive unique identifier to group synced devices
 
-## Key Implementation Details
+### Authentication
 
-- **Translations**: Hardcoded in JavaScript object within index.html, toggled via `toggleLanguage()`. Default language: German
-- **GPS sync**: Uses Geolocation API for real GPS timestamps
-- **Haptic feedback**: Uses Navigator.vibrate() API
-- **Sound feedback**: Uses Web Audio API for beep sounds
-- **Mobile optimization**: Safe area insets for notches, touch-optimized, no user scaling
+JWT-based authentication protects sync and admin APIs:
 
-## Vercel Setup
+1. **Token Exchange**: User enters 4-digit PIN → `/api/auth/token` returns JWT
+2. **Token Storage**: JWT stored in localStorage (`skiTimerAuthToken`)
+3. **Token Usage**: API calls include `Authorization: Bearer <token>` header
+4. **Token Expiry**: 24-hour expiry, auto-prompts re-authentication
+5. **Backwards Compatible**: Legacy PIN hash still accepted for migration
 
-To enable cloud sync, add Vercel KV to your project:
-1. In Vercel dashboard, go to Storage → Create Database → KV
-2. Connect it to your project
-3. The `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables are auto-configured
+### CSV Export Format (Race Horology)
+
+Exports use semicolon delimiter and standard timing designators:
+- **Columns**: Startnummer, Messpunkt, Zeit, Status, Gerät
+- **Timing Points**: ST (Start), FT (Finish)
+- **Time Format**: HH:MM:SS.ss (hundredths of seconds)
+- **CSV Injection Protection**: Formula characters escaped with single quote prefix
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `REDIS_URL` | Yes | Redis connection URL (auto-configured with Vercel KV) |
-| `ADMIN_PIN` | Recommended | 4-digit PIN for admin API authentication (e.g., `1234`). If not set, admin API is unprotected. |
-| `CORS_ORIGIN` | No | Allowed CORS origin (defaults to `*`) |
+| `REDIS_URL` | Yes | Redis connection URL (Vercel KV or external Redis) |
+| `JWT_SECRET` | **Production** | Secret for signing JWT tokens. **Required in production** - will fail to start without it. |
+| `CORS_ORIGIN` | No | Allowed CORS origin (defaults to production domain) |
 
-## Admin API
+## API Endpoints
 
-The admin API (`/api/admin/races`) requires authentication when `ADMIN_PIN` is configured:
-- **GET** - List all races (requires PIN)
-- **DELETE** - Delete a race (requires PIN)
+### `/api/auth/token` (POST)
+Exchange PIN for JWT token.
+- **Body**: `{ pin: "1234" }`
+- **Response**: `{ success: true, token: "jwt...", isNewPin?: true }`
 
-Authentication flow:
-1. User enters PIN in app settings
-2. PIN is stored in sessionStorage (cleared on tab close)
-3. API calls include `Authorization: Bearer <pin>` header
-4. Server validates PIN using SHA-256 hash comparison
+### `/api/sync` (GET/POST/DELETE)
+Cloud sync for race entries. Requires JWT token when PIN is set.
+- **GET**: Fetch entries for race
+- **POST**: Add/update entry
+- **DELETE**: Remove entry
+
+### `/api/admin/races` (GET/DELETE)
+Race management. Requires JWT token.
+- **GET**: List all races with metadata
+- **DELETE**: Delete race and set tombstone for connected clients
+
+## Testing
+
+```bash
+# Unit tests (Vitest)
+npm test
+
+# E2E tests (Playwright)
+npm run test:e2e
+
+# E2E with browser visible
+npm run test:e2e:headed
+
+# All tests
+npm run test:all
+```
+
+## Vercel Deployment
+
+1. Connect repository to Vercel
+2. Add Vercel KV (Storage → Create Database → KV)
+3. Set `JWT_SECRET` environment variable in Vercel dashboard
+4. Deploy - environment variables auto-configured
+
+## Key Implementation Details
+
+- **Translations**: In `src/i18n/translations.ts`, toggled via language setting. Default: German
+- **GPS sync**: Uses Geolocation API for real GPS timestamps
+- **Haptic feedback**: Uses Navigator.vibrate() API
+- **Sound feedback**: Uses Web Audio API for beep sounds
+- **Photo capture**: Optional photo on timestamp, synced if <500KB
+- **Mobile optimization**: Safe area insets for notches, touch-optimized, portrait lock
+- **Service Worker**: Cache version `ski-race-timer-v31`, updates require version increment

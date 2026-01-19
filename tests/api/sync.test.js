@@ -889,3 +889,276 @@ describe('API: /api/sync', () => {
     });
   });
 });
+
+// ============================================
+// JWT Authentication Tests
+// ============================================
+
+describe('API: /api/sync - JWT Authentication', () => {
+  let mockRedis;
+
+  beforeEach(() => {
+    mockRedisData.clear();
+    mockRedis = createMockRedis();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Mock JWT validation handler
+  async function authHandler(req, res, redis) {
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    };
+
+    const response = {
+      status: null,
+      headers: {},
+      body: null
+    };
+
+    const mockRes = {
+      setHeader: (key, value) => { response.headers[key] = value; },
+      status: (code) => {
+        response.status = code;
+        return {
+          json: (data) => { response.body = data; return response; },
+          end: () => { return response; }
+        };
+      }
+    };
+
+    // Set CORS headers
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      mockRes.setHeader(key, value);
+    });
+
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return mockRes.status(200).end();
+    }
+
+    // Validate auth
+    const authResult = await validateAuth(req, redis, 'admin:clientPin');
+    if (!authResult.valid) {
+      return mockRes.status(401).json({
+        error: authResult.error,
+        expired: authResult.expired || false
+      });
+    }
+
+    // Success - return mock data
+    return mockRes.status(200).json({ success: true, method: authResult.method });
+  }
+
+  // Mock validateAuth function matching api/lib/jwt.js behavior
+  async function validateAuth(req, redis, clientPinKey) {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader) {
+      const storedPinHash = await redis.get(clientPinKey);
+      if (!storedPinHash) {
+        return { valid: true, method: 'none' };
+      }
+      return { valid: false, error: 'Authorization required. Set Race Management PIN in settings.' };
+    }
+
+    // Extract Bearer token
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return { valid: false, error: 'Invalid authorization format. Use: Bearer <token>' };
+    }
+
+    const token = parts[1];
+
+    // Check if token is a valid JWT (3 parts with dots)
+    const jwtParts = token.split('.');
+    if (jwtParts.length === 3) {
+      // Mock JWT verification
+      try {
+        const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64').toString());
+        if (payload.type === 'race-management' && payload.exp > Math.floor(Date.now() / 1000)) {
+          return { valid: true, method: 'jwt', payload };
+        }
+        if (payload.exp <= Math.floor(Date.now() / 1000)) {
+          return { valid: false, error: 'Token expired. Please re-authenticate.', expired: true };
+        }
+      } catch (e) {
+        // Not a valid JWT, try PIN hash fallback
+      }
+    }
+
+    // Fallback to PIN hash validation
+    const storedPinHash = await redis.get(clientPinKey);
+    if (!storedPinHash) {
+      return { valid: true, method: 'none' };
+    }
+
+    if (token === storedPinHash) {
+      return { valid: true, method: 'pin-hash' };
+    }
+
+    return { valid: false, error: 'Invalid token or PIN' };
+  }
+
+  describe('No Authentication Required', () => {
+    it('should allow access when no PIN is set', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: {}
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.method).toBe('none');
+    });
+  });
+
+  describe('Authorization Header Required', () => {
+    beforeEach(() => {
+      // Set a PIN hash
+      mockRedisData.set('admin:clientPin', 'stored-pin-hash-12345');
+    });
+
+    it('should return 401 when Authorization header is missing', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: {}
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Authorization required');
+    });
+
+    it('should return 401 for invalid authorization format', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: 'InvalidFormat token' }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Invalid authorization format');
+    });
+
+    it('should return 401 when Authorization header has no Bearer prefix', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: 'some-token' }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+    });
+  });
+
+  describe('JWT Token Authentication', () => {
+    beforeEach(() => {
+      mockRedisData.set('admin:clientPin', 'stored-pin-hash-12345');
+    });
+
+    it('should accept valid JWT token', async () => {
+      // Create a valid mock JWT
+      const payload = {
+        type: 'race-management',
+        exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.method).toBe('jwt');
+    });
+
+    it('should reject expired JWT token with expired flag', async () => {
+      // Create an expired mock JWT
+      const payload = {
+        type: 'race-management',
+        exp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago (expired)
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('expired');
+      expect(result.body.expired).toBe(true);
+    });
+
+    it('should reject JWT with wrong type', async () => {
+      const payload = {
+        type: 'wrong-type',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+    });
+  });
+
+  describe('PIN Hash Fallback (Backwards Compatibility)', () => {
+    beforeEach(() => {
+      mockRedisData.set('admin:clientPin', 'stored-pin-hash-12345');
+    });
+
+    it('should accept valid PIN hash as Bearer token', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: 'Bearer stored-pin-hash-12345' }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.method).toBe('pin-hash');
+    });
+
+    it('should reject invalid PIN hash', async () => {
+      const req = {
+        method: 'GET',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: 'Bearer wrong-pin-hash' }
+      };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Invalid token or PIN');
+    });
+  });
+
+  describe('CORS Headers with Auth', () => {
+    it('should include Authorization in allowed headers', async () => {
+      const req = { method: 'OPTIONS', headers: {} };
+      const result = await authHandler(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.headers['Access-Control-Allow-Headers']).toContain('Authorization');
+    });
+  });
+});

@@ -1,17 +1,18 @@
 /* ===== CSS Variables ===== */
 /* Skiteam Oberhaching color scheme with blue primary for actions */
+/* Optimized for outdoor visibility with high contrast */
 :root {
   --primary: #3B82F6;           /* Blue - primary actions */
   --primary-dark: #2563EB;      /* Darker blue for depth */
   --secondary: #E31837;         /* Red - brand accent, Finish point */
   --secondary-light: #60A5FA;   /* Light blue for gradients */
   --accent: #FFFFFF;
-  --background: #0D0D0D;
-  --surface: #1A1A1A;
-  --surface-elevated: #2A2A2A;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A0A0A0;
-  --text-tertiary: #666666;
+  --background: #000000;        /* Pure black for max contrast */
+  --surface: #141414;           /* Slightly lighter for surfaces */
+  --surface-elevated: #242424;  /* Elevated surfaces */
+  --text-primary: #FFFFFF;      /* Pure white for max contrast */
+  --text-secondary: #D0D0D0;    /* Brighter secondary text for outdoor */
+  --text-tertiary: #909090;     /* Brighter tertiary text for outdoor */
   --success: #4ADE80;
   --warning: #FBBF24;
   --error: #EF4444;
@@ -20,6 +21,7 @@
   --gps-inactive: #EF4444;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
+  --radius: 8px;                /* Consistent corner radius for all elements */
 }
 
 /* ===== Reset & Base ===== */
@@ -71,7 +73,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 4px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--surface-elevated);
 }
@@ -90,16 +92,18 @@ body {
 .sync-indicator {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--surface-elevated);
-  border-radius: 12px;
-  font-size: 0.75rem;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .sync-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--text-tertiary);
 }
@@ -124,12 +128,13 @@ body {
 }
 
 .entry-count-badge {
-  padding: 2px 8px;
+  padding: 4px 10px;
   background: var(--secondary);
   color: white;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== Views ===== */
@@ -163,23 +168,26 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 12px 16px;
-  background: var(--surface);
-  border-radius: 14px;
+  padding: 8px 16px;
+  margin-top: 8px;
+  background: var(--background);
+  border-radius: var(--radius);
+  border: 1px solid var(--surface-elevated);
   flex-shrink: 0;
 }
 
 .bib-label {
   color: var(--text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .bib-value {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 2.5rem;
-  font-weight: 700;
-  min-width: 100px;
+  font-size: 2.75rem;
+  font-weight: 800;
+  min-width: 110px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
 /* Last Recorded Entry Display */
@@ -188,10 +196,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 6px 16px;
+  padding: 8px 16px;
   background: var(--surface-elevated);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
   color: var(--text-secondary);
   opacity: 0;
   transform: translateY(-10px);
@@ -206,19 +215,21 @@ body {
 
 .last-recorded .bib {
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
 .last-recorded .point {
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .last-recorded .time {
   font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
 }
 
 /* Timing Points */
@@ -230,14 +241,14 @@ body {
 
 .timing-point-btn {
   flex: 1;
-  max-width: 80px;
-  padding: 10px 8px;
+  max-width: 90px;
+  padding: 12px 10px;
   border: 2px solid var(--surface-elevated);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -271,23 +282,22 @@ body {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(4, 1fr);
   gap: 4px;
-  padding: 4px;
   flex: 1;
   min-height: 0;
 }
 
 .num-btn {
-  border: none;
-  border-radius: 10px;
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-primary);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
   min-height: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .num-btn:active {
@@ -309,19 +319,20 @@ body {
 /* Timestamp Button */
 .timestamp-btn {
   width: 100%;
-  padding: 42px 24px;
-  border: none;
-  border-radius: 20px;
+  padding: 32px 24px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%);
   color: white;
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease-out, background 0.2s ease;
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
   flex-shrink: 0;
   position: relative;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .timestamp-btn:active {
@@ -357,8 +368,9 @@ body {
 .timestamp-photo-icon {
   display: none;
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
   opacity: 0.85;
 }
 
@@ -396,7 +408,7 @@ body {
   flex: 1;
   padding: 10px 12px;
   border: 1px solid var(--surface-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--background);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -416,7 +428,7 @@ body {
 .filter-select {
   padding: 10px 12px;
   border: 1px solid var(--surface-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--background);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -473,7 +485,7 @@ body {
   gap: 8px;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--surface-elevated);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -543,7 +555,7 @@ body {
   justify-content: space-between;
   padding: 16px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius);
   margin-bottom: 8px;
 }
 
@@ -611,7 +623,7 @@ body {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--surface-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--background);
   color: var(--text-primary);
   font-size: 1rem;
@@ -653,7 +665,7 @@ body {
 .lang-toggle {
   display: flex;
   background: var(--surface-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -755,7 +767,7 @@ body {
   width: 100%;
   max-width: 360px;
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius);
   overflow: hidden;
   animation: modalIn 0.2s ease-out;
 }
@@ -796,7 +808,7 @@ body {
   flex: 1;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -869,7 +881,7 @@ body {
   color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -888,7 +900,7 @@ body {
   align-items: center;
   justify-content: center;
   background: var(--background);
-  border-radius: 8px;
+  border-radius: var(--radius);
   overflow: hidden;
   margin: 16px;
 }
@@ -915,7 +927,7 @@ body {
 
 .photo-viewer-point {
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--success);
@@ -928,14 +940,34 @@ body {
 }
 
 /* ===== Confirmation Overlay ===== */
+/* Non-blocking overlay - allows interaction with elements below */
 .confirmation-overlay {
   position: fixed;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
+  padding: 32px 48px;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: var(--radius);
+  border: 4px solid rgba(255, 255, 255, 0.15);
   z-index: 900;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Timing point colored borders for quick visual verification */
+.confirmation-overlay[data-point="S"] {
+  border-color: var(--success);
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.confirmation-overlay[data-point="F"] {
+  border-color: var(--secondary);
+  box-shadow: 0 0 40px rgba(249, 115, 22, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .confirmation-overlay.show {
@@ -960,20 +992,22 @@ body {
 
 .confirmation-bib {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 4rem;
+  font-weight: 800;
   color: var(--primary);
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
 }
 
 .confirmation-point {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.75rem;
+  font-weight: 700;
   margin-top: 8px;
 }
 
 .confirmation-time {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -987,7 +1021,7 @@ body {
   padding: 8px 16px;
   background: var(--warning);
   color: var(--background);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-weight: 600;
 }
 
@@ -996,15 +1030,17 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  background: var(--surface-elevated);
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .gps-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--gps-inactive);
 }
@@ -1088,25 +1124,25 @@ body {
   }
 
   .num-btn {
-    font-size: 1.125rem;
-    border-radius: 8px;
+    font-size: 1.25rem;
+    font-weight: 700;
   }
 
   .timestamp-btn {
-    padding: 33px 20px;
-    font-size: 1.75rem;
+    padding: 25px 20px;
+    font-size: 2rem;
   }
 
   .bib-display {
-    padding: 10px 14px;
+    padding: 6px 12px;
   }
 
   .bib-value {
-    font-size: 2.25rem;
+    font-size: 2.5rem;
   }
 
   .timing-point-btn {
-    padding: 8px 6px;
+    padding: 10px 8px;
   }
 }
 
@@ -1121,13 +1157,13 @@ body {
   }
 
   .num-btn {
-    font-size: 1rem;
+    font-size: 1.125rem;
+    font-weight: 700;
   }
 
   .timestamp-btn {
-    padding: 27px 16px;
-    font-size: 1.5rem;
-    border-radius: 16px;
+    padding: 20px 16px;
+    font-size: 1.75rem;
   }
 }
 
@@ -1181,7 +1217,7 @@ body {
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--surface-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius);
   margin-bottom: 8px;
 }
 
@@ -1214,7 +1250,7 @@ body {
 .race-delete-btn {
   padding: 8px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--error);
   color: white;
   font-size: 0.75rem;

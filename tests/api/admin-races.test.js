@@ -539,3 +539,249 @@ describe('Sync API Tombstone Detection', () => {
     expect(result.body.deleted).toBe(true);
   });
 });
+
+// ============================================
+// JWT Authentication Tests for Admin API
+// ============================================
+
+describe('Admin API JWT Authentication', () => {
+  let mockRedis;
+
+  beforeEach(() => {
+    mockRedisData.clear();
+    mockRedis = createMockRedis();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Mock validateAuth function matching api/lib/jwt.js behavior
+  async function validateAuth(req, redis, clientPinKey) {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader) {
+      const storedPinHash = await redis.get(clientPinKey);
+      if (!storedPinHash) {
+        return { valid: true, method: 'none' };
+      }
+      return { valid: false, error: 'Authorization required. Set Race Management PIN in settings.' };
+    }
+
+    // Extract Bearer token
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return { valid: false, error: 'Invalid authorization format. Use: Bearer <token>' };
+    }
+
+    const token = parts[1];
+
+    // Check if token is a valid JWT (3 parts with dots)
+    const jwtParts = token.split('.');
+    if (jwtParts.length === 3) {
+      try {
+        const payload = JSON.parse(Buffer.from(jwtParts[1], 'base64').toString());
+        if (payload.type === 'race-management' && payload.exp > Math.floor(Date.now() / 1000)) {
+          return { valid: true, method: 'jwt', payload };
+        }
+        if (payload.exp <= Math.floor(Date.now() / 1000)) {
+          return { valid: false, error: 'Token expired. Please re-authenticate.', expired: true };
+        }
+      } catch (e) {
+        // Not a valid JWT
+      }
+    }
+
+    // Fallback to PIN hash validation
+    const storedPinHash = await redis.get(clientPinKey);
+    if (!storedPinHash) {
+      return { valid: true, method: 'none' };
+    }
+
+    if (token === storedPinHash) {
+      return { valid: true, method: 'pin-hash' };
+    }
+
+    return { valid: false, error: 'Invalid token or PIN' };
+  }
+
+  // Admin handler with auth
+  async function adminHandlerWithAuth(req, res, redis) {
+    const response = {
+      status: null,
+      headers: {},
+      body: null
+    };
+
+    const mockRes = {
+      setHeader: (key, value) => { response.headers[key] = value; },
+      status: (code) => {
+        response.status = code;
+        return {
+          json: (data) => { response.body = data; return response; },
+          end: () => { return response; }
+        };
+      }
+    };
+
+    // Set CORS headers
+    mockRes.setHeader('Access-Control-Allow-Origin', '*');
+    mockRes.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS');
+    mockRes.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+      return mockRes.status(200).end();
+    }
+
+    // Validate auth
+    const authResult = await validateAuth(req, redis, 'admin:clientPin');
+    if (!authResult.valid) {
+      return mockRes.status(401).json({
+        error: authResult.error,
+        expired: authResult.expired || false
+      });
+    }
+
+    // Proceed with admin operations
+    if (req.method === 'GET') {
+      const races = await listRaces(redis);
+      return mockRes.status(200).json({ races, authMethod: authResult.method });
+    }
+
+    if (req.method === 'DELETE') {
+      const { raceId } = req.query || {};
+      if (!raceId) {
+        return mockRes.status(400).json({ error: 'raceId is required' });
+      }
+      const result = await deleteRace(redis, raceId);
+      if (!result.success) {
+        return mockRes.status(404).json({ error: result.error });
+      }
+      return mockRes.status(200).json({ ...result, authMethod: authResult.method });
+    }
+
+    return mockRes.status(405).json({ error: 'Method not allowed' });
+  }
+
+  describe('No PIN Set', () => {
+    it('should allow admin access when no PIN is configured', async () => {
+      const req = { method: 'GET', query: {}, headers: {} };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.authMethod).toBe('none');
+    });
+  });
+
+  describe('PIN Required', () => {
+    beforeEach(() => {
+      mockRedisData.set('admin:clientPin', 'stored-admin-pin-hash');
+    });
+
+    it('should require auth when PIN is set', async () => {
+      const req = { method: 'GET', query: {}, headers: {} };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Authorization required');
+    });
+
+    it('should accept valid JWT for admin operations', async () => {
+      const payload = {
+        type: 'race-management',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'GET',
+        query: {},
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.authMethod).toBe('jwt');
+    });
+
+    it('should reject expired JWT with expired flag', async () => {
+      const payload = {
+        type: 'race-management',
+        exp: Math.floor(Date.now() / 1000) - 3600 // expired
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'GET',
+        query: {},
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+      expect(result.body.expired).toBe(true);
+    });
+
+    it('should accept PIN hash fallback for admin operations', async () => {
+      const req = {
+        method: 'GET',
+        query: {},
+        headers: { authorization: 'Bearer stored-admin-pin-hash' }
+      };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.authMethod).toBe('pin-hash');
+    });
+  });
+
+  describe('DELETE with Auth', () => {
+    beforeEach(() => {
+      mockRedisData.set('admin:clientPin', 'stored-admin-pin-hash');
+      mockRedisData.set('race:test-race', JSON.stringify({
+        entries: [{ id: 1 }],
+        lastUpdated: Date.now()
+      }));
+    });
+
+    it('should allow DELETE with valid JWT', async () => {
+      const payload = {
+        type: 'race-management',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      const mockJwt = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const req = {
+        method: 'DELETE',
+        query: { raceId: 'TEST-RACE' },
+        headers: { authorization: `Bearer ${mockJwt}` }
+      };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.authMethod).toBe('jwt');
+    });
+
+    it('should reject DELETE without auth', async () => {
+      const req = {
+        method: 'DELETE',
+        query: { raceId: 'TEST-RACE' },
+        headers: {}
+      };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(401);
+    });
+  });
+
+  describe('CORS Headers', () => {
+    it('should include Authorization in CORS allowed headers', async () => {
+      const req = { method: 'OPTIONS', headers: {} };
+      const result = await adminHandlerWithAuth(req, {}, mockRedis);
+
+      expect(result.status).toBe(200);
+      expect(result.headers['Access-Control-Allow-Headers']).toContain('Authorization');
+    });
+  });
+});

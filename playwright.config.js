@@ -84,7 +84,7 @@ export default defineConfig({
 
   // Run local dev server before starting tests (not for production)
   webServer: isProduction ? undefined : {
-    command: 'npx serve public -l 3000',
+    command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000

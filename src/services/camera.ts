@@ -14,6 +14,7 @@ const CAMERA_CONFIG: MediaStreamConstraints = {
 const PHOTO_QUALITY = 0.8;
 const PHOTO_MAX_WIDTH = 1280;
 const PHOTO_MAX_HEIGHT = 720;
+const PHOTO_MAX_SIZE_KB = 200; // Max base64 size in KB (actual image ~150KB)
 
 class CameraService {
   private stream: MediaStream | null = null;
@@ -132,8 +133,16 @@ class CameraService {
       // Convert to base64
       const dataUrl = this.canvasElement.toDataURL('image/jpeg', PHOTO_QUALITY);
       const base64 = dataUrl.split(',')[1];
+      const sizeKB = Math.round(base64.length / 1024);
 
-      console.log(`Photo captured: ${Math.round(base64.length / 1024)}KB`);
+      console.log(`Photo captured: ${sizeKB}KB`);
+
+      // Check size limit
+      if (sizeKB > PHOTO_MAX_SIZE_KB) {
+        console.warn(`Photo too large (${sizeKB}KB > ${PHOTO_MAX_SIZE_KB}KB limit), discarding`);
+        return null;
+      }
+
       return base64;
     } catch (error) {
       console.error('Photo capture error:', error);

@@ -1,58 +1,11 @@
 import Redis from 'ioredis';
-import crypto from 'crypto';
+import { validateAuth } from '../lib/jwt.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
 
-// Authentication - PIN must be set via ADMIN_PIN environment variable
-const ADMIN_PIN = process.env.ADMIN_PIN;
-
-/**
- * Hash PIN using SHA-256 for secure comparison
- */
-function hashPin(pin) {
-  return crypto.createHash('sha256').update(pin).digest('hex');
-}
-
-/**
- * Authenticate admin request
- * Returns { authenticated: boolean, error?: string }
- */
-function authenticateAdmin(req) {
-  // If no ADMIN_PIN is configured, authentication is disabled (development mode)
-  if (!ADMIN_PIN) {
-    console.warn('ADMIN_PIN not configured - admin API is unprotected!');
-    return { authenticated: true };
-  }
-
-  // Get PIN from Authorization header (format: "Bearer <pin>")
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return { authenticated: false, error: 'Authorization header required' };
-  }
-
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    return { authenticated: false, error: 'Invalid authorization format. Use: Bearer <pin>' };
-  }
-
-  const providedPin = parts[1];
-
-  // Validate PIN format (4 digits)
-  if (!/^\d{4}$/.test(providedPin)) {
-    return { authenticated: false, error: 'Invalid PIN format' };
-  }
-
-  // Compare PINs using timing-safe comparison
-  const providedHash = hashPin(providedPin);
-  const expectedHash = hashPin(ADMIN_PIN);
-
-  if (!crypto.timingSafeEqual(Buffer.from(providedHash), Buffer.from(expectedHash))) {
-    return { authenticated: false, error: 'Invalid PIN' };
-  }
-
-  return { authenticated: true };
-}
+// Redis key for client PIN (same as other APIs)
+const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Create Redis client - reuse connection across invocations
 let redis = null;
@@ -87,8 +40,8 @@ function getRedis() {
   return redis;
 }
 
-// CORS configuration
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || '*';
+// CORS configuration - default to production domain
+const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -232,12 +185,6 @@ export default async function handler(req, res) {
 
   setCorsHeaders(res);
 
-  // Authenticate admin request
-  const auth = authenticateAdmin(req);
-  if (!auth.authenticated) {
-    return res.status(401).json({ error: auth.error || 'Unauthorized' });
-  }
-
   let client;
   try {
     client = getRedis();
@@ -248,6 +195,15 @@ export default async function handler(req, res) {
 
   if (redisError) {
     return res.status(503).json({ error: 'Database connection issue. Please try again.' });
+  }
+
+  // Authenticate admin request using JWT or PIN hash
+  const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
+  if (!auth.valid) {
+    return res.status(401).json({
+      error: auth.error || 'Unauthorized',
+      expired: auth.expired || false
+    });
   }
 
   try {
