@@ -95,7 +95,7 @@ body {
   max-width: 430px;
   margin: 0 auto;
   padding-top: var(--safe-top);
-  /* Note: bottom safe area handled by .tab-bar */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ===== Main Content ===== */
@@ -762,8 +762,7 @@ body {
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--surface-elevated);
-  padding-bottom: env(safe-area-inset-bottom);
-  position: relative;
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -771,15 +770,20 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
+  gap: 2px;
+  padding: 6px 8px 4px;
   border: none;
   background: transparent;
   color: var(--text-tertiary);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
   position: relative;
+}
+
+.tab-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .tab-btn::after {
@@ -1400,14 +1404,13 @@ body {
     padding: 4px 16px;
   }
 
-  /* Tab bar - reduce safe area in landscape */
+  /* Tab bar adjustments for landscape */
   .tab-bar {
-    padding: 4px 16px;
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    padding: 0 16px;
   }
 
   .tab-btn {
-    padding: 8px 12px;
+    padding: 6px 12px 4px;
   }
 
   /* Modal adjustments for landscape */
@@ -1463,19 +1466,18 @@ body {
   }
 
   .tab-bar {
-    padding: 2px 12px;
-    padding-bottom: max(2px, env(safe-area-inset-bottom));
+    padding: 0 12px;
   }
 
   .tab-btn {
-    padding: 6px 10px;
-    font-size: 0.75rem;
-    gap: 2px;
+    padding: 4px 10px 2px;
+    font-size: 0.7rem;
+    gap: 1px;
   }
 
   .tab-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 
   /* Settings more compact */
