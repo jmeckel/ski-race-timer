@@ -211,8 +211,12 @@ async function recordTimestamp(): Promise<void> {
 
     // Auto-increment bib if enabled and a bib was entered
     if (state.settings.auto && state.bibInput) {
-      const nextBib = String(parseInt(state.bibInput, 10) + 1);
-      store.setBibInput(nextBib);
+      const localNext = parseInt(state.bibInput, 10) + 1;
+      // If sync is enabled, use the max of local next and cloud highest + 1
+      const nextBib = state.settings.sync && state.cloudHighestBib > 0
+        ? Math.max(localNext, state.cloudHighestBib + 1)
+        : localNext;
+      store.setBibInput(String(nextBib));
     } else if (!state.bibInput) {
       // Keep empty if no bib was entered
       store.setBibInput('');
@@ -575,6 +579,18 @@ function initSettingsView(): void {
   // Race ID input
   const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
   if (raceIdInput) {
+    // Debounced race exists check on input
+    let raceCheckTimeout: ReturnType<typeof setTimeout>;
+    raceIdInput.addEventListener('input', () => {
+      clearTimeout(raceCheckTimeout);
+      const raceId = raceIdInput.value.trim();
+      if (raceId) {
+        raceCheckTimeout = setTimeout(() => checkRaceExists(raceId), 500);
+      } else {
+        updateRaceExistsIndicator(null, 0);
+      }
+    });
+
     raceIdInput.addEventListener('change', async () => {
       const newRaceId = raceIdInput.value.trim();
       const state = store.getState();
@@ -930,7 +946,7 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   }
 
   // Update sync status
-  if (changedKeys.includes('syncStatus') || changedKeys.includes('settings')) {
+  if (changedKeys.includes('syncStatus') || changedKeys.includes('settings') || changedKeys.includes('cloudDeviceCount')) {
     updateSyncStatusIndicator();
   }
 
@@ -1048,6 +1064,7 @@ function updateSyncStatusIndicator(): void {
   const indicator = document.getElementById('sync-indicator');
   const dot = document.querySelector('.sync-dot');
   const text = document.querySelector('.sync-status-text');
+  const deviceCountEl = document.getElementById('sync-device-count');
 
   // Show indicator when sync is enabled
   if (indicator) {
@@ -1067,6 +1084,16 @@ function updateSyncStatusIndicator(): void {
 
   if (text) {
     text.textContent = t(state.syncStatus, state.currentLang);
+  }
+
+  // Show device count when connected
+  if (deviceCountEl) {
+    if (state.syncStatus === 'connected' && state.cloudDeviceCount > 0) {
+      deviceCountEl.textContent = `(${state.cloudDeviceCount})`;
+      deviceCountEl.style.display = 'inline';
+    } else {
+      deviceCountEl.style.display = 'none';
+    }
   }
 }
 
@@ -1219,4 +1246,42 @@ function formatTimeDisplay(date: Date): string {
   const seconds = String(date.getSeconds()).padStart(2, '0');
   const ms = String(date.getMilliseconds()).padStart(3, '0');
   return `${hours}:${minutes}:${seconds}.${ms}`;
+}
+
+/**
+ * Check if race exists in cloud
+ */
+async function checkRaceExists(raceId: string): Promise<void> {
+  const result = await syncService.checkRaceExists(raceId);
+  store.setRaceExistsInCloud(result.exists);
+  updateRaceExistsIndicator(result.exists, result.entryCount);
+}
+
+/**
+ * Update race exists indicator UI
+ */
+function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): void {
+  const indicator = document.getElementById('race-exists-indicator');
+  const textEl = document.getElementById('race-exists-text');
+  const lang = store.getState().currentLang;
+
+  if (!indicator || !textEl) return;
+
+  if (exists === null) {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  indicator.style.display = 'inline-flex';
+  indicator.classList.remove('found', 'new');
+
+  if (exists) {
+    indicator.classList.add('found');
+    textEl.textContent = entryCount > 0
+      ? `${entryCount} ${t('entriesInCloud', lang)}`
+      : t('raceFound', lang);
+  } else {
+    indicator.classList.add('new');
+    textEl.textContent = t('raceNew', lang);
+  }
 }

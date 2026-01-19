@@ -150,9 +150,13 @@ class SyncService {
     if (!state.settings.sync || !state.raceId) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`
-      );
+      // Include deviceId and deviceName for heartbeat tracking
+      const params = new URLSearchParams({
+        raceId: state.raceId,
+        deviceId: state.deviceId,
+        deviceName: state.deviceName
+      });
+      const response = await fetch(`${API_BASE}?${params}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -174,6 +178,16 @@ class SyncService {
 
       // Update sync status
       store.setSyncStatus('connected');
+
+      // Update device count
+      if (typeof data.deviceCount === 'number') {
+        store.setCloudDeviceCount(data.deviceCount);
+      }
+
+      // Update highest bib
+      if (typeof data.highestBib === 'number') {
+        store.setCloudHighestBib(data.highestBib);
+      }
 
       // Merge remote entries
       if (cloudEntries.length > 0) {
@@ -225,6 +239,24 @@ class SyncService {
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Parse response to check for photoSkipped flag
+      try {
+        const data = await response.json();
+        if (data.photoSkipped) {
+          this.showSyncToast('Photo too large for sync', 'warning');
+        }
+
+        // Update device count and highest bib from response
+        if (typeof data.deviceCount === 'number') {
+          store.setCloudDeviceCount(data.deviceCount);
+        }
+        if (typeof data.highestBib === 'number') {
+          store.setCloudHighestBib(data.highestBib);
+        }
+      } catch {
+        // Ignore parse errors for response body
       }
 
       // Remove from sync queue on success
@@ -312,10 +344,10 @@ class SyncService {
   /**
    * Show sync toast notification
    */
-  private showSyncToast(message: string): void {
+  private showSyncToast(message: string, type: 'success' | 'warning' | 'error' = 'success'): void {
     // Dispatch custom event for toast
     window.dispatchEvent(new CustomEvent('show-toast', {
-      detail: { message, type: 'success' }
+      detail: { message, type }
     }));
   }
 
@@ -362,6 +394,34 @@ class SyncService {
    */
   getLastSyncTime(): number {
     return this.lastSyncTimestamp;
+  }
+
+  /**
+   * Check if a race exists in the cloud
+   */
+  async checkRaceExists(raceId: string): Promise<{ exists: boolean; entryCount: number }> {
+    if (!raceId) {
+      return { exists: false, entryCount: 0 };
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`
+      );
+
+      if (!response.ok) {
+        return { exists: false, entryCount: 0 };
+      }
+
+      const data = await response.json();
+      return {
+        exists: data.exists === true,
+        entryCount: typeof data.entryCount === 'number' ? data.entryCount : 0
+      };
+    } catch (error) {
+      console.error('Check race exists error:', error);
+      return { exists: false, entryCount: 0 };
+    }
   }
 }
 

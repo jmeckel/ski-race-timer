@@ -135,6 +135,9 @@ class Store {
       syncStatus: 'disconnected',
       syncQueue,
       connectedDevices: new Map(),
+      cloudDeviceCount: 0,
+      cloudHighestBib: 0,
+      raceExistsInCloud: null,
 
       // GPS State
       gpsEnabled: settings.gps,
@@ -536,6 +539,18 @@ class Store {
     const connectedDevices = new Map(this.state.connectedDevices);
     connectedDevices.delete(deviceId);
     this.setState({ connectedDevices }, false);
+  }
+
+  setCloudDeviceCount(count: number) {
+    this.setState({ cloudDeviceCount: count }, false);
+  }
+
+  setCloudHighestBib(bib: number) {
+    this.setState({ cloudHighestBib: bib }, false);
+  }
+
+  setRaceExistsInCloud(exists: boolean | null) {
+    this.setState({ raceExistsInCloud: exists }, false);
   }
 
   // ===== GPS State =====

@@ -28,6 +28,7 @@
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
           <span class="sync-dot"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
+          <span class="sync-device-count" id="sync-device-count" style="display: none;"></span>
         </div>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
           <span class="gps-dot"></span>
@@ -199,6 +200,12 @@
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="raceId">Race ID</span>
+              <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
+                <svg class="race-exists-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span class="race-exists-text" id="race-exists-text"></span>
+              </span>
             </div>
             <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 150px;">
           </div>

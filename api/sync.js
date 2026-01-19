@@ -5,6 +5,7 @@ const MAX_ENTRIES_PER_RACE = 10000;
 const MAX_RACE_ID_LENGTH = 50;
 const MAX_DEVICE_NAME_LENGTH = 100;
 const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
+const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds - device considered inactive after this
 
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
@@ -135,6 +136,79 @@ function safeJsonParse(str, defaultValue) {
   }
 }
 
+// Update device heartbeat in Redis
+async function updateDeviceHeartbeat(client, normalizedRaceId, deviceId, deviceName) {
+  if (!deviceId) return;
+
+  const devicesKey = `race:${normalizedRaceId}:devices`;
+  const deviceData = JSON.stringify({
+    name: deviceName || 'Unknown',
+    lastSeen: Date.now()
+  });
+
+  await client.hset(devicesKey, deviceId, deviceData);
+  await client.expire(devicesKey, CACHE_EXPIRY_SECONDS);
+}
+
+// Get active device count (devices seen within threshold)
+async function getActiveDeviceCount(client, normalizedRaceId) {
+  const devicesKey = `race:${normalizedRaceId}:devices`;
+  const devices = await client.hgetall(devicesKey);
+
+  if (!devices || Object.keys(devices).length === 0) {
+    return 0;
+  }
+
+  const now = Date.now();
+  let activeCount = 0;
+  const staleDevices = [];
+
+  for (const [deviceId, deviceJson] of Object.entries(devices)) {
+    try {
+      const device = JSON.parse(deviceJson);
+      if (now - device.lastSeen <= DEVICE_STALE_THRESHOLD) {
+        activeCount++;
+      } else {
+        staleDevices.push(deviceId);
+      }
+    } catch (e) {
+      staleDevices.push(deviceId);
+    }
+  }
+
+  // Clean up stale devices
+  if (staleDevices.length > 0) {
+    await client.hdel(devicesKey, ...staleDevices);
+  }
+
+  return activeCount;
+}
+
+// Update highest bib if new bib is higher
+async function updateHighestBib(client, normalizedRaceId, bib) {
+  if (!bib) return;
+
+  const bibNum = parseInt(bib, 10);
+  if (isNaN(bibNum) || bibNum <= 0) return;
+
+  const highestBibKey = `race:${normalizedRaceId}:highestBib`;
+
+  // Get current highest
+  const currentHighest = await client.get(highestBibKey);
+  const currentNum = parseInt(currentHighest, 10) || 0;
+
+  if (bibNum > currentNum) {
+    await client.set(highestBibKey, String(bibNum), 'EX', CACHE_EXPIRY_SECONDS);
+  }
+}
+
+// Get highest bib for race
+async function getHighestBib(client, normalizedRaceId) {
+  const highestBibKey = `race:${normalizedRaceId}:highestBib`;
+  const highest = await client.get(highestBibKey);
+  return parseInt(highest, 10) || 0;
+}
+
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -158,7 +232,9 @@ export default async function handler(req, res) {
     });
   }
 
-  const redisKey = `race:${raceId}`;
+  // Normalize race ID to lowercase for case-insensitive matching
+  const normalizedRaceId = raceId.toLowerCase();
+  const redisKey = `race:${normalizedRaceId}`;
 
   let client;
   try {
@@ -191,12 +267,35 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      // Handle checkOnly query - just check if race exists
+      if (req.query.checkOnly === 'true') {
+        const data = await client.get(redisKey);
+        const parsed = safeJsonParse(data, null);
+        const exists = parsed !== null;
+        const entryCount = exists && Array.isArray(parsed.entries) ? parsed.entries.length : 0;
+        return res.status(200).json({ exists, entryCount });
+      }
+
+      // Update device heartbeat if deviceId provided (from query params)
+      const { deviceId: queryDeviceId, deviceName: queryDeviceName } = req.query;
+      if (queryDeviceId) {
+        await updateDeviceHeartbeat(client, normalizedRaceId, queryDeviceId, queryDeviceName);
+      }
+
       const data = await client.get(redisKey);
       const parsed = safeJsonParse(data, { entries: [], lastUpdated: null });
 
+      // Get active device count
+      const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
+
+      // Get highest bib
+      const highestBib = await getHighestBib(client, normalizedRaceId);
+
       return res.status(200).json({
         entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-        lastUpdated: parsed.lastUpdated || null
+        lastUpdated: parsed.lastUpdated || null,
+        deviceCount,
+        highestBib
       });
     }
 
@@ -248,10 +347,13 @@ export default async function handler(req, res) {
       };
 
       // Include photo if present (base64, limit size)
+      let photoSkipped = false;
       if (entry.photo && typeof entry.photo === 'string') {
         // Limit photo size to ~500KB base64 (roughly 375KB image)
         if (entry.photo.length <= 500000) {
           enrichedEntry.photo = entry.photo;
+        } else {
+          photoSkipped = true;
         }
       }
 
@@ -277,10 +379,25 @@ export default async function handler(req, res) {
         await client.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
       }
 
+      // Update device heartbeat
+      await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
+
+      // Update highest bib
+      await updateHighestBib(client, normalizedRaceId, enrichedEntry.bib);
+
+      // Get active device count
+      const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
+
+      // Get highest bib
+      const highestBib = await getHighestBib(client, normalizedRaceId);
+
       return res.status(200).json({
         success: true,
         entries: existing.entries,
-        lastUpdated: existing.lastUpdated
+        lastUpdated: existing.lastUpdated,
+        deviceCount,
+        highestBib,
+        photoSkipped
       });
     }
 

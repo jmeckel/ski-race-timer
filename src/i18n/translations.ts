@@ -118,7 +118,15 @@ export const translations: Record<Language, Translations> = {
     version: 'Version',
     devices: 'Devices',
     entries: 'entries',
-    selected: 'selected'
+    selected: 'selected',
+
+    // Race exists indicator
+    raceFound: 'Race found',
+    raceNew: 'New race',
+    entriesInCloud: 'entries in cloud',
+
+    // Photo sync
+    photoTooLarge: 'Photo too large for sync'
   },
 
   de: {
@@ -238,7 +246,15 @@ export const translations: Record<Language, Translations> = {
     version: 'Version',
     devices: 'Geräte',
     entries: 'Einträge',
-    selected: 'ausgewählt'
+    selected: 'ausgewählt',
+
+    // Race exists indicator
+    raceFound: 'Rennen gefunden',
+    raceNew: 'Neues Rennen',
+    entriesInCloud: 'Einträge in Cloud',
+
+    // Photo sync
+    photoTooLarge: 'Foto zu groß für Sync'
   }
 };
 

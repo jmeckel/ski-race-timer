@@ -371,4 +371,128 @@ describe('Sync Service', () => {
       expect(mockFetch).toHaveBeenCalled();
     });
   });
+
+  describe('checkRaceExists', () => {
+    it('should return exists=true for existing race', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ exists: true, entryCount: 5 })
+      });
+
+      const result = await syncService.checkRaceExists('EXISTING-RACE');
+
+      expect(result.exists).toBe(true);
+      expect(result.entryCount).toBe(5);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('checkOnly=true')
+      );
+    });
+
+    it('should return exists=false for new race', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ exists: false, entryCount: 0 })
+      });
+
+      const result = await syncService.checkRaceExists('NEW-RACE');
+
+      expect(result.exists).toBe(false);
+      expect(result.entryCount).toBe(0);
+    });
+
+    it('should return exists=false on network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await syncService.checkRaceExists('ERROR-RACE');
+
+      expect(result.exists).toBe(false);
+      expect(result.entryCount).toBe(0);
+    });
+
+    it('should return exists=false for HTTP error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500
+      });
+
+      const result = await syncService.checkRaceExists('SERVER-ERROR-RACE');
+
+      expect(result.exists).toBe(false);
+      expect(result.entryCount).toBe(0);
+    });
+
+    it('should return exists=false for empty race ID', async () => {
+      const result = await syncService.checkRaceExists('');
+
+      expect(result.exists).toBe(false);
+      expect(result.entryCount).toBe(0);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('device count and highest bib in responses', () => {
+    it('should handle deviceCount in fetch response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          entries: [],
+          lastUpdated: Date.now(),
+          deviceCount: 3,
+          highestBib: 10
+        })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      // Verify fetch was called (the store update happens internally)
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should handle photoSkipped in POST response', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+      });
+
+      syncService.initialize();
+
+      const entry = createValidEntry();
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          entries: [],
+          lastUpdated: Date.now(),
+          deviceCount: 1,
+          highestBib: 42,
+          photoSkipped: true
+        })
+      });
+
+      const result = await syncService.sendEntryToCloud(entry);
+
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('device heartbeat in GET requests', () => {
+    it('should include deviceId and deviceName in fetch URL', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+      });
+
+      syncService.initialize();
+      await syncService.forceRefresh();
+
+      // Check that deviceId is included in the URL
+      const fetchCalls = mockFetch.mock.calls;
+      const lastCall = fetchCalls[fetchCalls.length - 1];
+      const url = lastCall[0] as string;
+
+      expect(url).toContain('deviceId=');
+      expect(url).toContain('deviceName=');
+    });
+  });
 });

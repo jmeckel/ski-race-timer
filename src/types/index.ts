@@ -99,6 +99,9 @@ export interface AppState {
   syncStatus: SyncStatus;
   syncQueue: SyncQueueItem[];
   connectedDevices: Map<string, DeviceInfo>;
+  cloudDeviceCount: number;
+  cloudHighestBib: number;
+  raceExistsInCloud: boolean | null;
 
   // GPS State
   gpsEnabled: boolean;
@@ -123,6 +126,10 @@ export interface SyncResponse {
   lastUpdated: number | null;
   success?: boolean;
   error?: string;
+  deviceCount?: number;
+  highestBib?: number;
+  raceExists?: boolean;
+  photoSkipped?: boolean;
 }
 
 // Export format types

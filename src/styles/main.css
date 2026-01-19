@@ -115,6 +115,13 @@ body {
   background: var(--warning);
 }
 
+.sync-device-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+
 .entry-count-badge {
   padding: 2px 8px;
   background: var(--primary);
@@ -550,6 +557,31 @@ body {
 .text-input:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+/* Race Exists Indicator */
+.race-exists-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+}
+
+.race-exists-indicator.found {
+  color: var(--success);
+}
+
+.race-exists-indicator.new {
+  color: var(--text-tertiary);
+}
+
+.race-exists-check {
+  flex-shrink: 0;
+}
+
+.race-exists-text {
+  white-space: nowrap;
 }
 
 /* Language Toggle */

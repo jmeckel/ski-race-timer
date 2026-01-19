@@ -614,6 +614,42 @@ describe('Store', () => {
 
       expect(store.getState().connectedDevices.has('dev_remove123')).toBe(false);
     });
+
+    it('should set cloud device count', () => {
+      store.setCloudDeviceCount(3);
+      expect(store.getState().cloudDeviceCount).toBe(3);
+
+      store.setCloudDeviceCount(5);
+      expect(store.getState().cloudDeviceCount).toBe(5);
+    });
+
+    it('should set cloud highest bib', () => {
+      store.setCloudHighestBib(42);
+      expect(store.getState().cloudHighestBib).toBe(42);
+
+      store.setCloudHighestBib(100);
+      expect(store.getState().cloudHighestBib).toBe(100);
+    });
+
+    it('should set race exists in cloud', () => {
+      expect(store.getState().raceExistsInCloud).toBeNull();
+
+      store.setRaceExistsInCloud(true);
+      expect(store.getState().raceExistsInCloud).toBe(true);
+
+      store.setRaceExistsInCloud(false);
+      expect(store.getState().raceExistsInCloud).toBe(false);
+
+      store.setRaceExistsInCloud(null);
+      expect(store.getState().raceExistsInCloud).toBeNull();
+    });
+
+    it('should initialize cloud state with defaults', () => {
+      const state = store.getState();
+      expect(state.cloudDeviceCount).toBe(0);
+      expect(state.cloudHighestBib).toBe(0);
+      expect(state.raceExistsInCloud).toBeNull();
+    });
   });
 
   describe('GPS State', () => {
