@@ -48,6 +48,45 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===== Ripple Effect ===== */
+/* Material Design-style ripple synced with haptic feedback */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0);
+  animation: rippleEffect 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.ripple-primary {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.ripple-success {
+  background: rgba(74, 222, 128, 0.4);
+}
+
+.ripple-secondary {
+  background: rgba(227, 24, 55, 0.4);
+}
+
+@keyframes rippleEffect {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
 /* ===== App Container ===== */
 .app {
   display: flex;
@@ -421,8 +460,14 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* Placeholder styling - darker for better contrast (WCAG AA) */
+::placeholder {
+  color: #707070;
+  opacity: 1;
+}
+
 .search-input::placeholder {
-  color: var(--text-tertiary);
+  color: #707070;
 }
 
 .filter-select {
