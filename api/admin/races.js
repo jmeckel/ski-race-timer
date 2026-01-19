@@ -124,21 +124,33 @@ async function listRaces(client) {
 
 // Delete a race and set tombstone
 async function deleteRace(client, raceId) {
+  // Try original casing first, then lowercase (for backwards compatibility)
+  const originalKey = `race:${raceId}`;
   const normalizedRaceId = raceId.toLowerCase();
-  const raceKey = `race:${normalizedRaceId}`;
-  const devicesKey = `race:${normalizedRaceId}:devices`;
-  const highestBibKey = `race:${normalizedRaceId}:highestBib`;
-  const tombstoneKey = `race:${normalizedRaceId}:deleted`;
+  const normalizedKey = `race:${normalizedRaceId}`;
 
-  // Check if race exists
-  const exists = await client.exists(raceKey);
-  if (!exists) {
-    return { success: false, error: 'Race not found' };
+  // Check which key exists (original casing or normalized)
+  let actualRaceId = raceId;
+  let raceKey = originalKey;
+
+  const existsOriginal = await client.exists(originalKey);
+  if (!existsOriginal) {
+    // Try lowercase version
+    const existsNormalized = await client.exists(normalizedKey);
+    if (!existsNormalized) {
+      return { success: false, error: 'Race not found' };
+    }
+    actualRaceId = normalizedRaceId;
+    raceKey = normalizedKey;
   }
 
-  // Set tombstone with expiry
+  const devicesKey = `race:${actualRaceId}:devices`;
+  const highestBibKey = `race:${actualRaceId}:highestBib`;
+  const tombstoneKey = `race:${actualRaceId}:deleted`;
+
+  // Set tombstone with expiry (use lowercase for tombstone for consistency)
   await client.set(
-    tombstoneKey,
+    `race:${normalizedRaceId}:deleted`,
     JSON.stringify({
       deletedAt: Date.now(),
       message: 'Race deleted by administrator'
@@ -150,7 +162,14 @@ async function deleteRace(client, raceId) {
   // Delete all race data
   await client.del(raceKey, devicesKey, highestBibKey);
 
-  return { success: true, raceId: normalizedRaceId };
+  // Also try to delete any leftover keys with different casing
+  if (actualRaceId !== normalizedRaceId) {
+    await client.del(normalizedKey, `race:${normalizedRaceId}:devices`, `race:${normalizedRaceId}:highestBib`);
+  } else if (raceId !== normalizedRaceId) {
+    await client.del(originalKey, `race:${raceId}:devices`, `race:${raceId}:highestBib`);
+  }
+
+  return { success: true, raceId: actualRaceId };
 }
 
 export default async function handler(req, res) {
@@ -182,10 +201,26 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const { raceId } = req.query;
+      const { raceId, deleteAll } = req.query;
+
+      // Batch delete all races
+      if (deleteAll === 'true') {
+        const races = await listRaces(client);
+        const results = [];
+        for (const race of races) {
+          const result = await deleteRace(client, race.raceId);
+          results.push({ raceId: race.raceId, ...result });
+        }
+        return res.status(200).json({
+          success: true,
+          deleted: results.filter(r => r.success).length,
+          total: races.length,
+          results
+        });
+      }
 
       if (!raceId) {
-        return res.status(400).json({ error: 'raceId is required' });
+        return res.status(400).json({ error: 'raceId is required (or use deleteAll=true)' });
       }
 
       const result = await deleteRace(client, raceId);
