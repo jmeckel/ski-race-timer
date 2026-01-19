@@ -1285,9 +1285,11 @@ body {
 
 /* ===== Landscape Mode ===== */
 @media (orientation: landscape) {
-  /* Remove max-width constraint in landscape */
+  /* Remove max-width constraint and add side safe areas for notch */
   .app {
     max-width: 100%;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   /* Timer View - CSS Grid two-column layout */
