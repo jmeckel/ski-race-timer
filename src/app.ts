@@ -515,6 +515,11 @@ function initSettingsView(): void {
     simpleModeToggle.addEventListener('change', () => {
       store.updateSettings({ simple: simpleModeToggle.checked });
       applySettings();
+      // Hide admin section in simple mode
+      const adminSection = document.getElementById('admin-section');
+      if (adminSection) {
+        adminSection.style.display = simpleModeToggle.checked ? 'none' : 'block';
+      }
     });
   }
 
@@ -1179,6 +1184,13 @@ function updateSettingsInputs(): void {
   const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
 
   if (simpleModeToggle) simpleModeToggle.checked = settings.simple;
+
+  // Hide admin section in simple mode
+  const adminSection = document.getElementById('admin-section');
+  if (adminSection) {
+    adminSection.style.display = settings.simple ? 'none' : 'block';
+  }
+
   if (gpsToggle) gpsToggle.checked = settings.gps;
   if (syncToggle) syncToggle.checked = settings.sync;
   if (autoToggle) autoToggle.checked = settings.auto;
