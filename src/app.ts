@@ -1352,7 +1352,21 @@ function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): 
 
 // Store admin PIN hash in localStorage
 const ADMIN_PIN_KEY = 'skiTimerAdminPin';
+const DEFAULT_ADMIN_PIN = '1977'; // Must match ADMIN_PIN in Vercel env
 let pendingRaceDelete: string | null = null;
+
+/**
+ * Initialize default admin PIN if not already set
+ */
+function initializeDefaultAdminPin(): void {
+  const existingPin = localStorage.getItem(ADMIN_PIN_KEY);
+  if (!existingPin) {
+    // Set default PIN hash
+    const defaultPinHash = simpleHash(DEFAULT_ADMIN_PIN);
+    localStorage.setItem(ADMIN_PIN_KEY, defaultPinHash);
+    console.log('Default admin PIN initialized');
+  }
+}
 
 /**
  * Validate PIN format: exactly 4 digits
@@ -1391,6 +1405,9 @@ function updatePinStatusDisplay(): void {
  * Initialize race management
  */
 function initRaceManagement(): void {
+  // Initialize default admin PIN if not already set
+  initializeDefaultAdminPin();
+
   // Update PIN status display
   updatePinStatusDisplay();
 
