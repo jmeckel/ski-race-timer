@@ -1496,10 +1496,14 @@ body {
 
   .header {
     padding: 2px 12px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
 
   .tab-bar {
-    padding: 0 12px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .tab-btn {
