@@ -118,6 +118,7 @@ body {
 /*
  * Do NOT use position: fixed - it breaks iOS PWA viewport sizing.
  * Instead, use height: 100% to inherit from body which has proper viewport units.
+ * Note: bottom safe area is on tab-bar so its background fills the safe area.
  */
 .app {
   display: flex;
@@ -126,7 +127,6 @@ body {
   max-width: 430px;
   margin: 0 auto;
   padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--background);
 }
 
@@ -795,6 +795,8 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--surface-elevated);
   flex-shrink: 0;
+  /* Safe area padding so tab bar background fills the bottom safe area */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tab-btn {
@@ -1397,7 +1399,7 @@ body {
     min-height: unset;
     padding: 12px;
     font-size: clamp(1.25rem, 4vw, 2rem);
-    border-radius: 9999px;
+    border-radius: 32px;
     align-self: stretch;
   }
 
@@ -1424,14 +1426,18 @@ body {
     margin: 0 auto;
   }
 
-  /* Header adjustments */
+  /* Header adjustments - add side safe areas */
   .header {
     padding: 4px 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
 
-  /* Tab bar adjustments for landscape */
+  /* Tab bar adjustments for landscape - add side safe areas */
   .tab-bar {
-    padding: 0 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .tab-btn {
