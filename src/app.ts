@@ -1256,9 +1256,7 @@ function formatTimeDisplay(date: Date): string {
  * Check if race exists in cloud
  */
 async function checkRaceExists(raceId: string): Promise<void> {
-  console.log('Checking if race exists:', raceId);
   const result = await syncService.checkRaceExists(raceId);
-  console.log('Race exists result:', result);
   store.setRaceExistsInCloud(result.exists);
   updateRaceExistsIndicator(result.exists, result.entryCount);
 }

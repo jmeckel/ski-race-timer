@@ -404,20 +404,16 @@ class SyncService {
       return { exists: false, entryCount: 0 };
     }
 
-    const url = `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`;
-    console.log('checkRaceExists fetching:', url);
-
     try {
-      const response = await fetch(url);
-      console.log('checkRaceExists response status:', response.status);
+      const response = await fetch(
+        `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`
+      );
 
       if (!response.ok) {
-        console.log('checkRaceExists response not ok');
         return { exists: false, entryCount: 0 };
       }
 
       const data = await response.json();
-      console.log('checkRaceExists data:', data);
       return {
         exists: data.exists === true,
         entryCount: typeof data.entryCount === 'number' ? data.entryCount : 0
