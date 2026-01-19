@@ -201,8 +201,22 @@ export function initApp(): void {
   if (settings.gps) {
     gpsService.start();
   }
+  // Auto-start sync if enabled, race ID exists, AND user has valid auth token
+  // Token proves user previously authenticated - no PIN needed on restart
   if (settings.sync && store.getState().raceId) {
-    syncService.initialize();
+    if (hasAuthToken()) {
+      // Valid token exists - auto-start sync
+      syncService.initialize();
+    } else {
+      // No token - disable sync, user must re-authenticate
+      store.updateSettings({ sync: false });
+      const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+      if (syncToggle) syncToggle.checked = false;
+      setTimeout(() => {
+        const lang = store.getState().currentLang;
+        showToast(t('syncRequiresPin', lang), 'info', 5000);
+      }, 500);
+    }
   }
   if (settings.photoCapture) {
     cameraService.initialize();
@@ -727,9 +741,21 @@ function initSettingsView(): void {
   // Sync toggle
   const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
   if (syncToggle) {
-    syncToggle.addEventListener('change', () => {
+    syncToggle.addEventListener('change', async () => {
+      const state = store.getState();
+
+      if (syncToggle.checked && state.raceId) {
+        // Require PIN verification when enabling sync with existing race ID
+        const pinVerified = await verifyPinForRaceJoin(state.currentLang);
+        if (!pinVerified) {
+          // PIN verification cancelled or failed - revert toggle
+          syncToggle.checked = false;
+          return;
+        }
+      }
+
       store.updateSettings({ sync: syncToggle.checked });
-      if (syncToggle.checked && store.getState().raceId) {
+      if (syncToggle.checked && state.raceId) {
         syncService.initialize();
       } else {
         syncService.cleanup();
@@ -2075,22 +2101,22 @@ function handleBeforeUnload(): void {
 
 /**
  * Handle manage races button click
+ * Always requires PIN verification for security
  */
 function handleManageRacesClick(): void {
-  // If already authenticated with valid token, open directly
-  if (hasAuthToken()) {
-    openRaceManagementModal();
-    return;
-  }
-
-  // Show PIN verification modal
+  // Always show PIN verification modal - race management requires explicit authentication
   const modal = document.getElementById('admin-pin-modal');
   const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
   const errorEl = document.getElementById('admin-pin-error');
+  const titleEl = document.getElementById('admin-pin-modal-title');
+  const textEl = document.getElementById('admin-pin-modal-text');
+  const lang = store.getState().currentLang;
 
   if (modal && pinInput && errorEl) {
     pinInput.value = '';
     errorEl.style.display = 'none';
+    if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
+    if (textEl) textEl.textContent = t('enterPinText', lang);
     modal.classList.add('show');
     pinInput.focus();
   }
@@ -2132,10 +2158,12 @@ let pinVerifyResolver: ((verified: boolean) => void) | null = null;
 /**
  * Show PIN verification modal and wait for result
  * Used when joining a race with sync enabled
+ * Skips verification if user already has a valid auth token (previously authenticated)
  */
 function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
   return new Promise((resolve) => {
     // If already authenticated with valid token, allow without verification
+    // Token proves user previously entered correct PIN
     if (hasAuthToken()) {
       resolve(true);
       return;
