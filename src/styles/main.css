@@ -281,7 +281,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(4, 1fr);
-  gap: 4px;
+  gap: 6px;
   flex: 1;
   min-height: 0;
 }
@@ -1151,7 +1151,7 @@ body {
   }
 
   .number-pad {
-    gap: 3px;
+    gap: 5px;
   }
 
   .num-btn {
@@ -1184,7 +1184,7 @@ body {
   }
 
   .number-pad {
-    gap: 2px;
+    gap: 4px;
   }
 
   .num-btn {
