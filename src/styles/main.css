@@ -1,16 +1,17 @@
 /* ===== CSS Variables ===== */
+/* Skiteam Oberhaching color scheme: red, grey, white, black */
 :root {
-  --primary: #00D4FF;
-  --primary-dark: #0099CC;
-  --secondary: #FF6B35;
-  --secondary-light: #FF8F5E;
-  --accent: #7CFF6B;
-  --background: #0A0E14;
-  --surface: #151B23;
-  --surface-elevated: #1E2732;
+  --primary: #E31837;
+  --primary-dark: #C41230;
+  --secondary: #E31837;
+  --secondary-light: #FF3D5A;
+  --accent: #FFFFFF;
+  --background: #0D0D0D;
+  --surface: #1A1A1A;
+  --surface-elevated: #2A2A2A;
   --text-primary: #FFFFFF;
-  --text-secondary: #8B9AAB;
-  --text-tertiary: #5A6673;
+  --text-secondary: #A0A0A0;
+  --text-tertiary: #666666;
   --success: #4ADE80;
   --warning: #FBBF24;
   --error: #EF4444;
@@ -307,7 +308,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 4px 12px rgba(227, 24, 55, 0.3);
   flex-shrink: 0;
 }
 
@@ -322,10 +323,10 @@ body {
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    box-shadow: 0 4px 12px rgba(227, 24, 55, 0.3);
   }
   50% {
-    box-shadow: 0 4px 24px rgba(255, 107, 53, 0.6);
+    box-shadow: 0 4px 24px rgba(227, 24, 55, 0.6);
   }
 }
 
