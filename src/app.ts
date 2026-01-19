@@ -8,16 +8,14 @@ import type { Entry, TimingPoint, Language, RaceInfo } from './types';
 
 // Admin API configuration
 const ADMIN_API_BASE = '/api/admin/races';
+const SERVER_API_PIN = '1977'; // Fixed PIN for API authentication (must match Vercel ADMIN_PIN)
 
 /**
  * Get authorization headers for admin API requests
+ * Uses fixed server PIN - separate from user-configurable client PIN
  */
 function getAdminAuthHeaders(): HeadersInit {
-  const pin = sessionStorage.getItem('adminPin');
-  if (pin) {
-    return { 'Authorization': `Bearer ${pin}` };
-  }
-  return {};
+  return { 'Authorization': `Bearer ${SERVER_API_PIN}` };
 }
 
 // DOM Elements cache
@@ -1725,10 +1723,7 @@ function handleAdminPinVerify(): void {
   const enteredPinHash = simpleHash(enteredPin);
 
   if (enteredPinHash === storedPinHash) {
-    // PIN correct - store PIN for API auth (session only, cleared on tab close)
-    sessionStorage.setItem('adminPin', enteredPin);
-
-    // Close PIN modal and open race management
+    // PIN correct - open race management (API uses separate fixed PIN)
     modal.classList.remove('show');
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
@@ -1777,11 +1772,11 @@ async function loadRaceList(): Promise<void> {
     });
     if (!response.ok) {
       if (response.status === 401) {
-        // Auth failed - clear stored PIN and close modal
-        sessionStorage.removeItem('adminPin');
+        // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
         if (modal) modal.classList.remove('show');
-        showToast(t('incorrectPin', lang), 'error');
+        showToast('API authentication failed', 'error');
+        console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
       throw new Error(`HTTP ${response.status}`);
@@ -1886,11 +1881,11 @@ async function handleConfirmDeleteRace(): Promise<void> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Auth failed - clear stored PIN and close modal
-        sessionStorage.removeItem('adminPin');
+        // API auth failed - server PIN mismatch (should not happen in production)
         const modal = document.getElementById('race-management-modal');
         if (modal) modal.classList.remove('show');
-        showToast(t('incorrectPin', lang), 'error');
+        showToast('API authentication failed', 'error');
+        console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
       throw new Error(`HTTP ${response.status}`);
