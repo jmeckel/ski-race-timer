@@ -33,13 +33,18 @@
 }
 
 html {
+  /* iOS PWA height fix: use -webkit-fill-available with fallbacks */
   height: 100%;
+  height: -webkit-fill-available;
   /* Use surface color so safe area shows tab bar color, not black */
   background: var(--surface);
 }
 
 body {
+  /* iOS PWA height fix: multiple fallbacks for full viewport */
   height: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
   overflow: hidden;
   font-family: 'Outfit', -apple-system, sans-serif;
   background: var(--background);
@@ -47,6 +52,17 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern viewport units for browsers that support them */
+@supports (height: 100dvh) {
+  html {
+    height: 100dvh;
+  }
+  body {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
 }
 
 /* ===== Ripple Effect ===== */
