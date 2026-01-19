@@ -69,3 +69,23 @@ To enable cloud sync, add Vercel KV to your project:
 1. In Vercel dashboard, go to Storage → Create Database → KV
 2. Connect it to your project
 3. The `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables are auto-configured
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `REDIS_URL` | Yes | Redis connection URL (auto-configured with Vercel KV) |
+| `ADMIN_PIN` | Recommended | 4-digit PIN for admin API authentication (e.g., `1234`). If not set, admin API is unprotected. |
+| `CORS_ORIGIN` | No | Allowed CORS origin (defaults to `*`) |
+
+## Admin API
+
+The admin API (`/api/admin/races`) requires authentication when `ADMIN_PIN` is configured:
+- **GET** - List all races (requires PIN)
+- **DELETE** - Delete a race (requires PIN)
+
+Authentication flow:
+1. User enters PIN in app settings
+2. PIN is stored in sessionStorage (cleared on tab close)
+3. API calls include `Authorization: Bearer <pin>` header
+4. Server validates PIN using SHA-256 hash comparison
