@@ -1399,7 +1399,7 @@ body {
     min-height: unset;
     padding: 12px;
     font-size: clamp(1.25rem, 4vw, 2rem);
-    border-radius: 32px;
+    border-radius: 64px;
     align-self: stretch;
   }
 
