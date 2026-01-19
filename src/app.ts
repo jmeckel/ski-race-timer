@@ -16,6 +16,10 @@ let pullToRefreshInstance: PullToRefresh | null = null;
  * Initialize the application
  */
 export function initApp(): void {
+  // Set version in UI
+  const versionEl = document.getElementById('app-version');
+  if (versionEl) versionEl.textContent = __APP_VERSION__;
+
   // Initialize components
   initClock();
   initTabs();
