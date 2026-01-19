@@ -38,7 +38,13 @@ html {
 }
 
 body {
+  /* Base height with fallbacks for different contexts:
+     - 100%: standard fallback
+     - -webkit-fill-available: iOS Safari browser with toolbar
+     - 100dvh: dynamic viewport height (adjusts with browser chrome)
+  */
   height: 100%;
+  height: -webkit-fill-available;
   overflow: hidden;
   font-family: 'Outfit', -apple-system, sans-serif;
   background: var(--background);
@@ -46,6 +52,27 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern viewport units for browsers that support them */
+@supports (height: 100dvh) {
+  body {
+    height: 100dvh; /* Dynamic viewport height - adjusts with browser UI */
+  }
+}
+
+/* PWA standalone mode - no browser chrome, use large viewport height */
+@media all and (display-mode: standalone) {
+  body {
+    height: 100%;
+    height: -webkit-fill-available;
+  }
+
+  @supports (height: 100lvh) {
+    body {
+      height: 100lvh; /* Large viewport height - assumes no browser UI */
+    }
+  }
 }
 
 /* ===== Ripple Effect ===== */
@@ -88,15 +115,14 @@ body {
 }
 
 /* ===== App Container ===== */
-/* Use position: fixed to properly fill viewport in iOS PWA standalone mode */
+/*
+ * Do NOT use position: fixed - it breaks iOS PWA viewport sizing.
+ * Instead, use height: 100% to inherit from body which has proper viewport units.
+ */
 .app {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
   max-width: 430px;
   margin: 0 auto;
   padding-top: env(safe-area-inset-top, 0px);
