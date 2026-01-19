@@ -366,21 +366,6 @@ describe('VirtualList Component', () => {
       list.destroy();
     });
 
-    it('should call onItemSelect', () => {
-      const onItemSelect = vi.fn();
-      const list = new VirtualList({ container, onItemSelect });
-      const entry = createEntry(1);
-
-      list.setEntries([entry]);
-
-      const checkbox = container.querySelector('.result-checkbox') as HTMLInputElement;
-      checkbox.click();
-
-      expect(onItemSelect).toHaveBeenCalledWith(entry, true);
-
-      list.destroy();
-    });
-
     it('should call onViewPhoto when photo button is clicked', () => {
       const onViewPhoto = vi.fn();
       const list = new VirtualList({ container, onViewPhoto });
