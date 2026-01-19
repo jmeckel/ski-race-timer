@@ -414,6 +414,24 @@ export default async function handler(req, res) {
         e => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
       );
 
+      // Check for cross-device duplicates (same bib + same point from different device)
+      let crossDeviceDuplicate = null;
+      if (enrichedEntry.bib) {
+        const existingMatch = existing.entries.find(
+          e => e.bib === enrichedEntry.bib &&
+               e.point === enrichedEntry.point &&
+               e.deviceId !== sanitizedDeviceId
+        );
+        if (existingMatch) {
+          crossDeviceDuplicate = {
+            bib: existingMatch.bib,
+            point: existingMatch.point,
+            deviceName: existingMatch.deviceName || 'Unknown device',
+            timestamp: existingMatch.timestamp
+          };
+        }
+      }
+
       if (!isDuplicate) {
         existing.entries.push(enrichedEntry);
         existing.lastUpdated = Date.now();
@@ -440,7 +458,8 @@ export default async function handler(req, res) {
         lastUpdated: existing.lastUpdated,
         deviceCount,
         highestBib,
-        photoSkipped
+        photoSkipped,
+        crossDeviceDuplicate
       });
     }
 

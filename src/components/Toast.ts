@@ -21,7 +21,7 @@ export class Toast {
 
     // Listen for custom toast events
     window.addEventListener('show-toast', ((e: CustomEvent) => {
-      this.show(e.detail.message, { type: e.detail.type });
+      this.show(e.detail.message, { type: e.detail.type, duration: e.detail.duration });
     }) as EventListener);
   }
 

@@ -2,6 +2,7 @@ import { store } from '../store';
 import type { Entry, SyncResponse, DeviceInfo } from '../types';
 import { isValidEntry } from '../utils/validation';
 import { fetchWithTimeout } from '../utils/errors';
+import { photoStorage } from './photoStorage';
 
 // API configuration
 const API_BASE = '/api/sync';
@@ -197,6 +198,32 @@ class SyncService {
   }
 
   /**
+   * Process photos from cloud entries - store in IndexedDB and set marker
+   */
+  private async processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
+    const processedEntries: Entry[] = [];
+
+    for (const entry of entries) {
+      if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
+        // Entry has full photo data from cloud - save to IndexedDB
+        const saved = await photoStorage.savePhoto(entry.id, entry.photo);
+        if (saved) {
+          // Replace full photo with marker
+          processedEntries.push({ ...entry, photo: 'indexeddb' });
+        } else {
+          // Failed to save - keep entry without photo
+          processedEntries.push({ ...entry, photo: undefined });
+        }
+      } else {
+        // No photo or already has marker
+        processedEntries.push(entry);
+      }
+    }
+
+    return processedEntries;
+  }
+
+  /**
    * Fetch entries from cloud
    */
   async fetchCloudEntries(): Promise<void> {
@@ -294,7 +321,9 @@ class SyncService {
 
       // Merge remote entries (excluding deleted ones)
       if (cloudEntries.length > 0) {
-        const added = store.mergeCloudEntries(cloudEntries, deletedIds);
+        // Process photos from cloud entries - store in IndexedDB
+        const processedEntries = await this.processCloudPhotos(cloudEntries);
+        const added = store.mergeCloudEntries(processedEntries, deletedIds);
         if (added > 0) {
           this.showSyncToast(`Synced ${added} entries from cloud`);
         }
@@ -363,13 +392,25 @@ class SyncService {
     if (!state.settings.sync || !state.raceId) return false;
 
     try {
+      // Prepare entry for sync - load photo from IndexedDB if needed
+      let entryToSync = { ...entry };
+      if (entry.photo === 'indexeddb') {
+        const photoData = await photoStorage.getPhoto(entry.id);
+        if (photoData) {
+          entryToSync = { ...entry, photo: photoData };
+        } else {
+          // Photo not found in IndexedDB, send without photo
+          entryToSync = { ...entry, photo: undefined };
+        }
+      }
+
       const response = await fetchWithTimeout(
         `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({
-            entry,
+            entry: entryToSync,
             deviceId: state.deviceId,
             deviceName: state.deviceName
           })
@@ -381,11 +422,26 @@ class SyncService {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // Parse response to check for photoSkipped flag
+      // Parse response to check for flags and warnings
       try {
         const data = await response.json();
         if (data.photoSkipped) {
           this.showSyncToast('Photo too large for sync', 'warning');
+        }
+
+        // Check for cross-device duplicate warning
+        if (data.crossDeviceDuplicate) {
+          const dup = data.crossDeviceDuplicate;
+          const pointLabel = dup.point === 'S' ? 'Start' : 'Finish';
+          this.showSyncToast(
+            `Duplicate: Bib ${dup.bib} ${pointLabel} already recorded by ${dup.deviceName}`,
+            'warning',
+            5000
+          );
+          // Dispatch event for UI to show more prominent warning
+          window.dispatchEvent(new CustomEvent('cross-device-duplicate', {
+            detail: dup
+          }));
         }
 
         // Update device count and highest bib from response
@@ -484,10 +540,10 @@ class SyncService {
   /**
    * Show sync toast notification
    */
-  private showSyncToast(message: string, type: 'success' | 'warning' | 'error' = 'success'): void {
+  private showSyncToast(message: string, type: 'success' | 'warning' | 'error' = 'success', duration?: number): void {
     // Dispatch custom event for toast
     window.dispatchEvent(new CustomEvent('show-toast', {
-      detail: { message, type }
+      detail: { message, type, duration }
     }));
   }
 

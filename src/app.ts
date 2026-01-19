@@ -1,6 +1,6 @@
 import { store } from './store';
 import { Clock, VirtualList, showToast, PullToRefresh } from './components';
-import { syncService, gpsService, cameraService, captureTimingPhoto } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -379,15 +379,20 @@ async function recordTimestamp(): Promise<void> {
     };
 
     // Capture photo asynchronously - don't block timestamp recording
+    // Photos are stored in IndexedDB (separate from localStorage) to avoid quota limits
     if (state.settings.photoCapture) {
       // Capture entry ID in local const to prevent race condition
       // This ensures photo attaches to correct entry even if multiple timestamps recorded rapidly
       const entryId = entry.id;
       captureTimingPhoto()
-        .then(photo => {
+        .then(async (photo) => {
           if (photo) {
-            // Update entry with photo after capture completes
-            store.updateEntry(entryId, { photo });
+            // Store photo in IndexedDB (not in entry to save localStorage space)
+            const saved = await photoStorage.savePhoto(entryId, photo);
+            if (saved) {
+              // Mark entry as having a photo (without storing the actual photo data)
+              store.updateEntry(entryId, { photo: 'indexeddb' });
+            }
           }
         })
         .catch(err => {
@@ -1048,6 +1053,9 @@ async function handleConfirmDelete(): Promise<void> {
     const entriesToDelete = [...state.entries];
     store.clearAll();
 
+    // Clear all photos from IndexedDB
+    await photoStorage.clearAll();
+
     // Sync deletions to cloud
     if (state.settings.sync && state.raceId) {
       for (const entry of entriesToDelete) {
@@ -1063,6 +1071,9 @@ async function handleConfirmDelete(): Promise<void> {
     const entriesToDelete = state.entries.filter(e => ids.includes(e.id));
     store.deleteMultiple(ids);
 
+    // Delete photos from IndexedDB for selected entries
+    await photoStorage.deletePhotos(ids);
+
     // Sync deletions to cloud
     if (state.settings.sync && state.raceId) {
       for (const entry of entriesToDelete) {
@@ -1075,6 +1086,9 @@ async function handleConfirmDelete(): Promise<void> {
     // Get entry before deleting to sync deletion
     const entryToDelete = state.entries.find(e => e.id === entryId);
     store.deleteEntry(entryId);
+
+    // Delete photo from IndexedDB
+    await photoStorage.deletePhoto(entryId);
 
     // Sync deletion to cloud
     if (state.settings.sync && state.raceId && entryToDelete) {
@@ -1124,8 +1138,9 @@ let currentPhotoEntryId: string | null = null;
 
 /**
  * Open photo viewer modal
+ * Loads photo from IndexedDB if stored there
  */
-function openPhotoViewer(entry: Entry): void {
+async function openPhotoViewer(entry: Entry): Promise<void> {
   const modal = document.getElementById('photo-viewer-modal');
   if (!modal || !entry.photo) return;
 
@@ -1136,7 +1151,25 @@ function openPhotoViewer(entry: Entry): void {
   const pointEl = document.getElementById('photo-viewer-point');
   const timeEl = document.getElementById('photo-viewer-time');
 
-  if (image) image.src = `data:image/jpeg;base64,${entry.photo}`;
+  // Load photo from IndexedDB or use inline base64
+  if (image) {
+    if (entry.photo === 'indexeddb') {
+      // Photo stored in IndexedDB - load it
+      image.src = ''; // Clear while loading
+      const photoData = await photoStorage.getPhoto(entry.id);
+      if (photoData) {
+        image.src = `data:image/jpeg;base64,${photoData}`;
+      } else {
+        // Photo not found in IndexedDB
+        console.warn('Photo not found in IndexedDB for entry:', entry.id);
+        return;
+      }
+    } else {
+      // Legacy: photo stored inline (backwards compatibility)
+      image.src = `data:image/jpeg;base64,${entry.photo}`;
+    }
+  }
+
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
     const state = store.getState();
@@ -1164,14 +1197,19 @@ function closePhotoViewer(): void {
 
 /**
  * Delete photo from entry
+ * Removes from both IndexedDB and entry marker
  */
-function deletePhoto(): void {
+async function deletePhoto(): Promise<void> {
   if (!currentPhotoEntryId) return;
 
   const state = store.getState();
+  const entryId = currentPhotoEntryId;
 
-  // Update entry to remove photo
-  store.updateEntry(currentPhotoEntryId, { photo: undefined });
+  // Delete from IndexedDB
+  await photoStorage.deletePhoto(entryId);
+
+  // Update entry to remove photo marker
+  store.updateEntry(entryId, { photo: undefined });
 
   // Close modal and show toast
   closePhotoViewer();

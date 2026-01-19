@@ -2,4 +2,5 @@
 export { cameraService, captureTimingPhoto } from './camera';
 export { syncService, syncEntry } from './sync';
 export { gpsService } from './gps';
+export { photoStorage } from './photoStorage';
 export * from './feedback';

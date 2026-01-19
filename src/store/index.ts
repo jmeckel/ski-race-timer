@@ -201,7 +201,17 @@ class Store {
       // Check storage quota if available
       this.checkStorageQuota();
 
-      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(this.state.entries));
+      // Strip full photo data from entries before saving
+      // Photos are stored in IndexedDB, only keep 'indexeddb' marker
+      const entriesToSave = this.state.entries.map(entry => {
+        if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
+          // This is legacy full base64 data - strip it
+          return { ...entry, photo: 'indexeddb' };
+        }
+        return entry;
+      });
+
+      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entriesToSave));
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.state.settings));
       localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
       localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
