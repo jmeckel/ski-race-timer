@@ -151,7 +151,7 @@ class FileReaderMock {
 
   readAsText(blob) {
     setTimeout(() => {
-      this.result = '{"version":"2.0.0","entries":[],"settings":{}}';
+      this.result = '{"version":"2.1.0","entries":[],"settings":{}}';
       if (this.onload) this.onload({ target: this });
     }, 0);
   }

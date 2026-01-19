@@ -62,4 +62,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 // Debug info
-console.log('Ski Race Timer v2.0.0');
+console.log('Ski Race Timer v2.1.0');
