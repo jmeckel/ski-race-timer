@@ -95,7 +95,7 @@ body {
   max-width: 430px;
   margin: 0 auto;
   padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
+  /* Note: bottom safe area handled by .tab-bar */
 }
 
 /* ===== Main Content ===== */
@@ -574,6 +574,15 @@ body {
 .action-btn.danger:active {
   background: var(--error);
   color: white;
+}
+
+/* Admin action buttons - ensure text is always visible */
+.admin-action-btn {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  white-space: nowrap;
+  min-width: fit-content;
+  gap: 6px;
 }
 
 /* Select Mode Bar */
@@ -1275,80 +1284,92 @@ body {
     max-width: 100%;
   }
 
-  /* Timer View - Two column layout */
-  .timer-view {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-areas:
-      "clock timestamp"
-      "points timestamp"
-      "numpad timestamp"
-      "bib last";
-    gap: 8px;
+  /* Timer View - Two column layout using flexbox for reliability */
+  .timer-view.active {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
     padding: 8px 16px;
-    align-items: start;
+    gap: 8px;
+    align-content: flex-start;
+    position: relative;
   }
 
-  .clock-container {
-    grid-area: clock;
+  /* Left column: clock, bib, timing points, number pad */
+  .timer-view .clock-container {
+    width: 45%;
+    order: 1;
     padding: 0;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .timer-view .clock-container .clock {
+    font-size: clamp(1.75rem, 5vw, 3rem);
     text-align: left;
   }
 
-  .clock-container .clock {
-    font-size: clamp(2rem, 8vw, 4rem);
-  }
-
-  .timing-points {
-    grid-area: points;
-    justify-content: flex-start;
-  }
-
-  .timing-point-btn {
-    max-width: 80px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
-  }
-
-  .number-pad {
-    grid-area: numpad;
-    max-height: none;
-    gap: 4px;
-  }
-
-  .num-btn {
-    font-size: 1.25rem;
-  }
-
-  .timestamp-btn {
-    grid-area: timestamp;
-    height: 100%;
-    min-height: 120px;
-    max-height: none;
-    padding: 16px;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    border-radius: var(--radius);
-    align-self: stretch;
-  }
-
-  .bib-display {
-    grid-area: bib;
+  .timer-view .bib-display {
+    width: 45%;
+    order: 2;
     margin-top: 0;
     padding: 6px 12px;
     justify-content: flex-start;
   }
 
-  .bib-value {
-    font-size: 2rem;
-    min-width: 80px;
+  .timer-view .bib-value {
+    font-size: 1.75rem;
+    min-width: 70px;
   }
 
-  .last-recorded {
-    grid-area: last;
-    justify-content: flex-end;
-    padding: 6px 12px;
-    font-size: 0.8rem;
+  .timer-view .timing-points {
+    width: 45%;
+    order: 3;
+    justify-content: flex-start;
+  }
+
+  .timer-view .timing-point-btn {
+    max-width: 70px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  /* Right column: timestamp button fills right side */
+  .timer-view .timestamp-btn {
+    width: 50%;
+    order: 4;
+    position: absolute;
+    right: 16px;
+    top: 8px;
+    bottom: 8px;
+    height: auto;
+    min-height: unset;
+    padding: 16px;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-view .last-recorded {
+    width: 45%;
+    order: 5;
+    justify-content: flex-start;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  .timer-view .number-pad {
+    width: 45%;
+    order: 6;
+    flex: 1;
+    max-height: none;
+    gap: 4px;
+  }
+
+  .timer-view .num-btn {
+    font-size: 1.1rem;
   }
 
   /* Results View - Wider layout */
@@ -1364,26 +1385,14 @@ body {
     padding: 10px 16px;
   }
 
-  /* Settings View - Two column grid */
+  /* Settings View - better use of width */
   .settings-view {
-    padding: 8px 16px;
+    padding: 8px 24px;
   }
 
   .settings-content {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px 16px;
-    max-width: none;
-  }
-
-  .setting-section {
-    margin-bottom: 0;
-  }
-
-  /* Full width for certain sections */
-  .setting-section:has(.text-input),
-  .setting-section:last-child {
-    grid-column: span 2;
+    max-width: 600px;
+    margin: 0 auto;
   }
 
   /* Header adjustments */
@@ -1391,54 +1400,62 @@ body {
     padding: 4px 16px;
   }
 
-  /* Tab bar adjustments */
+  /* Tab bar - reduce safe area in landscape */
   .tab-bar {
     padding: 4px 16px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
   }
 
   /* Modal adjustments for landscape */
   .modal-content {
-    max-width: 600px;
-    max-height: 90vh;
+    max-width: 500px;
+    max-height: 85vh;
   }
 }
 
 /* Landscape with very short height (phones) */
-@media (orientation: landscape) and (max-height: 450px) {
-  .timer-view {
+@media (orientation: landscape) and (max-height: 500px) {
+  .timer-view.active {
     padding: 4px 12px;
     gap: 4px;
   }
 
-  .clock-container .clock {
-    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  .timer-view .clock-container .clock {
+    font-size: clamp(1.25rem, 4vw, 2rem);
   }
 
-  .timing-point-btn {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-  }
-
-  .num-btn {
-    font-size: 1rem;
-  }
-
-  .timestamp-btn {
-    min-height: 80px;
-    font-size: clamp(1.25rem, 3vw, 1.75rem);
-  }
-
-  .bib-display {
+  .timer-view .bib-display {
     padding: 4px 8px;
   }
 
-  .bib-value {
+  .timer-view .bib-value {
     font-size: 1.5rem;
   }
 
-  .last-recorded {
-    padding: 4px 8px;
+  .timer-view .timing-point-btn {
+    padding: 6px 8px;
     font-size: 0.75rem;
+    max-width: 60px;
+  }
+
+  .timer-view .num-btn {
+    font-size: 0.95rem;
+  }
+
+  .timer-view .timestamp-btn {
+    right: 12px;
+    top: 4px;
+    bottom: 4px;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+  }
+
+  .timer-view .last-recorded {
+    padding: 2px 6px;
+    font-size: 0.7rem;
   }
 
   .header {
@@ -1447,20 +1464,27 @@ body {
 
   .tab-bar {
     padding: 2px 12px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
 
   .tab-btn {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    gap: 2px;
+  }
+
+  .tab-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* Settings more compact */
   .setting-row {
-    padding: 8px 0;
+    padding: 6px 0;
   }
 
   .setting-title {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
   }
 
   .setting-description {
