@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ski-race-timer-v32';
+const CACHE_NAME = 'ski-race-timer-v33';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -60,9 +60,16 @@ self.addEventListener('fetch', (event) => {
           }
           // Clone the response
           const responseToCache = response.clone();
+          // EXCEPTION FIX: Add catch handler to cache.put() to prevent uncaught exceptions
           caches.open(CACHE_NAME)
             .then((cache) => {
-              cache.put(event.request, responseToCache);
+              cache.put(event.request, responseToCache).catch((err) => {
+                // Log but don't throw - cache failures shouldn't break the app
+                console.warn('Cache put failed:', err.message);
+              });
+            })
+            .catch((err) => {
+              console.warn('Cache open failed:', err.message);
             });
           return response;
         });

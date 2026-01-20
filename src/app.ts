@@ -110,9 +110,12 @@ function createRipple(event: MouseEvent | TouchEvent, element: HTMLElement, vari
   element.appendChild(ripple);
 
   // Remove after animation
-  setTimeout(() => {
+  // MEMORY LEAK FIX: Track timeout and clean up properly
+  const timeoutId = setTimeout(() => {
     ripple.remove();
+    activeRippleTimeouts.delete(timeoutId);
   }, 500);
+  activeRippleTimeouts.add(timeoutId);
 }
 
 /**
@@ -172,6 +175,9 @@ let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
+
+// MEMORY LEAK FIX: Track active ripple timeouts for cleanup
+const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
 /**
  * Initialize the application
@@ -387,11 +393,24 @@ async function recordTimestamp(): Promise<void> {
       captureTimingPhoto()
         .then(async (photo) => {
           if (photo) {
+            // RACE CONDITION FIX: Verify entry still exists before updating
+            // Entry could have been deleted while photo was being captured
+            const currentState = store.getState();
+            const entryStillExists = currentState.entries.some(e => e.id === entryId);
+            if (!entryStillExists) {
+              console.warn('Entry was deleted before photo could be attached:', entryId);
+              return;
+            }
+
             // Store photo in IndexedDB (not in entry to save localStorage space)
             const saved = await photoStorage.savePhoto(entryId, photo);
             if (saved) {
-              // Mark entry as having a photo (without storing the actual photo data)
-              store.updateEntry(entryId, { photo: 'indexeddb' });
+              // Double-check entry still exists before update (could be deleted during save)
+              const finalState = store.getState();
+              if (finalState.entries.some(e => e.id === entryId)) {
+                // Mark entry as having a photo (without storing the actual photo data)
+                store.updateEntry(entryId, { photo: 'indexeddb' });
+              }
             }
           }
         })
@@ -2268,6 +2287,15 @@ function handleBeforeUnload(): void {
 
   // Cleanup camera service
   cameraService.stop();
+
+  // MEMORY LEAK FIX: Clear all pending ripple timeouts
+  for (const timeoutId of activeRippleTimeouts) {
+    clearTimeout(timeoutId);
+  }
+  activeRippleTimeouts.clear();
+
+  // Remove any orphaned ripple elements
+  document.querySelectorAll('.ripple').forEach(ripple => ripple.remove());
 }
 
 /**

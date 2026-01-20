@@ -48,6 +48,8 @@ class Store {
   private state: AppState;
   private listeners: Set<StateListener> = new Set();
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private isNotifying = false;
+  private pendingNotifications: (keyof AppState)[][] = [];
 
   constructor() {
     this.state = this.loadInitialState();
@@ -167,14 +169,34 @@ class Store {
   }
 
   // Notify all listeners of state changes
+  // RE-ENTRANCY FIX: Queue notifications to prevent mutations during notification
   private notify(changedKeys: (keyof AppState)[]) {
-    this.listeners.forEach(listener => {
-      try {
-        listener(this.state, changedKeys);
-      } catch (e) {
-        console.error('State listener error:', e);
+    // Queue the notification
+    this.pendingNotifications.push(changedKeys);
+
+    // If already notifying, let the current notification loop handle it
+    if (this.isNotifying) {
+      return;
+    }
+
+    // Process all pending notifications
+    this.isNotifying = true;
+    try {
+      while (this.pendingNotifications.length > 0) {
+        const keys = this.pendingNotifications.shift()!;
+        // Create a copy of listeners to avoid issues if listeners are added/removed during iteration
+        const listenersCopy = Array.from(this.listeners);
+        for (const listener of listenersCopy) {
+          try {
+            listener(this.state, keys);
+          } catch (e) {
+            console.error('State listener error:', e);
+          }
+        }
       }
-    });
+    } finally {
+      this.isNotifying = false;
+    }
   }
 
   // Update state

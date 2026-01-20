@@ -514,16 +514,19 @@ class SyncService {
 
   /**
    * Process sync queue with retry logic
+   * ATOMICITY FIX: Set flag before any checks to prevent concurrent processing
    */
   private async processQueue(): Promise<void> {
+    // CRITICAL: Set flag FIRST to prevent race condition
+    // Multiple calls could pass the check if flag is set after early returns
     if (this.isProcessingQueue) return;
-
-    const state = store.getState();
-    if (!state.settings.sync || !state.raceId || state.syncQueue.length === 0) return;
-
     this.isProcessingQueue = true;
 
     try {
+      const state = store.getState();
+      if (!state.settings.sync || !state.raceId || state.syncQueue.length === 0) {
+        return; // Early exit, but finally block will clear flag
+      }
       const now = Date.now();
 
       for (const item of state.syncQueue) {

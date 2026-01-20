@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-C_9uyxEe.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-CkDvDnwi.css">
+  <script type="module" crossorigin src="/assets/main-CcC1dGxI.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-DD37Z-Rb.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -238,6 +238,16 @@
               <span class="setting-title" data-i18n="deviceName">Device Name</span>
             </div>
             <input type="text" class="text-input" id="device-name-input" placeholder="Timer 1" style="max-width: 150px;">
+          </div>
+          <div class="setting-row" id="sync-photos-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="syncPhotos">Sync Photos</span>
+              <span class="setting-description" data-i18n="syncPhotosDesc">Share photos across devices via cloud</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sync-photos-toggle" disabled>
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 
@@ -510,6 +520,36 @@
       </div>
       <div class="modal-footer">
         <button class="modal-btn primary" id="race-deleted-ok-btn" data-i18n="ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Sync Warning Modal -->
+  <div class="modal-overlay" id="photo-sync-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="syncPhotosWarning">Enable Photo Sync</h2>
+      </div>
+      <div class="modal-body">
+        <p data-i18n="syncPhotosWarningText">Enabling photo sync will transfer the following data:</p>
+        <div class="photo-sync-stats" id="photo-sync-stats">
+          <div class="photo-sync-stat">
+            <span class="photo-sync-label" data-i18n="photosToUpload">Photos to upload</span>
+            <span class="photo-sync-value" id="photos-upload-count">0</span>
+          </div>
+          <div class="photo-sync-stat">
+            <span class="photo-sync-label" data-i18n="photosToDownload">Photos to download</span>
+            <span class="photo-sync-value" id="photos-download-count">0</span>
+          </div>
+          <div class="photo-sync-stat total">
+            <span class="photo-sync-label" data-i18n="totalDataVolume">Total data volume</span>
+            <span class="photo-sync-value" id="photos-total-size">0 KB</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="photo-sync-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="photo-sync-confirm-btn" data-i18n="enableSync">Enable Sync</button>
       </div>
     </div>
   </div>
