@@ -87,6 +87,113 @@ describe('Validation Utilities', () => {
       const entry = { ...validEntry, bib: 123 as unknown as string };
       expect(isValidEntry(entry)).toBe(false);
     });
+
+    // Tests for optional field validation (added for enhanced type guard)
+    describe('optional field validation', () => {
+      it('should validate entry with all optional fields', () => {
+        const fullEntry = {
+          ...validEntry,
+          syncedAt: 1704067200000,
+          photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==',
+          gpsCoords: {
+            latitude: 48.1234,
+            longitude: 11.5678,
+            accuracy: 5.0
+          }
+        };
+        expect(isValidEntry(fullEntry)).toBe(true);
+      });
+
+      it('should reject non-string deviceId', () => {
+        const entry = { ...validEntry, deviceId: 123 as unknown as string };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject non-string deviceName', () => {
+        const entry = { ...validEntry, deviceName: 123 as unknown as string };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject non-number syncedAt', () => {
+        const entry = { ...validEntry, syncedAt: '1704067200000' as unknown as number };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject negative syncedAt', () => {
+        const entry = { ...validEntry, syncedAt: -1 };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject NaN syncedAt', () => {
+        const entry = { ...validEntry, syncedAt: NaN };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject Infinity syncedAt', () => {
+        const entry = { ...validEntry, syncedAt: Infinity };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject non-string photo', () => {
+        const entry = { ...validEntry, photo: 123 as unknown as string };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject non-object gpsCoords', () => {
+        const entry = { ...validEntry, gpsCoords: 'invalid' as unknown as Entry['gpsCoords'] };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject null gpsCoords', () => {
+        const entry = { ...validEntry, gpsCoords: null as unknown as Entry['gpsCoords'] };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject gpsCoords with missing latitude', () => {
+        const entry = {
+          ...validEntry,
+          gpsCoords: { longitude: 11.5678, accuracy: 5.0 } as unknown as Entry['gpsCoords']
+        };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject gpsCoords with non-number latitude', () => {
+        const entry = {
+          ...validEntry,
+          gpsCoords: { latitude: '48.1234', longitude: 11.5678, accuracy: 5.0 } as unknown as Entry['gpsCoords']
+        };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject gpsCoords with NaN latitude', () => {
+        const entry = {
+          ...validEntry,
+          gpsCoords: { latitude: NaN, longitude: 11.5678, accuracy: 5.0 }
+        };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should reject gpsCoords with negative accuracy', () => {
+        const entry = {
+          ...validEntry,
+          gpsCoords: { latitude: 48.1234, longitude: 11.5678, accuracy: -1 }
+        };
+        expect(isValidEntry(entry)).toBe(false);
+      });
+
+      it('should accept entry with undefined optional fields', () => {
+        const minimalEntry = {
+          id: 'test-id',
+          bib: '001',
+          point: 'F' as const,
+          timestamp: '2024-01-01T12:00:00.000Z',
+          status: 'ok' as const,
+          deviceId: 'dev_test',
+          deviceName: 'Timer 1'
+        };
+        expect(isValidEntry(minimalEntry)).toBe(true);
+      });
+    });
   });
 
   describe('isValidSettings', () => {

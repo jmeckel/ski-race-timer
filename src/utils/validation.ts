@@ -7,6 +7,13 @@ const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq'];
 
 /**
  * Validate a single entry
+ *
+ * Validates structure and types for all Entry fields:
+ * - Required: id, point, timestamp
+ * - Optional in legacy data: bib, status, deviceId, deviceName
+ * - Optional: syncedAt, photo, gpsCoords
+ *
+ * @returns true if entry has valid structure (may still need sanitization)
  */
 export function isValidEntry(entry: unknown): entry is Entry {
   if (!entry || typeof entry !== 'object') return false;
@@ -25,12 +32,37 @@ export function isValidEntry(entry: unknown): entry is Entry {
   // Point is required and must be valid
   if (!VALID_POINTS.includes(e.point as TimingPoint)) return false;
 
-  // Timestamp is required
+  // Timestamp is required and must be valid ISO date
   if (!e.timestamp || typeof e.timestamp !== 'string') return false;
   if (isNaN(Date.parse(e.timestamp))) return false;
 
   // Status is optional but must be valid if present
-  if (e.status && !VALID_STATUSES.includes(e.status as EntryStatus)) return false;
+  if (e.status !== undefined && !VALID_STATUSES.includes(e.status as EntryStatus)) return false;
+
+  // DeviceId is optional but must be string if present
+  if (e.deviceId !== undefined && typeof e.deviceId !== 'string') return false;
+
+  // DeviceName is optional but must be string if present
+  if (e.deviceName !== undefined && typeof e.deviceName !== 'string') return false;
+
+  // SyncedAt is optional but must be non-negative number if present
+  if (e.syncedAt !== undefined) {
+    if (typeof e.syncedAt !== 'number' || e.syncedAt < 0 || !Number.isFinite(e.syncedAt)) {
+      return false;
+    }
+  }
+
+  // Photo is optional but must be string if present
+  if (e.photo !== undefined && typeof e.photo !== 'string') return false;
+
+  // GpsCoords is optional but must have valid structure if present
+  if (e.gpsCoords !== undefined) {
+    if (typeof e.gpsCoords !== 'object' || e.gpsCoords === null) return false;
+    const coords = e.gpsCoords as Record<string, unknown>;
+    if (typeof coords.latitude !== 'number' || !Number.isFinite(coords.latitude)) return false;
+    if (typeof coords.longitude !== 'number' || !Number.isFinite(coords.longitude)) return false;
+    if (typeof coords.accuracy !== 'number' || !Number.isFinite(coords.accuracy) || coords.accuracy < 0) return false;
+  }
 
   return true;
 }

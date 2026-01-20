@@ -17,8 +17,25 @@ const RATE_LIMIT_MAX_POSTS = 30; // Max POST requests per window per IP
 // Create Redis client - reuse connection across invocations
 let redis = null;
 let redisError = null;
+let lastErrorTime = 0;
+const RECONNECT_DELAY = 5000; // 5 seconds before attempting reconnection after error
 
 function getRedis() {
+  // If we have an error and enough time has passed, reset connection to retry
+  if (redisError && redis) {
+    const timeSinceError = Date.now() - lastErrorTime;
+    if (timeSinceError > RECONNECT_DELAY) {
+      console.log('Attempting Redis reconnection after error...');
+      try {
+        redis.disconnect();
+      } catch (e) {
+        // Ignore disconnect errors
+      }
+      redis = null;
+      redisError = null;
+    }
+  }
+
   if (!redis) {
     if (!process.env.REDIS_URL) {
       throw new Error('REDIS_URL environment variable is not configured');
@@ -29,8 +46,16 @@ function getRedis() {
       lazyConnect: true,
       connectTimeout: 10000,
       retryStrategy(times) {
-        if (times > 3) return null; // Stop retrying after 3 attempts
+        if (times > 3) {
+          lastErrorTime = Date.now();
+          return null; // Stop retrying after 3 attempts
+        }
         return Math.min(times * 200, 2000);
+      },
+      reconnectOnError(err) {
+        // Reconnect on specific errors
+        const targetErrors = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
+        return targetErrors.some(e => err.message.includes(e));
       }
     });
 
@@ -38,14 +63,36 @@ function getRedis() {
     redis.on('error', (err) => {
       console.error('Redis connection error:', err.message);
       redisError = err;
+      lastErrorTime = Date.now();
     });
 
     redis.on('connect', () => {
       console.log('Redis connected successfully');
       redisError = null;
     });
+
+    redis.on('close', () => {
+      console.log('Redis connection closed');
+    });
+
+    redis.on('reconnecting', () => {
+      console.log('Redis reconnecting...');
+    });
   }
   return redis;
+}
+
+/**
+ * Check if Redis is healthy and ready for operations
+ */
+async function isRedisHealthy() {
+  if (!redis || redisError) return false;
+  try {
+    await redis.ping();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // CORS configuration - use environment variable or default to production domain

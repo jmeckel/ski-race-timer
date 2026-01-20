@@ -1,10 +1,17 @@
 import { formatTime, formatDate } from '../utils';
 import { store } from '../store';
-import { gpsService } from '../services';
+import { gpsService, batteryService, type BatteryLevel } from '../services';
+
+// Frame throttling for battery optimization
+// Normal: 60fps, Low battery: 30fps, Critical: 15fps
+const FRAME_SKIP_NORMAL = 0;
+const FRAME_SKIP_LOW = 1; // Skip every other frame (30fps)
+const FRAME_SKIP_CRITICAL = 3; // Skip 3 of 4 frames (15fps)
 
 /**
  * High-performance clock component using requestAnimationFrame
  * Only updates changed digits to minimize DOM manipulation
+ * Battery-aware: reduces frame rate when battery is low
  */
 export class Clock {
   private container: HTMLElement;
@@ -15,6 +22,11 @@ export class Clock {
   private animationId: number | null = null;
   private isRunning = false;
   private visibilityHandler: (() => void) | null = null;
+
+  // Battery-aware throttling
+  private frameSkipCount = FRAME_SKIP_NORMAL;
+  private currentFrame = 0;
+  private batteryUnsubscribe: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -127,6 +139,35 @@ export class Clock {
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
     }
+
+    // Subscribe to battery changes for adaptive frame rate
+    if (!this.batteryUnsubscribe) {
+      batteryService.initialize().then(() => {
+        this.batteryUnsubscribe = batteryService.subscribe((status) => {
+          this.updateFrameSkipFromBattery(status.batteryLevel);
+        });
+      });
+    }
+  }
+
+  /**
+   * Update frame skip count based on battery level
+   */
+  private updateFrameSkipFromBattery(level: BatteryLevel): void {
+    const previousSkip = this.frameSkipCount;
+    switch (level) {
+      case 'critical':
+        this.frameSkipCount = FRAME_SKIP_CRITICAL;
+        break;
+      case 'low':
+        this.frameSkipCount = FRAME_SKIP_LOW;
+        break;
+      default:
+        this.frameSkipCount = FRAME_SKIP_NORMAL;
+    }
+    if (previousSkip !== this.frameSkipCount) {
+      console.log(`Clock frame rate adjusted: battery=${level}, skip=${this.frameSkipCount}`);
+    }
   }
 
   /**
@@ -144,37 +185,64 @@ export class Clock {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
+
+    // Unsubscribe from battery changes
+    if (this.batteryUnsubscribe) {
+      this.batteryUnsubscribe();
+      this.batteryUnsubscribe = null;
+    }
   }
 
   /**
    * Clock tick using requestAnimationFrame
+   * Entire method wrapped in try-catch to ensure clock keeps running even if RAF throws
+   * Battery-aware: skips frames when battery is low to reduce CPU usage
    */
   private tick = (): void => {
     if (!this.isRunning) return;
 
     try {
-      // Always use Date.now() for display - GPS timestamp is only for recording entries
-      const now = new Date();
-      const timeStr = formatTime(now);
+      // Frame skipping for battery optimization
+      // Always schedule next frame first, then decide whether to update display
+      this.currentFrame++;
+      const shouldUpdate = this.frameSkipCount === 0 || (this.currentFrame % (this.frameSkipCount + 1)) === 0;
 
-      // Only update changed digits
-      if (timeStr !== this.lastTimeStr) {
-        this.updateDigits(timeStr);
-        this.lastTimeStr = timeStr;
+      if (shouldUpdate) {
+        // Always use Date.now() for display - GPS timestamp is only for recording entries
+        const now = new Date();
+        const timeStr = formatTime(now);
+
+        // Only update changed digits
+        if (timeStr !== this.lastTimeStr) {
+          this.updateDigits(timeStr);
+          this.lastTimeStr = timeStr;
+        }
+
+        // Update date once per second (when seconds change)
+        const seconds = now.getSeconds();
+        if (seconds === 0 || !this.dateElement.textContent) {
+          const state = store.getState();
+          this.dateElement.textContent = formatDate(now, state.currentLang);
+        }
       }
 
-      // Update date once per second (when seconds change)
-      const seconds = now.getSeconds();
-      if (seconds === 0 || !this.dateElement.textContent) {
-        const state = store.getState();
-        this.dateElement.textContent = formatDate(now, state.currentLang);
-      }
+      // Schedule next frame inside try block
+      this.animationId = requestAnimationFrame(this.tick);
     } catch (error) {
       console.error('Clock tick error:', error);
+      // Try to recover by scheduling next frame even after error
+      try {
+        this.animationId = requestAnimationFrame(this.tick);
+      } catch (rafError) {
+        console.error('Clock RAF scheduling failed:', rafError);
+        // If RAF fails completely, fall back to setTimeout
+        setTimeout(() => {
+          if (this.isRunning) {
+            this.tick();
+          }
+        }, 16); // ~60fps
+      }
     }
-
-    // Always schedule next frame to keep clock running
-    this.animationId = requestAnimationFrame(this.tick);
   };
 
   /**

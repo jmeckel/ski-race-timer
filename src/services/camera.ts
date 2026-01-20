@@ -16,21 +16,26 @@ const PHOTO_MAX_WIDTH = 1280;
 const PHOTO_MAX_HEIGHT = 720;
 const PHOTO_MAX_SIZE_KB = 200; // Max base64 size in KB (actual image ~150KB)
 
+// Camera state machine to handle visibility changes correctly
+type CameraState = 'stopped' | 'initializing' | 'ready' | 'paused' | 'resuming';
+
 class CameraService {
   private stream: MediaStream | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private canvasElement: HTMLCanvasElement | null = null;
-  private isInitialized = false;
-  private isReinitializing = false; // Guard against concurrent reinitialize calls
+  private cameraState: CameraState = 'stopped';
   private visibilityHandler: (() => void) | null = null;
-  private wasActiveBeforeHidden = false;
+  private pendingVisibilityChange: 'hidden' | 'visible' | null = null;
 
   /**
    * Initialize the camera service
    * Creates hidden video and canvas elements for photo capture
    */
   async initialize(): Promise<boolean> {
-    if (this.isInitialized) return true;
+    if (this.cameraState === 'ready') return true;
+    if (this.cameraState === 'initializing') return false; // Already initializing
+
+    this.cameraState = 'initializing';
 
     try {
       // Check if camera API is available
@@ -70,33 +75,19 @@ class CameraService {
         this.videoElement.onerror = () => reject(new Error('Video load error'));
       });
 
-      this.isInitialized = true;
+      // Check if visibility changed during initialization
+      if (this.pendingVisibilityChange === 'hidden') {
+        this.pendingVisibilityChange = null;
+        this.pauseCamera();
+        return false;
+      }
+
+      this.cameraState = 'ready';
       store.setCameraReady(true);
 
       // Add visibility change handler to pause/resume camera for battery optimization
       if (!this.visibilityHandler) {
-        this.visibilityHandler = () => {
-          if (document.hidden) {
-            // Page is hidden - pause camera stream to save battery
-            this.wasActiveBeforeHidden = this.isInitialized;
-            if (this.stream) {
-              // Stop all tracks to release camera hardware
-              this.stream.getTracks().forEach(track => track.stop());
-              this.stream = null;
-              if (this.videoElement) {
-                this.videoElement.srcObject = null;
-              }
-              this.isInitialized = false;
-              store.setCameraReady(false);
-              console.log('Camera paused (page hidden)');
-            }
-          } else {
-            // Page is visible again - reinitialize camera if it was active before
-            if (this.wasActiveBeforeHidden && !this.isInitialized) {
-              this.reinitializeCamera();
-            }
-          }
-        };
+        this.visibilityHandler = () => this.handleVisibilityChange();
         document.addEventListener('visibilitychange', this.visibilityHandler);
       }
 
@@ -105,22 +96,63 @@ class CameraService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Camera initialization failed';
       console.error('Camera initialization error:', errorMessage);
+      this.cameraState = 'stopped';
       store.setCameraReady(false, errorMessage);
       return false;
     }
   }
 
   /**
+   * Handle visibility change events with state machine
+   */
+  private handleVisibilityChange(): void {
+    if (document.hidden) {
+      // Page is hidden
+      if (this.cameraState === 'initializing' || this.cameraState === 'resuming') {
+        // Mark pending change - will be handled when init/resume completes
+        this.pendingVisibilityChange = 'hidden';
+        console.log('Camera: visibility changed to hidden during init/resume, will pause after');
+      } else if (this.cameraState === 'ready') {
+        this.pauseCamera();
+      }
+    } else {
+      // Page is visible
+      if (this.cameraState === 'initializing' || this.cameraState === 'resuming') {
+        // Clear any pending hidden change
+        this.pendingVisibilityChange = null;
+      } else if (this.cameraState === 'paused') {
+        this.reinitializeCamera();
+      }
+    }
+  }
+
+  /**
+   * Pause camera when page becomes hidden
+   */
+  private pauseCamera(): void {
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
+      if (this.videoElement) {
+        this.videoElement.srcObject = null;
+      }
+    }
+    this.cameraState = 'paused';
+    store.setCameraReady(false);
+    console.log('Camera paused (page hidden)');
+  }
+
+  /**
    * Reinitialize camera after visibility change
-   * Uses guard flag to prevent overlapping calls on rapid visibility changes
+   * Uses state machine to handle rapid visibility changes correctly
    */
   private async reinitializeCamera(): Promise<void> {
     // Prevent concurrent reinitialize calls
-    if (this.isReinitializing) {
+    if (this.cameraState === 'resuming') {
       console.log('Camera reinitialization already in progress, skipping');
       return;
     }
-    this.isReinitializing = true;
+    this.cameraState = 'resuming';
 
     try {
       if (!this.videoElement) {
@@ -152,14 +184,20 @@ class CameraService {
         this.videoElement.onerror = () => reject(new Error('Video load error'));
       });
 
-      this.isInitialized = true;
+      // Check if visibility changed during reinitialization
+      if (this.pendingVisibilityChange === 'hidden') {
+        this.pendingVisibilityChange = null;
+        this.pauseCamera();
+        console.log('Camera paused immediately after reinit (page hidden during reinit)');
+        return;
+      }
+
+      this.cameraState = 'ready';
       store.setCameraReady(true);
       console.log('Camera reinitialized (page visible)');
     } catch (error) {
       console.error('Failed to reinitialize camera:', error);
-      this.wasActiveBeforeHidden = false;
-    } finally {
-      this.isReinitializing = false;
+      this.cameraState = 'stopped';
     }
   }
 
@@ -168,8 +206,8 @@ class CameraService {
    * Returns base64 encoded JPEG image
    */
   async capturePhoto(): Promise<string | null> {
-    if (!this.isInitialized || !this.videoElement || !this.canvasElement) {
-      console.warn('Camera not initialized');
+    if (this.cameraState !== 'ready' || !this.videoElement || !this.canvasElement) {
+      console.warn('Camera not ready for capture');
       return null;
     }
 
@@ -259,10 +297,8 @@ class CameraService {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
-    this.wasActiveBeforeHidden = false;
-    this.isReinitializing = false;
-
-    this.isInitialized = false;
+    this.pendingVisibilityChange = null;
+    this.cameraState = 'stopped';
     store.setCameraReady(false);
     console.log('Camera stopped');
   }
@@ -271,7 +307,7 @@ class CameraService {
    * Check if camera is ready
    */
   isReady(): boolean {
-    return this.isInitialized;
+    return this.cameraState === 'ready';
   }
 
   /**

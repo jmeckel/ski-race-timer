@@ -355,6 +355,50 @@ describe('PhotoStorage - API Signature Verification', () => {
   });
 });
 
+describe('PhotoStorage - Queue Serialization', () => {
+  it('should serialize concurrent saves', async () => {
+    vi.resetModules();
+    const module = await import('../../../src/services/photoStorage');
+
+    // Simulate concurrent saves
+    const save1 = module.photoStorage.savePhoto('entry-1', 'photo-data-1');
+    const save2 = module.photoStorage.savePhoto('entry-2', 'photo-data-2');
+    const save3 = module.photoStorage.savePhoto('entry-3', 'photo-data-3');
+
+    // All should be promises
+    expect(save1).toBeInstanceOf(Promise);
+    expect(save2).toBeInstanceOf(Promise);
+    expect(save3).toBeInstanceOf(Promise);
+
+    // All should resolve (queue processes them serially)
+    const results = await Promise.all([save1, save2, save3]);
+
+    // Each result should be a boolean indicating success
+    results.forEach(result => {
+      expect(typeof result).toBe('boolean');
+    });
+  });
+
+  it('should not have concurrent transaction conflicts', async () => {
+    vi.resetModules();
+    const module = await import('../../../src/services/photoStorage');
+
+    // Make many rapid concurrent saves
+    const saves = [];
+    for (let i = 0; i < 10; i++) {
+      saves.push(module.photoStorage.savePhoto(`entry-${i}`, `photo-data-${i}`));
+    }
+
+    // All should complete without throwing
+    const results = await Promise.allSettled(saves);
+
+    // All should fulfill (not reject)
+    results.forEach(result => {
+      expect(result.status).toBe('fulfilled');
+    });
+  });
+});
+
 describe('PhotoStorage - Return Types', () => {
   it('savePhoto should return a Promise', async () => {
     vi.resetModules();

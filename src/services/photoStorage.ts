@@ -16,9 +16,17 @@ interface PhotoRecord {
   timestamp: number;
 }
 
+interface QueuedSave {
+  entryId: string;
+  photoBase64: string;
+  resolve: (success: boolean) => void;
+}
+
 class PhotoStorageService {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<boolean> | null = null;
+  private saveQueue: QueuedSave[] = [];
+  private isProcessingQueue = false;
 
   /**
    * Initialize IndexedDB connection
@@ -66,8 +74,39 @@ class PhotoStorageService {
 
   /**
    * Store a photo for an entry
+   * Uses a queue to serialize saves and prevent IndexedDB transaction conflicts
    */
   async savePhoto(entryId: string, photoBase64: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      // Add to queue
+      this.saveQueue.push({ entryId, photoBase64, resolve });
+      // Process queue if not already processing
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Process the save queue serially
+   */
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue) return;
+    this.isProcessingQueue = true;
+
+    try {
+      while (this.saveQueue.length > 0) {
+        const item = this.saveQueue.shift()!;
+        const success = await this.doSavePhoto(item.entryId, item.photoBase64);
+        item.resolve(success);
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
+  }
+
+  /**
+   * Actually perform the photo save
+   */
+  private async doSavePhoto(entryId: string, photoBase64: string): Promise<boolean> {
     if (!this.db) {
       const initialized = await this.initialize();
       if (!initialized) return false;

@@ -426,11 +426,12 @@ async function recordTimestamp(): Promise<void> {
               // Store photo in IndexedDB (not in entry to save localStorage space)
               const saved = await photoStorage.savePhoto(entryId, photo);
               if (saved) {
-                // Double-check entry still exists before update (could be deleted during save)
-                const finalState = store.getState();
-                if (finalState.entries.some(e => e.id === entryId)) {
-                  // Mark entry as having a photo (without storing the actual photo data)
-                  store.updateEntry(entryId, { photo: 'indexeddb' });
+                // Mark entry as having a photo - updateEntry returns false if entry was deleted
+                const updated = store.updateEntry(entryId, { photo: 'indexeddb' });
+                if (!updated) {
+                  // Entry was deleted during save - clean up orphaned photo
+                  console.warn('Entry deleted during photo save, removing orphaned photo:', entryId);
+                  await photoStorage.deletePhoto(entryId);
                 }
               }
             } catch (err) {

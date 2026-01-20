@@ -7,6 +7,7 @@ import { t } from '../i18n/translations';
 const ITEM_HEIGHT = 72; // Height of each result item in pixels
 const BUFFER_SIZE = 5; // Number of items to render above/below viewport
 const SCROLL_DEBOUNCE = 16; // ~60fps
+const RESIZE_DEBOUNCE = 100; // Debounce resize events for battery efficiency
 
 interface VirtualListOptions {
   container: HTMLElement;
@@ -30,6 +31,7 @@ export class VirtualList {
   private resizeObserver: ResizeObserver | null = null;
   private scrollHandler: (() => void) | null = null;
   private scrollDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  private resizeDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
   private isPaused = false;
   private needsRefreshOnResume = false;
 
@@ -63,15 +65,31 @@ export class VirtualList {
       }
       this.scrollDebounceTimeout = setTimeout(() => {
         this.scrollDebounceTimeout = null;
-        this.onScroll();
+        try {
+          this.onScroll();
+        } catch (error) {
+          console.error('VirtualList scroll error:', error);
+          // Continue to allow future scroll events
+        }
       }, SCROLL_DEBOUNCE);
     };
     this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
 
-    // Set up resize observer - store reference for cleanup
+    // Set up resize observer with debounce for battery efficiency
     this.resizeObserver = new ResizeObserver(() => {
-      this.containerHeight = this.scrollContainer.clientHeight;
-      this.render();
+      // Debounce resize events to prevent excessive renders during animations
+      if (this.resizeDebounceTimeout !== null) {
+        clearTimeout(this.resizeDebounceTimeout);
+      }
+      this.resizeDebounceTimeout = setTimeout(() => {
+        this.resizeDebounceTimeout = null;
+        try {
+          this.containerHeight = this.scrollContainer.clientHeight;
+          this.render();
+        } catch (error) {
+          console.error('VirtualList resize error:', error);
+        }
+      }, RESIZE_DEBOUNCE);
     });
     this.resizeObserver.observe(this.scrollContainer);
 
@@ -382,10 +400,14 @@ export class VirtualList {
       this.resizeObserver.disconnect();
     }
 
-    // Cancel pending debounce timeout
+    // Cancel pending debounce timeouts
     if (this.scrollDebounceTimeout !== null) {
       clearTimeout(this.scrollDebounceTimeout);
       this.scrollDebounceTimeout = null;
+    }
+    if (this.resizeDebounceTimeout !== null) {
+      clearTimeout(this.resizeDebounceTimeout);
+      this.resizeDebounceTimeout = null;
     }
 
     // Remove scroll listener
@@ -463,10 +485,14 @@ export class VirtualList {
       this.resizeObserver = null;
     }
 
-    // Cancel pending debounce timeout to prevent callback firing after destroy
+    // Cancel pending debounce timeouts to prevent callbacks firing after destroy
     if (this.scrollDebounceTimeout !== null) {
       clearTimeout(this.scrollDebounceTimeout);
       this.scrollDebounceTimeout = null;
+    }
+    if (this.resizeDebounceTimeout !== null) {
+      clearTimeout(this.resizeDebounceTimeout);
+      this.resizeDebounceTimeout = null;
     }
 
     // Remove scroll listener to prevent memory leak

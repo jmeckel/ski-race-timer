@@ -41,8 +41,18 @@ const DEFAULT_SETTINGS: Settings = {
 // Maximum undo stack size
 const MAX_UNDO_STACK = 50;
 
-// State change listener type
-type StateListener = (state: AppState, changedKeys: (keyof AppState)[]) => void;
+/**
+ * State change listener type
+ *
+ * IMPORTANT: The state parameter is a snapshot taken when the notification was queued.
+ * This ensures all listeners in a batch see consistent state, even if one listener
+ * triggers additional state changes. If you need the absolute latest state (e.g., for
+ * chained updates), call store.getState() instead of using the passed state parameter.
+ */
+type StateListener = (state: Readonly<AppState>, changedKeys: (keyof AppState)[]) => void;
+
+// Error callback for listener exceptions
+type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
 
 class Store {
   private state: AppState;
@@ -50,6 +60,8 @@ class Store {
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private isNotifying = false;
   private pendingNotifications: { keys: (keyof AppState)[]; stateSnapshot: AppState }[] = [];
+  private listenerErrorCallback: ListenerErrorCallback | null = null;
+  private failedListenerCount = 0;
 
   constructor() {
     this.state = this.loadInitialState();
@@ -193,12 +205,37 @@ class Store {
             listener(stateSnapshot, keys);
           } catch (e) {
             console.error('State listener error:', e);
+            this.failedListenerCount++;
+            // Notify error callback if registered
+            if (this.listenerErrorCallback) {
+              try {
+                this.listenerErrorCallback(e, listener);
+              } catch {
+                // Ignore errors in error callback
+              }
+            }
           }
         }
       }
     } finally {
       this.isNotifying = false;
     }
+  }
+
+  /**
+   * Register a callback for listener errors
+   * Useful for logging to analytics or showing user notification
+   */
+  onListenerError(callback: ListenerErrorCallback): void {
+    this.listenerErrorCallback = callback;
+  }
+
+  /**
+   * Get the count of listener failures since app start
+   * Can be used for health monitoring
+   */
+  getListenerFailureCount(): number {
+    return this.failedListenerCount;
   }
 
   // Update state
@@ -363,9 +400,13 @@ class Store {
     });
   }
 
-  updateEntry(id: string, updates: Partial<Entry>) {
+  /**
+   * Update an entry by ID
+   * @returns true if entry was found and updated, false if entry not found
+   */
+  updateEntry(id: string, updates: Partial<Entry>): boolean {
     const index = this.state.entries.findIndex(e => e.id === id);
-    if (index === -1) return;
+    if (index === -1) return false;
 
     const oldEntry = this.state.entries[index];
     const newEntry = { ...oldEntry, ...updates };
@@ -379,6 +420,7 @@ class Store {
     const entries = [...this.state.entries];
     entries[index] = newEntry;
     this.setState({ entries });
+    return true;
   }
 
   // ===== Undo/Redo =====

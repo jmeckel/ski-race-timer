@@ -125,18 +125,24 @@ export class PullToRefresh {
   private onTouchMove = (e: TouchEvent): void => {
     if (!this.isPulling || this.isRefreshing) return;
 
-    const scrollTop = this.scrollableParent?.scrollTop ?? 0;
-    if (scrollTop > 0) {
+    try {
+      const scrollTop = this.scrollableParent?.scrollTop ?? 0;
+      if (scrollTop > 0) {
+        this.isPulling = false;
+        return;
+      }
+
+      this.currentY = e.touches[0].clientY;
+      const pullDistance = (this.currentY - this.startY) / RESISTANCE;
+
+      if (pullDistance > 0) {
+        e.preventDefault();
+        this.updateIndicator(pullDistance);
+      }
+    } catch (error) {
+      console.error('PullToRefresh move error:', error);
       this.isPulling = false;
-      return;
-    }
-
-    this.currentY = e.touches[0].clientY;
-    const pullDistance = (this.currentY - this.startY) / RESISTANCE;
-
-    if (pullDistance > 0) {
-      e.preventDefault();
-      this.updateIndicator(pullDistance);
+      this.resetIndicator();
     }
   };
 
@@ -194,6 +200,9 @@ export class PullToRefresh {
 
     try {
       await this.onRefresh();
+    } catch (error) {
+      console.error('PullToRefresh callback error:', error);
+      // Continue to reset state even if refresh fails
     } finally {
       this.isRefreshing = false;
       if (content) content.style.display = 'flex';
