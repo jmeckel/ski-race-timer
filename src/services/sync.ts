@@ -62,12 +62,17 @@ export async function exchangePinForToken(pin: string): Promise<{ success: boole
 }
 
 // Sync configuration
-const POLL_INTERVAL_NORMAL = 5000; // 5 seconds
+const POLL_INTERVAL_NORMAL = 5000; // 5 seconds - fast polling when active
 const POLL_INTERVAL_ERROR = 30000; // 30 seconds on error
 const MAX_RETRIES = 5;
 const RETRY_BACKOFF_BASE = 2000; // 2 seconds
 const QUEUE_PROCESS_INTERVAL = 10000; // 10 seconds
 const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
+
+// Adaptive polling configuration
+// Gradually increases interval when no changes detected to save battery
+const POLL_INTERVALS_IDLE = [5000, 10000, 15000, 20000, 30000]; // Gradual increase
+const IDLE_THRESHOLD = 6; // Number of no-change polls before starting to throttle
 
 class SyncService {
   private pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -78,6 +83,10 @@ class SyncService {
   private isProcessingQueue = false;
   private visibilityHandler: (() => void) | null = null;
   private wasPollingBeforeHidden = false;
+
+  // Adaptive polling state
+  private consecutiveNoChanges = 0; // Track polls with no changes
+  private currentIdleLevel = 0; // Index into POLL_INTERVALS_IDLE
 
   /**
    * Initialize sync service
@@ -203,21 +212,70 @@ class SyncService {
   }
 
   /**
-   * Adjust polling interval based on success/failure
+   * Adjust polling interval based on success/failure and whether changes were detected
+   * Implements adaptive polling: fast when active, slow when idle
    */
-  private adjustPollingInterval(success: boolean): void {
-    if (success) {
-      this.consecutiveErrors = 0;
-      if (this.pollInterval) {
-        clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_NORMAL);
-      }
-    } else {
+  private adjustPollingInterval(success: boolean, hasChanges: boolean = false): void {
+    if (!success) {
+      // Error case - use error interval
       this.consecutiveErrors++;
       if (this.consecutiveErrors > 2 && this.pollInterval) {
         clearInterval(this.pollInterval);
         this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_ERROR);
+        console.log('Sync polling: error mode (30s)');
       }
+      return;
+    }
+
+    // Success case - reset error counter
+    this.consecutiveErrors = 0;
+
+    if (hasChanges) {
+      // Changes detected - reset to fast polling
+      this.consecutiveNoChanges = 0;
+      this.currentIdleLevel = 0;
+
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_NORMAL);
+      }
+      console.log('Sync polling: active mode (5s)');
+    } else {
+      // No changes - consider throttling
+      this.consecutiveNoChanges++;
+
+      if (this.consecutiveNoChanges >= IDLE_THRESHOLD) {
+        // Start or continue throttling
+        const newIdleLevel = Math.min(
+          this.currentIdleLevel + 1,
+          POLL_INTERVALS_IDLE.length - 1
+        );
+
+        // Only adjust if level changed
+        if (newIdleLevel !== this.currentIdleLevel) {
+          this.currentIdleLevel = newIdleLevel;
+          const newInterval = POLL_INTERVALS_IDLE[this.currentIdleLevel];
+
+          if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
+          }
+          console.log(`Sync polling: idle mode (${newInterval / 1000}s)`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Reset adaptive polling to fast mode (call when user sends an entry)
+   */
+  resetToFastPolling(): void {
+    this.consecutiveNoChanges = 0;
+    this.currentIdleLevel = 0;
+
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_NORMAL);
     }
   }
 
@@ -346,9 +404,13 @@ class SyncService {
         store.setCloudHighestBib(data.highestBib);
       }
 
+      // Track if any changes occurred for adaptive polling
+      let hasChanges = false;
+
       // Remove locally any entries that were deleted from cloud
       if (deletedIds.length > 0) {
         store.removeDeletedCloudEntries(deletedIds);
+        hasChanges = true;
       }
 
       // Merge remote entries (excluding deleted ones)
@@ -357,13 +419,14 @@ class SyncService {
         const processedEntries = await this.processCloudPhotos(cloudEntries);
         const added = store.mergeCloudEntries(processedEntries, deletedIds);
         if (added > 0) {
+          hasChanges = true;
           const lang = store.getState().currentLang;
           this.showSyncToast(t('syncedEntriesFromCloud', lang).replace('{count}', String(added)));
         }
       }
 
       this.lastSyncTimestamp = data.lastUpdated || Date.now();
-      this.adjustPollingInterval(true);
+      this.adjustPollingInterval(true, hasChanges);
     } catch (error) {
       console.error('Cloud sync fetch error:', error);
 
@@ -499,6 +562,9 @@ class SyncService {
       // Remove from sync queue on success
       store.removeFromSyncQueue(entry.id);
 
+      // Reset to fast polling when user is actively sending entries
+      this.resetToFastPolling();
+
       return true;
     } catch (error) {
       console.error('Cloud sync send error:', error);
@@ -617,7 +683,11 @@ class SyncService {
     }
     this.wasPollingBeforeHidden = false;
 
+    // Reset adaptive polling state
     this.consecutiveErrors = 0;
+    this.consecutiveNoChanges = 0;
+    this.currentIdleLevel = 0;
+
     store.setSyncStatus('disconnected');
     console.log('Sync service cleaned up');
   }
