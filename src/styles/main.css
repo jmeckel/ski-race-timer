@@ -1558,12 +1558,12 @@ body {
     align-self: stretch;
   }
 
-  /* Right column: Last recorded (compact, same height as clock) */
+  /* Right column: Last recorded (compact) */
   .timer-view .last-recorded {
     grid-area: last;
     justify-content: center;
-    padding: 4px 8px;
-    font-size: 0.7rem;
+    padding: 2px 8px;
+    font-size: 0.75rem;
     align-self: center;
   }
 
