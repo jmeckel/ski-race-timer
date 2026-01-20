@@ -7,6 +7,7 @@ import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, f
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
 import { injectSpeedInsights } from '@vercel/speed-insights';
+import { OnboardingController } from './onboarding';
 import type { Entry, TimingPoint, Language, RaceInfo } from './types';
 
 // Initialize Vercel Speed Insights
@@ -175,6 +176,7 @@ let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
+let onboardingController: OnboardingController | null = null;
 
 // MEMORY LEAK FIX: Track active ripple timeouts for cleanup
 const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
@@ -267,6 +269,27 @@ export function initApp(): void {
   const initialState = store.getState();
   if (initialState.currentView === 'timer') {
     wakeLockService.enable();
+  }
+
+  // Initialize onboarding for first-time users
+  onboardingController = new OnboardingController();
+  onboardingController.setUpdateTranslationsCallback(() => updateTranslations());
+
+  // Show onboarding if first-time user
+  if (onboardingController.shouldShow()) {
+    onboardingController.show();
+  }
+
+  // "Show Tutorial" button handler
+  const showTutorialBtn = document.getElementById('show-tutorial-btn');
+  if (showTutorialBtn) {
+    showTutorialBtn.addEventListener('click', () => {
+      if (onboardingController) {
+        onboardingController.reset();
+        onboardingController.show();
+        feedbackTap();
+      }
+    });
   }
 
   console.log('Ski Race Timer initialized');

@@ -1665,6 +1665,215 @@ body {
   background: #DC2626;
 }
 
+/* ===== Onboarding Modal ===== */
+.onboarding-container {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px 24px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: var(--primary);
+  transform: scale(1.25);
+}
+
+.progress-dot.completed {
+  background: var(--success);
+}
+
+.onboarding-card {
+  animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.onboarding-icon.success {
+  color: var(--success);
+  font-size: 72px;
+}
+
+.onboarding-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.onboarding-card p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.onboarding-card .text-input {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.onboarding-lang-select {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+#onboarding-modal .lang-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid var(--surface-elevated);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#onboarding-modal .lang-btn:active {
+  transform: scale(0.97);
+}
+
+#onboarding-modal .lang-btn.selected {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.onboarding-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.onboarding-btn:active {
+  transform: scale(0.98);
+}
+
+.onboarding-btn.primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.onboarding-btn.primary:active {
+  background: var(--primary-dark);
+}
+
+.onboarding-btn.secondary {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.onboarding-btn.secondary:hover {
+  color: var(--text-primary);
+}
+
+.onboarding-summary {
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  text-align: left;
+}
+
+.onboarding-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface);
+  font-size: 0.875rem;
+}
+
+.onboarding-summary-item:last-child {
+  border-bottom: none;
+}
+
+.onboarding-summary-item span {
+  color: var(--text-secondary);
+}
+
+.onboarding-summary-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.onboarding-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+#onboarding-modal .race-status {
+  font-size: 0.8125rem;
+  margin-bottom: 12px;
+  min-height: 20px;
+  transition: all 0.2s ease;
+}
+
+#onboarding-modal .race-status.found {
+  color: var(--success);
+}
+
+#onboarding-modal .race-status.new {
+  color: var(--text-tertiary);
+}
+
+.onboarding-tip {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
 /* ===== Print Styles ===== */
 @media print {
   .tab-bar,

@@ -333,6 +333,23 @@
           </div>
         </div>
 
+        <!-- Tutorial -->
+        <div class="settings-section">
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="showTutorial">Show Tutorial</span>
+              <span class="setting-description" data-i18n="showTutorialDesc">Run the setup wizard again</span>
+            </div>
+            <button class="action-btn" id="show-tutorial-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <span data-i18n="show">Show</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Admin Section (hidden in simple mode) -->
         <div class="settings-section" id="admin-section">
           <div class="settings-section-title" data-i18n="admin">Admin</div>
@@ -642,6 +659,67 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn danger" id="confirm-delete-race-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Modal -->
+  <div class="modal-overlay" id="onboarding-modal">
+    <div class="onboarding-container">
+      <div class="onboarding-progress">
+        <span class="progress-dot active"></span>
+        <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
+      </div>
+
+      <div class="onboarding-cards">
+        <!-- Card 1: Welcome -->
+        <div class="onboarding-card" data-step="1">
+          <div class="onboarding-icon">⏱️</div>
+          <h2 data-i18n="onboardingWelcome">Welcome to Ski Race Timer</h2>
+          <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
+          <div class="onboarding-lang-select">
+            <button class="lang-btn" data-lang="de">Deutsch</button>
+            <button class="lang-btn" data-lang="en">English</button>
+          </div>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="getStarted">Get Started</button>
+        </div>
+
+        <!-- Card 2: Device Name -->
+        <div class="onboarding-card" data-step="2" style="display:none">
+          <h2 data-i18n="onboardingDeviceName">Name Your Timer</h2>
+          <p data-i18n="onboardingDeviceNameDesc">This identifies your device when syncing</p>
+          <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 3: Race Setup -->
+        <div class="onboarding-card" data-step="3" style="display:none">
+          <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
+          <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
+          <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
+          <div class="race-status" id="onboarding-race-status"></div>
+          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none">
+          <label class="onboarding-toggle-row">
+            <span data-i18n="enableSync">Enable Cloud Sync</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="onboarding-sync-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
+        </div>
+
+        <!-- Card 4: Ready -->
+        <div class="onboarding-card" data-step="4" style="display:none">
+          <div class="onboarding-icon success">✓</div>
+          <h2 data-i18n="onboardingReady">Ready to Time!</h2>
+          <div class="onboarding-summary" id="onboarding-summary"></div>
+          <p class="onboarding-tip" data-i18n="onboardingTip">Tap the big red button to record timestamps</p>
+          <button class="onboarding-btn primary" data-action="finish" data-i18n="startTiming">Start Timing</button>
+        </div>
       </div>
     </div>
   </div>

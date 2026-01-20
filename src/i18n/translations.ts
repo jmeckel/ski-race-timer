@@ -209,7 +209,31 @@ export const translations: Record<Language, Translations> = {
     gpsUnavailable: 'GPS unavailable',
 
     // Generic errors
-    unknownError: 'Unknown error'
+    unknownError: 'Unknown error',
+
+    // Onboarding
+    onboardingWelcome: 'Welcome to Ski Race Timer',
+    onboardingWelcomeDesc: 'GPS-synchronized timing for ski races',
+    getStarted: 'Get Started',
+    onboardingDeviceName: 'Name Your Timer',
+    onboardingDeviceNameDesc: 'This identifies your device when syncing',
+    onboardingRaceSetup: 'Join a Race',
+    onboardingRaceSetupDesc: 'Enter a race ID to sync with other timers',
+    skipForNow: 'Skip for now',
+    onboardingReady: 'Ready to Time!',
+    onboardingTip: 'Tap the big blue button to record timestamps',
+    startTiming: 'Start Timing',
+    continue: 'Continue',
+    deviceNameLabel: 'Device Name',
+    raceIdLabel: 'Race ID',
+    syncStatusLabel: 'Cloud Sync',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    showTutorial: 'Show Tutorial',
+    showTutorialDesc: 'Run the setup wizard again',
+    show: 'Show',
+    onboardingComplete: 'Setup complete!',
+    invalidPin: 'Invalid PIN format'
   },
 
   de: {
@@ -420,7 +444,31 @@ export const translations: Record<Language, Translations> = {
     gpsUnavailable: 'GPS nicht verfügbar',
 
     // Generic errors
-    unknownError: 'Unbekannter Fehler'
+    unknownError: 'Unbekannter Fehler',
+
+    // Onboarding
+    onboardingWelcome: 'Willkommen bei Ski Race Timer',
+    onboardingWelcomeDesc: 'GPS-synchronisierte Zeitmessung für Skirennen',
+    getStarted: "Los geht's",
+    onboardingDeviceName: 'Timer benennen',
+    onboardingDeviceNameDesc: 'Dieser Name identifiziert dein Gerät beim Synchronisieren',
+    onboardingRaceSetup: 'Rennen beitreten',
+    onboardingRaceSetupDesc: 'Gib eine Rennen-ID ein um mit anderen Timern zu synchronisieren',
+    skipForNow: 'Vorerst überspringen',
+    onboardingReady: 'Bereit zur Zeitmessung!',
+    onboardingTip: 'Tippe auf den großen blauen Button um Zeiten zu erfassen',
+    startTiming: 'Zeitmessung starten',
+    continue: 'Weiter',
+    deviceNameLabel: 'Gerätename',
+    raceIdLabel: 'Rennen-ID',
+    syncStatusLabel: 'Cloud-Sync',
+    enabled: 'Aktiviert',
+    disabled: 'Deaktiviert',
+    showTutorial: 'Tutorial anzeigen',
+    showTutorialDesc: 'Setup-Assistenten erneut starten',
+    show: 'Anzeigen',
+    onboardingComplete: 'Einrichtung abgeschlossen!',
+    invalidPin: 'Ungültiges PIN-Format'
   }
 };
 
