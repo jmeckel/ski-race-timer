@@ -142,9 +142,15 @@ test.describe('Timer View', () => {
       // Navigate to results view where undo button is located
       await navigateTo(page, 'results');
 
-      // Click undo button
+      // Click undo button - this opens confirmation modal for destructive undo
       await page.click('#undo-btn');
-      await expect(page.locator('.toast')).toBeVisible();
+
+      // Confirm the undo action
+      await expect(page.locator('#confirm-modal.show')).toBeVisible();
+      await page.click('#confirm-delete-btn');
+
+      // Toast should appear after confirmation
+      await expect(page.locator('.toast')).toBeVisible({ timeout: 5000 });
     });
   });
 });

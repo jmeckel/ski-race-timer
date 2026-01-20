@@ -44,8 +44,8 @@ test.describe('Results View', () => {
 
     test('should show timing point for each entry', async ({ page }) => {
       const firstEntry = page.locator('.result-item').first();
-      // F for Finish in simple mode
-      await expect(firstEntry).toContainText('F');
+      // Timing point shows "Ziel" (Finish in German, which is default)
+      await expect(firstEntry).toContainText('Ziel');
     });
 
     test('should show timestamp for each entry', async ({ page }) => {

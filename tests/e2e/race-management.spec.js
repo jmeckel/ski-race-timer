@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { setupPage, clickToggle, isToggleOn, navigateTo } from './helpers.js';
+import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo } from './helpers.js';
 
 // Skip tests that require backend API
 const skipBackendTests = !process.env.BACKEND_TESTS;

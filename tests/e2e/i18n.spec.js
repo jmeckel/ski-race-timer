@@ -103,9 +103,9 @@ test.describe('German Language (Default)', () => {
     // Go to results
     await navigateTo(page, 'results');
 
-    // Timing point shows the code (F for Finish) not translated label
+    // Timing point shows the translated label (Ziel for Finish in German)
     const pointLabel = page.locator('.result-point').first();
-    await expect(pointLabel).toContainText('F');
+    await expect(pointLabel).toContainText('Ziel');
   });
 });
 
@@ -122,7 +122,7 @@ test.describe('English Language', () => {
     await expect(langToggle).toContainText('EN');
   });
 
-  test('should show F for Finish in English', async ({ page }) => {
+  test('should show Finish label in English', async ({ page }) => {
     // Record an entry
     await page.click('#timestamp-btn');
     await waitForConfirmationToHide(page);
@@ -130,9 +130,9 @@ test.describe('English Language', () => {
     // Go to results
     await navigateTo(page, 'results');
 
-    // Timing point should show "F" for Finish
+    // Timing point should show "Finish" label in English
     const pointLabel = page.locator('.result-point').first();
-    await expect(pointLabel).toHaveText('F');
+    await expect(pointLabel).toHaveText('Finish');
   });
 
   test('should show English settings labels', async ({ page }) => {
