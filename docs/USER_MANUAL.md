@@ -2,7 +2,7 @@
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 1.0 | Last Updated: January 2026
+Version 3.1 | Last Updated: January 2026
 
 ---
 
@@ -67,9 +67,20 @@ When you first open Ski Race Timer, an onboarding wizard guides you through init
 #### Step 2: Name Your Timer
 - Enter a name for this device (e.g., "Start Timer", "Finish Line 1")
 - This name identifies your device when syncing with others
-- A default name is suggested, but you can customize it
+- A random name is suggested (e.g., "Alpine Peak 42") - tap the refresh button to generate a new one
+- You can also type any custom name
 
-#### Step 3: Join a Race (Optional)
+#### Step 3: Photo Documentation
+- Choose whether to enable automatic photo capture
+- When enabled, a photo is taken each time you record a timestamp
+- **Why use photos?**
+  - Verify bib numbers in case of disputes
+  - Document finish line crossings
+  - Evidence for race officials
+- Photo capture is **off by default** - enable only if needed
+- Can be changed later in Settings
+
+#### Step 4: Join a Race (Optional)
 - **Race ID**: Enter a unique identifier for your race (e.g., "WINTERCUP-2026")
   - If the race already exists, you'll see "Race found" with the entry count
   - If it's new, you'll see "New race"
@@ -77,8 +88,12 @@ When you first open Ski Race Timer, an onboarding wizard guides you through init
 - **Enable Cloud Sync**: Toggle on to sync with other devices
 - You can skip this step and configure it later in Settings
 
-#### Step 4: Ready to Time
-- Review your configuration
+#### Step 5: Ready to Time
+- Review your configuration summary:
+  - Device name
+  - Photo capture status
+  - Race ID
+  - Cloud sync status
 - Tap **Start Timing** to begin
 
 > **Tip:** You can replay the setup wizard anytime from Settings → Show Tutorial
