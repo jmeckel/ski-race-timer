@@ -690,7 +690,15 @@
         <div class="onboarding-card" data-step="2" style="display:none">
           <h2 data-i18n="onboardingDeviceName">Name Your Timer</h2>
           <p data-i18n="onboardingDeviceNameDesc">This identifies your device when syncing</p>
-          <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
+          <div class="onboarding-input-row">
+            <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
+            <button class="onboarding-regenerate-btn" id="onboarding-regenerate-name" type="button" aria-label="Generate new name">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+              </svg>
+            </button>
+          </div>
           <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
         </div>
 

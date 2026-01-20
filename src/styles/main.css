@@ -1748,6 +1748,50 @@ body {
   margin-bottom: 16px;
 }
 
+.onboarding-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.onboarding-input-row .text-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.onboarding-regenerate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.onboarding-regenerate-btn:hover {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.onboarding-regenerate-btn:active {
+  transform: scale(0.95);
+}
+
+.onboarding-regenerate-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.onboarding-regenerate-btn:active svg {
+  transform: rotate(180deg);
+}
+
 .onboarding-lang-select {
   display: flex;
   gap: 12px;

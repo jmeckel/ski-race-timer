@@ -4,6 +4,7 @@ import { exchangePinForToken } from './services/sync';
 import { feedbackSuccess, feedbackTap } from './services';
 import { showToast } from './components';
 import { t } from './i18n/translations';
+import { generateDeviceName } from './utils/id';
 import type { Language } from './types';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
@@ -159,6 +160,18 @@ export class OnboardingController {
         }
       });
     });
+
+    // Regenerate device name button
+    const regenerateBtn = document.getElementById('onboarding-regenerate-name');
+    if (regenerateBtn) {
+      regenerateBtn.addEventListener('click', () => {
+        const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+        if (deviceNameInput) {
+          deviceNameInput.value = generateDeviceName();
+          feedbackTap();
+        }
+      });
+    }
 
     // Race ID input - check existence with debounce
     const raceIdInput = document.getElementById('onboarding-race-id') as HTMLInputElement;
