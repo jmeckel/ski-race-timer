@@ -45,12 +45,12 @@ export class Clock {
   }
 
   /**
-   * Move timing points from their original location into the date row
+   * Move timing controls (timing points and run selector) into the date row
    */
   private moveTimingPointsToDateRow(): void {
-    const timingPoints = document.getElementById('timing-points');
-    if (timingPoints && this.dateRow) {
-      this.dateRow.appendChild(timingPoints);
+    const timingControls = document.querySelector('.timing-controls');
+    if (timingControls && this.dateRow) {
+      this.dateRow.appendChild(timingControls);
     }
   }
 

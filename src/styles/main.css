@@ -319,11 +319,11 @@ body {
   font-weight: 600;
 }
 
-/* Timing Controls Container */
+/* Timing Controls Container - holds timing points and run selector on same line */
 .timing-controls {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   gap: 16px;
   align-items: center;
   justify-content: center;
@@ -332,11 +332,11 @@ body {
 
 /* Timing Points */
 .timing-points {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
   gap: 8px;
   flex-shrink: 0;
-  align-items: stretch;
+  align-items: center;
 }
 
 .timing-point-btn {
@@ -378,11 +378,11 @@ body {
 
 /* Run Selector */
 .run-selector {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
   gap: 6px;
   flex-shrink: 0;
-  align-items: stretch;
+  align-items: center;
 }
 
 .run-btn {
