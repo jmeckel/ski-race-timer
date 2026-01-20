@@ -13,27 +13,56 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockRedisData = new Map();
 
+// Handler-level locks to simulate Redis WATCH/MULTI/EXEC atomic transactions
+// This serializes the entire read-modify-write cycle for POST operations
+const handlerLocks = new Map(); // key -> Promise
+
+async function withHandlerLock(key, fn) {
+  // Wait for any pending operation on this key
+  while (handlerLocks.has(key)) {
+    await handlerLocks.get(key);
+  }
+
+  // Create lock for this operation
+  let releaseLock;
+  const lockPromise = new Promise(resolve => { releaseLock = resolve; });
+  handlerLocks.set(key, lockPromise);
+
+  try {
+    return await fn();
+  } finally {
+    handlerLocks.delete(key);
+    releaseLock();
+  }
+}
+
 const createMockRedis = () => ({
-  get: vi.fn((key) => Promise.resolve(mockRedisData.get(key) || null)),
-  set: vi.fn((key, value, ...args) => {
-    mockRedisData.set(key, value);
-    return Promise.resolve('OK');
+  get: vi.fn(async (key) => {
+    return mockRedisData.get(key) || null;
   }),
-  hset: vi.fn((key, field, value) => {
+  set: vi.fn(async (key, value, ...args) => {
+    mockRedisData.set(key, value);
+    return 'OK';
+  }),
+  hset: vi.fn(async (key, field, value) => {
     const hash = mockRedisData.get(key) || {};
     hash[field] = value;
     mockRedisData.set(key, hash);
-    return Promise.resolve(1);
+    return 1;
   }),
-  hgetall: vi.fn((key) => Promise.resolve(mockRedisData.get(key) || {})),
-  hdel: vi.fn((key, ...fields) => {
+  hgetall: vi.fn(async (key) => {
+    return mockRedisData.get(key) || {};
+  }),
+  hdel: vi.fn(async (key, ...fields) => {
     const hash = mockRedisData.get(key) || {};
     fields.forEach(f => delete hash[f]);
     mockRedisData.set(key, hash);
-    return Promise.resolve(fields.length);
+    return fields.length;
   }),
   expire: vi.fn(() => Promise.resolve(1)),
-  exists: vi.fn((key) => Promise.resolve(mockRedisData.has(key) ? 1 : 0)),
+  exists: vi.fn(async (key) => {
+    return mockRedisData.has(key) ? 1 : 0;
+  }),
   on: vi.fn(),
   connect: vi.fn(() => Promise.resolve())
 });
@@ -248,8 +277,11 @@ async function handler(req, res, redis) {
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
       const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
 
-      const existingData = await redis.get(redisKey);
-      const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+      // Use handler lock to serialize the entire read-modify-write cycle
+      // This simulates Redis WATCH/MULTI/EXEC atomic transactions
+      return withHandlerLock(redisKey, async () => {
+        const existingData = await redis.get(redisKey);
+        const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
 
       if (!Array.isArray(existing.entries)) {
         existing.entries = [];
@@ -336,7 +368,8 @@ async function handler(req, res, redis) {
         response.crossDeviceDuplicate = crossDeviceDuplicate;
       }
 
-      return mockRes.status(200).json(response);
+        return mockRes.status(200).json(response);
+      }); // End withHandlerLock
     }
 
     return mockRes.status(405).json({ error: 'Method not allowed' });
@@ -354,6 +387,7 @@ describe('API: /api/sync', () => {
 
   beforeEach(() => {
     mockRedisData.clear();
+    handlerLocks.clear();
     mockRedis = createMockRedis();
   });
 
@@ -1149,6 +1183,7 @@ describe('API: /api/sync - JWT Authentication', () => {
 
   beforeEach(() => {
     mockRedisData.clear();
+    handlerLocks.clear();
     mockRedis = createMockRedis();
   });
 
