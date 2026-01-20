@@ -58,10 +58,10 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
+        run: npx playwright install --with-deps webkit
 
       - name: Run E2E tests
-        run: npm run test:e2e -- --project=mobile-chrome-portrait
+        run: npm run test:e2e -- --project=mobile-safari-portrait
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
