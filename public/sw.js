@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ski-race-timer-v33';
+const CACHE_NAME = 'ski-race-timer-v34';
 const urlsToCache = [
   '/',
   '/index.html',
