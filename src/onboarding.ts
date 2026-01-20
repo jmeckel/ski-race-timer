@@ -42,7 +42,7 @@ function closeModal(modal: HTMLElement | null): void {
 export class OnboardingController {
   private modal: HTMLElement | null;
   private currentStep = 1;
-  private totalSteps = 4;
+  private totalSteps = 5;
   private updateTranslationsCallback: (() => void) | null = null;
 
   constructor() {
@@ -97,6 +97,9 @@ export class OnboardingController {
 
     const syncToggle = document.getElementById('onboarding-sync-toggle') as HTMLInputElement;
     if (syncToggle) syncToggle.checked = true;
+
+    const photoToggle = document.getElementById('onboarding-photo-toggle') as HTMLInputElement;
+    if (photoToggle) photoToggle.checked = false;
 
     this.updateUI();
     this.modal.classList.add('show');
@@ -241,7 +244,10 @@ export class OnboardingController {
         }
         return true;
       }
-      case 3: { // Race setup
+      case 3: { // Photo capture - no validation needed
+        return true;
+      }
+      case 4: { // Race setup
         const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
         const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
 
@@ -276,7 +282,12 @@ export class OnboardingController {
         }
         break;
       }
-      case 3: { // Save race settings
+      case 3: { // Save photo capture setting
+        const photoEnabled = (document.getElementById('onboarding-photo-toggle') as HTMLInputElement)?.checked;
+        store.updateSettings({ photoCapture: photoEnabled });
+        break;
+      }
+      case 4: { // Save race settings
         const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
         const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
 
@@ -318,7 +329,7 @@ export class OnboardingController {
     this.updateProgressDots();
 
     // If final step, show summary
-    if (step === 4) {
+    if (step === 5) {
       this.showSummary();
     }
   }
@@ -361,6 +372,10 @@ export class OnboardingController {
         <div class="onboarding-summary-item">
           <span>${t('deviceNameLabel', lang)}</span>
           <strong>${state.deviceName}</strong>
+        </div>
+        <div class="onboarding-summary-item">
+          <span>${t('photoCaptureLabel', lang)}</span>
+          <strong>${state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)}</strong>
         </div>
         <div class="onboarding-summary-item">
           <span>${t('raceIdLabel', lang)}</span>

@@ -671,6 +671,7 @@
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
       </div>
 
       <div class="onboarding-cards">
@@ -702,8 +703,23 @@
           <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
         </div>
 
-        <!-- Card 3: Race Setup -->
+        <!-- Card 3: Photo Capture -->
         <div class="onboarding-card" data-step="3" style="display:none">
+          <div class="onboarding-icon">📷</div>
+          <h2 data-i18n="onboardingPhoto">Photo Documentation</h2>
+          <p data-i18n="onboardingPhotoDesc">Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.</p>
+          <label class="onboarding-toggle-row">
+            <span data-i18n="enablePhotoCapture">Enable Photo Capture</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="onboarding-photo-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 4: Race Setup -->
+        <div class="onboarding-card" data-step="4" style="display:none">
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
@@ -720,8 +736,8 @@
           <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
         </div>
 
-        <!-- Card 4: Ready -->
-        <div class="onboarding-card" data-step="4" style="display:none">
+        <!-- Card 5: Ready -->
+        <div class="onboarding-card" data-step="5" style="display:none">
           <div class="onboarding-icon success">✓</div>
           <h2 data-i18n="onboardingReady">Ready to Time!</h2>
           <div class="onboarding-summary" id="onboarding-summary"></div>
