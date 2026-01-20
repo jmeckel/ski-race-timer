@@ -438,6 +438,15 @@ class Store {
     return this.state.redoStack.length > 0;
   }
 
+  /**
+   * Peek at the next undo action without performing it
+   * Useful for showing confirmation dialogs for destructive actions
+   */
+  peekUndo(): Action | null {
+    if (!this.canUndo()) return null;
+    return this.state.undoStack[this.state.undoStack.length - 1];
+  }
+
   undo(): { type: Action['type']; data: Entry | Entry[] } | null {
     if (!this.canUndo()) return null;
 

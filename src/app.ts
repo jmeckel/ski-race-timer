@@ -699,15 +699,23 @@ function initResultsActions(): void {
   if (undoBtn) {
     undoBtn.addEventListener('click', () => {
       if (store.canUndo()) {
-        const result = store.undo();
-        feedbackUndo();
-        showToast(t('undone', store.getState().currentLang), 'success');
+        // Check if this is a destructive undo (undoing ADD_ENTRY deletes an entry)
+        const nextAction = store.peekUndo();
+        if (nextAction && nextAction.type === 'ADD_ENTRY') {
+          // Show confirmation modal for destructive undo
+          openConfirmModal('undoAdd');
+        } else {
+          // Non-destructive undo - proceed immediately
+          const result = store.undo();
+          feedbackUndo();
+          showToast(t('undone', store.getState().currentLang), 'success');
 
-        // Sync undo to cloud if it was an ADD_ENTRY (entry was removed)
-        const state = store.getState();
-        if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
-          const entry = result.data as Entry;
-          syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+          // Sync undo to cloud if needed
+          const state = store.getState();
+          if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
+            const entry = result.data as Entry;
+            syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+          }
         }
       }
     });
@@ -1135,7 +1143,7 @@ function openEditModal(entry: Entry): void {
 /**
  * Open confirm modal
  */
-function openConfirmModal(action: 'delete' | 'deleteSelected' | 'clearAll'): void {
+function openConfirmModal(action: 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd'): void {
   const modal = document.getElementById('confirm-modal');
   if (!modal) return;
 
@@ -1152,6 +1160,9 @@ function openConfirmModal(action: 'delete' | 'deleteSelected' | 'clearAll'): voi
     const count = store.getState().selectedEntries.size;
     if (titleEl) titleEl.textContent = t('confirmDelete', lang);
     if (textEl) textEl.textContent = `${count} ${t('entries', lang)} ${t('selected', lang)}`;
+  } else if (action === 'undoAdd') {
+    if (titleEl) titleEl.textContent = t('confirmUndoAdd', lang);
+    if (textEl) textEl.textContent = t('confirmUndoAddText', lang);
   } else {
     if (titleEl) titleEl.textContent = t('confirmDelete', lang);
     if (textEl) textEl.textContent = t('confirmDeleteText', lang);
@@ -1216,6 +1227,19 @@ async function handleConfirmDelete(): Promise<void> {
     }
 
     showToast(t('deleted', state.currentLang), 'success');
+  } else if (action === 'undoAdd') {
+    // Perform the undo operation
+    const result = store.undo();
+    feedbackUndo();
+    showToast(t('undone', state.currentLang), 'success');
+
+    // Sync undo to cloud if it was an ADD_ENTRY (entry was removed)
+    if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
+      const entry = result.data as Entry;
+      syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+    }
+    closeAllModals();
+    return; // Early return - don't call feedbackDelete
   } else if (entryId) {
     // Get entry before deleting to sync deletion
     const entryToDelete = state.entries.find(e => e.id === entryId);
