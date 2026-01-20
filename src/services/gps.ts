@@ -14,6 +14,8 @@ const ACCURACY_FAIR = 30;
 class GpsService {
   private watchId: number | null = null;
   private lastPosition: GeolocationPosition | null = null;
+  private visibilityHandler: (() => void) | null = null;
+  private wasActiveBeforeHidden = false;
 
   /**
    * Start watching GPS position
@@ -38,6 +40,33 @@ class GpsService {
         GPS_OPTIONS
       );
 
+      // Add visibility change handler to pause/resume GPS for battery optimization
+      if (!this.visibilityHandler) {
+        this.visibilityHandler = () => {
+          if (document.hidden) {
+            // Page is hidden - stop GPS watch to save battery
+            this.wasActiveBeforeHidden = this.watchId !== null;
+            if (this.watchId !== null) {
+              navigator.geolocation.clearWatch(this.watchId);
+              this.watchId = null;
+              // Keep lastPosition so we can still use it for entries
+              store.setGpsStatus('inactive');
+            }
+          } else {
+            // Page is visible again - resume GPS if it was active before
+            if (this.wasActiveBeforeHidden) {
+              store.setGpsStatus('searching');
+              this.watchId = navigator.geolocation.watchPosition(
+                (position) => this.handlePosition(position),
+                (error) => this.handleError(error),
+                GPS_OPTIONS
+              );
+            }
+          }
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+      }
+
       console.log('GPS watching started');
       return true;
     } catch (error) {
@@ -55,6 +84,13 @@ class GpsService {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
+
+    // Remove visibility change handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+    this.wasActiveBeforeHidden = false;
 
     this.lastPosition = null;
     store.setGpsStatus('inactive');

@@ -142,14 +142,17 @@ export class PullToRefresh {
 
   /**
    * Handle touch end
+   * RACE CONDITION FIX: Check and set isRefreshing atomically to prevent double refresh
    */
   private onTouchEnd = async (): Promise<void> => {
-    if (!this.isPulling) return;
+    if (!this.isPulling || this.isRefreshing) return;
 
     const pullDistance = (this.currentY - this.startY) / RESISTANCE;
     this.isPulling = false;
 
-    if (pullDistance >= PULL_THRESHOLD && !this.isRefreshing) {
+    if (pullDistance >= PULL_THRESHOLD) {
+      // Set flag IMMEDIATELY to prevent concurrent refresh triggers
+      this.isRefreshing = true;
       await this.triggerRefresh();
     } else {
       this.resetIndicator();
@@ -178,10 +181,9 @@ export class PullToRefresh {
 
   /**
    * Trigger refresh
+   * Note: isRefreshing is set by onTouchEnd before calling this method
    */
   private async triggerRefresh(): Promise<void> {
-    this.isRefreshing = true;
-
     const content = this.indicator.querySelector('.pull-indicator-content') as HTMLElement;
     const spinner = this.indicator.querySelector('.pull-spinner') as HTMLElement;
 
@@ -213,11 +215,13 @@ export class PullToRefresh {
 
   /**
    * Cleanup
+   * Note: Options must match addEventListener for proper removal (capture matters, passive doesn't)
+   * but we keep them consistent for clarity
    */
   destroy(): void {
-    this.container.removeEventListener('touchstart', this.onTouchStart);
-    this.container.removeEventListener('touchmove', this.onTouchMove);
-    this.container.removeEventListener('touchend', this.onTouchEnd);
+    this.container.removeEventListener('touchstart', this.onTouchStart, { passive: true } as EventListenerOptions);
+    this.container.removeEventListener('touchmove', this.onTouchMove, { passive: false } as EventListenerOptions);
+    this.container.removeEventListener('touchend', this.onTouchEnd, { passive: true } as EventListenerOptions);
     this.indicator.remove();
   }
 }

@@ -14,6 +14,7 @@ export class Clock {
   private lastTimeStr = '';
   private animationId: number | null = null;
   private isRunning = false;
+  private visibilityHandler: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -107,6 +108,25 @@ export class Clock {
     if (this.isRunning) return;
     this.isRunning = true;
     this.tick();
+
+    // Add visibility change handler to pause/resume clock for battery optimization
+    if (!this.visibilityHandler) {
+      this.visibilityHandler = () => {
+        if (document.hidden) {
+          // Page is hidden - stop animation loop but keep isRunning true
+          if (this.animationId !== null) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+          }
+        } else {
+          // Page is visible again - resume if still running
+          if (this.isRunning && this.animationId === null) {
+            this.tick();
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
   }
 
   /**
@@ -193,6 +213,13 @@ export class Clock {
    */
   destroy(): void {
     this.stop();
+
+    // Remove visibility change handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+
     this.container.innerHTML = '';
   }
 }

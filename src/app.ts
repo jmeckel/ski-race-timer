@@ -1,6 +1,6 @@
 import { store } from './store';
-import { Clock, VirtualList, showToast, PullToRefresh } from './components';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage } from './services';
+import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -179,6 +179,10 @@ let pullToRefreshInstance: PullToRefresh | null = null;
 // MEMORY LEAK FIX: Track active ripple timeouts for cleanup
 const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
+// MEMORY LEAK FIX: Track debounced timeouts for cleanup on page unload
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Initialize the application
  */
@@ -248,6 +252,13 @@ export function initApp(): void {
   // Apply initial state
   applySettings();
   updateUI();
+
+  // Enable wake lock if starting on timer view
+  // This keeps the screen on during active timing
+  const initialState = store.getState();
+  if (initialState.currentView === 'timer') {
+    wakeLockService.enable();
+  }
 
   console.log('Ski Race Timer initialized');
 }
@@ -638,9 +649,8 @@ function initResultsView(): void {
   // Search input with debounce
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   if (searchInput) {
-    let searchTimeout: ReturnType<typeof setTimeout>;
     searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
+      if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         applyFilters();
       }, 300);
@@ -660,6 +670,12 @@ function initResultsView(): void {
 
   // Action buttons
   initResultsActions();
+
+  // Pause VirtualList if not starting on results view
+  // It will be resumed when user switches to results tab
+  if (state.currentView !== 'results' && virtualList) {
+    virtualList.pause();
+  }
 }
 
 /**
@@ -762,39 +778,51 @@ function initSettingsView(): void {
     });
   }
 
-  // Sync toggle
+  // Sync toggle - with guard against concurrent invocations
   const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+  let syncTogglePending = false;
   if (syncToggle) {
     syncToggle.addEventListener('change', async () => {
-      const state = store.getState();
-
-      if (syncToggle.checked && state.raceId) {
-        // Require PIN verification when enabling sync with existing race ID
-        const pinVerified = await verifyPinForRaceJoin(state.currentLang);
-        if (!pinVerified) {
-          // PIN verification cancelled or failed - revert toggle
-          syncToggle.checked = false;
-          return;
-        }
+      // RACE CONDITION FIX: Guard against concurrent invocations
+      if (syncTogglePending) {
+        syncToggle.checked = !syncToggle.checked; // Revert toggle
+        return;
       }
+      syncTogglePending = true;
 
-      store.updateSettings({ sync: syncToggle.checked });
+      try {
+        const state = store.getState();
 
-      // Update sync photos toggle state
-      const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
-      if (syncPhotosToggle) {
-        syncPhotosToggle.disabled = !syncToggle.checked;
-        if (!syncToggle.checked) {
-          // Disable photo sync when main sync is disabled
-          syncPhotosToggle.checked = false;
-          store.updateSettings({ syncPhotos: false });
+        if (syncToggle.checked && state.raceId) {
+          // Require PIN verification when enabling sync with existing race ID
+          const pinVerified = await verifyPinForRaceJoin(state.currentLang);
+          if (!pinVerified) {
+            // PIN verification cancelled or failed - revert toggle
+            syncToggle.checked = false;
+            return;
+          }
         }
-      }
 
-      if (syncToggle.checked && state.raceId) {
-        syncService.initialize();
-      } else {
-        syncService.cleanup();
+        store.updateSettings({ sync: syncToggle.checked });
+
+        // Update sync photos toggle state
+        const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+        if (syncPhotosToggle) {
+          syncPhotosToggle.disabled = !syncToggle.checked;
+          if (!syncToggle.checked) {
+            // Disable photo sync when main sync is disabled
+            syncPhotosToggle.checked = false;
+            store.updateSettings({ syncPhotos: false });
+          }
+        }
+
+        if (syncToggle.checked && state.raceId) {
+          syncService.initialize();
+        } else {
+          syncService.cleanup();
+        }
+      } finally {
+        syncTogglePending = false;
       }
     });
   }
@@ -866,11 +894,11 @@ function initSettingsView(): void {
 
   // Race ID input
   const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
+  let raceIdChangePending = false;
   if (raceIdInput) {
     // Debounced race exists check on input
-    let raceCheckTimeout: ReturnType<typeof setTimeout>;
     raceIdInput.addEventListener('input', () => {
-      clearTimeout(raceCheckTimeout);
+      if (raceCheckTimeout) clearTimeout(raceCheckTimeout);
       const raceId = raceIdInput.value.trim();
       if (raceId) {
         raceCheckTimeout = setTimeout(() => checkRaceExists(raceId), 500);
@@ -880,8 +908,15 @@ function initSettingsView(): void {
     });
 
     raceIdInput.addEventListener('change', async () => {
-      const newRaceId = raceIdInput.value.trim();
-      const state = store.getState();
+      // RACE CONDITION FIX: Guard against concurrent invocations
+      if (raceIdChangePending) {
+        return; // Ignore if already processing
+      }
+      raceIdChangePending = true;
+
+      try {
+        const newRaceId = raceIdInput.value.trim();
+        const state = store.getState();
       const hasEntries = state.entries.length > 0;
       const wasPreviouslySynced = state.lastSyncedRaceId !== '';
       const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
@@ -947,6 +982,9 @@ function initSettingsView(): void {
       if (state.settings.sync && normalizedRaceId) {
         syncService.initialize();
         store.markCurrentRaceAsSynced();
+      }
+      } finally {
+        raceIdChangePending = false;
       }
     });
   }
@@ -1345,6 +1383,24 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   // Update view visibility
   if (changedKeys.includes('currentView')) {
     updateViewVisibility();
+
+    // Wake Lock: Enable when on timer view, disable otherwise
+    // This keeps the screen on during active timing
+    if (state.currentView === 'timer') {
+      wakeLockService.enable();
+    } else {
+      wakeLockService.disable();
+    }
+
+    // VirtualList: Pause when not on results view, resume when on results view
+    // This saves resources when the results tab is inactive
+    if (virtualList) {
+      if (state.currentView === 'results') {
+        virtualList.resume();
+      } else {
+        virtualList.pause();
+      }
+    }
   }
 
   // Update bib display
@@ -2288,6 +2344,15 @@ function handleBeforeUnload(): void {
   // Cleanup camera service
   cameraService.stop();
 
+  // Cleanup GPS service - stop watching position to prevent memory leaks
+  gpsService.stop();
+
+  // Cleanup wake lock service
+  wakeLockService.disable();
+
+  // Cleanup toast singleton and its event listener
+  destroyToast();
+
   // MEMORY LEAK FIX: Clear all pending ripple timeouts
   for (const timeoutId of activeRippleTimeouts) {
     clearTimeout(timeoutId);
@@ -2296,6 +2361,22 @@ function handleBeforeUnload(): void {
 
   // Remove any orphaned ripple elements
   document.querySelectorAll('.ripple').forEach(ripple => ripple.remove());
+
+  // MEMORY LEAK FIX: Remove global event listeners
+  window.removeEventListener('race-deleted', handleRaceDeleted as EventListener);
+  window.removeEventListener('auth-expired', handleAuthExpired as EventListener);
+  window.removeEventListener('storage-error', handleStorageError as EventListener);
+  window.removeEventListener('storage-warning', handleStorageWarning as EventListener);
+
+  // MEMORY LEAK FIX: Clear debounced timeouts
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  if (raceCheckTimeout) {
+    clearTimeout(raceCheckTimeout);
+    raceCheckTimeout = null;
+  }
 }
 
 /**

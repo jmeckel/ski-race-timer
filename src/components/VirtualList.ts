@@ -27,6 +27,10 @@ export class VirtualList {
   private containerHeight = 0;
   private options: VirtualListOptions;
   private unsubscribe: (() => void) | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private scrollHandler: (() => void) | null = null;
+  private isPaused = false;
+  private needsRefreshOnResume = false;
 
   constructor(options: VirtualListOptions) {
     this.options = options;
@@ -50,16 +54,16 @@ export class VirtualList {
     this.scrollContainer.appendChild(this.contentContainer);
     this.container.appendChild(this.scrollContainer);
 
-    // Set up scroll listener with debounce
-    const handleScroll = debounce(() => this.onScroll(), SCROLL_DEBOUNCE);
-    this.scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Set up scroll listener with debounce - store reference for cleanup
+    this.scrollHandler = debounce(() => this.onScroll(), SCROLL_DEBOUNCE);
+    this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
 
-    // Set up resize observer
-    const resizeObserver = new ResizeObserver(() => {
+    // Set up resize observer - store reference for cleanup
+    this.resizeObserver = new ResizeObserver(() => {
       this.containerHeight = this.scrollContainer.clientHeight;
       this.render();
     });
-    resizeObserver.observe(this.scrollContainer);
+    this.resizeObserver.observe(this.scrollContainer);
 
     // Subscribe to store updates
     this.unsubscribe = store.subscribe((state, changedKeys) => {
@@ -350,12 +354,105 @@ export class VirtualList {
   }
 
   /**
+   * Pause the virtual list when results tab is inactive
+   * Stops store subscription, scroll listener, and resize observer to save resources
+   */
+  pause(): void {
+    if (this.isPaused) return;
+    this.isPaused = true;
+
+    // Unsubscribe from store updates
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+
+    // Stop ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+
+    // Remove scroll listener
+    if (this.scrollHandler) {
+      this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
+    }
+
+    console.log('VirtualList paused');
+  }
+
+  /**
+   * Resume the virtual list when results tab becomes active
+   * Re-subscribes to store, restarts observers, and refreshes data
+   */
+  resume(): void {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+
+    // Re-subscribe to store updates
+    if (!this.unsubscribe) {
+      this.unsubscribe = store.subscribe((state, changedKeys) => {
+        if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries')) {
+          if (this.isPaused) {
+            this.needsRefreshOnResume = true;
+          } else {
+            this.setEntries(state.entries);
+          }
+        }
+      });
+    }
+
+    // Re-observe with ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.observe(this.scrollContainer);
+    }
+
+    // Re-add scroll listener
+    if (this.scrollHandler) {
+      this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
+    }
+
+    // Refresh data if entries changed while paused
+    if (this.needsRefreshOnResume) {
+      this.needsRefreshOnResume = false;
+      this.setEntries(store.getState().entries);
+    }
+
+    // Update container height and re-render
+    this.containerHeight = this.scrollContainer.clientHeight;
+    this.render();
+
+    console.log('VirtualList resumed');
+  }
+
+  /**
+   * Check if virtual list is paused
+   */
+  isPausedState(): boolean {
+    return this.isPaused;
+  }
+
+  /**
    * Cleanup
    */
   destroy(): void {
+    // Unsubscribe from store
     if (this.unsubscribe) {
       this.unsubscribe();
+      this.unsubscribe = null;
     }
+
+    // Disconnect ResizeObserver to prevent memory leak
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+
+    // Remove scroll listener to prevent memory leak
+    if (this.scrollHandler) {
+      this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
+      this.scrollHandler = null;
+    }
+
     this.visibleItems.clear();
     this.container.innerHTML = '';
   }

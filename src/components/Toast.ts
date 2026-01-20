@@ -14,15 +14,17 @@ export class Toast {
   private container: HTMLElement;
   private queue: Array<{ message: string; options: ToastOptions }> = [];
   private isShowing = false;
+  private toastEventListener: EventListener;
 
   constructor() {
     this.container = this.createContainer();
     document.body.appendChild(this.container);
 
-    // Listen for custom toast events
-    window.addEventListener('show-toast', ((e: CustomEvent) => {
+    // Listen for custom toast events - store reference for cleanup
+    this.toastEventListener = ((e: CustomEvent) => {
       this.show(e.detail.message, { type: e.detail.type, duration: e.detail.duration });
-    }) as EventListener);
+    }) as EventListener;
+    window.addEventListener('show-toast', this.toastEventListener);
   }
 
   /**
@@ -161,6 +163,15 @@ export class Toast {
     this.container.innerHTML = '';
     this.isShowing = false;
   }
+
+  /**
+   * Destroy toast instance and cleanup event listeners
+   */
+  destroy(): void {
+    window.removeEventListener('show-toast', this.toastEventListener);
+    this.clear();
+    this.container.remove();
+  }
 }
 
 // Singleton instance
@@ -181,4 +192,14 @@ export function getToast(): Toast {
  */
 export function showToast(message: string, type: ToastType = 'info', duration?: number): void {
   getToast().show(message, { type, duration });
+}
+
+/**
+ * Destroy toast instance and cleanup - call on page unload
+ */
+export function destroyToast(): void {
+  if (toastInstance) {
+    toastInstance.destroy();
+    toastInstance = null;
+  }
 }

@@ -21,6 +21,8 @@ class CameraService {
   private videoElement: HTMLVideoElement | null = null;
   private canvasElement: HTMLCanvasElement | null = null;
   private isInitialized = false;
+  private visibilityHandler: (() => void) | null = null;
+  private wasActiveBeforeHidden = false;
 
   /**
    * Initialize the camera service
@@ -69,6 +71,34 @@ class CameraService {
 
       this.isInitialized = true;
       store.setCameraReady(true);
+
+      // Add visibility change handler to pause/resume camera for battery optimization
+      if (!this.visibilityHandler) {
+        this.visibilityHandler = () => {
+          if (document.hidden) {
+            // Page is hidden - pause camera stream to save battery
+            this.wasActiveBeforeHidden = this.isInitialized;
+            if (this.stream) {
+              // Stop all tracks to release camera hardware
+              this.stream.getTracks().forEach(track => track.stop());
+              this.stream = null;
+              if (this.videoElement) {
+                this.videoElement.srcObject = null;
+              }
+              this.isInitialized = false;
+              store.setCameraReady(false);
+              console.log('Camera paused (page hidden)');
+            }
+          } else {
+            // Page is visible again - reinitialize camera if it was active before
+            if (this.wasActiveBeforeHidden && !this.isInitialized) {
+              this.reinitializeCamera();
+            }
+          }
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+      }
+
       console.log('Camera initialized successfully');
       return true;
     } catch (error) {
@@ -76,6 +106,49 @@ class CameraService {
       console.error('Camera initialization error:', errorMessage);
       store.setCameraReady(false, errorMessage);
       return false;
+    }
+  }
+
+  /**
+   * Reinitialize camera after visibility change
+   */
+  private async reinitializeCamera(): Promise<void> {
+    try {
+      if (!this.videoElement) {
+        // Video element was removed, need to recreate
+        this.videoElement = document.createElement('video');
+        this.videoElement.setAttribute('autoplay', '');
+        this.videoElement.setAttribute('playsinline', '');
+        this.videoElement.style.position = 'absolute';
+        this.videoElement.style.left = '-9999px';
+        this.videoElement.style.top = '-9999px';
+        document.body.appendChild(this.videoElement);
+      }
+
+      // Request camera access
+      this.stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONFIG);
+      this.videoElement.srcObject = this.stream;
+
+      // Wait for video to be ready
+      await new Promise<void>((resolve, reject) => {
+        if (!this.videoElement) {
+          reject(new Error('Video element not available'));
+          return;
+        }
+        this.videoElement.onloadedmetadata = () => {
+          this.videoElement!.play()
+            .then(() => resolve())
+            .catch(reject);
+        };
+        this.videoElement.onerror = () => reject(new Error('Video load error'));
+      });
+
+      this.isInitialized = true;
+      store.setCameraReady(true);
+      console.log('Camera reinitialized (page visible)');
+    } catch (error) {
+      console.error('Failed to reinitialize camera:', error);
+      this.wasActiveBeforeHidden = false;
     }
   }
 
@@ -164,6 +237,13 @@ class CameraService {
       this.videoElement.remove();
       this.videoElement = null;
     }
+
+    // Remove visibility change handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+    this.wasActiveBeforeHidden = false;
 
     this.isInitialized = false;
     store.setCameraReady(false);

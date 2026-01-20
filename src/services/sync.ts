@@ -76,6 +76,8 @@ class SyncService {
   private consecutiveErrors = 0;
   private lastSyncTimestamp = 0;
   private isProcessingQueue = false;
+  private visibilityHandler: (() => void) | null = null;
+  private wasPollingBeforeHidden = false;
 
   /**
    * Initialize sync service
@@ -99,6 +101,26 @@ class SyncService {
 
     // Push existing local entries to cloud
     this.pushLocalEntries();
+
+    // Add visibility change handler to pause/resume polling for battery optimization
+    if (!this.visibilityHandler) {
+      this.visibilityHandler = () => {
+        if (document.hidden) {
+          // Page is hidden - stop polling to save battery
+          this.wasPollingBeforeHidden = this.pollInterval !== null;
+          if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+          }
+        } else {
+          // Page is visible again - resume polling if it was active before
+          if (this.wasPollingBeforeHidden) {
+            this.startPolling();
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
 
     store.setSyncStatus('connecting');
     console.log('Sync service initialized for race:', state.raceId);
@@ -587,6 +609,13 @@ class SyncService {
       this.broadcastChannel.close();
       this.broadcastChannel = null;
     }
+
+    // Remove visibility change handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+    this.wasPollingBeforeHidden = false;
 
     this.consecutiveErrors = 0;
     store.setSyncStatus('disconnected');
