@@ -322,6 +322,8 @@ body {
 /* Timing Controls Container */
 .timing-controls {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 16px;
   align-items: center;
   justify-content: center;
@@ -331,8 +333,10 @@ body {
 /* Timing Points */
 .timing-points {
   display: flex;
+  flex-direction: row;
   gap: 8px;
   flex-shrink: 0;
+  align-items: stretch;
 }
 
 .timing-point-btn {
@@ -375,8 +379,10 @@ body {
 /* Run Selector */
 .run-selector {
   display: flex;
+  flex-direction: row;
   gap: 6px;
   flex-shrink: 0;
+  align-items: stretch;
 }
 
 .run-btn {
@@ -1491,6 +1497,8 @@ body {
 
   .timer-view .timing-controls {
     grid-area: points;
+    display: flex;
+    flex-direction: row;
     justify-content: flex-start;
     gap: 12px;
   }
