@@ -1,4 +1,4 @@
-import type { Language, TimingPoint } from '../types';
+import type { Language, TimingPoint, Run } from '../types';
 
 /**
  * Format time as HH:MM:SS.mmm
@@ -74,6 +74,28 @@ export function getPointLabel(point: TimingPoint, lang: Language = 'de'): string
     de: { S: 'Start', F: 'Ziel' }
   };
   return labels[lang][point];
+}
+
+/**
+ * Get display label for run
+ */
+export function getRunLabel(run: Run, lang: Language = 'de'): string {
+  const labels: Record<Language, Record<Run, string>> = {
+    en: { 1: 'R1', 2: 'R2' },
+    de: { 1: 'L1', 2: 'L2' }
+  };
+  return labels[lang][run];
+}
+
+/**
+ * Get color for run
+ */
+export function getRunColor(run: Run): string {
+  const colors: Record<Run, string> = {
+    1: 'var(--primary)',
+    2: 'var(--warning)'
+  };
+  return colors[run] || 'var(--text-secondary)';
 }
 
 /**

@@ -3,7 +3,7 @@ import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './co
 import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
-import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
+import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
@@ -507,14 +507,21 @@ function updateLastRecorded(entry: Entry): void {
 
   const bibEl = el.querySelector('.bib') as HTMLElement | null;
   const pointEl = el.querySelector('.point') as HTMLElement | null;
+  const runEl = el.querySelector('.run') as HTMLElement | null;
   const timeEl = el.querySelector('.time') as HTMLElement | null;
+
+  const state = store.getState();
 
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    const state = store.getState();
     pointEl.textContent = getPointLabel(entry.point, state.currentLang);
     pointEl.style.background = `${getPointColor(entry.point)}20`;
     pointEl.style.color = getPointColor(entry.point);
+  }
+  if (runEl && entry.run) {
+    runEl.textContent = getRunLabel(entry.run, state.currentLang);
+    runEl.style.background = `${getRunColor(entry.run)}20`;
+    runEl.style.color = getRunColor(entry.run);
   }
   if (timeEl) {
     const date = new Date(entry.timestamp);

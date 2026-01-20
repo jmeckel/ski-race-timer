@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-Dc2Xl7Am.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-CwvpUq6a.css">
+  <script type="module" crossorigin src="/assets/main-DC9vSquZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-BJ4WUOFF.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -63,14 +63,24 @@
         <!-- Clock -->
         <div class="clock-container" id="clock-container"></div>
 
-        <!-- Timing Points -->
-        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
-          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
-            <span data-i18n="start">Start</span>
-          </button>
-          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
-            <span data-i18n="finish">Finish</span>
-          </button>
+        <!-- Timing Points and Run Selector -->
+        <div class="timing-controls">
+          <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
+            <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
+              <span data-i18n="start">Start</span>
+            </button>
+            <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
+              <span data-i18n="finish">Finish</span>
+            </button>
+          </div>
+          <div class="run-selector" id="run-selector" role="radiogroup" aria-label="Run" data-advanced>
+            <button class="run-btn active" data-run="1" role="radio" aria-checked="true">
+              <span data-i18n="run1">L1</span>
+            </button>
+            <button class="run-btn" data-run="2" role="radio" aria-checked="false">
+              <span data-i18n="run2">L2</span>
+            </button>
+          </div>
         </div>
 
         <!-- Timestamp Button -->
@@ -89,6 +99,7 @@
           <span data-i18n="lastRecorded">Last recorded:</span>
           <span class="bib">---</span>
           <span class="point">-</span>
+          <span class="run" data-advanced>-</span>
           <span class="time">--:--:--.---</span>
         </div>
 
@@ -473,6 +484,13 @@
             <option value="dnf">DNF</option>
             <option value="dsq">DSQ</option>
           </select>
+        </div>
+        <div style="margin-top: 16px;" data-advanced>
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
+          <div class="edit-run-selector" id="edit-run-selector">
+            <button class="edit-run-btn active" data-run="1" type="button">1</button>
+            <button class="edit-run-btn" data-run="2" type="button">2</button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

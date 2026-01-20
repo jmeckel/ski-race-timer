@@ -307,7 +307,8 @@ body {
   color: var(--text-primary);
 }
 
-.last-recorded .point {
+.last-recorded .point,
+.last-recorded .run {
   padding: 3px 8px;
   border-radius: var(--radius);
   font-size: 0.8rem;
