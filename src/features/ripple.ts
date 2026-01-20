@@ -19,10 +19,11 @@ export function createRipple(
   const rect = element.getBoundingClientRect();
   let x: number, y: number;
 
-  if (event instanceof TouchEvent && event.touches.length > 0) {
+  // Check for TouchEvent safely (not available in all browsers, e.g., desktop Safari)
+  if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent && event.touches.length > 0) {
     x = event.touches[0].clientX - rect.left;
     y = event.touches[0].clientY - rect.top;
-  } else if (event instanceof MouseEvent) {
+  } else if (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent) {
     x = event.clientX - rect.left;
     y = event.clientY - rect.top;
   } else {
