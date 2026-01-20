@@ -237,7 +237,14 @@ export const translations: Record<Language, Translations> = {
     showTutorialDesc: 'Run the setup wizard again',
     show: 'Show',
     onboardingComplete: 'Setup complete!',
-    invalidPin: 'Invalid PIN format'
+    invalidPin: 'Invalid PIN format',
+    recentRaces: 'Recent Races',
+    noRecentRaces: 'No races from today',
+    errorOccurred: 'Something went wrong',
+    errorRecoveryMessage: 'The app encountered an error. You can dismiss this and continue, or reload the app.',
+    dismiss: 'Dismiss',
+    reload: 'Reload',
+    operationFailed: 'Operation failed'
   },
 
   de: {
@@ -476,7 +483,14 @@ export const translations: Record<Language, Translations> = {
     showTutorialDesc: 'Setup-Assistenten erneut starten',
     show: 'Anzeigen',
     onboardingComplete: 'Einrichtung abgeschlossen!',
-    invalidPin: 'Ungültiges PIN-Format'
+    invalidPin: 'Ungültiges PIN-Format',
+    recentRaces: 'Letzte Rennen',
+    noRecentRaces: 'Keine Rennen von heute',
+    errorOccurred: 'Ein Fehler ist aufgetreten',
+    errorRecoveryMessage: 'Die App hat einen Fehler festgestellt. Sie können diesen Hinweis schließen und fortfahren, oder die App neu laden.',
+    dismiss: 'Schließen',
+    reload: 'Neu laden',
+    operationFailed: 'Vorgang fehlgeschlagen'
   }
 };
 

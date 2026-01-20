@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-CcC1dGxI.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-DD37Z-Rb.css">
+  <script type="module" crossorigin src="/assets/main-Dc2Xl7Am.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-CwvpUq6a.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -221,7 +221,7 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" id="race-id-input-row-container">
             <div class="setting-label">
               <span class="setting-title" data-i18n="raceId">Race ID</span>
               <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
@@ -231,7 +231,16 @@
                 <span class="race-exists-text" id="race-exists-text"></span>
               </span>
             </div>
-            <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 150px;">
+            <div class="race-id-input-row">
+              <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 120px;">
+              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </button>
+              <div class="recent-races-dropdown" id="settings-recent-races-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div class="setting-row">
             <div class="setting-label">
@@ -335,6 +344,23 @@
           </div>
         </div>
 
+        <!-- Tutorial -->
+        <div class="settings-section">
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="showTutorial">Show Tutorial</span>
+              <span class="setting-description" data-i18n="showTutorialDesc">Run the setup wizard again</span>
+            </div>
+            <button class="action-btn admin-action-btn" id="show-tutorial-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <span data-i18n="show">Show</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Admin Section (hidden in simple mode) -->
         <div class="settings-section" id="admin-section">
           <div class="settings-section-title" data-i18n="admin">Admin</div>
@@ -417,6 +443,13 @@
           <circle cx="12" cy="12" r="10"/>
         </svg>
         <span data-i18n="duplicateWarning">Duplicate entry</span>
+      </div>
+      <div class="confirmation-zero-bib" style="display: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v4M12 17h.01"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span data-i18n="zeroBibWarning">Bib 000 - verify entry</span>
       </div>
     </div>
   </div>
@@ -637,6 +670,100 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn danger" id="confirm-delete-race-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Modal -->
+  <div class="modal-overlay" id="onboarding-modal">
+    <div class="onboarding-container">
+      <div class="onboarding-progress">
+        <span class="progress-dot active"></span>
+        <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
+      </div>
+
+      <div class="onboarding-cards">
+        <!-- Card 1: Welcome -->
+        <div class="onboarding-card" data-step="1">
+          <div class="onboarding-icon">⏱️</div>
+          <h2 data-i18n="onboardingWelcome">Welcome to Ski Race Timer</h2>
+          <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
+          <div class="onboarding-lang-select">
+            <button class="lang-btn" data-lang="de">Deutsch</button>
+            <button class="lang-btn" data-lang="en">English</button>
+          </div>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="getStarted">Get Started</button>
+        </div>
+
+        <!-- Card 2: Device Name -->
+        <div class="onboarding-card" data-step="2" style="display:none">
+          <h2 data-i18n="onboardingDeviceName">Name Your Timer</h2>
+          <p data-i18n="onboardingDeviceNameDesc">This identifies your device when syncing</p>
+          <div class="onboarding-input-row">
+            <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
+            <button class="onboarding-regenerate-btn" id="onboarding-regenerate-name" type="button" aria-label="Generate new name">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+              </svg>
+            </button>
+          </div>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 3: Photo Capture -->
+        <div class="onboarding-card" data-step="3" style="display:none">
+          <div class="onboarding-icon">📷</div>
+          <h2 data-i18n="onboardingPhoto">Photo Documentation</h2>
+          <p data-i18n="onboardingPhotoDesc">Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.</p>
+          <label class="onboarding-toggle-row">
+            <span data-i18n="enablePhotoCapture">Enable Photo Capture</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="onboarding-photo-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 4: Race Setup -->
+        <div class="onboarding-card" data-step="4" style="display:none">
+          <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
+          <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
+          <div class="race-id-input-row">
+            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
+            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </button>
+            <div class="recent-races-dropdown" id="onboarding-recent-races-dropdown" style="display:none"></div>
+          </div>
+          <div class="race-status" id="onboarding-race-status"></div>
+          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none">
+          <label class="onboarding-toggle-row">
+            <span data-i18n="enableSync">Enable Cloud Sync</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="onboarding-sync-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
+        </div>
+
+        <!-- Card 5: Ready -->
+        <div class="onboarding-card" data-step="5" style="display:none">
+          <div class="onboarding-icon success">✓</div>
+          <h2 data-i18n="onboardingReady">Ready to Time!</h2>
+          <div class="onboarding-summary" id="onboarding-summary"></div>
+          <p class="onboarding-tip" data-i18n="onboardingTip">Tap the big red button to record timestamps</p>
+          <button class="onboarding-btn primary" data-action="finish" data-i18n="startTiming">Start Timing</button>
+        </div>
       </div>
     </div>
   </div>

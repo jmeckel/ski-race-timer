@@ -1,0 +1,117 @@
+/**
+ * Ripple effect utilities
+ * Material Design-style ripple synced with haptic feedback
+ */
+
+// Track active ripple timeouts for cleanup
+const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
+
+/**
+ * Create ripple effect on element
+ * Synced with haptic feedback for tactile response
+ */
+export function createRipple(
+  event: MouseEvent | TouchEvent,
+  element: HTMLElement,
+  variant?: 'primary' | 'success' | 'secondary'
+): void {
+  // Get click/touch position
+  const rect = element.getBoundingClientRect();
+  let x: number, y: number;
+
+  if (event instanceof TouchEvent && event.touches.length > 0) {
+    x = event.touches[0].clientX - rect.left;
+    y = event.touches[0].clientY - rect.top;
+  } else if (event instanceof MouseEvent) {
+    x = event.clientX - rect.left;
+    y = event.clientY - rect.top;
+  } else {
+    // Fallback to center
+    x = rect.width / 2;
+    y = rect.height / 2;
+  }
+
+  // Create ripple element
+  const ripple = document.createElement('span');
+  ripple.classList.add('ripple');
+  if (variant) {
+    ripple.classList.add(`ripple-${variant}`);
+  }
+
+  // Size ripple to cover the element
+  const size = Math.max(rect.width, rect.height) * 2;
+  ripple.style.width = `${size}px`;
+  ripple.style.height = `${size}px`;
+  ripple.style.left = `${x - size / 2}px`;
+  ripple.style.top = `${y - size / 2}px`;
+
+  // Add to element
+  element.appendChild(ripple);
+
+  // Remove after animation
+  const timeoutId = setTimeout(() => {
+    ripple.remove();
+    activeRippleTimeouts.delete(timeoutId);
+  }, 500);
+  activeRippleTimeouts.add(timeoutId);
+}
+
+/**
+ * Initialize ripple effect on buttons
+ */
+export function initRippleEffects(): void {
+  // Number pad buttons
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.classList.add('ripple-container');
+    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
+    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
+  });
+
+  // Timestamp button - use primary color
+  const timestampBtn = document.querySelector('.timestamp-btn');
+  if (timestampBtn) {
+    timestampBtn.classList.add('ripple-container');
+    timestampBtn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, timestampBtn as HTMLElement, 'primary'), { passive: true });
+    timestampBtn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, timestampBtn as HTMLElement, 'primary'));
+  }
+
+  // Timing point buttons
+  document.querySelectorAll('.timing-point-btn').forEach(btn => {
+    btn.classList.add('ripple-container');
+    const isStart = btn.getAttribute('data-point') === 'S';
+    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'), { passive: true });
+    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'));
+  });
+
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.add('ripple-container');
+    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, 'primary'), { passive: true });
+    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, 'primary'));
+  });
+
+  // Action buttons in results view
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.classList.add('ripple-container');
+    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
+    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
+  });
+
+  // Modal buttons
+  document.querySelectorAll('.modal-btn').forEach(btn => {
+    btn.classList.add('ripple-container');
+    const isPrimary = btn.classList.contains('primary');
+    const isDanger = btn.classList.contains('danger');
+    const variant = isPrimary ? 'primary' : isDanger ? 'secondary' : undefined;
+    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, variant), { passive: true });
+    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, variant));
+  });
+}
+
+/**
+ * Cleanup ripple timeouts (for page unload)
+ */
+export function cleanupRippleEffects(): void {
+  activeRippleTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+  activeRippleTimeouts.clear();
+}

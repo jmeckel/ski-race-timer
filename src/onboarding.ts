@@ -1,11 +1,13 @@
 import { store } from './store';
 import { syncService } from './services';
-import { exchangePinForToken } from './services/sync';
+import { exchangePinForToken, hasAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackTap } from './services';
 import { showToast } from './components';
 import { t } from './i18n/translations';
 import { generateDeviceName } from './utils/id';
-import type { Language } from './types';
+import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
+import { fetchWithTimeout } from './utils/errors';
+import type { Language, RaceInfo } from './types';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
 
@@ -190,6 +192,140 @@ export class OnboardingController {
         }
       });
     }
+
+    // Recent races button
+    const recentRacesBtn = document.getElementById('onboarding-recent-races-btn');
+    const recentRacesDropdown = document.getElementById('onboarding-recent-races-dropdown');
+    if (recentRacesBtn && recentRacesDropdown) {
+      recentRacesBtn.addEventListener('click', () => {
+        feedbackTap();
+        if (recentRacesDropdown.style.display === 'none') {
+          this.showRecentRacesDropdown(recentRacesDropdown, 'onboarding-race-id');
+        } else {
+          recentRacesDropdown.style.display = 'none';
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        const target = e.target as Node;
+        if (!recentRacesBtn.contains(target) && !recentRacesDropdown.contains(target)) {
+          recentRacesDropdown.style.display = 'none';
+        }
+      });
+    }
+  }
+
+  /**
+   * Show recent races dropdown and populate with today's races
+   * Fetches from API if authenticated, falls back to localStorage
+   */
+  private async showRecentRacesDropdown(dropdown: HTMLElement, inputId: string): Promise<void> {
+    const lang = store.getState().currentLang;
+
+    // Show loading state
+    dropdown.innerHTML = `<div class="recent-races-empty">${t('loading', lang)}</div>`;
+    dropdown.style.display = 'block';
+
+    // Try to fetch from API if authenticated
+    let races: RecentRace[] = [];
+
+    if (hasAuthToken()) {
+      try {
+        races = await this.fetchRacesFromApi();
+      } catch (error) {
+        console.warn('Failed to fetch races from API:', error);
+        // Fall back to localStorage
+        races = getTodaysRecentRaces();
+      }
+    } else {
+      // Not authenticated - use localStorage
+      races = getTodaysRecentRaces();
+    }
+
+    if (races.length === 0) {
+      dropdown.innerHTML = `<div class="recent-races-empty">${t('noRecentRaces', lang)}</div>`;
+    } else {
+      dropdown.innerHTML = races.map(race => this.renderRecentRaceItem(race)).join('');
+
+      // Add click handlers to each item
+      dropdown.querySelectorAll('.recent-race-item').forEach((item, index) => {
+        item.addEventListener('click', () => {
+          const race = races[index];
+          this.selectRecentRace(race, inputId, dropdown);
+        });
+      });
+    }
+  }
+
+  /**
+   * Fetch races from the admin API
+   * Returns races filtered to today only, formatted as RecentRace
+   */
+  private async fetchRacesFromApi(): Promise<RecentRace[]> {
+    const token = localStorage.getItem('skiTimerAuthToken');
+    if (!token) {
+      return [];
+    }
+
+    const response = await fetchWithTimeout('/api/admin/races', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }, 5000);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raceInfos: RaceInfo[] = data.races || [];
+
+    // Filter to today's races and convert to RecentRace format
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+
+    const todaysRaces = raceInfos
+      .filter(race => race.lastUpdated && race.lastUpdated >= todayStart)
+      .map(race => ({
+        raceId: race.raceId,
+        createdAt: race.lastUpdated || Date.now(),
+        lastUpdated: race.lastUpdated || Date.now(),
+        entryCount: race.entryCount
+      }))
+      .slice(0, 5);
+
+    // Also update localStorage with fetched races for future use
+    todaysRaces.forEach(race => {
+      addRecentRace(race.raceId, race.lastUpdated, race.entryCount);
+    });
+
+    return todaysRaces;
+  }
+
+  /**
+   * Render a single recent race item
+   */
+  private renderRecentRaceItem(race: RecentRace): string {
+    const entryText = race.entryCount !== undefined ? `${race.entryCount} entries` : '';
+    return `
+      <div class="recent-race-item" data-race-id="${race.raceId}">
+        <span class="recent-race-id">${race.raceId}</span>
+        <span class="recent-race-meta">${entryText}</span>
+      </div>
+    `;
+  }
+
+  /**
+   * Select a recent race and fill the input
+   */
+  private selectRecentRace(race: RecentRace, inputId: string, dropdown: HTMLElement): void {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      input.value = race.raceId;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      feedbackTap();
+    }
+    dropdown.style.display = 'none';
   }
 
   /**

@@ -6,6 +6,7 @@ import { photoStorage } from './photoStorage';
 import { t } from '../i18n/translations';
 import { getPointLabel } from '../utils/format';
 import { batteryService, type BatteryLevel } from './battery';
+import { addRecentRace } from '../utils/recentRaces';
 
 // API configuration
 const API_BASE = '/api/sync';
@@ -638,6 +639,12 @@ class SyncService {
       }
 
       this.lastSyncTimestamp = data.lastUpdated || Date.now();
+
+      // Track this race as recently synced
+      if (state.raceId) {
+        addRecentRace(state.raceId, this.lastSyncTimestamp, cloudEntries.length);
+      }
+
       this.adjustPollingInterval(true, hasChanges);
     } catch (error) {
       console.error('Cloud sync fetch error:', error);

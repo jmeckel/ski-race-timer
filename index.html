@@ -219,7 +219,7 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" id="race-id-input-row-container">
             <div class="setting-label">
               <span class="setting-title" data-i18n="raceId">Race ID</span>
               <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
@@ -229,7 +229,16 @@
                 <span class="race-exists-text" id="race-exists-text"></span>
               </span>
             </div>
-            <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 150px;">
+            <div class="race-id-input-row">
+              <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 120px;">
+              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </button>
+              <div class="recent-races-dropdown" id="settings-recent-races-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div class="setting-row">
             <div class="setting-label">
@@ -722,7 +731,16 @@
         <div class="onboarding-card" data-step="4" style="display:none">
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
-          <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
+          <div class="race-id-input-row">
+            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
+            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </button>
+            <div class="recent-races-dropdown" id="onboarding-recent-races-dropdown" style="display:none"></div>
+          </div>
           <div class="race-status" id="onboarding-race-status"></div>
           <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none">
           <label class="onboarding-toggle-row">

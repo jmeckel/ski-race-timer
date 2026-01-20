@@ -6,9 +6,15 @@ import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedback
 import { generateEntryId, getPointLabel, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
+import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
 import type { Entry, TimingPoint, Language, RaceInfo } from './types';
+
+// Feature modules
+import { closeModal, closeAllModalsAnimated, openModal } from './features/modals';
+import { initRippleEffects, createRipple, cleanupRippleEffects } from './features/ripple';
+import { exportResults, formatTimeForRaceHorology, escapeCSVField } from './features/export';
 
 // Initialize Vercel Speed Insights
 injectSpeedInsights();
@@ -48,138 +54,12 @@ async function authenticateWithPin(pin: string): Promise<{ success: boolean; err
   return result;
 }
 
-/**
- * Close modal with animation
- * Adds closing class, waits for animation, then removes show class
- */
-function closeModal(modal: HTMLElement | null): void {
-  if (!modal || !modal.classList.contains('show')) return;
-
-  modal.classList.add('closing');
-
-  // Wait for animation to complete (150ms)
-  setTimeout(() => {
-    modal.classList.remove('show', 'closing');
-  }, 150);
-}
-
-/**
- * Close all open modals with animation
- */
-function closeAllModalsAnimated(): void {
-  document.querySelectorAll('.modal-overlay.show').forEach(modal => {
-    closeModal(modal as HTMLElement);
-  });
-}
-
-/**
- * Create ripple effect on element
- * Synced with haptic feedback for tactile response
- */
-function createRipple(event: MouseEvent | TouchEvent, element: HTMLElement, variant?: 'primary' | 'success' | 'secondary'): void {
-  // Get click/touch position
-  const rect = element.getBoundingClientRect();
-  let x: number, y: number;
-
-  if (event instanceof TouchEvent && event.touches.length > 0) {
-    x = event.touches[0].clientX - rect.left;
-    y = event.touches[0].clientY - rect.top;
-  } else if (event instanceof MouseEvent) {
-    x = event.clientX - rect.left;
-    y = event.clientY - rect.top;
-  } else {
-    // Fallback to center
-    x = rect.width / 2;
-    y = rect.height / 2;
-  }
-
-  // Create ripple element
-  const ripple = document.createElement('span');
-  ripple.classList.add('ripple');
-  if (variant) {
-    ripple.classList.add(`ripple-${variant}`);
-  }
-
-  // Size ripple to cover the element
-  const size = Math.max(rect.width, rect.height) * 2;
-  ripple.style.width = `${size}px`;
-  ripple.style.height = `${size}px`;
-  ripple.style.left = `${x - size / 2}px`;
-  ripple.style.top = `${y - size / 2}px`;
-
-  // Add to element
-  element.appendChild(ripple);
-
-  // Remove after animation
-  // MEMORY LEAK FIX: Track timeout and clean up properly
-  const timeoutId = setTimeout(() => {
-    ripple.remove();
-    activeRippleTimeouts.delete(timeoutId);
-  }, 500);
-  activeRippleTimeouts.add(timeoutId);
-}
-
-/**
- * Initialize ripple effect on buttons
- */
-function initRippleEffects(): void {
-  // Number pad buttons
-  document.querySelectorAll('.num-btn').forEach(btn => {
-    btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
-  });
-
-  // Timestamp button - use primary color
-  const timestampBtn = document.querySelector('.timestamp-btn');
-  if (timestampBtn) {
-    timestampBtn.classList.add('ripple-container');
-    timestampBtn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, timestampBtn as HTMLElement, 'primary'), { passive: true });
-    timestampBtn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, timestampBtn as HTMLElement, 'primary'));
-  }
-
-  // Timing point buttons
-  document.querySelectorAll('.timing-point-btn').forEach(btn => {
-    btn.classList.add('ripple-container');
-    const isStart = btn.getAttribute('data-point') === 'S';
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'));
-  });
-
-  // Tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, 'primary'), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, 'primary'));
-  });
-
-  // Action buttons in results view
-  document.querySelectorAll('.action-btn').forEach(btn => {
-    btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
-  });
-
-  // Modal buttons
-  document.querySelectorAll('.modal-btn').forEach(btn => {
-    btn.classList.add('ripple-container');
-    const isPrimary = btn.classList.contains('primary');
-    const isDanger = btn.classList.contains('danger');
-    const variant = isPrimary ? 'primary' : isDanger ? 'secondary' : undefined;
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, variant), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, variant));
-  });
-}
-
 // DOM Elements cache
 let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
 let onboardingController: OnboardingController | null = null;
-
-// MEMORY LEAK FIX: Track active ripple timeouts for cleanup
-const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
 // MEMORY LEAK FIX: Track debounced timeouts for cleanup on page unload
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -1073,6 +953,28 @@ function initSettingsView(): void {
     });
   }
 
+  // Settings recent races button
+  const settingsRecentRacesBtn = document.getElementById('settings-recent-races-btn');
+  const settingsRecentRacesDropdown = document.getElementById('settings-recent-races-dropdown');
+  if (settingsRecentRacesBtn && settingsRecentRacesDropdown) {
+    settingsRecentRacesBtn.addEventListener('click', () => {
+      feedbackTap();
+      if (settingsRecentRacesDropdown.style.display === 'none') {
+        showSettingsRecentRacesDropdown(settingsRecentRacesDropdown);
+      } else {
+        settingsRecentRacesDropdown.style.display = 'none';
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node;
+      if (!settingsRecentRacesBtn.contains(target) && !settingsRecentRacesDropdown.contains(target)) {
+        settingsRecentRacesDropdown.style.display = 'none';
+      }
+    });
+  }
+
   // Device name input
   const deviceNameInput = document.getElementById('device-name-input') as HTMLInputElement;
   if (deviceNameInput) {
@@ -1397,78 +1299,6 @@ async function deletePhoto(): Promise<void> {
   closePhotoViewer();
   showToast(t('photoDeleted', state.currentLang), 'success');
   feedbackDelete();
-}
-
-/**
- * Convert ISO timestamp to Race Horology time format (HH:MM:SS,ss)
- * Race Horology expects time-of-day format like ALGE timing devices
- * Uses comma as decimal separator (European standard)
- */
-function formatTimeForRaceHorology(isoTimestamp: string): string {
-  const date = new Date(isoTimestamp);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  const hundredths = Math.floor(date.getMilliseconds() / 10).toString().padStart(2, '0');
-  return `${hours}:${minutes}:${seconds},${hundredths}`;
-}
-
-/**
- * Escape a field for CSV export
- * Prevents CSV injection attacks and handles special characters
- */
-function escapeCSVField(field: string): string {
-  if (!field) return '';
-
-  // Prevent CSV injection by prefixing formula characters
-  if (/^[=+\-@]/.test(field)) {
-    field = "'" + field;
-  }
-
-  // Escape quotes and wrap in quotes if contains special chars (using semicolon as delimiter)
-  if (/[";,\n\r]/.test(field)) {
-    return `"${field.replace(/"/g, '""')}"`;
-  }
-
-  return field;
-}
-
-/**
- * Export results
- */
-function exportResults(): void {
-  const state = store.getState();
-  if (state.entries.length === 0) {
-    showToast(t('noEntries', state.currentLang), 'info');
-    return;
-  }
-
-  // Create CSV content (Race Horology format)
-  // Headers: Startnummer (bib), Messpunkt (timing point), Zeit (time in HH:MM:SS.ss)
-  const headers = ['Startnummer', 'Messpunkt', 'Zeit', 'Status', 'Gerät'];
-  const rows = state.entries.map(entry => [
-    escapeCSVField(entry.bib),
-    entry.point === 'S' ? 'ST' : 'FT', // ST=Start, FT=Finish (standard timing designators)
-    formatTimeForRaceHorology(entry.timestamp),
-    entry.status.toUpperCase(),
-    escapeCSVField(entry.deviceName || '')
-  ]);
-
-  const csvContent = [
-    headers.join(';'),
-    ...rows.map(row => row.join(';'))
-  ].join('\n');
-
-  // Download file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `race-horology-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-
-  showToast(t('exported', state.currentLang), 'success');
 }
 
 /**
@@ -1876,6 +1706,121 @@ async function checkRaceExists(raceId: string): Promise<void> {
 
   store.setRaceExistsInCloud(result.exists);
   updateRaceExistsIndicator(result.exists, result.entryCount);
+}
+
+// ===== Recent Races Dropdown Functions =====
+
+/**
+ * Show settings recent races dropdown and populate with today's races
+ * Fetches from API if authenticated, falls back to localStorage
+ */
+async function showSettingsRecentRacesDropdown(dropdown: HTMLElement): Promise<void> {
+  const lang = store.getState().currentLang;
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="recent-races-empty">${t('loading', lang)}</div>`;
+  dropdown.style.display = 'block';
+
+  // Try to fetch from API if authenticated
+  let races: RecentRace[] = [];
+
+  if (hasAuthToken()) {
+    try {
+      races = await fetchRacesFromApi();
+    } catch (error) {
+      console.warn('Failed to fetch races from API:', error);
+      // Fall back to localStorage
+      races = getTodaysRecentRaces();
+    }
+  } else {
+    // Not authenticated - use localStorage
+    races = getTodaysRecentRaces();
+  }
+
+  if (races.length === 0) {
+    dropdown.innerHTML = `<div class="recent-races-empty">${t('noRecentRaces', lang)}</div>`;
+  } else {
+    dropdown.innerHTML = races.map(race => renderRecentRaceItem(race)).join('');
+
+    // Add click handlers to each item
+    dropdown.querySelectorAll('.recent-race-item').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        const race = races[index];
+        selectSettingsRecentRace(race, dropdown);
+      });
+    });
+  }
+}
+
+/**
+ * Fetch races from the admin API
+ * Returns races filtered to today only, formatted as RecentRace
+ */
+async function fetchRacesFromApi(): Promise<RecentRace[]> {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (!token) {
+    return [];
+  }
+
+  const response = await fetchWithTimeout('/api/admin/races', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }, 5000);
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const raceInfos: RaceInfo[] = data.races || [];
+
+  // Filter to today's races and convert to RecentRace format
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStart = today.getTime();
+
+  const todaysRaces = raceInfos
+    .filter(race => race.lastUpdated && race.lastUpdated >= todayStart)
+    .map(race => ({
+      raceId: race.raceId,
+      createdAt: race.lastUpdated || Date.now(),
+      lastUpdated: race.lastUpdated || Date.now(),
+      entryCount: race.entryCount
+    }))
+    .slice(0, 5);
+
+  // Also update localStorage with fetched races for future use
+  todaysRaces.forEach(race => {
+    addRecentRace(race.raceId, race.lastUpdated, race.entryCount);
+  });
+
+  return todaysRaces;
+}
+
+/**
+ * Render a single recent race item
+ */
+function renderRecentRaceItem(race: RecentRace): string {
+  const entryText = race.entryCount !== undefined ? `${race.entryCount} entries` : '';
+  return `
+    <div class="recent-race-item" data-race-id="${race.raceId}">
+      <span class="recent-race-id">${race.raceId}</span>
+      <span class="recent-race-meta">${entryText}</span>
+    </div>
+  `;
+}
+
+/**
+ * Select a recent race and fill the settings race ID input
+ */
+function selectSettingsRecentRace(race: RecentRace, dropdown: HTMLElement): void {
+  const input = document.getElementById('race-id-input') as HTMLInputElement;
+  if (input) {
+    input.value = race.raceId;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    feedbackTap();
+  }
+  dropdown.style.display = 'none';
 }
 
 /**
@@ -2458,13 +2403,8 @@ function handleBeforeUnload(): void {
   // Cleanup toast singleton and its event listener
   destroyToast();
 
-  // MEMORY LEAK FIX: Clear all pending ripple timeouts
-  for (const timeoutId of activeRippleTimeouts) {
-    clearTimeout(timeoutId);
-  }
-  activeRippleTimeouts.clear();
-
-  // Remove any orphaned ripple elements
+  // MEMORY LEAK FIX: Clear all pending ripple timeouts and remove orphaned ripples
+  cleanupRippleEffects();
   document.querySelectorAll('.ripple').forEach(ripple => ripple.remove());
 
   // MEMORY LEAK FIX: Remove global event listeners

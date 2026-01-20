@@ -1,6 +1,10 @@
 import './styles/main.css';
 import { initApp } from './app';
 import { getToast } from './components/Toast';
+import { initGlobalErrorHandlers } from './utils/errorBoundary';
+
+// Initialize global error handlers first (catches errors during init)
+initGlobalErrorHandlers();
 
 // Initialize toast system
 getToast();
