@@ -244,6 +244,13 @@ body {
   height: 100%;
 }
 
+/* Portrait mode element ordering */
+.timer-view .clock-container { order: 1; }
+.timer-view .last-recorded { order: 2; }
+.timer-view .timestamp-btn { order: 3; }
+.timer-view .bib-display { order: 4; }
+.timer-view .number-pad { order: 5; }
+
 .clock-container {
   text-align: center;
   padding: 4px 0;
@@ -1472,7 +1479,7 @@ body {
     align-items: stretch;
   }
 
-  /* Left column: Large bib display */
+  /* Left column: Large bib display (same styling as portrait) */
   .timer-view .bib-display {
     grid-area: bib;
     display: flex;
@@ -1481,7 +1488,7 @@ body {
     justify-content: center;
     margin: 0;
     padding: 12px;
-    background: var(--surface);
+    background: var(--background);
     border-radius: var(--radius);
     border: 1px solid var(--surface-elevated);
   }
