@@ -1457,17 +1457,17 @@ body {
   }
 
   /* Timer View - CSS Grid two-column layout (2x2 matrix) */
-  /* Left: bib (large) + numpad | Right: last + clock/controls + timestamp */
+  /* Left: bib (large) + numpad | Right: clock/controls + last + timestamp */
   .timer-view.active {
     display: grid !important;
     grid-template-columns: 40% 60%;
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
-      "bib        last"
-      "numpad     clock"
+      "bib        clock"
+      "numpad     last"
       "numpad     timestamp";
-    padding: 8px 16px 16px;
-    gap: 12px 20px;
+    padding: 8px 16px 24px;
+    gap: 10px 20px;
     align-items: stretch;
   }
 
@@ -1558,13 +1558,16 @@ body {
     align-self: stretch;
   }
 
-  /* Right column: Last recorded (compact) */
+  /* Right column: Last recorded (between clock and timestamp) */
   .timer-view .last-recorded {
     grid-area: last;
     justify-content: center;
-    padding: 2px 8px;
+    padding: 8px 12px;
+    margin: 4px 0;
     font-size: 0.75rem;
     align-self: center;
+    background: var(--surface);
+    border-radius: var(--radius);
   }
 
   /* Results View - Wider layout */
