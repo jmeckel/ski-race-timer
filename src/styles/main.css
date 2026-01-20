@@ -1460,13 +1460,13 @@ body {
   /* Left: bib (large) + numpad | Right: clock/controls + last + timestamp */
   .timer-view.active {
     display: grid !important;
-    grid-template-columns: 40% 60%;
+    grid-template-columns: 40% 1fr;
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
       "bib        clock"
       "numpad     last"
       "numpad     timestamp";
-    padding: 8px 16px 24px;
+    padding: 8px 20px 24px;
     gap: 10px 20px;
     align-items: stretch;
   }
@@ -1525,7 +1525,8 @@ body {
   .timer-view .clock-container .clock-date-row {
     flex-wrap: wrap;
     justify-content: center !important;
-    gap: 8px;
+    gap: 16px;
+    margin-top: 4px;
   }
 
   .timer-view .timing-controls {
@@ -1533,7 +1534,7 @@ body {
     flex-direction: row !important;
     justify-content: center;
     gap: 8px;
-    margin-top: 4px;
+    margin-left: 8px;
   }
 
   .timer-view .timing-point-btn {
@@ -1562,9 +1563,9 @@ body {
   .timer-view .last-recorded {
     grid-area: last;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 8px 16px;
     margin: 4px 0;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     align-self: center;
     background: var(--surface);
     border-radius: var(--radius);
