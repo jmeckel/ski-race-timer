@@ -138,7 +138,7 @@ The Timer view is your main workspace for recording race times.
 │         12:34:56.789            │  ← Live clock (updates every ms)
 │                                 │
 │    [Start]     [Finish]         │  ← Timing point selection
-│         [R1]  [R2]              │  ← Run selection (Full Mode)
+│         [R1]  [R2]              │  ← Run selection
 │                                 │
 │    ┌─────────────────────┐      │
 │    │    RECORD TIME      │      │  ← Big timestamp button
@@ -243,7 +243,7 @@ Entries are displayed in a scrollable list, sorted by timestamp (newest first):
 Each entry shows:
 - **Bib number** (large, on the left)
 - **Timing point** (S = Start, F = Finish)
-- **Run indicator** (R1 or R2, in Full Mode only)
+- **Run indicator** (L1/R1 or L2/R2)
 - **Timestamp** (HH:MM:SS.ss format)
 - **Sync status** (✓ = synced to cloud)
 - **Device name** (which timer recorded it)
@@ -254,7 +254,7 @@ Each entry shows:
 At the top of the Results view:
 - **Total**: Number of recorded entries
 - **Racers**: Number of unique bib numbers
-- **Finished**: Number of Finish entries (Full Mode only)
+- **Finished**: Number of Finish entries
 
 ### Searching and Filtering
 
@@ -273,7 +273,7 @@ At the top of the Results view:
 1. Tap on any entry to open the edit dialog
 2. You can modify:
    - **Bib number**: Change if entered incorrectly
-   - **Run**: Change between Run 1 and Run 2 (Full Mode only)
+   - **Run**: Change between Run 1 and Run 2
    - **Status**: Set to OK, DNS, DNF, or DSQ
 
 3. Tap **Save** to confirm changes
@@ -463,7 +463,7 @@ All devices with matching Race ID and PIN will sync automatically.
 
 ### Race Management
 
-Access via **Settings → Admin → Manage Races** (Full Mode only)
+Access via **Settings → Admin → Manage Races**
 
 Features:
 - View all active races you have access to
