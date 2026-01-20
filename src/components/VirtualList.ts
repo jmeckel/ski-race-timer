@@ -1,5 +1,5 @@
 import type { Entry } from '../types';
-import { formatTime, formatBib, getPointColor, escapeHtml, debounce } from '../utils';
+import { formatTime, formatBib, getPointColor, escapeHtml } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
 
@@ -29,6 +29,7 @@ export class VirtualList {
   private unsubscribe: (() => void) | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private scrollHandler: (() => void) | null = null;
+  private scrollDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
   private isPaused = false;
   private needsRefreshOnResume = false;
 
@@ -54,8 +55,17 @@ export class VirtualList {
     this.scrollContainer.appendChild(this.contentContainer);
     this.container.appendChild(this.scrollContainer);
 
-    // Set up scroll listener with debounce - store reference for cleanup
-    this.scrollHandler = debounce(() => this.onScroll(), SCROLL_DEBOUNCE);
+    // Set up scroll listener with cancellable debounce
+    this.scrollHandler = () => {
+      // Clear any pending timeout to debounce
+      if (this.scrollDebounceTimeout !== null) {
+        clearTimeout(this.scrollDebounceTimeout);
+      }
+      this.scrollDebounceTimeout = setTimeout(() => {
+        this.scrollDebounceTimeout = null;
+        this.onScroll();
+      }, SCROLL_DEBOUNCE);
+    };
     this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
 
     // Set up resize observer - store reference for cleanup
@@ -372,6 +382,12 @@ export class VirtualList {
       this.resizeObserver.disconnect();
     }
 
+    // Cancel pending debounce timeout
+    if (this.scrollDebounceTimeout !== null) {
+      clearTimeout(this.scrollDebounceTimeout);
+      this.scrollDebounceTimeout = null;
+    }
+
     // Remove scroll listener
     if (this.scrollHandler) {
       this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
@@ -445,6 +461,12 @@ export class VirtualList {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+
+    // Cancel pending debounce timeout to prevent callback firing after destroy
+    if (this.scrollDebounceTimeout !== null) {
+      clearTimeout(this.scrollDebounceTimeout);
+      this.scrollDebounceTimeout = null;
     }
 
     // Remove scroll listener to prevent memory leak

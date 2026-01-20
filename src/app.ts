@@ -413,24 +413,28 @@ async function recordTimestamp(): Promise<void> {
       captureTimingPhoto()
         .then(async (photo) => {
           if (photo) {
-            // RACE CONDITION FIX: Verify entry still exists before updating
-            // Entry could have been deleted while photo was being captured
-            const currentState = store.getState();
-            const entryStillExists = currentState.entries.some(e => e.id === entryId);
-            if (!entryStillExists) {
-              console.warn('Entry was deleted before photo could be attached:', entryId);
-              return;
-            }
-
-            // Store photo in IndexedDB (not in entry to save localStorage space)
-            const saved = await photoStorage.savePhoto(entryId, photo);
-            if (saved) {
-              // Double-check entry still exists before update (could be deleted during save)
-              const finalState = store.getState();
-              if (finalState.entries.some(e => e.id === entryId)) {
-                // Mark entry as having a photo (without storing the actual photo data)
-                store.updateEntry(entryId, { photo: 'indexeddb' });
+            try {
+              // RACE CONDITION FIX: Verify entry still exists before updating
+              // Entry could have been deleted while photo was being captured
+              const currentState = store.getState();
+              const entryStillExists = currentState.entries.some(e => e.id === entryId);
+              if (!entryStillExists) {
+                console.warn('Entry was deleted before photo could be attached:', entryId);
+                return;
               }
+
+              // Store photo in IndexedDB (not in entry to save localStorage space)
+              const saved = await photoStorage.savePhoto(entryId, photo);
+              if (saved) {
+                // Double-check entry still exists before update (could be deleted during save)
+                const finalState = store.getState();
+                if (finalState.entries.some(e => e.id === entryId)) {
+                  // Mark entry as having a photo (without storing the actual photo data)
+                  store.updateEntry(entryId, { photo: 'indexeddb' });
+                }
+              }
+            } catch (err) {
+              logWarning('Camera', 'photo save/update', err, 'photoError');
             }
           }
         })

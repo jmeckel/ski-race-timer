@@ -282,6 +282,19 @@ class PhotoStorageService {
       }
     });
   }
+
+  /**
+   * Close the IndexedDB connection
+   * Call this during app cleanup to release resources
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+      this.initPromise = null;
+      console.log('Photo storage connection closed');
+    }
+  }
 }
 
 // Singleton instance

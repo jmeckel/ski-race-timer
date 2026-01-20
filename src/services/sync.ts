@@ -486,8 +486,18 @@ class SyncService {
         return;
       }
 
-      const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
-      const deletedIds = Array.isArray(data.deletedIds) ? data.deletedIds : [];
+      // Validate and filter entries - only accept well-formed entries
+      const rawEntries = Array.isArray(data.entries) ? data.entries : [];
+      const cloudEntries = rawEntries.filter(entry => {
+        if (!isValidEntry(entry)) {
+          console.warn('Skipping invalid entry from cloud:', entry);
+          return false;
+        }
+        return true;
+      });
+      const deletedIds = Array.isArray(data.deletedIds)
+        ? data.deletedIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+        : [];
 
       // Update sync status
       store.setSyncStatus('connected');

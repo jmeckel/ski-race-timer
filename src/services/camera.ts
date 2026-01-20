@@ -21,6 +21,7 @@ class CameraService {
   private videoElement: HTMLVideoElement | null = null;
   private canvasElement: HTMLCanvasElement | null = null;
   private isInitialized = false;
+  private isReinitializing = false; // Guard against concurrent reinitialize calls
   private visibilityHandler: (() => void) | null = null;
   private wasActiveBeforeHidden = false;
 
@@ -111,8 +112,16 @@ class CameraService {
 
   /**
    * Reinitialize camera after visibility change
+   * Uses guard flag to prevent overlapping calls on rapid visibility changes
    */
   private async reinitializeCamera(): Promise<void> {
+    // Prevent concurrent reinitialize calls
+    if (this.isReinitializing) {
+      console.log('Camera reinitialization already in progress, skipping');
+      return;
+    }
+    this.isReinitializing = true;
+
     try {
       if (!this.videoElement) {
         // Video element was removed, need to recreate
@@ -149,6 +158,8 @@ class CameraService {
     } catch (error) {
       console.error('Failed to reinitialize camera:', error);
       this.wasActiveBeforeHidden = false;
+    } finally {
+      this.isReinitializing = false;
     }
   }
 
@@ -238,12 +249,18 @@ class CameraService {
       this.videoElement = null;
     }
 
+    // Clean up canvas element reference
+    if (this.canvasElement) {
+      this.canvasElement = null;
+    }
+
     // Remove visibility change handler
     if (this.visibilityHandler) {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
     this.wasActiveBeforeHidden = false;
+    this.isReinitializing = false;
 
     this.isInitialized = false;
     store.setCameraReady(false);

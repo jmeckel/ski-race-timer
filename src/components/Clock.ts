@@ -138,6 +138,12 @@ export class Clock {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+
+    // Remove visibility change handler to prevent memory leak
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
   }
 
   /**

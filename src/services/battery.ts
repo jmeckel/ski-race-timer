@@ -27,6 +27,9 @@ class BatteryService {
     charging: true, // Assume charging (plugged in) by default
     batteryLevel: 'normal'
   };
+  // Store event handler references for proper cleanup
+  private levelChangeHandler: (() => void) | null = null;
+  private chargingChangeHandler: (() => void) | null = null;
 
   /**
    * Check if Battery Status API is supported
@@ -55,9 +58,11 @@ class BatteryService {
       // Read initial status
       this.updateStatus();
 
-      // Listen for battery changes
-      this.battery.addEventListener('levelchange', () => this.updateStatus());
-      this.battery.addEventListener('chargingchange', () => this.updateStatus());
+      // Listen for battery changes - store handlers for cleanup
+      this.levelChangeHandler = () => this.updateStatus();
+      this.chargingChangeHandler = () => this.updateStatus();
+      this.battery.addEventListener('levelchange', this.levelChangeHandler);
+      this.battery.addEventListener('chargingchange', this.chargingChangeHandler);
 
       console.log('Battery service initialized:', this.currentStatus);
       return true;
@@ -175,8 +180,15 @@ class BatteryService {
    */
   cleanup(): void {
     if (this.battery) {
-      // Note: BatteryManager doesn't have removeEventListener typed,
-      // but the events will be GC'd when battery reference is cleared
+      // Remove event listeners before clearing reference
+      if (this.levelChangeHandler) {
+        this.battery.removeEventListener('levelchange', this.levelChangeHandler);
+        this.levelChangeHandler = null;
+      }
+      if (this.chargingChangeHandler) {
+        this.battery.removeEventListener('chargingchange', this.chargingChangeHandler);
+        this.chargingChangeHandler = null;
+      }
       this.battery = null;
     }
     this.callbacks.clear();
@@ -191,6 +203,7 @@ interface BatteryManager extends EventTarget {
   chargingTime: number;
   dischargingTime: number;
   addEventListener(type: 'levelchange' | 'chargingchange', listener: () => void): void;
+  removeEventListener(type: 'levelchange' | 'chargingchange', listener: () => void): void;
 }
 
 interface NavigatorWithBattery extends Navigator {

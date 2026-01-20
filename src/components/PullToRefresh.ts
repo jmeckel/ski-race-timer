@@ -215,13 +215,13 @@ export class PullToRefresh {
 
   /**
    * Cleanup
-   * Note: Options must match addEventListener for proper removal (capture matters, passive doesn't)
-   * but we keep them consistent for clarity
+   * Note: Only the 'capture' option affects removeEventListener matching.
+   * Since we use default (capture: false), no options are needed for removal.
    */
   destroy(): void {
-    this.container.removeEventListener('touchstart', this.onTouchStart, { passive: true } as EventListenerOptions);
-    this.container.removeEventListener('touchmove', this.onTouchMove, { passive: false } as EventListenerOptions);
-    this.container.removeEventListener('touchend', this.onTouchEnd, { passive: true } as EventListenerOptions);
+    this.container.removeEventListener('touchstart', this.onTouchStart);
+    this.container.removeEventListener('touchmove', this.onTouchMove);
+    this.container.removeEventListener('touchend', this.onTouchEnd);
     this.indicator.remove();
   }
 }
