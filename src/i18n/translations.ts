@@ -70,6 +70,7 @@ export const translations: Record<Language, Translations> = {
     undone: 'Undone',
     copied: 'Copied to clipboard',
     duplicateWarning: 'Duplicate entry detected',
+    zeroBibWarning: 'Bib 000 - verify entry',
     exported: 'Exported successfully',
 
     // GPS
@@ -280,6 +281,7 @@ export const translations: Record<Language, Translations> = {
     undone: 'Rückgängig gemacht',
     copied: 'In Zwischenablage kopiert',
     duplicateWarning: 'Doppelter Eintrag erkannt',
+    zeroBibWarning: 'Startnr. 000 - Eintrag prüfen',
     exported: 'Erfolgreich exportiert',
 
     // GPS

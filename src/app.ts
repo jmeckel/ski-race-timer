@@ -435,13 +435,19 @@ async function recordTimestamp(): Promise<void> {
       e => e.bib === entry.bib && e.point === entry.point
     );
 
+    // Check for zero bib (e.g., "000")
+    const hasZeroBib = isZeroBib(entry.bib);
+
     // Add entry
     store.addEntry(entry);
 
-    // Show feedback
+    // Show feedback - prioritize duplicate warning over zero bib warning
     if (isDuplicate) {
       feedbackWarning();
       showDuplicateWarning(entry);
+    } else if (hasZeroBib) {
+      feedbackWarning();
+      showZeroBibWarning(entry);
     } else {
       feedbackSuccess();
       showConfirmation(entry);
@@ -523,6 +529,34 @@ function showDuplicateWarning(entry: Entry): void {
   setTimeout(() => {
     if (warningEl) warningEl.style.display = 'none';
   }, 2500);
+}
+
+/**
+ * Show zero bib warning (when bib is "000" or all zeros)
+ */
+function showZeroBibWarning(entry: Entry): void {
+  const overlay = document.getElementById('confirmation-overlay');
+  if (!overlay) return;
+
+  const warningEl = overlay.querySelector('.confirmation-zero-bib') as HTMLElement | null;
+  if (warningEl) {
+    warningEl.style.display = 'flex';
+  }
+
+  showConfirmation(entry);
+
+  setTimeout(() => {
+    if (warningEl) warningEl.style.display = 'none';
+  }, 2500);
+}
+
+/**
+ * Check if bib is all zeros (e.g., "0", "00", "000")
+ */
+function isZeroBib(bib: string): boolean {
+  if (!bib) return false;
+  // Check if bib consists only of zeros
+  return /^0+$/.test(bib);
 }
 
 /**
