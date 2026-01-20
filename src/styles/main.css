@@ -1525,7 +1525,7 @@ body {
   .timer-view .clock-container .clock-date-row {
     flex-wrap: wrap;
     justify-content: center !important;
-    gap: 16px;
+    gap: 48px;
     margin-top: 4px;
   }
 
@@ -1534,7 +1534,6 @@ body {
     flex-direction: row !important;
     justify-content: center;
     gap: 8px;
-    margin-left: 8px;
   }
 
   .timer-view .timing-point-btn {
