@@ -429,13 +429,19 @@ function showConfirmation(entry: Entry): void {
 
   const bibEl = overlay.querySelector('.confirmation-bib') as HTMLElement | null;
   const pointEl = overlay.querySelector('.confirmation-point') as HTMLElement | null;
+  const runEl = overlay.querySelector('.confirmation-run') as HTMLElement | null;
   const timeEl = overlay.querySelector('.confirmation-time') as HTMLElement | null;
+
+  const state = store.getState();
 
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    const state = store.getState();
     pointEl.textContent = getPointLabel(entry.point, state.currentLang);
     pointEl.style.color = getPointColor(entry.point);
+  }
+  if (runEl && entry.run) {
+    runEl.textContent = getRunLabel(entry.run, state.currentLang);
+    runEl.style.color = getRunColor(entry.run);
   }
   if (timeEl) {
     const date = new Date(entry.timestamp);
