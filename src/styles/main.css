@@ -1524,8 +1524,8 @@ body {
 
   .timer-view .clock-container .clock-date-row {
     flex-wrap: wrap;
-    justify-content: center !important;
-    gap: 48px;
+    justify-content: space-evenly !important;
+    gap: 12px;
     margin-top: 4px;
   }
 
