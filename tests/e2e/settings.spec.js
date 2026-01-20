@@ -4,7 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo } from './helpers.js';
+import { setupPage, clickToggle, isToggleOn, navigateTo } from './helpers.js';
 
 test.describe('Settings View', () => {
   test.beforeEach(async ({ page }) => {
@@ -20,25 +20,6 @@ test.describe('Settings View', () => {
     test('should highlight settings tab', async ({ page }) => {
       const tab = page.locator('[data-view="settings"]');
       await expect(tab).toHaveClass(/active/);
-    });
-  });
-
-  test.describe('Simple Mode Toggle', () => {
-    test('should be on by default', async ({ page }) => {
-      const toggle = page.locator('#simple-mode-toggle');
-      await expect(toggle).toBeChecked();
-    });
-
-    test('should toggle simple mode off', async ({ page }) => {
-      const toggle = page.locator('#simple-mode-toggle');
-      await clickToggle(page, '#simple-mode-toggle');
-      await expect(toggle).not.toBeChecked();
-    });
-
-    test('should show hidden settings when simple mode is off', async ({ page }) => {
-      await expect(page.locator('#gps-section')).not.toBeVisible();
-      await clickToggle(page, '#simple-mode-toggle');
-      await expect(page.locator('#gps-section')).toBeVisible();
     });
   });
 
@@ -81,9 +62,9 @@ test.describe('Settings View', () => {
   });
 });
 
-test.describe('Settings View - Full Mode', () => {
+test.describe('Settings View - GPS Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
     await navigateTo(page, 'settings');
   });
 
@@ -143,7 +124,7 @@ test.describe('Settings View - Full Mode', () => {
 
 test.describe('Settings - Keyboard Accessibility', () => {
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
     await navigateTo(page, 'settings');
   });
 
@@ -169,7 +150,7 @@ test.describe('Settings - Keyboard Accessibility', () => {
 
 test.describe('Settings - Toggle Independence', () => {
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
     await navigateTo(page, 'settings');
   });
 

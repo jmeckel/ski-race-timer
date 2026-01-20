@@ -6,18 +6,14 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo } from './helpers.js';
+import { setupPage, clickToggle, isToggleOn, navigateTo } from './helpers.js';
 
 // Skip tests that require backend API
 const skipBackendTests = !process.env.BACKEND_TESTS;
 
-// Helper to navigate to settings and disable simple mode
+// Helper to navigate to settings
 async function goToSettings(page) {
   await navigateTo(page, 'settings');
-  // Disable simple mode if needed
-  if (await isToggleOn(page, '#simple-mode-toggle')) {
-    await clickToggle(page, '#simple-mode-toggle');
-  }
 }
 
 test.describe('Race Management - Admin Section', () => {
@@ -27,7 +23,7 @@ test.describe('Race Management - Admin Section', () => {
   });
 
   test('should display admin section in settings', async ({ page }) => {
-    // Admin section should be visible (not hidden by simple mode)
+    // Admin section should be visible
     await expect(page.locator('#change-pin-btn')).toBeVisible();
     await expect(page.locator('#manage-races-btn')).toBeVisible();
   });

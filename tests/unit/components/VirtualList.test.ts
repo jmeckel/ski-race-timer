@@ -293,7 +293,8 @@ describe('VirtualList Component', () => {
 
       const item = container.querySelector('.result-item');
       expect(item?.textContent).toContain('042');
-      expect(item?.textContent).toContain('F');
+      // Timing point is now translated (F -> Ziel in German, the default language)
+      expect(item?.textContent).toContain('Ziel');
 
       list.destroy();
     });

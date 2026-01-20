@@ -24,7 +24,6 @@ Version 3.4 | Last Updated: January 2026
    - [Deleting Entries](#deleting-entries)
    - [Exporting Results](#exporting-results)
 5. [Settings](#settings)
-   - [Simple Mode vs Full Mode](#simple-mode-vs-full-mode)
    - [Cloud Sync](#cloud-sync)
    - [Photo Capture](#photo-capture)
    - [GPS Sync](#gps-sync)
@@ -190,16 +189,16 @@ The Timer view is your main workspace for recording race times.
 - **Start (S)**: Records when a racer leaves the start gate
 - **Finish (F)**: Records when a racer crosses the finish line
 
-In **Full Mode**, both buttons are visible. In **Simple Mode**, only Finish is shown.
+Both timing point buttons are visible in the timer view. The selected point is highlighted.
 
 ### Run Selection
 
 For multi-run races (e.g., slalom with two runs), use the run selector:
 
-- **R1** (Run 1): First run of the race
-- **R2** (Run 2): Second run of the race
+- **L1** / **R1** (Run 1): First run of the race
+- **L2** / **R2** (Run 2): Second run of the race
 
-The run selector appears only in **Full Mode**. In Simple Mode, all entries are recorded as Run 1.
+The label depends on the selected language (L for German "Lauf", R for English "Run").
 
 **How it works:**
 1. Select the run (R1 or R2) before recording times
@@ -341,25 +340,6 @@ Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät
 ## Settings
 
 Access Settings via the gear icon in the navigation bar.
-
-### Simple Mode vs Full Mode
-
-**Simple Mode** (default):
-- Shows only essential controls
-- Finish timing point only
-- Fewer settings visible
-- Best for single-point timing
-
-**Full Mode**:
-- All features visible
-- Both Start and Finish timing points
-- Run selection (Run 1 / Run 2) for multi-run races
-- Run indicator in results list
-- Advanced filtering in Results
-- GPS settings visible
-- Admin/race management options
-
-Toggle: **Settings → Simple Mode**
 
 ### Cloud Sync
 

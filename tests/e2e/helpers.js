@@ -6,6 +6,7 @@
 /**
  * Setup page with onboarding bypassed and clean state
  * Call this in beforeEach to ensure consistent test state
+ * Note: Normal mode (simple=false) is now the default
  */
 export async function setupPage(page) {
   // Set localStorage to bypass onboarding before navigating
@@ -20,7 +21,7 @@ export async function setupPage(page) {
       sync: false,
       syncPhotos: false,
       gps: false,
-      simple: true,
+      simple: false,  // Normal mode is default
       photoCapture: false
     }));
     localStorage.setItem('skiTimerLang', 'de');
@@ -32,27 +33,10 @@ export async function setupPage(page) {
 }
 
 /**
- * Setup page with full mode enabled (not simple mode)
+ * @deprecated Use setupPage() instead - normal mode is now the default
  */
 export async function setupPageFullMode(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-    // Keys must match the store's DEFAULT_SETTINGS
-    localStorage.setItem('skiTimerSettings', JSON.stringify({
-      auto: true,
-      haptic: true,
-      sound: false,
-      sync: false,
-      syncPhotos: false,
-      gps: false,
-      simple: false,  // Full mode = simple OFF
-      photoCapture: false
-    }));
-    localStorage.setItem('skiTimerLang', 'de');
-  });
-
-  await page.goto('/');
-  await page.waitForSelector('.clock-time', { timeout: 5000 });
+  return setupPage(page);
 }
 
 /**
@@ -69,7 +53,7 @@ export async function setupPageEnglish(page) {
       sync: false,
       syncPhotos: false,
       gps: false,
-      simple: true,
+      simple: false,  // Normal mode is default
       photoCapture: false
     }));
     localStorage.setItem('skiTimerLang', 'en');

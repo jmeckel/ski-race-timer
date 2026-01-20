@@ -35,7 +35,7 @@ const DEFAULT_SETTINGS: Settings = {
   sync: false,
   syncPhotos: false,  // Sync photos disabled by default - must be enabled separately
   gps: false,
-  simple: true,
+  simple: false,  // Normal mode is default (simple mode toggle is hidden)
   photoCapture: false
 };
 

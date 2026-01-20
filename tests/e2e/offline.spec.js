@@ -296,9 +296,9 @@ test.describe('Data Recovery', () => {
     // Should start fresh with defaults
     await navigateTo(page, 'settings');
 
-    // Simple mode should be on (default)
-    const simpleToggle = page.locator('#simple-mode-toggle');
-    await expect(simpleToggle).toBeChecked();
+    // Normal mode should be default (GPS section visible)
+    const gpsSection = page.locator('#gps-section');
+    await expect(gpsSection).toBeVisible();
   });
 });
 

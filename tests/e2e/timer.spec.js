@@ -107,20 +107,20 @@ test.describe('Timer View', () => {
     });
   });
 
-  test.describe('Simple Mode', () => {
-    test('should hide Start button in simple mode', async ({ page }) => {
+  test.describe('Timing Controls', () => {
+    test('should show Start button', async ({ page }) => {
       const startBtn = page.locator('[data-point="S"]');
-      await expect(startBtn).not.toBeVisible();
+      await expect(startBtn).toBeVisible();
     });
 
-    test('should show Finish button in simple mode', async ({ page }) => {
+    test('should show Finish button', async ({ page }) => {
       const finishBtn = page.locator('[data-point="F"]');
       await expect(finishBtn).toBeVisible();
     });
 
-    test('should hide run selector in simple mode', async ({ page }) => {
+    test('should show run selector', async ({ page }) => {
       const runSelector = page.locator('.run-selector');
-      await expect(runSelector).not.toBeVisible();
+      await expect(runSelector).toBeVisible();
     });
   });
 

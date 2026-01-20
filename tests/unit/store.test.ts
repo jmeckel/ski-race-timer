@@ -103,7 +103,7 @@ describe('Store', () => {
       expect(state.settings.sound).toBe(false);
       expect(state.settings.sync).toBe(false);
       expect(state.settings.gps).toBe(false);
-      expect(state.settings.simple).toBe(true);
+      expect(state.settings.simple).toBe(false);  // Normal mode is default
       expect(state.settings.photoCapture).toBe(false);
     });
 

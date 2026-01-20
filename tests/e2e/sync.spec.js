@@ -7,7 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, setupPageWithSync, clickToggle, isToggleOn, navigateTo, enterBib, waitForConfirmationToHide } from './helpers.js';
+import { setupPage, setupPageWithSync, clickToggle, isToggleOn, navigateTo, enterBib, waitForConfirmationToHide } from './helpers.js';
 
 // Skip sync tests unless SYNC_TESTS env var is set
 const skipSyncTests = !process.env.SYNC_TESTS;
@@ -37,14 +37,6 @@ async function enableSync(page, raceId = 'TEST-RACE-001') {
 
   // Handle race change modal if it appears
   await dismissRaceChangeModal(page);
-}
-
-// Helper to disable simple mode
-async function disableSimpleMode(page) {
-  await navigateTo(page, 'settings');
-  if (await isToggleOn(page, '#simple-mode-toggle')) {
-    await clickToggle(page, '#simple-mode-toggle');
-  }
 }
 
 // Helper to dismiss race change modal if visible
@@ -508,9 +500,6 @@ test.describe('Cloud Sync Improvements', () => {
 
   test.describe('Bib Counter Sync', () => {
     test('should auto-increment bib correctly with local entries', async ({ page }) => {
-      // Disable simple mode to access auto-increment
-      await disableSimpleMode(page);
-
       await enableSync(page, 'BIB-SYNC-TEST-' + Date.now());
 
       // Record first entry
@@ -525,8 +514,6 @@ test.describe('Cloud Sync Improvements', () => {
     test('should sync bib counter across devices when both record entries', async ({ page, context }) => {
       const raceId = 'BIB-MULTI-TEST-' + Date.now();
 
-      // Disable simple mode on first device
-      await disableSimpleMode(page);
       await enableSync(page, raceId);
 
       // Record entries on first device
@@ -541,7 +528,7 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Open second device
       const page2 = await context.newPage();
-      await setupPageFullMode(page2);
+      await setupPage(page2);
       await enableSync(page2, raceId);
 
       // Wait for sync
@@ -574,8 +561,7 @@ test.describe('Cloud Sync Improvements', () => {
     });
 
     test('should be able to toggle photo capture on and off', async ({ page }) => {
-      // Photo toggle may be hidden in simple mode
-      await disableSimpleMode(page);
+      await navigateTo(page, 'settings');
 
       // Get photo toggle
       const photoToggle = page.locator('#photo-toggle');
@@ -694,7 +680,7 @@ test.describe('Verification Steps', () => {
   });
 
   test('Verification: Auto-increment bib works', async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
 
     // Enable auto-increment (should be on by default)
     await navigateTo(page, 'settings');
@@ -826,7 +812,7 @@ test.describe('Delete Sync', () => {
   test('should handle multi-delete with sync', async ({ page }) => {
     // Enable sync and disable simple mode for multi-select
     const uniqueRaceId = 'MULTI-DELETE-' + Date.now();
-    await setupPageFullMode(page);
+    await setupPage(page);
     await enableSync(page, uniqueRaceId);
 
     // Add multiple entries
