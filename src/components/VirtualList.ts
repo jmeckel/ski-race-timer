@@ -1,5 +1,5 @@
 import type { Entry } from '../types';
-import { formatTime, formatBib, getPointColor, escapeHtml } from '../utils';
+import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
 
@@ -265,16 +265,21 @@ export class VirtualList {
     const date = new Date(entry.timestamp);
     const timeStr = formatTime(date);
     const bibStr = formatBib(entry.bib || '---');
+    const lang = store.getState().currentLang;
     const pointColor = getPointColor(entry.point);
+    const pointLabel = getPointLabel(entry.point, lang);
+    const run = entry.run ?? 1;
+    const runColor = getRunColor(run);
+    const runLabel = getRunLabel(run, lang);
 
     item.innerHTML = `
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
         ${escapeHtml(bibStr)}
       </div>
       <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
-        ${escapeHtml(entry.point)}
+        ${escapeHtml(pointLabel)}
       </div>
-      <span class="result-run" data-advanced>L${entry.run ?? 1}</span>
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}
