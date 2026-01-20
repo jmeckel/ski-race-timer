@@ -61,24 +61,24 @@
         <!-- Clock -->
         <div class="clock-container" id="clock-container"></div>
 
-        <!-- Timing Points -->
-        <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
-          <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
-            <span data-i18n="start">Start</span>
-          </button>
-          <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
-            <span data-i18n="finish">Finish</span>
-          </button>
-        </div>
-
-        <!-- Run Selector (Full mode only) -->
-        <div class="run-selector" id="run-selector" role="radiogroup" aria-label="Run" data-advanced>
-          <button class="run-btn active" data-run="1" role="radio" aria-checked="true">
-            <span data-i18n="run1">L1</span>
-          </button>
-          <button class="run-btn" data-run="2" role="radio" aria-checked="false">
-            <span data-i18n="run2">L2</span>
-          </button>
+        <!-- Timing Points and Run Selector -->
+        <div class="timing-controls">
+          <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
+            <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
+              <span data-i18n="start">Start</span>
+            </button>
+            <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
+              <span data-i18n="finish">Finish</span>
+            </button>
+          </div>
+          <div class="run-selector" id="run-selector" role="radiogroup" aria-label="Run" data-advanced>
+            <button class="run-btn active" data-run="1" role="radio" aria-checked="true">
+              <span data-i18n="run1">L1</span>
+            </button>
+            <button class="run-btn" data-run="2" role="radio" aria-checked="false">
+              <span data-i18n="run2">L2</span>
+            </button>
+          </div>
         </div>
 
         <!-- Timestamp Button -->

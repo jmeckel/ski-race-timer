@@ -319,6 +319,15 @@ body {
   font-weight: 600;
 }
 
+/* Timing Controls Container */
+.timing-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* Timing Points */
 .timing-points {
   display: flex;
@@ -366,20 +375,20 @@ body {
 /* Run Selector */
 .run-selector {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .run-btn {
   flex: 1;
-  max-width: 60px;
-  padding: 12px 10px;
+  max-width: 48px;
+  padding: 8px 6px;
   border: 2px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-secondary);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1480,9 +1489,10 @@ body {
     min-width: 60px;
   }
 
-  .timer-view .timing-points {
+  .timer-view .timing-controls {
     grid-area: points;
     justify-content: flex-start;
+    gap: 12px;
   }
 
   .timer-view .timing-point-btn {
@@ -1491,15 +1501,10 @@ body {
     font-size: 0.8rem;
   }
 
-  .timer-view .run-selector {
-    grid-area: run;
-    justify-content: flex-start;
-  }
-
   .timer-view .run-btn {
-    max-width: 50px;
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    max-width: 40px;
+    padding: 4px 6px;
+    font-size: 0.75rem;
   }
 
   .timer-view .number-pad {
@@ -1609,9 +1614,9 @@ body {
   }
 
   .timer-view .run-btn {
-    padding: 4px 8px;
-    font-size: 0.7rem;
-    max-width: 45px;
+    padding: 3px 5px;
+    font-size: 0.65rem;
+    max-width: 36px;
   }
 
   .timer-view .num-btn {
