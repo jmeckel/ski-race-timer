@@ -5,6 +5,7 @@ import { fetchWithTimeout } from '../utils/errors';
 import { photoStorage } from './photoStorage';
 import { t } from '../i18n/translations';
 import { getPointLabel } from '../utils/format';
+import { batteryService, type BatteryLevel } from './battery';
 
 // API configuration
 const API_BASE = '/api/sync';
@@ -74,6 +75,12 @@ const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
 const POLL_INTERVALS_IDLE = [5000, 10000, 15000, 20000, 30000]; // Gradual increase
 const IDLE_THRESHOLD = 6; // Number of no-change polls before starting to throttle
 
+// Battery-aware polling configuration
+// More aggressive throttling when battery is low
+const POLL_INTERVALS_LOW_BATTERY = [10000, 20000, 30000, 45000, 60000]; // Low battery: slower
+const POLL_INTERVALS_CRITICAL = [30000, 45000, 60000]; // Critical: much slower
+const IDLE_THRESHOLD_LOW_BATTERY = 3; // Start throttling sooner on low battery
+
 class SyncService {
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private queueInterval: ReturnType<typeof setInterval> | null = null;
@@ -87,6 +94,10 @@ class SyncService {
   // Adaptive polling state
   private consecutiveNoChanges = 0; // Track polls with no changes
   private currentIdleLevel = 0; // Index into POLL_INTERVALS_IDLE
+
+  // Battery-aware polling state
+  private currentBatteryLevel: BatteryLevel = 'normal';
+  private batteryUnsubscribe: (() => void) | null = null;
 
   /**
    * Initialize sync service
@@ -129,6 +140,22 @@ class SyncService {
         }
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    // Subscribe to battery status changes for adaptive polling
+    if (!this.batteryUnsubscribe) {
+      batteryService.initialize().then(() => {
+        this.batteryUnsubscribe = batteryService.subscribe((status) => {
+          const previousLevel = this.currentBatteryLevel;
+          this.currentBatteryLevel = status.batteryLevel;
+
+          // Adjust polling if battery level changed and we're actively polling
+          if (previousLevel !== status.batteryLevel && this.pollInterval) {
+            console.log(`Battery level changed: ${previousLevel} -> ${status.batteryLevel}`);
+            this.applyBatteryAwarePolling();
+          }
+        });
+      });
     }
 
     store.setSyncStatus('connecting');
@@ -212,8 +239,73 @@ class SyncService {
   }
 
   /**
+   * Get the appropriate polling intervals based on battery level
+   */
+  private getPollingIntervals(): number[] {
+    switch (this.currentBatteryLevel) {
+      case 'critical':
+        return POLL_INTERVALS_CRITICAL;
+      case 'low':
+        return POLL_INTERVALS_LOW_BATTERY;
+      default:
+        return POLL_INTERVALS_IDLE;
+    }
+  }
+
+  /**
+   * Get the idle threshold based on battery level
+   */
+  private getIdleThreshold(): number {
+    return this.currentBatteryLevel === 'normal'
+      ? IDLE_THRESHOLD
+      : IDLE_THRESHOLD_LOW_BATTERY;
+  }
+
+  /**
+   * Get the base polling interval based on battery level
+   */
+  private getBasePollingInterval(): number {
+    switch (this.currentBatteryLevel) {
+      case 'critical':
+        return POLL_INTERVALS_CRITICAL[0]; // 30s even when active
+      case 'low':
+        return POLL_INTERVALS_LOW_BATTERY[0]; // 10s when active
+      default:
+        return POLL_INTERVAL_NORMAL; // 5s when active
+    }
+  }
+
+  /**
+   * Apply battery-aware polling based on current state
+   * Called when battery level changes
+   */
+  private applyBatteryAwarePolling(): void {
+    const intervals = this.getPollingIntervals();
+
+    // Clamp idle level to new interval array bounds
+    this.currentIdleLevel = Math.min(this.currentIdleLevel, intervals.length - 1);
+
+    // Get appropriate interval
+    let newInterval: number;
+    if (this.consecutiveNoChanges < this.getIdleThreshold()) {
+      // Active mode - use base interval for battery level
+      newInterval = this.getBasePollingInterval();
+    } else {
+      // Idle mode - use throttled interval
+      newInterval = intervals[this.currentIdleLevel];
+    }
+
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
+      console.log(`Sync polling: battery-adjusted (${newInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
+    }
+  }
+
+  /**
    * Adjust polling interval based on success/failure and whether changes were detected
    * Implements adaptive polling: fast when active, slow when idle
+   * Battery-aware: uses slower intervals when battery is low
    */
   private adjustPollingInterval(success: boolean, hasChanges: boolean = false): void {
     if (!success) {
@@ -230,37 +322,41 @@ class SyncService {
     // Success case - reset error counter
     this.consecutiveErrors = 0;
 
+    const intervals = this.getPollingIntervals();
+    const idleThreshold = this.getIdleThreshold();
+    const baseInterval = this.getBasePollingInterval();
+
     if (hasChanges) {
-      // Changes detected - reset to fast polling
+      // Changes detected - reset to fast polling (battery-aware)
       this.consecutiveNoChanges = 0;
       this.currentIdleLevel = 0;
 
       if (this.pollInterval) {
         clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_NORMAL);
+        this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
       }
-      console.log('Sync polling: active mode (5s)');
+      console.log(`Sync polling: active mode (${baseInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
     } else {
       // No changes - consider throttling
       this.consecutiveNoChanges++;
 
-      if (this.consecutiveNoChanges >= IDLE_THRESHOLD) {
+      if (this.consecutiveNoChanges >= idleThreshold) {
         // Start or continue throttling
         const newIdleLevel = Math.min(
           this.currentIdleLevel + 1,
-          POLL_INTERVALS_IDLE.length - 1
+          intervals.length - 1
         );
 
         // Only adjust if level changed
         if (newIdleLevel !== this.currentIdleLevel) {
           this.currentIdleLevel = newIdleLevel;
-          const newInterval = POLL_INTERVALS_IDLE[this.currentIdleLevel];
+          const newInterval = intervals[this.currentIdleLevel];
 
           if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
           }
-          console.log(`Sync polling: idle mode (${newInterval / 1000}s)`);
+          console.log(`Sync polling: idle mode (${newInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
         }
       }
     }
@@ -268,14 +364,16 @@ class SyncService {
 
   /**
    * Reset adaptive polling to fast mode (call when user sends an entry)
+   * Uses battery-aware base interval
    */
   resetToFastPolling(): void {
     this.consecutiveNoChanges = 0;
     this.currentIdleLevel = 0;
 
+    const baseInterval = this.getBasePollingInterval();
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
-      this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_NORMAL);
+      this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
     }
   }
 
@@ -683,10 +781,17 @@ class SyncService {
     }
     this.wasPollingBeforeHidden = false;
 
+    // Unsubscribe from battery changes
+    if (this.batteryUnsubscribe) {
+      this.batteryUnsubscribe();
+      this.batteryUnsubscribe = null;
+    }
+
     // Reset adaptive polling state
     this.consecutiveErrors = 0;
     this.consecutiveNoChanges = 0;
     this.currentIdleLevel = 0;
+    this.currentBatteryLevel = 'normal';
 
     store.setSyncStatus('disconnected');
     console.log('Sync service cleaned up');
