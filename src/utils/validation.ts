@@ -160,6 +160,7 @@ export function sanitizeEntry(entry: unknown, deviceId: string): Entry | null {
     id: typeof e.id === 'number' ? String(e.id) : String(e.id),
     bib: sanitizeString(e.bib, 10),
     point: e.point,
+    run: e.run ?? 1,
     timestamp: e.timestamp,
     status: e.status || 'ok',
     deviceId: sanitizeString(e.deviceId || deviceId, 50),

@@ -363,6 +363,72 @@ body {
   background: color-mix(in srgb, var(--point-color) 10%, var(--surface));
 }
 
+/* Run Selector */
+.run-selector {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.run-btn {
+  flex: 1;
+  max-width: 60px;
+  padding: 12px 10px;
+  border: 2px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.run-btn:active {
+  transform: scale(0.95);
+}
+
+.run-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+/* Edit Modal Run Selector */
+.edit-run-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-run-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-run-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+/* Result Run Badge */
+.result-run {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 /* Number Pad */
 .number-pad {
   display: grid;
@@ -1425,6 +1491,17 @@ body {
     font-size: 0.8rem;
   }
 
+  .timer-view .run-selector {
+    grid-area: run;
+    justify-content: flex-start;
+  }
+
+  .timer-view .run-btn {
+    max-width: 50px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
   .timer-view .number-pad {
     grid-area: numpad;
     max-height: none;
@@ -1529,6 +1606,12 @@ body {
     padding: 4px 8px;
     font-size: 0.7rem;
     max-width: 55px;
+  }
+
+  .timer-view .run-btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    max-width: 45px;
   }
 
   .timer-view .num-btn {

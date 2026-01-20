@@ -2,7 +2,7 @@
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 3.3 | Stand: Januar 2026
+Version 3.4 | Stand: Januar 2026
 
 ---
 
@@ -47,6 +47,7 @@ Ski Race Timer ist eine professionelle Zeitmessungsanwendung für Skirennen und 
 
 - **GPS-synchronisierte Zeitmessung** für präzise, konsistente Zeitstempel über alle Geräte
 - **Mehrgeräte-Synchronisation** zur Koordination von Start- und Zielzeitmessung
+- **Mehrlauf-Unterstützung** für Rennen mit zwei Durchgängen (z.B. Slalom)
 - **Offline-First-Design** - funktioniert ohne Internet, synchronisiert bei Verbindung
 - **Fotoaufnahme** - optionale Fotodokumentation für jeden Zeitstempel
 - **Export für Race Horology** - branchenübliches CSV-Format
@@ -137,12 +138,13 @@ Die Timer-Ansicht ist Ihr Hauptarbeitsbereich für die Erfassung von Rennzeiten.
 │         12:34:56.789            │  ← Live-Uhr (aktualisiert jede ms)
 │                                 │
 │    [Start]     [Ziel]           │  ← Messpunkt-Auswahl
+│        [L1] [L2]                │  ← Laufauswahl (Vollmodus)
 │                                 │
 │    ┌─────────────────────┐      │
 │    │    ZEIT ERFASSEN    │      │  ← Große Zeitstempel-Schaltfläche
 │    └─────────────────────┘      │
 │                                 │
-│    Letzte: 042 | Ziel | 12:34   │  ← Zuletzt erfasster Eintrag
+│    Letzte: 042 | L1 | Ziel      │  ← Zuletzt erfasster Eintrag
 │                                 │
 │         Startnr: 043            │  ← Aktuelle Startnummer
 │                                 │
@@ -189,6 +191,15 @@ Die Timer-Ansicht ist Ihr Hauptarbeitsbereich für die Erfassung von Rennzeiten.
 
 Im **Vollmodus** sind beide Schaltflächen sichtbar. Im **Einfachen Modus** wird nur Ziel angezeigt.
 
+### Laufauswahl
+
+Für Mehrlaufrennen (z.B. Slalom mit zwei Durchgängen) verwenden Sie die Laufauswahl:
+
+- **L1** (Lauf 1): Erster Durchgang des Rennens
+- **L2** (Lauf 2): Zweiter Durchgang des Rennens
+
+Die Laufauswahl erscheint nur im **Vollmodus**. Im Einfachen Modus werden alle Einträge als Lauf 1 erfasst.
+
 ### Auto-Inkrement
 
 Wenn aktiviert (Standard), erhöht sich die Startnummer automatisch um 1 nach Erfassung einer **Ziel**-Zeit. Dies beschleunigt die Zeitmessung, wenn Rennläufer der Reihe nach ins Ziel kommen.
@@ -198,7 +209,7 @@ Wenn aktiviert (Standard), erhöht sich die Startnummer automatisch um 1 nach Er
 
 ### Duplikaterkennung
 
-Wenn Sie die gleiche Startnummer und den gleichen Messpunkt zweimal erfassen, erscheint eine **gelbe Warnung**. Der Eintrag wird trotzdem erfasst, aber dies warnt Sie vor möglichen Fehlern.
+Wenn Sie die gleiche Startnummer, den gleichen Messpunkt und den gleichen Lauf zweimal erfassen, erscheint eine **gelbe Warnung**. Der Eintrag wird trotzdem erfasst, aber dies warnt Sie vor möglichen Fehlern. Dieselbe Startnummer kann ohne Warnung für verschiedene Läufe erfasst werden (z.B. Lauf 1 und Lauf 2).
 
 ### Null-Startnummer-Warnung
 
@@ -216,13 +227,14 @@ Einträge werden in einer scrollbaren Liste angezeigt, sortiert nach Zeitstempel
 
 ```
 ┌─────────────────────────────────┐
-│  042  │  Z  │  12:34:56.78  │ ✓ │
+│  042  │ L1 │  Z  │ 12:34:56.78 │ ✓ │
 │  Start Timer                    │
 └─────────────────────────────────┘
 ```
 
 Jeder Eintrag zeigt:
 - **Startnummer** (groß, links)
+- **Lauf-Indikator** (L1 = Lauf 1, L2 = Lauf 2)
 - **Messpunkt** (S = Start, Z = Ziel)
 - **Zeitstempel** (HH:MM:SS.ss Format)
 - **Sync-Status** (✓ = mit Cloud synchronisiert)
@@ -253,6 +265,7 @@ Am oberen Rand der Ergebnis-Ansicht:
 1. Tippen Sie auf einen Eintrag, um den Bearbeitungsdialog zu öffnen
 2. Sie können ändern:
    - **Startnummer**: Ändern, wenn falsch eingegeben
+   - **Lauf**: Zwischen Lauf 1 und Lauf 2 wechseln
    - **Status**: Auf OK, DNS, DNF oder DSQ setzen
 
 3. Tippen Sie auf **Speichern** zur Bestätigung
@@ -299,15 +312,16 @@ Tippen Sie auf die **Export**-Schaltfläche, um eine CSV-Datei herunterzuladen, 
 
 **Export-Format:**
 ```csv
-Startnummer;Messpunkt;Zeit;Status;Gerät
-042;FT;12:34:56.78;OK;Ziel Timer
-041;ST;12:33:45.12;OK;Start Timer
+Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät
+042;1;FT;12:34:56.78;OK;Ziel Timer
+041;2;ST;12:33:45.12;OK;Start Timer
 ```
 
 **Spaltendetails:**
 | Spalte | Beschreibung |
 |--------|--------------|
 | Startnummer | Startnummer |
+| Lauf | 1 (erster Durchgang) oder 2 (zweiter Durchgang) |
 | Messpunkt | ST (Start) oder FT (Ziel) |
 | Zeit | Zeit im HH:MM:SS.ss Format |
 | Status | OK, DNS, DNF oder DSQ |
@@ -330,6 +344,7 @@ Zugang zu den Einstellungen über das Zahnrad-Symbol in der Navigationsleiste.
 **Vollmodus**:
 - Alle Funktionen sichtbar
 - Sowohl Start- als auch Ziel-Messpunkte
+- Laufauswahl (Lauf 1/Lauf 2) für Mehrlaufrennen
 - Erweiterte Filterung in Ergebnissen
 - GPS-Einstellungen sichtbar
 - Admin-/Rennverwaltungsoptionen

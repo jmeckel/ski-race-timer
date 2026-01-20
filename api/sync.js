@@ -303,18 +303,21 @@ async function atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId
       e => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
     );
 
-    // Check for cross-device duplicates (same bib + same point from different device)
+    // Check for cross-device duplicates (same bib + same point + same run from different device)
     let crossDeviceDuplicate = null;
     if (enrichedEntry.bib) {
+      const entryRun = enrichedEntry.run ?? 1;
       const existingMatch = existing.entries.find(
         e => e.bib === enrichedEntry.bib &&
              e.point === enrichedEntry.point &&
+             (e.run ?? 1) === entryRun &&
              e.deviceId !== sanitizedDeviceId
       );
       if (existingMatch) {
         crossDeviceDuplicate = {
           bib: existingMatch.bib,
           point: existingMatch.point,
+          run: existingMatch.run ?? 1,
           deviceName: existingMatch.deviceName || 'Unknown device',
           timestamp: existingMatch.timestamp
         };

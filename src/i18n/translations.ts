@@ -12,6 +12,9 @@ export const translations: Record<Language, Translations> = {
     finish: 'Finish',
     bib: 'Bib',
     point: 'Point',
+    run: 'Run',
+    run1: 'R1',
+    run2: 'R2',
     time: 'Record time',
     lastRecorded: 'Last recorded',
 
@@ -258,6 +261,9 @@ export const translations: Record<Language, Translations> = {
     finish: 'Ziel',
     bib: 'Startnr.',
     point: 'Punkt',
+    run: 'Lauf',
+    run1: 'L1',
+    run2: 'L2',
     time: 'Zeit erfassen',
     lastRecorded: 'Zuletzt erfasst',
 

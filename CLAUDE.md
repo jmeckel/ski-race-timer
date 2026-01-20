@@ -54,8 +54,8 @@ Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for s
 ### Key Components
 
 The app has three tab-based views:
-1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Finish), number pad
-2. **Results** - List of recorded times, CSV export (Race Horology format), entry editing/deletion, photo thumbnails
+1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Finish), run selection (Run 1/2), number pad
+2. **Results** - List of recorded times with run indicator, CSV export (Race Horology format), entry editing/deletion, photo thumbnails
 3. **Settings** - GPS sync, cloud sync, auto-increment bib, haptic/sound feedback, language toggle (EN/DE), photo capture, race management
 
 ### Data Storage
@@ -68,7 +68,7 @@ The app has three tab-based views:
   - `skiTimerDeviceId` - Unique device identifier
   - `skiTimerRecentRaces` - Recently synced races (for quick-select)
 
-- **Entry format**: `{ id, bib, point: 'S'|'F', timestamp, status, deviceId, deviceName, photo? }`
+- **Entry format**: `{ id, bib, point: 'S'|'F', run: 1|2, timestamp, status, deviceId, deviceName, photo? }`
 
 ### Feature Modules
 
@@ -108,8 +108,9 @@ JWT-based authentication protects sync and admin APIs:
 ### CSV Export Format (Race Horology)
 
 Exports use semicolon delimiter and standard timing designators:
-- **Columns**: Startnummer, Messpunkt, Zeit, Status, Gerät
+- **Columns**: Startnummer, Lauf, Messpunkt, Zeit, Status, Gerät
 - **Timing Points**: ST (Start), FT (Finish)
+- **Run (Lauf)**: 1 or 2 for multi-run races
 - **Time Format**: HH:MM:SS.ss (hundredths of seconds)
 - **CSV Injection Protection**: Formula characters escaped with single quote prefix
 

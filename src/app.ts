@@ -87,6 +87,7 @@ export function initApp(): void {
   initTabs();
   initNumberPad();
   initTimingPoints();
+  initRunSelector();
   initTimestampButton();
   initResultsView();
   initSettingsView();
@@ -261,6 +262,25 @@ function initTimingPoints(): void {
 }
 
 /**
+ * Initialize run selector
+ */
+function initRunSelector(): void {
+  const container = document.getElementById('run-selector');
+  if (!container) return;
+
+  container.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('.run-btn');
+    if (!btn) return;
+
+    const runStr = btn.getAttribute('data-run');
+    const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
+    store.setSelectedRun(run);
+    feedbackTap();
+  });
+}
+
+/**
  * Initialize timestamp button
  */
 function initTimestampButton(): void {
@@ -300,6 +320,7 @@ async function recordTimestamp(): Promise<void> {
       id: generateEntryId(state.deviceId),
       bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
       point: state.selectedPoint,
+      run: state.selectedRun,
       timestamp: preciseTimestamp,
       status: 'ok',
       deviceId: state.deviceId,
@@ -348,8 +369,9 @@ async function recordTimestamp(): Promise<void> {
     }
 
     // Check for duplicate (only if bib is entered)
+    // Duplicate = same bib + point + run combination
     const isDuplicate = entry.bib && state.entries.some(
-      e => e.bib === entry.bib && e.point === entry.point
+      e => e.bib === entry.bib && e.point === entry.point && (e.run ?? 1) === entry.run
     );
 
     // Check for zero bib (e.g., "000")
@@ -1023,6 +1045,24 @@ function initModals(): void {
     });
   }
 
+  // Edit run selector
+  const editRunSelector = document.getElementById('edit-run-selector');
+  if (editRunSelector) {
+    editRunSelector.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.edit-run-btn');
+      if (!btn) return;
+
+      const modal = document.getElementById('edit-modal');
+      const run = btn.getAttribute('data-run') || '1';
+      if (modal) modal.setAttribute('data-entry-run', run);
+
+      document.querySelectorAll('.edit-run-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+    });
+  }
+
   // Photo viewer close buttons (X and footer Close)
   const photoViewerCloseBtn = document.getElementById('photo-viewer-close-btn');
   if (photoViewerCloseBtn) {
@@ -1067,6 +1107,14 @@ function openEditModal(entry: Entry): void {
 
   if (bibInput) bibInput.value = entry.bib || '';
   if (statusSelect) statusSelect.value = entry.status;
+
+  // Update run selector buttons
+  const entryRun = entry.run ?? 1;
+  document.querySelectorAll('.edit-run-btn').forEach(btn => {
+    const isActive = btn.getAttribute('data-run') === String(entryRun);
+    btn.classList.toggle('active', isActive);
+  });
+  modal.setAttribute('data-entry-run', String(entryRun));
 
   modal.classList.add('show');
 }
@@ -1187,10 +1235,13 @@ function handleSaveEdit(): void {
 
   const bibInput = document.getElementById('edit-bib-input') as HTMLInputElement;
   const statusSelect = document.getElementById('edit-status-select') as HTMLSelectElement;
+  const runAttr = modal.getAttribute('data-entry-run');
+  const run = runAttr ? parseInt(runAttr, 10) as 1 | 2 : 1;
 
   store.updateEntry(entryId, {
     bib: bibInput?.value.padStart(3, '0') || '',
-    status: statusSelect?.value as Entry['status']
+    status: statusSelect?.value as Entry['status'],
+    run
   });
 
   showToast(t('saved', store.getState().currentLang), 'success');
@@ -1338,6 +1389,11 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
     updateTimingPointSelection();
   }
 
+  // Update run selection
+  if (changedKeys.includes('selectedRun')) {
+    updateRunSelection();
+  }
+
   // Update results list
   if (changedKeys.includes('entries')) {
     if (virtualList) {
@@ -1375,6 +1431,7 @@ function updateUI(): void {
   updateViewVisibility();
   updateBibDisplay();
   updateTimingPointSelection();
+  updateRunSelection();
   updateStats();
   updateEntryCountBadge();
   updateSyncStatusIndicator();
@@ -1429,6 +1486,18 @@ function updateTimingPointSelection(): void {
   const state = store.getState();
   document.querySelectorAll('.timing-point-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-point') === state.selectedPoint);
+  });
+}
+
+/**
+ * Update run selection
+ */
+function updateRunSelection(): void {
+  const state = store.getState();
+  document.querySelectorAll('.run-btn').forEach(btn => {
+    const isActive = btn.getAttribute('data-run') === String(state.selectedRun);
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
   });
 }
 

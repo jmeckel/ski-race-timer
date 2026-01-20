@@ -28,6 +28,7 @@ describe('Validation Utilities', () => {
       id: 'dev_test-1704067200000-abcd1234',
       bib: '042',
       point: 'F',
+      run: 1,
       timestamp: '2024-01-01T12:00:00.000Z',
       status: 'ok',
       deviceId: 'dev_test',
@@ -53,6 +54,17 @@ describe('Validation Utilities', () => {
       expect(isValidEntry({ ...validEntry, status: 'dns' })).toBe(true);
       expect(isValidEntry({ ...validEntry, status: 'dnf' })).toBe(true);
       expect(isValidEntry({ ...validEntry, status: 'dsq' })).toBe(true);
+    });
+
+    it('should validate all run values', () => {
+      expect(isValidEntry({ ...validEntry, run: 1 })).toBe(true);
+      expect(isValidEntry({ ...validEntry, run: 2 })).toBe(true);
+    });
+
+    it('should accept entry without run (backwards compatibility)', () => {
+      const entryWithoutRun = { ...validEntry };
+      delete (entryWithoutRun as { run?: number }).run;
+      expect(isValidEntry(entryWithoutRun)).toBe(true);
     });
 
     it('should accept legacy numeric ID', () => {
@@ -233,6 +245,7 @@ describe('Validation Utilities', () => {
         id: 'dev_test-1704067200000-abcd1234',
         bib: '042',
         point: 'F',
+        run: 1,
         timestamp: '2024-01-01T12:00:00.000Z',
         status: 'ok',
         deviceId: 'dev_test',
@@ -394,6 +407,7 @@ describe('Validation Utilities', () => {
       id: 'dev_test-1704067200000-abcd1234',
       bib: '042',
       point: 'F',
+      run: 1,
       timestamp: '2024-01-01T12:00:00.000Z',
       status: 'ok',
       deviceId: 'dev_test',
@@ -421,6 +435,19 @@ describe('Validation Utilities', () => {
     it('should return null for invalid entry', () => {
       expect(sanitizeEntry({ invalid: true }, 'dev_default')).toBeNull();
       expect(sanitizeEntry(null, 'dev_default')).toBeNull();
+    });
+
+    it('should preserve run field', () => {
+      const entry = { ...validEntry, run: 2 as const };
+      const result = sanitizeEntry(entry, 'dev_default');
+      expect(result!.run).toBe(2);
+    });
+
+    it('should default run to 1 if not present', () => {
+      const entryWithoutRun = { ...validEntry };
+      delete (entryWithoutRun as { run?: number }).run;
+      const result = sanitizeEntry(entryWithoutRun, 'dev_default');
+      expect(result!.run).toBe(1);
     });
   });
 

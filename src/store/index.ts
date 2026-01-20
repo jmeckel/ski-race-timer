@@ -5,6 +5,7 @@ import type {
   Action,
   SyncStatus,
   TimingPoint,
+  Run,
   Language,
   SyncQueueItem,
   DeviceInfo
@@ -88,7 +89,10 @@ class Store {
       if (entriesJson) {
         const parsed = JSON.parse(entriesJson);
         if (Array.isArray(parsed)) {
-          entries = parsed.filter(e => isValidEntry(e));
+          // Filter valid entries and ensure run field exists (backwards compat)
+          entries = parsed
+            .filter(e => isValidEntry(e))
+            .map(e => ({ ...e, run: e.run ?? 1 }));
         }
       }
     } catch (e) {
@@ -131,6 +135,7 @@ class Store {
       currentLang: lang,
       bibInput: '',
       selectedPoint: 'F',
+      selectedRun: 1 as Run,
       selectMode: false,
       selectedEntries: new Set(),
       isRecording: false,
@@ -578,6 +583,10 @@ class Store {
     this.setState({ selectedPoint: point }, false);
   }
 
+  setSelectedRun(run: Run) {
+    this.setState({ selectedRun: run }, false);
+  }
+
   setSelectMode(enabled: boolean) {
     this.setState({
       selectMode: enabled,
@@ -720,7 +729,8 @@ class Store {
       const key = `${entry.id}-${entry.deviceId}`;
       if (existingIds.has(key)) continue;
 
-      newEntries.push(entry);
+      // Ensure run field exists (backwards compat)
+      newEntries.push({ ...entry, run: entry.run ?? 1 });
       existingIds.add(key);
       addedCount++;
     }

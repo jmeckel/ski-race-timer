@@ -117,6 +117,11 @@ test.describe('Timer View', () => {
       const finishBtn = page.locator('[data-point="F"]');
       await expect(finishBtn).toBeVisible();
     });
+
+    test('should hide run selector in simple mode', async ({ page }) => {
+      const runSelector = page.locator('.run-selector');
+      await expect(runSelector).not.toBeVisible();
+    });
   });
 
   test.describe('Keyboard Navigation', () => {
@@ -166,6 +171,69 @@ test.describe('Timer View - Full Mode', () => {
       await page.click('[data-point="F"]');
       const button = page.locator('[data-point="F"]');
       await expect(button).toHaveClass(/active/);
+    });
+  });
+
+  test.describe('Run Selection', () => {
+    test('should show run selector in full mode', async ({ page }) => {
+      await expect(page.locator('.run-selector')).toBeVisible();
+    });
+
+    test('should show both Run 1 and Run 2 buttons', async ({ page }) => {
+      await expect(page.locator('.run-selector [data-run="1"]')).toBeVisible();
+      await expect(page.locator('.run-selector [data-run="2"]')).toBeVisible();
+    });
+
+    test('should default to Run 1', async ({ page }) => {
+      const run1Button = page.locator('.run-selector [data-run="1"]');
+      await expect(run1Button).toHaveClass(/active/);
+    });
+
+    test('should select Run 2', async ({ page }) => {
+      await page.click('.run-selector [data-run="2"]');
+      const run2Button = page.locator('.run-selector [data-run="2"]');
+      await expect(run2Button).toHaveClass(/active/);
+    });
+
+    test('should switch back to Run 1', async ({ page }) => {
+      await page.click('.run-selector [data-run="2"]');
+      await page.click('.run-selector [data-run="1"]');
+      const run1Button = page.locator('.run-selector [data-run="1"]');
+      await expect(run1Button).toHaveClass(/active/);
+    });
+
+    test('should record entry with selected run', async ({ page }) => {
+      // Select Run 2
+      await page.click('.run-selector [data-run="2"]');
+
+      // Enter bib and record
+      await enterBib(page, 42);
+      await page.click('#timestamp-btn');
+      await waitForConfirmationToHide(page);
+
+      // Navigate to results to verify
+      await navigateTo(page, 'results');
+
+      // Check that the entry shows L2 (German for Run 2)
+      const entryRun = page.locator('.result-run').first();
+      await expect(entryRun).toContainText('L2');
+    });
+
+    test('should allow same bib for different runs without duplicate warning', async ({ page }) => {
+      // Record entry for Run 1
+      await enterBib(page, 1);
+      await page.click('#timestamp-btn');
+      await waitForConfirmationToHide(page);
+
+      // Switch to Run 2 and record same bib
+      await page.click('.run-selector [data-run="2"]');
+      await page.click('[data-action="clear"]');
+      await enterBib(page, 1);
+      await page.click('#timestamp-btn');
+
+      // Should NOT show duplicate warning (different run)
+      const duplicateWarning = page.locator('.confirmation-duplicate');
+      await expect(duplicateWarning).not.toBeVisible();
     });
   });
 });

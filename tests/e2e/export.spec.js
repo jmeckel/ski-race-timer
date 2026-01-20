@@ -202,6 +202,90 @@ test.describe('Export - Edge Cases', () => {
   });
 });
 
+test.describe('Export - Multiple Runs', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupPageFullMode(page);
+  });
+
+  test('should export entries with run number', async ({ page }) => {
+    // Add Run 1 entry
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await waitForConfirmationToHide(page);
+
+    // Export
+    await navigateTo(page, 'results');
+    const downloadPromise = page.waitForEvent('download');
+    await page.click('#export-btn');
+
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+
+    if (downloadPath) {
+      const content = fs.readFileSync(downloadPath, 'utf-8');
+
+      // CSV should have Lauf column header
+      expect(content).toContain('Lauf');
+      // Should have ;1; for Run 1 (between bib and timing point)
+      expect(content).toMatch(/;1;/);
+    }
+  });
+
+  test('should export Run 2 entries correctly', async ({ page }) => {
+    // Select Run 2
+    await page.click('.run-selector [data-run="2"]');
+    await page.click('[data-num="2"]');
+    await page.click('#timestamp-btn');
+    await waitForConfirmationToHide(page);
+
+    // Export
+    await navigateTo(page, 'results');
+    const downloadPromise = page.waitForEvent('download');
+    await page.click('#export-btn');
+
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+
+    if (downloadPath) {
+      const content = fs.readFileSync(downloadPath, 'utf-8');
+
+      // Should have ;2; for Run 2
+      expect(content).toMatch(/;2;/);
+    }
+  });
+
+  test('should export both Run 1 and Run 2 entries', async ({ page }) => {
+    // Add Run 1 entry
+    await page.click('.run-selector [data-run="1"]');
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await waitForConfirmationToHide(page);
+
+    // Add Run 2 entry
+    await page.click('[data-action="clear"]');
+    await page.click('.run-selector [data-run="2"]');
+    await page.click('[data-num="1"]');
+    await page.click('#timestamp-btn');
+    await waitForConfirmationToHide(page);
+
+    // Export
+    await navigateTo(page, 'results');
+    const downloadPromise = page.waitForEvent('download');
+    await page.click('#export-btn');
+
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+
+    if (downloadPath) {
+      const content = fs.readFileSync(downloadPath, 'utf-8');
+
+      // Should have both ;1; and ;2; for different runs
+      expect(content).toMatch(/;1;/);
+      expect(content).toMatch(/;2;/);
+    }
+  });
+});
+
 test.describe('Export - Multiple Timing Points', () => {
   test.beforeEach(async ({ page }) => {
     await setupPageFullMode(page);

@@ -91,17 +91,18 @@ export function exportResults(): void {
   );
 
   // Build CSV content
-  // Header: Startnummer;Messpunkt;Zeit;Status;Gerät
-  const header = 'Startnummer;Messpunkt;Zeit;Status;Gerät';
+  // Header: Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät
+  const header = 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
 
   const rows = sortedEntries.map(entry => {
     const bib = escapeCSVField(entry.bib);
+    const run = entry.run ?? 1;
     const point = getExportPointLabel(entry.point);
     const time = formatTimeForRaceHorology(entry.timestamp);
     const status = getStatusLabel(entry.status, lang);
     const device = escapeCSVField(entry.deviceName || entry.deviceId);
 
-    return `${bib};${point};${time};${status};${device}`;
+    return `${bib};${run};${point};${time};${status};${device}`;
   });
 
   const csvContent = [header, ...rows].join('\n');

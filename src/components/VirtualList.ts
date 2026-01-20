@@ -274,6 +274,7 @@ export class VirtualList {
       <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(entry.point)}
       </div>
+      <span class="result-run" data-advanced>L${entry.run ?? 1}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}

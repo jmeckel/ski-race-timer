@@ -39,6 +39,7 @@ function createValidEntry(overrides: Partial<Entry> = {}): Entry {
     id: `dev_test-${Date.now()}-abcd1234`,
     bib: '042',
     point: 'F',
+    run: 1,
     timestamp: new Date().toISOString(),
     status: 'ok',
     deviceId: 'dev_test',
@@ -231,6 +232,20 @@ describe('Store', () => {
 
         expect(store.getState().syncQueue).toHaveLength(1);
         expect(store.getState().syncQueue[0].entry).toEqual(entry);
+      });
+
+      it('should add entry with run 1', () => {
+        const entry = createValidEntry({ run: 1 });
+        store.addEntry(entry);
+
+        expect(store.getState().entries[0].run).toBe(1);
+      });
+
+      it('should add entry with run 2', () => {
+        const entry = createValidEntry({ run: 2 });
+        store.addEntry(entry);
+
+        expect(store.getState().entries[0].run).toBe(2);
       });
     });
 
@@ -496,6 +511,18 @@ describe('Store', () => {
 
       store.setSelectedPoint('F');
       expect(store.getState().selectedPoint).toBe('F');
+    });
+
+    it('should set selected run', () => {
+      store.setSelectedRun(1);
+      expect(store.getState().selectedRun).toBe(1);
+
+      store.setSelectedRun(2);
+      expect(store.getState().selectedRun).toBe(2);
+    });
+
+    it('should default to run 1', () => {
+      expect(store.getState().selectedRun).toBe(1);
     });
 
     it('should set select mode', () => {

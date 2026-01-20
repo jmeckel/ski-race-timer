@@ -2,7 +2,7 @@
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 3.3 | Last Updated: January 2026
+Version 3.4 | Last Updated: January 2026
 
 ---
 
@@ -16,6 +16,7 @@ Version 3.3 | Last Updated: January 2026
    - [Recording Times](#recording-times)
    - [Using the Number Pad](#using-the-number-pad)
    - [Timing Points (Start/Finish)](#timing-points)
+   - [Run Selection (Run 1/Run 2)](#run-selection)
 4. [Results View](#results-view)
    - [Viewing Entries](#viewing-entries)
    - [Searching and Filtering](#searching-and-filtering)
@@ -47,6 +48,7 @@ Ski Race Timer is a professional-grade timing application designed for ski races
 
 - **GPS-synchronized timing** for accurate, consistent timestamps across devices
 - **Multi-device sync** to coordinate start and finish timers
+- **Multi-run support** - Run 1/Run 2 selection for two-run races
 - **Offline-first design** - works without internet, syncs when connected
 - **Photo capture** - optional photo documentation for each timestamp
 - **Export to Race Horology** - industry-standard CSV format
@@ -137,6 +139,7 @@ The Timer view is your main workspace for recording race times.
 │         12:34:56.789            │  ← Live clock (updates every ms)
 │                                 │
 │    [Start]     [Finish]         │  ← Timing point selection
+│         [R1]  [R2]              │  ← Run selection (Full Mode)
 │                                 │
 │    ┌─────────────────────┐      │
 │    │    RECORD TIME      │      │  ← Big timestamp button
@@ -189,6 +192,23 @@ The Timer view is your main workspace for recording race times.
 
 In **Full Mode**, both buttons are visible. In **Simple Mode**, only Finish is shown.
 
+### Run Selection
+
+For multi-run races (e.g., slalom with two runs), use the run selector:
+
+- **R1** (Run 1): First run of the race
+- **R2** (Run 2): Second run of the race
+
+The run selector appears only in **Full Mode**. In Simple Mode, all entries are recorded as Run 1.
+
+**How it works:**
+1. Select the run (R1 or R2) before recording times
+2. The selected run is shown on each recorded entry
+3. Entries are filtered/grouped by run in the Results view
+4. Duplicate detection considers the run (same bib + point + run = duplicate)
+
+> **Tip:** Switch to Run 2 after the first run is complete. All timers should be on the same run setting.
+
 ### Auto-Increment
 
 When enabled (default), the bib number automatically increases by 1 after recording a **Finish** time. This speeds up timing when racers finish in order.
@@ -198,7 +218,7 @@ When enabled (default), the bib number automatically increases by 1 after record
 
 ### Duplicate Detection
 
-If you record the same bib number and timing point twice, a **yellow warning** appears. The entry is still recorded, but this alerts you to potential errors.
+If you record the same bib number, timing point, and run twice, a **yellow warning** appears. The entry is still recorded, but this alerts you to potential errors. Note: Recording the same bib for Run 1 and Run 2 is not a duplicate.
 
 ### Zero Bib Warning
 
@@ -224,6 +244,7 @@ Entries are displayed in a scrollable list, sorted by timestamp (newest first):
 Each entry shows:
 - **Bib number** (large, on the left)
 - **Timing point** (S = Start, F = Finish)
+- **Run indicator** (R1 or R2, in Full Mode only)
 - **Timestamp** (HH:MM:SS.ss format)
 - **Sync status** (✓ = synced to cloud)
 - **Device name** (which timer recorded it)
@@ -253,6 +274,7 @@ At the top of the Results view:
 1. Tap on any entry to open the edit dialog
 2. You can modify:
    - **Bib number**: Change if entered incorrectly
+   - **Run**: Change between Run 1 and Run 2 (Full Mode only)
    - **Status**: Set to OK, DNS, DNF, or DSQ
 
 3. Tap **Save** to confirm changes
@@ -299,15 +321,16 @@ Tap the **Export** button to download a CSV file compatible with Race Horology a
 
 **Export Format:**
 ```csv
-Startnummer;Messpunkt;Zeit;Status;Gerät
-042;FT;12:34:56.78;OK;Finish Timer
-041;ST;12:33:45.12;OK;Start Timer
+Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät
+042;1;FT;12:34:56.78;OK;Finish Timer
+041;2;ST;12:33:45.12;OK;Start Timer
 ```
 
 **Column Details:**
 | Column | Description |
 |--------|-------------|
 | Startnummer | Bib number |
+| Lauf | Run number (1 or 2) |
 | Messpunkt | ST (Start) or FT (Finish) |
 | Zeit | Time in HH:MM:SS.ss format |
 | Status | OK, DNS, DNF, or DSQ |
@@ -330,6 +353,8 @@ Access Settings via the gear icon in the navigation bar.
 **Full Mode**:
 - All features visible
 - Both Start and Finish timing points
+- Run selection (Run 1 / Run 2) for multi-run races
+- Run indicator in results list
 - Advanced filtering in Results
 - GPS settings visible
 - Admin/race management options

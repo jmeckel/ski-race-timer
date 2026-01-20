@@ -1,6 +1,9 @@
 // Timing point types
 export type TimingPoint = 'S' | 'F';
 
+// Run types (for multi-run races)
+export type Run = 1 | 2;
+
 // Entry status types
 export type EntryStatus = 'ok' | 'dns' | 'dnf' | 'dsq';
 
@@ -15,6 +18,7 @@ export interface Entry {
   id: string;
   bib: string;
   point: TimingPoint;
+  run: Run;             // Run number (1 or 2), defaults to 1 for backwards compat
   timestamp: string;
   status: EntryStatus;
   deviceId: string;
@@ -77,6 +81,7 @@ export interface AppState {
   currentLang: Language;
   bibInput: string;
   selectedPoint: TimingPoint;
+  selectedRun: Run;       // Current run selection (1 or 2)
   selectMode: boolean;
   selectedEntries: Set<string>;
   isRecording: boolean;
@@ -180,6 +185,9 @@ export interface Translations {
   finish: string;
   bib: string;
   point: string;
+  run: string;
+  run1: string;
+  run2: string;
   time: string;
   status: string;
   noEntries: string;
