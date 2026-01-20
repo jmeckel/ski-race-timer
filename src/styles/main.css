@@ -181,6 +181,7 @@ body {
 
 .sync-dot.connected {
   background: var(--success);
+  box-shadow: 0 0 8px var(--success), 0 0 16px rgba(74, 222, 128, 0.4);
 }
 
 .sync-dot.error {
@@ -216,12 +217,16 @@ body {
 
 .entry-count-badge {
   padding: 4px 10px;
-  background: var(--secondary);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.85) 0%, rgba(234, 88, 12, 0.75) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
   border-radius: var(--radius);
   font-size: 0.85rem;
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== Views ===== */
@@ -291,7 +296,9 @@ body {
   justify-content: center;
   gap: 12px;
   padding: 8px 16px;
-  background: var(--surface-elevated);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   font-size: 0.9rem;
@@ -305,6 +312,23 @@ body {
 .last-recorded.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Pulse animation when new entry is recorded */
+@keyframes lastRecordedPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.last-recorded.pulse {
+  animation: lastRecordedPulse 0.8s ease-out;
 }
 
 .last-recorded .bib {
@@ -396,7 +420,7 @@ body {
 .run-btn {
   flex: 1;
   max-width: 48px;
-  padding: 8px 6px;
+  padding: 12px 6px;
   border: 2px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface);
@@ -538,26 +562,6 @@ body {
 
 .timestamp-btn.flash {
   animation: recordFlash 0.3s ease-out;
-}
-
-/* Photo capture icon on timestamp button */
-.timestamp-photo-icon {
-  display: none;
-  position: absolute;
-  top: 50%;
-  right: 24px;
-  transform: translateY(-50%);
-  opacity: 0.85;
-}
-
-.timestamp-photo-icon svg {
-  display: block;
-  width: 28px;
-  height: 28px;
-}
-
-.timestamp-btn.photo-enabled .timestamp-photo-icon {
-  display: block;
 }
 
 /* ===== Results View ===== */
@@ -1348,6 +1352,7 @@ body {
 .gps-dot.active {
   background: var(--gps-active);
   animation: gpsPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--gps-active), 0 0 16px rgba(74, 222, 128, 0.4);
 }
 
 .gps-dot.searching {
@@ -1362,6 +1367,20 @@ body {
   50% {
     opacity: 0.5;
   }
+}
+
+/* ===== Camera Indicator ===== */
+.camera-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: var(--primary);
+  opacity: 0.9;
+}
+
+.camera-indicator svg {
+  display: block;
 }
 
 /* ===== Empty State ===== */
@@ -2219,4 +2238,216 @@ body {
     background: white;
     color: black;
   }
+}
+
+/* ===== Liquid Glass UI Enhancements ===== */
+/* These enhance existing elements with glassmorphism effects */
+
+/* Timestamp Button Glass Enhancement */
+.timestamp-btn.glass-surface-1 {
+  background: linear-gradient(
+    var(--glass-gradient-angle, 135deg),
+    rgba(59, 130, 246, 0.9) 0%,
+    rgba(96, 165, 250, 0.8) 50%,
+    rgba(59, 130, 246, 0.85) 100%
+  );
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 8px 32px rgba(59, 130, 246, 0.5),
+    0 0 60px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.timestamp-btn.glass-surface-1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%) calc(30% + var(--motion-tilt-y, 0) * 20%),
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.timestamp-btn.glass-surface-1 span {
+  position: relative;
+  z-index: 2;
+}
+
+/* Header Glass Enhancement - matches bib display style */
+.header.glass-frosted-top {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Tab Bar Glass Enhancement */
+.tab-bar.glass-frosted {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.85) 0%,
+    rgba(20, 20, 20, 0.95) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+/* Number Pad Glass Enhancement - lighter than bib display */
+.num-btn.glass-surface-3 {
+  background: linear-gradient(
+    var(--glass-gradient-angle, 135deg),
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.num-btn.glass-surface-3:active {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal Glass Enhancement */
+.modal-content.glass-surface-1 {
+  background: linear-gradient(
+    var(--glass-gradient-angle, 135deg),
+    rgba(25, 25, 25, 0.92) 0%,
+    rgba(20, 20, 20, 0.88) 100%
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Confirmation Overlay Glass Enhancement */
+.confirmation-overlay.glass-surface-1 {
+  background: linear-gradient(
+    var(--glass-gradient-angle, 135deg),
+    rgba(10, 10, 10, 0.92) 0%,
+    rgba(15, 15, 15, 0.88) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 4px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Setting Row Glass Enhancement */
+.setting-row.glass-surface-3 {
+  background: transparent;
+  border-radius: var(--radius);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.setting-row.glass-surface-3:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Timing Point Buttons Glass Enhancement */
+.timing-point-btn.glass-surface-3 {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timing-point-btn.glass-surface-3.active[data-point="S"] {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
+  border-color: rgba(74, 222, 128, 0.4);
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.2);
+}
+
+.timing-point-btn.glass-surface-3.active[data-point="F"] {
+  background: linear-gradient(135deg, rgba(227, 24, 55, 0.15) 0%, rgba(227, 24, 55, 0.08) 100%);
+  border-color: rgba(227, 24, 55, 0.4);
+  box-shadow: 0 0 15px rgba(227, 24, 55, 0.2);
+}
+
+/* Run Buttons Glass Enhancement */
+.run-btn.glass-surface-3 {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Run buttons - Blue glow for both */
+.run-btn.glass-surface-3.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Clock Container Subtle Enhancement */
+.clock-container.glass-enabled {
+  position: relative;
+}
+
+/* Results Header Glass Enhancement */
+.results-header.glass-frosted-top {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(20, 20, 20, 0.85) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Results Actions Glass Enhancement */
+.results-actions.glass-frosted {
+  background: linear-gradient(
+    0deg,
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(20, 20, 20, 0.85) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Bib Display Glass Enhancement */
+.bib-display.glass-surface-2 {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
 }

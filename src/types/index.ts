@@ -42,6 +42,10 @@ export interface Settings {
   gps: boolean;         // GPS enabled
   simple: boolean;      // Simple mode
   photoCapture: boolean; // Photo capture on timestamp
+  // Liquid Glass UI settings
+  motionEffects: boolean;  // Enable accelerometer-reactive effects
+  glassEffects: boolean;   // Enable glass/blur effects
+  outdoorMode: boolean;    // High contrast mode for outdoor readability
 }
 
 // Device info for multi-device sync

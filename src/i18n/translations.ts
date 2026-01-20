@@ -55,7 +55,7 @@ export const translations: Record<Language, Translations> = {
     deleteSelected: 'Delete Selected',
 
     // Sync
-    connected: 'Connected',
+    connected: 'Sync',
     connecting: 'Connecting...',
     syncing: 'Syncing...',
     offline: 'Offline',
@@ -261,7 +261,7 @@ export const translations: Record<Language, Translations> = {
     // Timer View
     start: 'Start',
     finish: 'Ziel',
-    bib: 'Startnr.',
+    bib: 'Startnummer',
     point: 'Punkt',
     run: 'Lauf',
     run1: 'L1',
@@ -306,7 +306,7 @@ export const translations: Record<Language, Translations> = {
     deleteSelected: 'Ausgewählte löschen',
 
     // Sync
-    connected: 'Verbunden',
+    connected: 'Sync',
     connecting: 'Verbinde...',
     syncing: 'Synchronisiere...',
     offline: 'Offline',

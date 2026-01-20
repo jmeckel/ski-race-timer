@@ -5,4 +5,5 @@ export { gpsService } from './gps';
 export { photoStorage } from './photoStorage';
 export { wakeLockService } from './wakeLock';
 export { batteryService, type BatteryLevel } from './battery';
+export { motionService } from './motion';
 export * from './feedback';

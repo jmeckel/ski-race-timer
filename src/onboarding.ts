@@ -571,6 +571,9 @@ export class OnboardingController {
    * Complete the onboarding wizard
    */
   private complete(): void {
+    // Force save all settings before closing (bypasses debounce to ensure persistence)
+    store.forceSave();
+
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     closeModal(this.modal);
     store.setView('timer');

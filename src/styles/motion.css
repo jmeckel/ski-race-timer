@@ -1,0 +1,232 @@
+/* ===== Motion-Reactive Styles ===== */
+/* Styles that respond to device tilt via CSS custom properties */
+
+/* ===== Timestamp Button (Primary Action) ===== */
+/* Uses glass-surface-1 + tilt + breathing */
+#timestamp-btn.glass-enabled {
+  /* 3D perspective tilt on device motion */
+  transform: perspective(500px)
+    rotateX(calc(var(--motion-tilt-y) * -3deg))
+    rotateY(calc(var(--motion-tilt-x) * 3deg));
+  transition: transform 0.15s ease-out;
+}
+
+#timestamp-btn.glass-enabled:active {
+  transform: perspective(500px) scale(0.97) translateY(2px);
+}
+
+/* ===== Clock Display ===== */
+/* Motion-reactive gradient on clock text */
+.clock-time.glass-enabled {
+  background: linear-gradient(
+    calc(90deg + var(--motion-tilt-x) * 15deg),
+    var(--text-primary) 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    var(--text-primary) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Clock container parallax */
+.clock-container.glass-enabled {
+  transform: translateX(calc(var(--motion-tilt-x) * 3px))
+             translateY(calc(var(--motion-tilt-y) * 2px));
+  transition: transform 0.2s ease-out;
+}
+
+/* ===== Confirmation Overlay ===== */
+/* Floating card with parallax */
+#confirmation-overlay.glass-enabled .confirmation-content {
+  transform: translateX(calc(var(--motion-tilt-x) * 8px))
+             translateY(calc(var(--motion-tilt-y) * 8px));
+  transition: transform 0.2s ease-out;
+}
+
+/* Color-tinted border glow for timing points */
+#confirmation-overlay.glass-enabled.point-start .confirmation-content {
+  box-shadow:
+    0 0 30px rgba(74, 222, 128, 0.3),
+    0 0 60px rgba(74, 222, 128, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+#confirmation-overlay.glass-enabled.point-finish .confirmation-content {
+  box-shadow:
+    0 0 30px rgba(227, 24, 55, 0.3),
+    0 0 60px rgba(227, 24, 55, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: rgba(227, 24, 55, 0.4);
+}
+
+/* ===== Tab Bar ===== */
+/* Active tab with glow pulse */
+.tab-bar.glass-enabled .tab-btn.active {
+  position: relative;
+}
+
+.tab-bar.glass-enabled .tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--primary);
+  animation: tabPulse 4s ease-in-out infinite;
+}
+
+/* Gradient highlight follows tilt */
+.tab-bar.glass-enabled::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) calc(50% + var(--motion-tilt-x) * 30%),
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ===== Number Pad ===== */
+/* Staggered breathing on number buttons */
+.number-pad.glass-enabled .num-btn:nth-child(1) { animation-delay: 0s; }
+.number-pad.glass-enabled .num-btn:nth-child(2) { animation-delay: 0.2s; }
+.number-pad.glass-enabled .num-btn:nth-child(3) { animation-delay: 0.4s; }
+.number-pad.glass-enabled .num-btn:nth-child(4) { animation-delay: 0.1s; }
+.number-pad.glass-enabled .num-btn:nth-child(5) { animation-delay: 0.3s; }
+.number-pad.glass-enabled .num-btn:nth-child(6) { animation-delay: 0.5s; }
+.number-pad.glass-enabled .num-btn:nth-child(7) { animation-delay: 0.2s; }
+.number-pad.glass-enabled .num-btn:nth-child(8) { animation-delay: 0.4s; }
+.number-pad.glass-enabled .num-btn:nth-child(9) { animation-delay: 0.6s; }
+.number-pad.glass-enabled .num-btn:nth-child(10) { animation-delay: 0.3s; }
+.number-pad.glass-enabled .num-btn:nth-child(11) { animation-delay: 0.5s; }
+.number-pad.glass-enabled .num-btn:nth-child(12) { animation-delay: 0.7s; }
+
+.number-pad.glass-enabled .num-btn {
+  animation: breatheBorder 8s ease-in-out infinite;
+}
+
+/* Press depth effect with shadow shift */
+.number-pad.glass-enabled .num-btn:active {
+  transform: scale(0.95) translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Header ===== */
+/* Sync indicator enhanced glow */
+.header.glass-enabled .sync-dot.connected {
+  box-shadow: 0 0 8px var(--success), 0 0 16px rgba(74, 222, 128, 0.3);
+  animation: breatheOpacity 4s ease-in-out infinite;
+}
+
+.header.glass-enabled .sync-dot.syncing {
+  box-shadow: 0 0 8px var(--primary), 0 0 16px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== Modals ===== */
+/* Floating parallax effect */
+.modal-overlay.glass-enabled .modal-content {
+  transform: translateX(calc(var(--motion-tilt-x) * 5px))
+             translateY(calc(var(--motion-tilt-y) * 5px));
+  transition: transform 0.2s ease-out;
+}
+
+/* Spring entrance when opening */
+.modal-overlay.glass-enabled.modal-open .modal-content {
+  animation: springIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ===== Settings Cards ===== */
+/* Light hover glow on setting rows */
+.settings-view.glass-enabled .setting-row {
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+  border-radius: var(--radius);
+}
+
+.settings-view.glass-enabled .setting-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+}
+
+/* ===== Timing Points ===== */
+/* Active timing point glow */
+.timing-points.glass-enabled .timing-point-btn.active {
+  position: relative;
+}
+
+.timing-points.glass-enabled .timing-point-btn.active[data-point="S"] {
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
+}
+
+.timing-points.glass-enabled .timing-point-btn.active[data-point="F"] {
+  box-shadow: 0 0 15px rgba(227, 24, 55, 0.3);
+}
+
+/* ===== Bib Display ===== */
+.bib-display.glass-enabled {
+  transform: translateY(calc(var(--motion-tilt-y) * 2px));
+  transition: transform 0.2s ease-out;
+}
+
+/* ===== Results List Item Selection ===== */
+/* Minimal effects to preserve virtual scroll performance */
+.results-list .result-item.selected.glass-enabled {
+  box-shadow: 0 0 0 2px var(--primary), 0 0 15px rgba(59, 130, 246, 0.3);
+  border-color: var(--primary);
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  #timestamp-btn.glass-enabled,
+  .clock-container.glass-enabled,
+  #confirmation-overlay.glass-enabled .confirmation-content,
+  .modal-overlay.glass-enabled .modal-content,
+  .bib-display.glass-enabled {
+    transform: none;
+    transition: none;
+  }
+
+  .number-pad.glass-enabled .num-btn {
+    animation: none;
+  }
+
+  .header.glass-enabled .sync-dot.connected {
+    animation: none;
+  }
+
+  .modal-overlay.glass-enabled.modal-open .modal-content {
+    animation: none;
+  }
+}
+
+/* ===== No Motion Effects Override ===== */
+.no-motion-effects #timestamp-btn.glass-enabled,
+.no-motion-effects .clock-time.glass-enabled,
+.no-motion-effects .clock-container.glass-enabled,
+.no-motion-effects #confirmation-overlay.glass-enabled .confirmation-content,
+.no-motion-effects .modal-overlay.glass-enabled .modal-content,
+.no-motion-effects .bib-display.glass-enabled {
+  transform: none;
+}
+
+.no-motion-effects .tab-bar.glass-enabled::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+}

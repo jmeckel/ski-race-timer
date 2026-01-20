@@ -38,7 +38,7 @@
 
   <div class="app" role="application" aria-label="Ski Race Timer">
     <!-- Header -->
-    <header class="header">
+    <header class="header glass-frosted-top glass-enable-target">
       <h1 class="header-title">Ski Race Timer</h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
@@ -50,6 +50,12 @@
           <span class="gps-dot"></span>
           <span class="gps-status-text" data-i18n="gps">GPS</span>
         </div>
+        <div class="camera-indicator" id="camera-indicator" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
         <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
       </div>
     </header>
@@ -59,37 +65,31 @@
       <!-- Timer View -->
       <div class="view timer-view active">
         <!-- Clock -->
-        <div class="clock-container" id="clock-container"></div>
+        <div class="clock-container glass-enable-target" id="clock-container"></div>
 
         <!-- Timing Points and Run Selector -->
         <div class="timing-controls">
-          <div class="timing-points" id="timing-points" role="radiogroup" aria-label="Timing Point">
-            <button class="timing-point-btn active" data-point="S" role="radio" aria-checked="false" data-advanced>
+          <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
+            <button class="timing-point-btn glass-surface-3 active" data-point="S" role="radio" aria-checked="false" data-advanced>
               <span data-i18n="start">Start</span>
             </button>
-            <button class="timing-point-btn active" data-point="F" role="radio" aria-checked="true">
+            <button class="timing-point-btn glass-surface-3 active" data-point="F" role="radio" aria-checked="true">
               <span data-i18n="finish">Finish</span>
             </button>
           </div>
           <div class="run-selector" id="run-selector" role="radiogroup" aria-label="Run" data-advanced>
-            <button class="run-btn active" data-run="1" role="radio" aria-checked="true">
+            <button class="run-btn glass-surface-3 active" data-run="1" role="radio" aria-checked="true">
               <span data-i18n="run1">L1</span>
             </button>
-            <button class="run-btn" data-run="2" role="radio" aria-checked="false">
+            <button class="run-btn glass-surface-3" data-run="2" role="radio" aria-checked="false">
               <span data-i18n="run2">L2</span>
             </button>
           </div>
         </div>
 
         <!-- Timestamp Button -->
-        <button class="timestamp-btn" id="timestamp-btn" aria-label="Record timestamp">
+        <button class="timestamp-btn glass-surface-1 glass-enable-target breathe-glow" id="timestamp-btn" aria-label="Record timestamp">
           <span data-i18n="time">TIME</span>
-          <span class="timestamp-photo-icon" id="timestamp-photo-icon" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-          </span>
         </button>
 
         <!-- Last Recorded -->
@@ -102,25 +102,25 @@
         </div>
 
         <!-- Bib Display -->
-        <div class="bib-display">
+        <div class="bib-display glass-surface-2 glass-enable-target">
           <span class="bib-label" data-i18n="bib">Bib</span>
           <span class="bib-value">---</span>
         </div>
 
         <!-- Number Pad -->
-        <div class="number-pad" id="number-pad" role="group" aria-label="Number pad">
-          <button class="num-btn" data-num="1" aria-label="1">1</button>
-          <button class="num-btn" data-num="2" aria-label="2">2</button>
-          <button class="num-btn" data-num="3" aria-label="3">3</button>
-          <button class="num-btn" data-num="4" aria-label="4">4</button>
-          <button class="num-btn" data-num="5" aria-label="5">5</button>
-          <button class="num-btn" data-num="6" aria-label="6">6</button>
-          <button class="num-btn" data-num="7" aria-label="7">7</button>
-          <button class="num-btn" data-num="8" aria-label="8">8</button>
-          <button class="num-btn" data-num="9" aria-label="9">9</button>
-          <button class="num-btn action" data-action="clear" aria-label="Clear">C</button>
-          <button class="num-btn" data-num="0" aria-label="0">0</button>
-          <button class="num-btn action" data-action="delete" aria-label="Delete">
+        <div class="number-pad glass-enable-target" id="number-pad" role="group" aria-label="Number pad">
+          <button class="num-btn glass-surface-3" data-num="1" aria-label="1">1</button>
+          <button class="num-btn glass-surface-3" data-num="2" aria-label="2">2</button>
+          <button class="num-btn glass-surface-3" data-num="3" aria-label="3">3</button>
+          <button class="num-btn glass-surface-3" data-num="4" aria-label="4">4</button>
+          <button class="num-btn glass-surface-3" data-num="5" aria-label="5">5</button>
+          <button class="num-btn glass-surface-3" data-num="6" aria-label="6">6</button>
+          <button class="num-btn glass-surface-3" data-num="7" aria-label="7">7</button>
+          <button class="num-btn glass-surface-3" data-num="8" aria-label="8">8</button>
+          <button class="num-btn glass-surface-3" data-num="9" aria-label="9">9</button>
+          <button class="num-btn glass-surface-3 action" data-action="clear" aria-label="Clear">C</button>
+          <button class="num-btn glass-surface-3" data-num="0" aria-label="0">0</button>
+          <button class="num-btn glass-surface-3 action" data-action="delete" aria-label="Delete">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/>
               <line x1="18" y1="9" x2="12" y2="15"/>
@@ -411,7 +411,7 @@
     </main>
 
     <!-- Tab Bar -->
-    <nav class="tab-bar" role="tablist" aria-label="Main navigation">
+    <nav class="tab-bar glass-frosted glass-enable-target" role="tablist" aria-label="Main navigation">
       <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
@@ -441,7 +441,7 @@
   </div>
 
   <!-- Confirmation Overlay -->
-  <div class="confirmation-overlay" id="confirmation-overlay">
+  <div class="confirmation-overlay glass-surface-1 glass-enable-target" id="confirmation-overlay">
     <div class="confirmation-content">
       <div class="confirmation-bib">---</div>
       <div class="confirmation-point">-</div>
@@ -465,8 +465,8 @@
   </div>
 
   <!-- Edit Modal -->
-  <div class="modal-overlay" id="edit-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="edit-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="edit">Edit Entry</h2>
       </div>
@@ -500,8 +500,8 @@
   </div>
 
   <!-- Confirm Modal -->
-  <div class="modal-overlay" id="confirm-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="confirm-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="confirmDelete">Delete Entry</h2>
       </div>
@@ -516,8 +516,8 @@
   </div>
 
   <!-- Race Change Modal -->
-  <div class="modal-overlay" id="race-change-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="race-change-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="raceChangeTitle">Change Race</h2>
       </div>
@@ -534,8 +534,8 @@
   </div>
 
   <!-- Photo Viewer Modal -->
-  <div class="modal-overlay" id="photo-viewer-modal">
-    <div class="modal-content photo-viewer-content">
+  <div class="modal-overlay glass-enable-target" id="photo-viewer-modal">
+    <div class="modal-content glass-surface-1 photo-viewer-content">
       <div class="modal-header photo-viewer-header">
         <h2 class="modal-title" data-i18n="viewPhoto">View Photo</h2>
         <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
@@ -560,8 +560,8 @@
   </div>
 
   <!-- Race Deleted Modal -->
-  <div class="modal-overlay" id="race-deleted-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="race-deleted-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="raceDeleted">Race Deleted</h2>
       </div>
@@ -575,8 +575,8 @@
   </div>
 
   <!-- Photo Sync Warning Modal -->
-  <div class="modal-overlay" id="photo-sync-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="photo-sync-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="syncPhotosWarning">Enable Photo Sync</h2>
       </div>
@@ -605,8 +605,8 @@
   </div>
 
   <!-- Race Management Modal -->
-  <div class="modal-overlay" id="race-management-modal">
-    <div class="modal-content race-management-content">
+  <div class="modal-overlay glass-enable-target" id="race-management-modal">
+    <div class="modal-content glass-surface-1 race-management-content">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
       </div>
@@ -628,8 +628,8 @@
   </div>
 
   <!-- Admin PIN Modal (for verifying PIN to access race management) -->
-  <div class="modal-overlay" id="admin-pin-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="admin-pin-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" id="admin-pin-modal-title" data-i18n="enterAdminPin">Enter Admin PIN</h2>
       </div>
@@ -646,8 +646,8 @@
   </div>
 
   <!-- Set/Change PIN Modal -->
-  <div class="modal-overlay" id="change-pin-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="change-pin-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" id="change-pin-modal-title" data-i18n="setPin">Set PIN</h2>
       </div>
@@ -676,8 +676,8 @@
   </div>
 
   <!-- Delete Race Confirmation Modal -->
-  <div class="modal-overlay" id="delete-race-confirm-modal">
-    <div class="modal-content">
+  <div class="modal-overlay glass-enable-target" id="delete-race-confirm-modal">
+    <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" data-i18n="confirmDeleteRace">Delete Race</h2>
       </div>

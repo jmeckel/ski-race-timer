@@ -1,6 +1,6 @@
 import { store } from './store';
 import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -280,6 +280,9 @@ function initRunSelector(): void {
   });
 }
 
+// Track if we've requested motion permission
+let motionPermissionRequested = false;
+
 /**
  * Initialize timestamp button
  */
@@ -288,6 +291,18 @@ function initTimestampButton(): void {
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
+    // Request motion permission on first click (iOS 13+ requires user gesture)
+    if (!motionPermissionRequested && store.getState().settings.motionEffects) {
+      motionPermissionRequested = true;
+      if (motionService.requiresPermission()) {
+        const granted = await motionService.requestPermission();
+        if (granted) {
+          await motionService.initialize();
+        }
+      } else if (motionService.isSupported()) {
+        await motionService.initialize();
+      }
+    }
     await recordTimestamp();
   });
 
@@ -535,6 +550,12 @@ function updateLastRecorded(entry: Entry): void {
   }
 
   el.classList.add('visible');
+
+  // Trigger pulse animation
+  el.classList.remove('pulse');
+  // Force reflow to restart animation
+  void el.offsetWidth;
+  el.classList.add('pulse');
 }
 
 /**
@@ -1453,6 +1474,8 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   // Update photo capture indicator on timestamp button
   if (changedKeys.includes('settings')) {
     updatePhotoCaptureIndicator();
+    // Apply glass/motion effect settings when settings change
+    applyGlassEffectSettings();
   }
 
   // Update undo button
@@ -1642,13 +1665,13 @@ function updateGpsIndicator(): void {
 }
 
 /**
- * Update photo capture indicator on timestamp button
+ * Update photo capture indicator in header status bar
  */
 function updatePhotoCaptureIndicator(): void {
   const state = store.getState();
-  const timestampBtn = document.getElementById('timestamp-btn');
-  if (timestampBtn) {
-    timestampBtn.classList.toggle('photo-enabled', state.settings.photoCapture);
+  const cameraIndicator = document.getElementById('camera-indicator');
+  if (cameraIndicator) {
+    cameraIndicator.style.display = state.settings.photoCapture ? 'flex' : 'none';
   }
 }
 
@@ -1767,6 +1790,54 @@ function applySettings(): void {
   // Force Finish point selected in simple mode
   if (settings.simple) {
     store.setSelectedPoint('F');
+  }
+
+  // Apply Liquid Glass UI settings
+  applyGlassEffectSettings();
+}
+
+/**
+ * Apply glass and motion effect settings to the UI
+ */
+function applyGlassEffectSettings(): void {
+  const settings = store.getState().settings;
+  const root = document.documentElement;
+
+  // Glass effects toggle
+  if (settings.glassEffects) {
+    root.classList.remove('no-glass-effects');
+    // Add glass-enabled class to key elements for motion-reactive styles
+    document.querySelectorAll('.glass-enable-target').forEach(el => {
+      el.classList.add('glass-enabled');
+    });
+  } else {
+    root.classList.add('no-glass-effects');
+    document.querySelectorAll('.glass-enabled').forEach(el => {
+      el.classList.remove('glass-enabled');
+    });
+  }
+
+  // Motion effects toggle
+  if (settings.motionEffects && settings.glassEffects) {
+    root.classList.remove('no-motion-effects');
+    // Initialize motion service if supported
+    if (motionService.isSupported()) {
+      // Note: On iOS 13+, permission must be requested from a user gesture
+      // We'll initialize without permission request here - the settings toggle will handle it
+      if (!motionService.requiresPermission()) {
+        motionService.initialize();
+      }
+    }
+  } else {
+    root.classList.add('no-motion-effects');
+    motionService.pause();
+  }
+
+  // Outdoor mode toggle (high contrast)
+  if (settings.outdoorMode) {
+    root.classList.add('outdoor-mode');
+  } else {
+    root.classList.remove('outdoor-mode');
   }
 }
 
@@ -2505,6 +2576,9 @@ function handleBeforeUnload(): void {
 
   // Cleanup wake lock service
   wakeLockService.disable();
+
+  // Cleanup motion service
+  motionService.cleanup();
 
   // Cleanup toast singleton and its event listener
   destroyToast();

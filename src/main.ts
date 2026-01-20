@@ -1,4 +1,7 @@
 import './styles/main.css';
+import './styles/glass.css';
+import './styles/animations.css';
+import './styles/motion.css';
 import { initApp } from './app';
 import { getToast } from './components/Toast';
 import { initGlobalErrorHandlers } from './utils/errorBoundary';

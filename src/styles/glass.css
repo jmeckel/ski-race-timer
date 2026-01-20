@@ -1,0 +1,247 @@
+/* ===== Liquid Glass UI System ===== */
+/* Glassmorphism effects with motion-reactive properties */
+
+/* Default motion values (fallback when motion is inactive) */
+:root {
+  --motion-tilt-x: 0;
+  --motion-tilt-y: 0;
+  --motion-rotation: 0;
+  --motion-active: 0;
+
+  /* Glass effect tokens */
+  --glass-blur-1: 4px;
+  --glass-blur-2: 12px;
+  --glass-blur-3: 24px;
+  --glass-blur-heavy: 32px;
+
+  /* Glass opacity levels */
+  --glass-opacity-light: 0.05;
+  --glass-opacity-medium: 0.08;
+  --glass-opacity-heavy: 0.12;
+
+  /* Glass border colors */
+  --glass-border-light: rgba(255, 255, 255, 0.08);
+  --glass-border-medium: rgba(255, 255, 255, 0.12);
+  --glass-border-heavy: rgba(255, 255, 255, 0.18);
+
+  /* Highlight/reflection */
+  --glass-highlight: rgba(255, 255, 255, 0.15);
+  --glass-highlight-strong: rgba(255, 255, 255, 0.25);
+
+  /* Motion-reactive gradient angle */
+  --glass-gradient-angle: calc(135deg + var(--motion-tilt-x) * 20deg);
+
+  /* Motion-reactive highlight position */
+  --glass-highlight-x: calc(50% + var(--motion-tilt-x) * 30%);
+  --glass-highlight-y: calc(30% + var(--motion-tilt-y) * 20%);
+}
+
+/* ===== Glass Surface Levels ===== */
+/* Level 1: Heavy blur + strong glow (primary actions) */
+.glass-surface-1 {
+  background: linear-gradient(
+    var(--glass-gradient-angle),
+    rgba(255, 255, 255, var(--glass-opacity-heavy)) 0%,
+    rgba(255, 255, 255, var(--glass-opacity-light)) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-3));
+  -webkit-backdrop-filter: blur(var(--glass-blur-3));
+  border: 1px solid var(--glass-border-heavy);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 var(--glass-highlight);
+  position: relative;
+  overflow: hidden;
+  contain: layout style paint;
+  will-change: transform;
+}
+
+.glass-surface-1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at var(--glass-highlight-x) var(--glass-highlight-y),
+    var(--glass-highlight-strong) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  opacity: calc(0.5 + var(--motion-active) * 0.5);
+  transition: opacity 0.3s ease;
+}
+
+/* Level 2: Medium blur (secondary UI) */
+.glass-surface-2 {
+  background: linear-gradient(
+    var(--glass-gradient-angle),
+    rgba(255, 255, 255, var(--glass-opacity-medium)) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-2));
+  -webkit-backdrop-filter: blur(var(--glass-blur-2));
+  border: 1px solid var(--glass-border-medium);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  contain: layout style paint;
+  will-change: transform;
+}
+
+/* Level 3: Light blur (subtle elements) */
+.glass-surface-3 {
+  background: linear-gradient(
+    var(--glass-gradient-angle),
+    rgba(255, 255, 255, var(--glass-opacity-light)) 0%,
+    transparent 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-1));
+  -webkit-backdrop-filter: blur(var(--glass-blur-1));
+  border: 1px solid var(--glass-border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  contain: layout style paint;
+}
+
+/* ===== Frosted Bar (Tab Bar, Header) ===== */
+.glass-frosted {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.85) 0%,
+    rgba(20, 20, 20, 0.95) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-2));
+  -webkit-backdrop-filter: blur(var(--glass-blur-2));
+  border-top: 1px solid var(--glass-border-light);
+}
+
+.glass-frosted-top {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(20, 20, 20, 0.85) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-2));
+  -webkit-backdrop-filter: blur(var(--glass-blur-2));
+  border-bottom: 1px solid var(--glass-border-light);
+}
+
+/* ===== Heavy Backdrop (Overlays) ===== */
+.glass-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ===== Glow Effects ===== */
+.glass-glow-primary {
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.3),
+    0 0 40px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+.glass-glow-success {
+  box-shadow:
+    0 0 20px rgba(74, 222, 128, 0.3),
+    0 0 40px rgba(74, 222, 128, 0.15),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+.glass-glow-danger {
+  box-shadow:
+    0 0 20px rgba(227, 24, 55, 0.3),
+    0 0 40px rgba(227, 24, 55, 0.15),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+/* ===== 3D Tilt Effect ===== */
+.glass-tilt {
+  transform: perspective(500px)
+    rotateX(calc(var(--motion-tilt-y) * -5deg))
+    rotateY(calc(var(--motion-tilt-x) * 5deg));
+  transition: transform 0.1s ease-out;
+}
+
+/* ===== Parallax Shift ===== */
+.glass-parallax {
+  transform: translateX(calc(var(--motion-tilt-x) * 5px))
+             translateY(calc(var(--motion-tilt-y) * 5px));
+}
+
+.glass-parallax-strong {
+  transform: translateX(calc(var(--motion-tilt-x) * 15px))
+             translateY(calc(var(--motion-tilt-y) * 15px));
+}
+
+/* ===== Outdoor Mode Override ===== */
+/* High contrast mode that disables blur for outdoor readability */
+.outdoor-mode .glass-surface-1,
+.outdoor-mode .glass-surface-2,
+.outdoor-mode .glass-surface-3,
+.outdoor-mode .glass-frosted,
+.outdoor-mode .glass-frosted-top,
+.outdoor-mode .glass-backdrop {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.outdoor-mode .glass-surface-1 {
+  background: rgba(30, 30, 30, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.outdoor-mode .glass-surface-2 {
+  background: rgba(25, 25, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.outdoor-mode .glass-surface-3 {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ===== No Glass Effects Override ===== */
+/* For users who prefer no blur effects */
+.no-glass-effects .glass-surface-1,
+.no-glass-effects .glass-surface-2,
+.no-glass-effects .glass-surface-3,
+.no-glass-effects .glass-frosted,
+.no-glass-effects .glass-frosted-top {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--surface-elevated);
+}
+
+.no-glass-effects .glass-backdrop {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* ===== No Motion Effects Override ===== */
+.no-motion-effects .glass-tilt,
+.no-motion-effects .glass-parallax,
+.no-motion-effects .glass-parallax-strong {
+  transform: none;
+}
+
+.no-motion-effects .glass-surface-1::before {
+  opacity: 0.5;
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .glass-tilt,
+  .glass-parallax,
+  .glass-parallax-strong {
+    transform: none;
+    transition: none;
+  }
+
+  .glass-surface-1::before {
+    opacity: 0.5;
+    transition: none;
+  }
+}

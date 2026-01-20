@@ -1,0 +1,247 @@
+/* ===== Breathing Animation System ===== */
+/* Slow, organic pulse animations for liquid glass UI */
+
+/* ===== Keyframes ===== */
+
+/* Primary breathing cycle - 8 second slow pulse */
+@keyframes breatheGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.2),
+      0 0 40px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(59, 130, 246, 0.35),
+      0 0 60px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes breatheGlowSuccess {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(74, 222, 128, 0.2),
+      0 0 40px rgba(74, 222, 128, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(74, 222, 128, 0.35),
+      0 0 60px rgba(74, 222, 128, 0.2);
+  }
+}
+
+@keyframes breatheGlowDanger {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(227, 24, 55, 0.2),
+      0 0 40px rgba(227, 24, 55, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(227, 24, 55, 0.35),
+      0 0 60px rgba(227, 24, 55, 0.2);
+  }
+}
+
+/* Scale breathing */
+@keyframes breatheScale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* Opacity breathing */
+@keyframes breatheOpacity {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Subtle border glow */
+@keyframes breatheBorder {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Active tab pulse */
+@keyframes tabPulse {
+  0%, 100% {
+    background: rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    background: rgba(59, 130, 246, 0.25);
+  }
+}
+
+/* ===== Utility Classes ===== */
+
+.breathe-glow {
+  animation: breatheGlow 8s ease-in-out infinite;
+}
+
+.breathe-glow-success {
+  animation: breatheGlowSuccess 8s ease-in-out infinite;
+}
+
+.breathe-glow-danger {
+  animation: breatheGlowDanger 8s ease-in-out infinite;
+}
+
+.breathe-scale {
+  animation: breatheScale 8s ease-in-out infinite;
+}
+
+.breathe-opacity {
+  animation: breatheOpacity 8s ease-in-out infinite;
+}
+
+.breathe-border {
+  animation: breatheBorder 8s ease-in-out infinite;
+}
+
+/* Combined breathing effect */
+.breathe-full {
+  animation:
+    breatheGlow 8s ease-in-out infinite,
+    breatheScale 8s ease-in-out infinite;
+}
+
+/* ===== Staggered Animation Delays ===== */
+/* For wave effects across grid elements */
+
+.breathe-delay-1 { animation-delay: 0s; }
+.breathe-delay-2 { animation-delay: 0.5s; }
+.breathe-delay-3 { animation-delay: 1s; }
+.breathe-delay-4 { animation-delay: 1.5s; }
+.breathe-delay-5 { animation-delay: 2s; }
+.breathe-delay-6 { animation-delay: 2.5s; }
+.breathe-delay-7 { animation-delay: 3s; }
+.breathe-delay-8 { animation-delay: 3.5s; }
+.breathe-delay-9 { animation-delay: 4s; }
+.breathe-delay-10 { animation-delay: 4.5s; }
+.breathe-delay-11 { animation-delay: 5s; }
+.breathe-delay-12 { animation-delay: 5.5s; }
+
+/* ===== Spring Entrance Animation ===== */
+@keyframes springIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  50% {
+    transform: scale(1.02) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.spring-in {
+  animation: springIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ===== Fade In Animation ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* ===== Slide Up Animation ===== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* ===== Press Effect ===== */
+.press-effect {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.press-effect:active {
+  transform: scale(0.97) translateY(2px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ===== Hover Glow ===== */
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow:
+    0 0 15px rgba(59, 130, 246, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Selection Glow ===== */
+.selection-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.selection-glow.selected {
+  box-shadow: 0 0 0 2px var(--primary), 0 0 20px rgba(59, 130, 246, 0.4);
+  border-color: var(--primary);
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .breathe-glow,
+  .breathe-glow-success,
+  .breathe-glow-danger,
+  .breathe-scale,
+  .breathe-opacity,
+  .breathe-border,
+  .breathe-full,
+  .spring-in,
+  .fade-in,
+  .slide-up {
+    animation: none;
+  }
+
+  .press-effect:active {
+    transform: none;
+  }
+
+  .hover-glow:hover {
+    box-shadow: none;
+  }
+}
+
+/* ===== No Glass Effects Override ===== */
+.no-glass-effects .breathe-glow,
+.no-glass-effects .breathe-glow-success,
+.no-glass-effects .breathe-glow-danger,
+.no-glass-effects .breathe-full {
+  animation: none;
+}

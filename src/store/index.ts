@@ -34,9 +34,13 @@ const DEFAULT_SETTINGS: Settings = {
   sound: false,
   sync: false,
   syncPhotos: false,  // Sync photos disabled by default - must be enabled separately
-  gps: false,
+  gps: true,          // GPS enabled by default for accurate timestamps
   simple: false,  // Normal mode is default (simple mode toggle is hidden)
-  photoCapture: false
+  photoCapture: false,
+  // Liquid Glass UI settings - enabled by default for modern look
+  motionEffects: true,
+  glassEffects: true,
+  outdoorMode: false
 };
 
 // Maximum undo stack size
@@ -260,6 +264,18 @@ class Store {
       clearTimeout(this.saveTimeout);
     }
     this.saveTimeout = setTimeout(() => this.saveToStorage(), 100);
+  }
+
+  /**
+   * Force immediate save to localStorage (bypasses debounce)
+   * Use when you need to ensure data is persisted before navigation/modal close
+   */
+  forceSave() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    this.saveToStorage();
   }
 
   // Save state to localStorage

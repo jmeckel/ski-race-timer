@@ -181,9 +181,13 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
     sound: false,
     sync: false,
     syncPhotos: false,  // Sync photos disabled by default
-    gps: false,
-    simple: true,
-    photoCapture: false
+    gps: true,          // GPS enabled by default for accurate timestamps
+    simple: false,      // Normal mode is default
+    photoCapture: false,
+    // Liquid Glass UI settings
+    motionEffects: true,
+    glassEffects: true,
+    outdoorMode: false
   };
 
   // Handle completely invalid data
@@ -221,7 +225,11 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
       syncPhotos: typeof s.syncPhotos === 'boolean' ? s.syncPhotos : defaultSettings.syncPhotos,
       gps: typeof s.gps === 'boolean' ? s.gps : defaultSettings.gps,
       simple: typeof s.simple === 'boolean' ? s.simple : defaultSettings.simple,
-      photoCapture: typeof s.photoCapture === 'boolean' ? s.photoCapture : defaultSettings.photoCapture
+      photoCapture: typeof s.photoCapture === 'boolean' ? s.photoCapture : defaultSettings.photoCapture,
+      // Liquid Glass UI settings
+      motionEffects: typeof s.motionEffects === 'boolean' ? s.motionEffects : defaultSettings.motionEffects,
+      glassEffects: typeof s.glassEffects === 'boolean' ? s.glassEffects : defaultSettings.glassEffects,
+      outdoorMode: typeof s.outdoorMode === 'boolean' ? s.outdoorMode : defaultSettings.outdoorMode
     };
   }
 
