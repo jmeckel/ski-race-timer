@@ -183,6 +183,15 @@ const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// Track search input listener for cleanup on re-init
+let searchInputListener: ((e: Event) => void) | null = null;
+
+// Track race check request ID to ignore stale responses
+let raceCheckRequestId = 0;
+
+// Resolver for PIN verification promise (used by closeAllModals cleanup)
+let pinVerifyResolver: ((verified: boolean) => void) | null = null;
+
 /**
  * Initialize the application
  */
@@ -683,12 +692,25 @@ function initResultsView(): void {
   // Search input with debounce
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   if (searchInput) {
-    searchInput.addEventListener('input', () => {
+    // Clear any pending search timeout from previous initialization
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+      searchTimeout = null;
+    }
+
+    // Remove old listener if re-initializing to prevent duplicates
+    if (searchInputListener) {
+      searchInput.removeEventListener('input', searchInputListener);
+    }
+
+    // Create and store new listener
+    searchInputListener = () => {
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         applyFilters();
       }, 300);
-    });
+    };
+    searchInput.addEventListener('input', searchInputListener);
   }
 
   // Filter selects
@@ -1247,8 +1269,19 @@ function handleSaveEdit(): void {
 
 /**
  * Close all modals with animation
+ * Also cleans up any pending PIN verification promises
  */
 function closeAllModals(): void {
+  // Check if admin PIN modal is being closed and has a pending resolver
+  const adminPinModal = document.getElementById('admin-pin-modal');
+  if (adminPinModal?.classList.contains('show') && pinVerifyResolver) {
+    pinVerifyResolver(false);
+    pinVerifyResolver = null;
+    // Clear the input as well
+    const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+    if (pinInput) pinInput.value = '';
+  }
+
   document.querySelectorAll('.modal-overlay.show').forEach(modal => {
     closeModal(modal as HTMLElement);
   });
@@ -1800,9 +1833,19 @@ let lastRaceExistsState: { exists: boolean | null; entryCount: number } = { exis
 
 /**
  * Check if race exists in cloud
+ * Uses request ID to ignore stale responses from previous requests
  */
 async function checkRaceExists(raceId: string): Promise<void> {
+  // Increment request ID to track this request
+  const currentRequestId = ++raceCheckRequestId;
+
   const result = await syncService.checkRaceExists(raceId);
+
+  // Ignore stale response if a newer request was made while this one was in flight
+  if (currentRequestId !== raceCheckRequestId) {
+    return;
+  }
+
   store.setRaceExistsInCloud(result.exists);
   updateRaceExistsIndicator(result.exists, result.entryCount);
 }
@@ -2411,6 +2454,18 @@ function handleBeforeUnload(): void {
     clearTimeout(raceCheckTimeout);
     raceCheckTimeout = null;
   }
+
+  // MEMORY LEAK FIX: Clear search input listener reference
+  searchInputListener = null;
+
+  // MEMORY LEAK FIX: Resolve any pending PIN verification promise
+  if (pinVerifyResolver) {
+    pinVerifyResolver(false);
+    pinVerifyResolver = null;
+  }
+
+  // Reset race check request ID
+  raceCheckRequestId = 0;
 }
 
 /**
@@ -2465,9 +2520,6 @@ async function handleAdminPinVerify(): Promise<void> {
     feedbackWarning();
   }
 }
-
-// Resolver for PIN verification promise
-let pinVerifyResolver: ((verified: boolean) => void) | null = null;
 
 /**
  * Show PIN verification modal and wait for result
