@@ -1456,92 +1456,114 @@ body {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
-  /* Timer View - CSS Grid two-column layout */
+  /* Timer View - CSS Grid two-column layout (2x2 matrix) */
+  /* Left: bib (large) + numpad | Right: clock/controls + timestamp + last */
   .timer-view.active {
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto 1fr auto;
+    grid-template-columns: 40% 60%;
+    grid-template-rows: auto 1fr auto;
     grid-template-areas:
-      "clock      timestamp"
-      "bib        timestamp"
-      "points     timestamp"
+      "bib        clock"
       "numpad     timestamp"
-      "last       timestamp";
+      "numpad     last";
     padding: 8px 16px;
-    gap: 6px 12px;
-    align-items: start;
+    gap: 8px 16px;
+    align-items: stretch;
   }
 
-  .timer-view .clock-container {
-    grid-area: clock;
-    padding: 0;
-    text-align: left;
-  }
-
-  .timer-view .clock-container .clock {
-    font-size: clamp(1.5rem, 5vw, 2.5rem);
-    text-align: left;
-  }
-
+  /* Left column: Large bib display */
   .timer-view .bib-display {
     grid-area: bib;
-    margin-top: 0;
-    padding: 4px 8px;
-    justify-content: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--surface-elevated);
+  }
+
+  .timer-view .bib-label {
+    font-size: 0.875rem;
+    margin-bottom: 4px;
   }
 
   .timer-view .bib-value {
-    font-size: 1.5rem;
-    min-width: 60px;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    min-width: auto;
+    letter-spacing: 0.05em;
   }
 
-  .timer-view .timing-controls {
-    grid-area: points;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 12px;
-  }
-
-  .timer-view .timing-point-btn {
-    max-width: 65px;
-    padding: 6px 10px;
-    font-size: 0.8rem;
-  }
-
-  .timer-view .run-btn {
-    max-width: 40px;
-    padding: 4px 6px;
-    font-size: 0.75rem;
-  }
-
+  /* Left column: Number pad */
   .timer-view .number-pad {
     grid-area: numpad;
     max-height: none;
-    gap: 3px;
+    gap: 4px;
     align-self: stretch;
   }
 
   .timer-view .num-btn {
-    font-size: 1rem;
+    font-size: clamp(0.875rem, 2.5vw, 1.25rem);
   }
 
-  .timer-view .last-recorded {
-    grid-area: last;
-    justify-content: flex-start;
-    padding: 4px 8px;
+  /* Right column: Clock container with time, date, and timing controls */
+  .timer-view .clock-container {
+    grid-area: clock;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-view .clock-container .clock-time {
+    font-size: clamp(1.75rem, 6vw, 3rem) !important;
+  }
+
+  .timer-view .clock-container .clock-date-row {
+    flex-wrap: wrap;
+    justify-content: center !important;
+    gap: 8px;
+  }
+
+  .timer-view .timing-controls {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .timer-view .timing-point-btn {
+    max-width: 60px;
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .timer-view .run-btn {
+    max-width: 38px;
+    padding: 4px 6px;
     font-size: 0.7rem;
   }
 
-  /* Timestamp button spans full right column */
+  /* Right column: Large timestamp button */
   .timer-view .timestamp-btn {
     grid-area: timestamp;
-    height: 100%;
     min-height: unset;
-    padding: 12px;
-    font-size: clamp(1.25rem, 4vw, 2rem);
-    border-radius: 64px;
+    padding: 16px;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    border-radius: 48px;
     align-self: stretch;
+  }
+
+  /* Right column: Last recorded */
+  .timer-view .last-recorded {
+    grid-area: last;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.75rem;
   }
 
   /* Results View - Wider layout */
@@ -1596,48 +1618,67 @@ body {
 @media (orientation: landscape) and (max-height: 500px) {
   .timer-view.active {
     padding: 4px 10px;
-    gap: 3px 8px;
-  }
-
-  .timer-view .clock-container .clock {
-    font-size: clamp(1.1rem, 4vw, 1.75rem);
+    gap: 4px 10px;
   }
 
   .timer-view .bib-display {
-    padding: 2px 6px;
+    padding: 6px;
   }
 
   .timer-view .bib-value {
-    font-size: 1.25rem;
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
   }
 
   .timer-view .bib-label {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  .timer-view .clock-container .clock-time {
+    font-size: clamp(1.25rem, 4vw, 2rem) !important;
+  }
+
+  .timer-view .clock-container .clock-date-row {
+    gap: 6px;
+  }
+
+  .timer-view .clock-container .clock-date {
+    font-size: 0.7rem !important;
+  }
+
+  .timer-view .timing-controls {
+    gap: 6px;
+    margin-top: 2px;
   }
 
   .timer-view .timing-point-btn {
-    padding: 4px 8px;
-    font-size: 0.7rem;
-    max-width: 55px;
+    padding: 3px 6px;
+    font-size: 0.65rem;
+    max-width: 50px;
   }
 
   .timer-view .run-btn {
-    padding: 3px 5px;
-    font-size: 0.65rem;
-    max-width: 36px;
+    padding: 2px 4px;
+    font-size: 0.6rem;
+    max-width: 32px;
+  }
+
+  .timer-view .number-pad {
+    gap: 2px;
   }
 
   .timer-view .num-btn {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .timer-view .timestamp-btn {
-    padding: 8px;
-    font-size: clamp(1rem, 3vw, 1.5rem);
+    padding: 10px;
+    font-size: clamp(1rem, 3.5vw, 1.75rem);
+    border-radius: 32px;
   }
 
   .timer-view .last-recorded {
-    padding: 2px 4px;
+    padding: 3px 6px;
     font-size: 0.65rem;
   }
 
