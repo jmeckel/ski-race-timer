@@ -2,7 +2,7 @@
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 3.1 | Last Updated: January 2026
+Version 3.3 | Last Updated: January 2026
 
 ---
 
@@ -84,6 +84,7 @@ When you first open Ski Race Timer, an onboarding wizard guides you through init
 - **Race ID**: Enter a unique identifier for your race (e.g., "WINTERCUP-2026")
   - If the race already exists, you'll see "Race found" with the entry count
   - If it's new, you'll see "New race"
+  - **Quick-Select**: Tap the clock icon next to the input to see recently synced races from today - tap any race to fill in the ID automatically
 - **PIN**: Enter a 4-digit PIN to secure the race
 - **Enable Cloud Sync**: Toggle on to sync with other devices
 - You can skip this step and configure it later in Settings
@@ -342,6 +343,7 @@ Enable cloud synchronization to share entries between multiple devices.
 **Settings:**
 - **Cloud Sync**: Master toggle for sync functionality
 - **Race ID**: Unique identifier for your race
+  - Tap the clock icon to quick-select from recently synced races
 - **Device Name**: How this device appears to others
 - **Sync Photos**: Also sync captured photos (uses more data)
 
@@ -574,6 +576,19 @@ Solutions:
 3. Try a different browser
 4. Check for JavaScript errors in browser console
 
+**Problem: Error recovery dialog appeared**
+
+If multiple errors occur, a recovery dialog may appear with options:
+- **Dismiss**: Close the dialog and continue using the app
+- **Reload**: Refresh the page to reset the app state
+
+This typically happens due to:
+1. Network connectivity issues during sync
+2. Browser running low on memory
+3. Temporary server issues
+
+Your data is safe - the app stores entries locally before syncing.
+
 **Problem: Data seems lost**
 
 Solutions:
@@ -600,7 +615,7 @@ When using on a computer or with external keyboard:
 ## Support
 
 **Report Issues:**
-https://github.com/anthropics/claude-code/issues
+https://github.com/jmeckel/ski-race-timer/issues
 
 **Version Information:**
 Check current version in Settings (bottom of page)
