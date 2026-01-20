@@ -6,23 +6,7 @@
 
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
-
-// Helper to click a toggle by clicking its label wrapper
-async function clickToggle(page, toggleSelector) {
-  await page.locator(`label:has(${toggleSelector})`).click();
-}
-
-// Helper to check if toggle is on
-async function isToggleOn(page, toggleSelector) {
-  return await page.locator(toggleSelector).isChecked();
-}
-
-// Helper to disable simple mode
-async function disableSimpleMode(page) {
-  if (await isToggleOn(page, '#simple-mode-toggle')) {
-    await clickToggle(page, '#simple-mode-toggle');
-  }
-}
+import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
 
 // Helper to add test entries
 async function addTestEntries(page, count = 3) {
@@ -33,43 +17,41 @@ async function addTestEntries(page, count = 3) {
       await page.click(`[data-num="${digit}"]`);
     }
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
   }
 }
 
 test.describe('Export - Race Horology CSV', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
 
     // Add test entries
     await addTestEntries(page, 3);
 
     // Navigate to Results
-    await page.click('[data-view="results"]');
-    await page.waitForSelector('.results-view');
+    await navigateTo(page, 'results');
   });
 
   test('should export Race Horology CSV file', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download');
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
     await page.click('#export-btn');
 
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toContain('race-horology');
+    // Filename format is: {raceId}_{date}.csv (e.g., race_2026-01-20.csv)
     expect(download.suggestedFilename()).toMatch(/\.csv$/);
   });
 
   test('should include correct filename with date', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download');
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
     await page.click('#export-btn');
 
     const download = await downloadPromise;
     const filename = download.suggestedFilename();
 
-    // Should contain date pattern
-    expect(filename).toMatch(/race-horology.*\.csv$/);
+    // Filename format: {raceId}_{YYYY-MM-DD}.csv
+    expect(filename).toMatch(/.*_\d{4}-\d{2}-\d{2}\.csv$/);
   });
 
   test('should export CSV with correct content', async ({ page }) => {
@@ -160,13 +142,14 @@ test.describe('Export - Race Horology CSV', () => {
 
 test.describe('Export - Edge Cases', () => {
   test('should export empty results gracefully', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     // Clear any existing data
     await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
     await page.reload();
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Export button should still work or be disabled
     const exportBtn = page.locator('#export-btn');
@@ -190,16 +173,15 @@ test.describe('Export - Edge Cases', () => {
   });
 
   test('should export entries with special status', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
 
     // Add entry
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(500);
+    await waitForConfirmationToHide(page);
 
     // Go to results and check entry exists
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Check that result items are visible
     const resultItems = page.locator('.result-item');
@@ -222,13 +204,7 @@ test.describe('Export - Edge Cases', () => {
 
 test.describe('Export - Multiple Timing Points', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
-
-    // Disable simple mode to access Start timing point
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
-    await page.click('[data-view="timer"]');
+    await setupPageFullMode(page);
   });
 
   test('should export entries with different timing points', async ({ page }) => {
@@ -236,17 +212,17 @@ test.describe('Export - Multiple Timing Points', () => {
     await page.click('[data-point="S"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Add Finish entry
     await page.click('[data-action="clear"]');
     await page.click('[data-point="F"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Export
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await page.click('#export-btn');
 
@@ -267,10 +243,10 @@ test.describe('Export - Multiple Timing Points', () => {
     await page.click('[data-point="S"]');
     await page.click('[data-num="5"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Export
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await page.click('#export-btn');
 
@@ -290,10 +266,10 @@ test.describe('Export - Multiple Timing Points', () => {
     await page.click('[data-point="F"]');
     await page.click('[data-num="7"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Export
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await page.click('#export-btn');
 
@@ -313,17 +289,17 @@ test.describe('Export - Multiple Timing Points', () => {
     await page.click('[data-point="S"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Add Finish entry
     await page.click('[data-action="clear"]');
     await page.click('[data-point="F"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Export
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await page.click('#export-btn');
 

@@ -12,22 +12,22 @@ export default defineConfig({
   testMatch: isProduction ? '**/production.spec.js' : '**/*.spec.js',
   testIgnore: isProduction ? [] : '**/production.spec.js',
 
-  // Maximum time for each test
-  timeout: isProduction ? 60000 : 30000,
+  // Reduced timeouts for faster test runs
+  timeout: isProduction ? 30000 : 15000,
 
-  // Expect timeout
+  // Expect timeout - reduced for faster failures
   expect: {
-    timeout: isProduction ? 10000 : 5000
+    timeout: isProduction ? 5000 : 3000
   },
 
   // Fail the build on CI if you accidentally left test.only
   forbidOnly: !!process.env.CI,
 
-  // Retry on CI only (more retries for production due to network)
-  retries: process.env.CI ? 2 : (isProduction ? 1 : 0),
+  // Retry on CI only
+  retries: process.env.CI ? 1 : 0,
 
-  // Parallel workers
-  workers: process.env.CI ? 1 : undefined,
+  // Parallel workers - more workers for faster runs
+  workers: process.env.CI ? 2 : 4,
 
   // Reporter
   reporter: [
@@ -40,45 +40,61 @@ export default defineConfig({
     // Base URL for navigation
     baseURL: isProduction ? prodUrl : 'http://localhost:3000',
 
-    // Collect trace on failure
+    // Collect trace on failure only
     trace: 'on-first-retry',
 
     // Screenshot on failure
     screenshot: 'only-on-failure',
 
-    // Video on failure
-    video: 'on-first-retry'
+    // No video by default (speeds up tests)
+    video: 'off',
+
+    // Faster action timeout
+    actionTimeout: 5000,
+
+    // Faster navigation timeout
+    navigationTimeout: 10000
   },
 
-  // Configure projects for different browsers
+  // Configure projects - MOBILE ONLY (Chrome-based and Safari-based)
   projects: isProduction ? [
-    // Production tests - run on Chromium only for speed
+    // Production: Mobile Chrome portrait only for quick smoke test
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      name: 'mobile-chrome-portrait',
+      use: { ...devices['Pixel 5'] }
     }
   ] : [
+    // Mobile Chrome - Portrait (Android)
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      name: 'mobile-chrome-portrait',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 393, height: 851 }
+      }
     },
+    // Mobile Chrome - Landscape (Android)
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
+      name: 'mobile-chrome-landscape',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 851, height: 393 }
+      }
     },
+    // Mobile Safari - Portrait (iPhone)
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] }
+      name: 'mobile-safari-portrait',
+      use: {
+        ...devices['iPhone 13'],
+        viewport: { width: 390, height: 844 }
+      }
     },
-
-    // Mobile viewports
+    // Mobile Safari - Landscape (iPhone)
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] }
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] }
+      name: 'mobile-safari-landscape',
+      use: {
+        ...devices['iPhone 13'],
+        viewport: { width: 844, height: 390 }
+      }
     }
   ],
 
@@ -87,6 +103,6 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000
+    timeout: 60000
   }
 });

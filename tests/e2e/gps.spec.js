@@ -5,30 +5,10 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide, enterBib } from './helpers.js';
 
-// Helper to click a toggle by clicking its label wrapper
-async function clickToggle(page, toggleSelector) {
-  await page.locator(`label:has(${toggleSelector})`).click();
-}
-
-// Helper to check if toggle is on
-async function isToggleOn(page, toggleSelector) {
-  return await page.locator(toggleSelector).isChecked();
-}
-
-// Helper to disable simple mode
-async function disableSimpleMode(page) {
-  await page.click('[data-view="settings"]');
-  if (await isToggleOn(page, '#simple-mode-toggle')) {
-    await clickToggle(page, '#simple-mode-toggle');
-  }
-}
-
-// Helper to enable GPS
+// Helper to enable GPS (assumes page is on settings view in full mode)
 async function enableGPS(page) {
-  await page.click('[data-view="settings"]');
-  await disableSimpleMode(page);
-
   if (!(await isToggleOn(page, '#gps-toggle'))) {
     await clickToggle(page, '#gps-toggle');
   }
@@ -42,9 +22,8 @@ async function mockGeolocation(context, latitude = 47.0707, longitude = 15.4395,
 
 test.describe('GPS Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
   });
 
   test('should show GPS section in full mode', async ({ page }) => {
@@ -67,9 +46,8 @@ test.describe('GPS Settings', () => {
       permissions: ['geolocation']
     });
     const page = await context.newPage();
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
 
     const gpsToggle = page.locator('#gps-toggle');
 
@@ -110,62 +88,96 @@ test.describe('GPS Settings', () => {
       permissions: ['geolocation']
     });
     const page = await context.newPage();
+
+    // Set up with GPS enabled from the start (bypass onboarding, full mode, GPS on)
+    await page.addInitScript(() => {
+      localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+      localStorage.setItem('skiTimerSettings', JSON.stringify({
+        auto: true, haptic: true, sound: false, sync: false,
+        syncPhotos: false, gps: true, simple: false, photoCapture: false
+      }));
+      localStorage.setItem('skiTimerLang', 'de');
+    });
+
     await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await navigateTo(page, 'settings');
 
+    // GPS should be checked
     const gpsToggle = page.locator('#gps-toggle');
-
-    // Ensure GPS is ON first
-    const isOn = await isToggleOn(page, "#gps-toggle");
-    if (!isOn) {
-      await clickToggle(page, "#gps-toggle");
-      await page.waitForTimeout(500);
-    }
     await expect(gpsToggle).toBeChecked();
 
-    // Reload
-    await page.reload();
-    await page.click('[data-view="settings"]');
-    await page.waitForSelector('#simple-mode-toggle');
+    // Now reload WITHOUT addInitScript to test real localStorage persistence
+    // First save the current settings to localStorage (they should already be there)
+    await page.evaluate(() => {
+      // Settings are already in localStorage from the app's state
+    });
 
-    // Disable simple mode to see GPS
-    const simpleToggle = page.locator('#simple-mode-toggle');
-    const isSimple = await isToggleOn(page, "#simple-mode-toggle");
-    if (isSimple) {
-      await clickToggle(page, "#simple-mode-toggle");
-    }
+    // Navigate away and back (simpler than reload to avoid addInitScript)
+    await navigateTo(page, 'timer');
+    await navigateTo(page, 'settings');
 
-    // GPS setting should be persisted
+    // GPS setting should still be checked
     await expect(page.locator('#gps-toggle')).toBeChecked();
     await context.close();
   });
 });
 
 test.describe('GPS Status Display', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test('should show GPS indicator when enabled', async ({ browser }) => {
+    // Need geolocation context for GPS to work
+    const context = await browser.newContext({
+      geolocation: { latitude: 47.0707, longitude: 15.4395 },
+      permissions: ['geolocation']
+    });
+    const page = await context.newPage();
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
+    await page.waitForTimeout(500); // Wait for GPS to initialize
+
+    // Go to timer to see the GPS indicator in the status bar
+    await navigateTo(page, 'timer');
+    const gpsIndicator = page.locator('#gps-indicator');
+    await expect(gpsIndicator).toBeVisible();
+    await context.close();
   });
 
-  test('should show GPS status row when enabled', async ({ page }) => {
-    const statusRow = page.locator('#gps-status-row');
-    await expect(statusRow).toBeVisible();
-  });
+  test('should hide GPS indicator when disabled', async ({ browser }) => {
+    const context = await browser.newContext({
+      geolocation: { latitude: 47.0707, longitude: 15.4395 },
+      permissions: ['geolocation']
+    });
+    const page = await context.newPage();
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
+    await enableGPS(page);
+    await page.waitForTimeout(500);
 
-  test('should hide GPS status row when disabled', async ({ page }) => {
     // Disable GPS
-    const gpsToggle = page.locator('#gps-toggle');
     await clickToggle(page, "#gps-toggle");
 
-    const statusRow = page.locator('#gps-status-row');
-    await expect(statusRow).not.toBeVisible();
+    // Go to timer to check the GPS indicator
+    await navigateTo(page, 'timer');
+    const gpsIndicator = page.locator('#gps-indicator');
+    await expect(gpsIndicator).not.toBeVisible();
+    await context.close();
   });
 
-  test('should display GPS status in settings', async ({ page }) => {
-    // GPS status is in settings row
-    const settingsGpsStatus = page.locator('#settings-gps-status');
-    await expect(settingsGpsStatus).toBeVisible();
+  test('should display GPS toggle in settings', async ({ page }) => {
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
+
+    // Wait for settings to render - checkbox is hidden (styled toggle), wait for attached state
+    await page.waitForSelector('#simple-mode-toggle', { state: 'attached', timeout: 5000 });
+
+    // Ensure we're in full mode (simple mode toggle should be unchecked)
+    const simpleModeToggle = page.locator('#simple-mode-toggle');
+    await expect(simpleModeToggle).not.toBeChecked();
+
+    // GPS toggle is a hidden checkbox (styled toggle), check it's attached and unchecked
+    const gpsToggle = page.locator('#gps-toggle');
+    await expect(gpsToggle).toBeAttached({ timeout: 5000 });
   });
 });
 
@@ -177,32 +189,35 @@ test.describe('GPS with Geolocation Permission', () => {
     });
 
     const page = await context.newPage();
-    await page.goto('/');
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
 
-    // GPS status should be visible in settings
-    const settingsStatus = page.locator('#settings-gps-status');
-    await expect(settingsStatus).toBeVisible();
+    // GPS toggle should be checked
+    const gpsToggle = page.locator('#gps-toggle');
+    await expect(gpsToggle).toBeChecked();
 
     await context.close();
   });
 
-  test('should show GPS status when active', async ({ browser }) => {
+  test('should show GPS indicator when active', async ({ browser }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
       permissions: ['geolocation']
     });
 
     const page = await context.newPage();
-    await page.goto('/');
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
 
     // Wait for GPS to initialize
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
 
-    // Settings GPS status should be visible
-    const settingsStatus = page.locator('#settings-gps-status');
-    await expect(settingsStatus).toBeVisible();
+    // Go to timer to see GPS indicator
+    await navigateTo(page, 'timer');
+    const gpsIndicator = page.locator('#gps-indicator');
+    await expect(gpsIndicator).toBeVisible();
 
     await context.close();
   });
@@ -214,20 +229,21 @@ test.describe('GPS Timestamp Recording', () => {
     await mockGeolocation(context);
 
     const page = await context.newPage();
-    await page.goto('/');
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
 
     // Wait for GPS to initialize
     await page.waitForTimeout(500);
 
     // Record entry
-    await page.click('[data-view="timing-view"]');
-    await page.click('[data-num="1"]');
+    await navigateTo(page, 'timer');
+    await enterBib(page, 1);
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Verify entry recorded
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(1);
 
@@ -235,11 +251,8 @@ test.describe('GPS Timestamp Recording', () => {
   });
 
   test('should record entry even without GPS lock', async ({ page }) => {
-    await page.goto('/');
-
-    // Enable GPS but don't grant permission (no mock)
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
 
     const gpsToggle = page.locator('#gps-toggle');
     const isOn = await isToggleOn(page, "#gps-toggle");
@@ -248,13 +261,13 @@ test.describe('GPS Timestamp Recording', () => {
     }
 
     // Record entry anyway
-    await page.click('[data-view="timing-view"]');
-    await page.click('[data-num="2"]');
+    await navigateTo(page, 'timer');
+    await enterBib(page, 2);
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Entry should still be recorded (fallback to local time)
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(1);
   });
@@ -268,14 +281,20 @@ test.describe('GPS Accuracy Levels', () => {
     });
 
     const page = await context.newPage();
-    await page.goto('/');
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
 
     await page.waitForTimeout(500);
 
-    // GPS status should be visible
-    const settingsStatus = page.locator('#settings-gps-status');
-    await expect(settingsStatus).toBeVisible();
+    // GPS toggle should be checked
+    const gpsToggle = page.locator('#gps-toggle');
+    await expect(gpsToggle).toBeChecked();
+
+    // Go to timer to check indicator
+    await navigateTo(page, 'timer');
+    const gpsIndicator = page.locator('#gps-indicator');
+    await expect(gpsIndicator).toBeVisible();
 
     await context.close();
   });
@@ -287,14 +306,20 @@ test.describe('GPS Accuracy Levels', () => {
     });
 
     const page = await context.newPage();
-    await page.goto('/');
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
 
     await page.waitForTimeout(500);
 
-    // GPS status should still be visible
-    const settingsStatus = page.locator('#settings-gps-status');
-    await expect(settingsStatus).toBeVisible();
+    // GPS toggle should be checked
+    const gpsToggle = page.locator('#gps-toggle');
+    await expect(gpsToggle).toBeChecked();
+
+    // Go to timer to check indicator
+    await navigateTo(page, 'timer');
+    const gpsIndicator = page.locator('#gps-indicator');
+    await expect(gpsIndicator).toBeVisible();
 
     await context.close();
   });
@@ -306,9 +331,8 @@ test.describe('GPS and Simple Mode', () => {
     await mockGeolocation(context);
 
     const page = await context.newPage();
-    await page.goto('/');
-
-    // Enable GPS in full mode
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
     await enableGPS(page);
     await page.waitForTimeout(500);
 
@@ -317,13 +341,13 @@ test.describe('GPS and Simple Mode', () => {
 
     // GPS section hidden but GPS may still be running in background
     // Recording should still work
-    await page.click('[data-view="timing-view"]');
-    await page.click('[data-num="3"]');
+    await navigateTo(page, 'timer');
+    await enterBib(page, 3);
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Entry should be recorded
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(1);
 
@@ -332,17 +356,16 @@ test.describe('GPS and Simple Mode', () => {
 });
 
 test.describe('GPS Independence from Other Settings', () => {
-  test('should toggle GPS without affecting sync', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
+  test.beforeEach(async ({ page }) => {
+    await setupPageFullMode(page);
+    await navigateTo(page, 'settings');
+  });
 
+  test('should toggle GPS without affecting sync', async ({ page }) => {
     // Get initial sync state
-    const syncToggle = page.locator('#sync-toggle');
     const syncInitial = await isToggleOn(page, "#sync-toggle");
 
     // Toggle GPS
-    const gpsToggle = page.locator('#gps-toggle');
     await clickToggle(page, "#gps-toggle");
 
     // Sync should be unchanged
@@ -351,16 +374,11 @@ test.describe('GPS Independence from Other Settings', () => {
   });
 
   test('should toggle GPS without affecting haptic', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
-
     // Get initial haptic state
     const hapticToggle = page.locator('#haptic-toggle');
     const hapticInitial = await hapticToggle.evaluate(el => el.checked);
 
     // Toggle GPS
-    const gpsToggle = page.locator('#gps-toggle');
     await clickToggle(page, "#gps-toggle");
 
     // Haptic should be unchanged

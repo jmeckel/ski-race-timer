@@ -5,16 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-
-// Helper to click a toggle by clicking its label wrapper
-async function clickToggle(page, toggleSelector) {
-  await page.locator(`label:has(${toggleSelector})`).click();
-}
-
-// Helper to check if toggle is on
-async function isToggleOn(page, toggleSelector) {
-  return await page.locator(toggleSelector).isChecked();
-}
+import { setupPage, clickToggle, navigateTo, waitForConfirmationToHide } from './helpers.js';
 
 // Helper to add test entries
 async function addTestEntries(page, count = 3) {
@@ -25,14 +16,13 @@ async function addTestEntries(page, count = 3) {
       await page.click(`[data-num="${digit}"]`);
     }
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
   }
 }
 
 test.describe('Data Persistence', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
   });
 
   test('should persist entries across page reload', async ({ page }) => {
@@ -41,10 +31,10 @@ test.describe('Data Persistence', () => {
 
     // Reload page
     await page.reload();
-    await page.waitForSelector('.clock-time');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
     // Check entries persisted
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(3);
   });
@@ -56,11 +46,10 @@ test.describe('Data Persistence', () => {
     // Close and reopen
     await page.close();
     const newPage = await context.newPage();
-    await newPage.goto('/');
-    await newPage.waitForSelector('.clock-time');
+    await setupPage(newPage);
 
     // Check entries persisted
-    await newPage.click('[data-view="results"]');
+    await navigateTo(newPage, 'results');
     const results = newPage.locator('.result-item');
     await expect(results).toHaveCount(2);
   });
@@ -69,12 +58,12 @@ test.describe('Data Persistence', () => {
 
 test.describe('LocalStorage Operations', () => {
   test('should save entries to localStorage', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     // Add entry
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Check localStorage
     const entries = await page.evaluate(() => {
@@ -87,8 +76,8 @@ test.describe('LocalStorage Operations', () => {
   });
 
   test('should save settings to localStorage', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await setupPage(page);
+    await navigateTo(page, 'settings');
 
     // Toggle sync (visible in simple mode)
     await clickToggle(page, '#sync-toggle');
@@ -107,7 +96,7 @@ test.describe('LocalStorage Operations', () => {
   });
 
   test('should handle corrupted localStorage gracefully', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     // Corrupt the entries data
     await page.evaluate(() => {
@@ -116,7 +105,7 @@ test.describe('LocalStorage Operations', () => {
 
     // Reload - should handle error gracefully
     await page.reload();
-    await page.waitForSelector('.clock-time');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
     // App should still work
     await page.click('[data-num="1"]');
@@ -127,7 +116,7 @@ test.describe('LocalStorage Operations', () => {
   });
 
   test('should handle missing localStorage gracefully', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     // Clear all storage
     await page.evaluate(() => {
@@ -136,7 +125,7 @@ test.describe('LocalStorage Operations', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
     // App should still work with defaults
     await expect(page.locator('.clock-time')).toBeVisible();
@@ -145,9 +134,11 @@ test.describe('LocalStorage Operations', () => {
 });
 
 test.describe('Offline Functionality', () => {
-  test('should display app when loaded', async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page }) => {
+    await setupPage(page);
+  });
 
+  test('should display app when loaded', async ({ page }) => {
     // Main elements should be visible
     await expect(page.locator('.clock-time')).toBeVisible();
     await expect(page.locator('.bib-display')).toBeVisible();
@@ -155,18 +146,16 @@ test.describe('Offline Functionality', () => {
   });
 
   test('should record entries without network', async ({ page, context }) => {
-    await page.goto('/');
-
     // Go offline
     await context.setOffline(true);
 
     // Record entry
     await page.click('[data-num="5"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Should still work locally
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(1);
 
@@ -175,22 +164,19 @@ test.describe('Offline Functionality', () => {
   });
 
   test('should navigate between views offline', async ({ page, context }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
-
     // Go offline
     await context.setOffline(true);
 
     // Navigate through views - check view containers are visible
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForTimeout(200);
     await expect(page.locator('.results-view')).toBeVisible({ timeout: 5000 });
 
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
     await page.waitForTimeout(200);
     await expect(page.locator('.settings-view')).toBeVisible({ timeout: 5000 });
 
-    await page.click('[data-view="timer"]');
+    await navigateTo(page, 'timer');
     await page.waitForTimeout(200);
     await expect(page.locator('.timer-view')).toBeVisible({ timeout: 5000 });
 
@@ -198,8 +184,6 @@ test.describe('Offline Functionality', () => {
   });
 
   test('should persist data recorded offline', async ({ page, context }) => {
-    await page.goto('/');
-
     // Go offline
     await context.setOffline(true);
 
@@ -211,18 +195,21 @@ test.describe('Offline Functionality', () => {
 
     // Reload
     await page.reload();
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
     // Data should persist
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(2);
   });
 });
 
 test.describe('Service Worker', () => {
-  test('should register service worker', async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page }) => {
+    await setupPage(page);
+  });
 
+  test('should register service worker', async ({ page }) => {
     // Wait for service worker registration
     await page.waitForTimeout(1000);
 
@@ -238,7 +225,6 @@ test.describe('Service Worker', () => {
   });
 
   test('should cache essential resources', async ({ page }) => {
-    await page.goto('/');
     await page.waitForTimeout(1000);
 
     // Check if caches exist
@@ -255,9 +241,11 @@ test.describe('Service Worker', () => {
 });
 
 test.describe('Edge Cases', () => {
-  test('should handle rapid entry recording', async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page }) => {
+    await setupPage(page);
+  });
 
+  test('should handle rapid entry recording', async ({ page }) => {
     // Rapidly add entries
     for (let i = 0; i < 10; i++) {
       await page.click('#timestamp-btn');
@@ -268,7 +256,7 @@ test.describe('Edge Cases', () => {
     await page.waitForTimeout(1000);
 
     // Check results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
 
     // Should have recorded all or most entries
@@ -277,8 +265,6 @@ test.describe('Edge Cases', () => {
   });
 
   test('should handle concurrent operations', async ({ page }) => {
-    await page.goto('/');
-
     // Add entry while navigating
     await page.click('[data-num="1"]');
     await Promise.all([
@@ -289,14 +275,14 @@ test.describe('Edge Cases', () => {
     await page.waitForTimeout(1000);
 
     // App should still be functional
-    await page.click('[data-view="timer"]');
+    await navigateTo(page, 'timer');
     await expect(page.locator('.clock-time')).toBeVisible();
   });
 });
 
 test.describe('Data Recovery', () => {
   test('should initialize with defaults after clear', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     // Clear all data
     await page.evaluate(() => {
@@ -305,10 +291,10 @@ test.describe('Data Recovery', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
 
     // Should start fresh with defaults
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Simple mode should be on (default)
     const simpleToggle = page.locator('#simple-mode-toggle');
@@ -317,9 +303,11 @@ test.describe('Data Recovery', () => {
 });
 
 test.describe('PWA Manifest', () => {
-  test('should have valid manifest link', async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page }) => {
+    await setupPage(page);
+  });
 
+  test('should have valid manifest link', async ({ page }) => {
     const manifestLink = await page.evaluate(() => {
       const link = document.querySelector('link[rel="manifest"]');
       return link ? link.getAttribute('href') : null;
@@ -329,8 +317,6 @@ test.describe('PWA Manifest', () => {
   });
 
   test('should load manifest successfully', async ({ page }) => {
-    await page.goto('/');
-
     const manifestResponse = await page.request.get('/manifest.json');
     expect(manifestResponse.ok()).toBe(true);
 

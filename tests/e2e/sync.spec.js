@@ -2,24 +2,21 @@
  * E2E Tests - Cloud Sync Functionality
  *
  * Tests for multi-device synchronization, sync status, and data merging
+ * NOTE: These tests require a backend server running. Skipped by default.
+ * Run with: SYNC_TESTS=1 npm run test:e2e -- --grep "Cloud Sync"
  */
 
 import { test, expect } from '@playwright/test';
+import { setupPage, setupPageFullMode, setupPageWithSync, clickToggle, isToggleOn, navigateTo, enterBib, waitForConfirmationToHide } from './helpers.js';
 
-// Helper to click a toggle by clicking its label wrapper
-async function clickToggle(page, toggleSelector) {
-  await page.locator(`label:has(${toggleSelector})`).click();
-}
+// Skip sync tests unless SYNC_TESTS env var is set
+const skipSyncTests = !process.env.SYNC_TESTS;
 
-// Helper to check if toggle is on
-async function isToggleOn(page, toggleSelector) {
-  return await page.locator(toggleSelector).isChecked();
-}
+test.describe.configure({ mode: 'serial' });
 
 // Helper to enable cloud sync with a race ID
 async function enableSync(page, raceId = 'TEST-RACE-001') {
-  await page.click('[data-view="settings"]');
-  await page.waitForSelector('.settings-view');
+  await navigateTo(page, 'settings');
 
   const isOn = await isToggleOn(page, '#sync-toggle');
   if (!isOn) {
@@ -44,7 +41,7 @@ async function enableSync(page, raceId = 'TEST-RACE-001') {
 
 // Helper to disable simple mode
 async function disableSimpleMode(page) {
-  await page.click('[data-view="settings"]');
+  await navigateTo(page, 'settings');
   if (await isToggleOn(page, '#simple-mode-toggle')) {
     await clickToggle(page, '#simple-mode-toggle');
   }
@@ -72,8 +69,7 @@ async function dismissRaceChangeModal(page) {
 
 // Helper to add a test entry
 async function addTestEntry(page, bib = '001') {
-  await page.click('[data-view="timer"]');
-  await page.waitForSelector('.clock-time');
+  await navigateTo(page, 'timer');
 
   // Clear and enter bib
   await page.click('[data-action="clear"]');
@@ -87,14 +83,16 @@ async function addTestEntry(page, bib = '001') {
 }
 
 test.describe('Cloud Sync', () => {
+  // Skip sync tests unless SYNC_TESTS env var is set (requires backend server)
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server. Set SYNC_TESTS=1 to run.');
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
   });
 
   test.describe('Sync Toggle', () => {
     test('should enable cloud sync', async ({ page }) => {
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       if (!(await isToggleOn(page, '#sync-toggle'))) {
         await clickToggle(page, '#sync-toggle');
@@ -111,8 +109,7 @@ test.describe('Cloud Sync', () => {
     });
 
     test('should toggle sync off', async ({ page }) => {
-      await page.click('[data-view="settings"]');
-      await page.waitForSelector('.settings-view');
+      await navigateTo(page, 'settings');
 
       // Enable sync first
       if (!(await isToggleOn(page, '#sync-toggle'))) {
@@ -132,7 +129,8 @@ test.describe('Cloud Sync', () => {
 
       // Reload and verify
       await page.reload();
-      await page.click('[data-view="settings"]');
+      await page.waitForSelector('.clock-time', { timeout: 5000 });
+      await navigateTo(page, 'settings');
 
       if (!(await isToggleOn(page, '#sync-toggle'))) {
         await clickToggle(page, '#sync-toggle');
@@ -180,8 +178,7 @@ test.describe('Cloud Sync', () => {
 
   test.describe('Sync Status', () => {
     test('should have sync toggle in settings', async ({ page }) => {
-      await page.click('[data-view="settings"]');
-      await page.waitForSelector('.settings-view');
+      await navigateTo(page, 'settings');
 
       // Sync toggle should exist
       const syncToggle = page.locator('#sync-toggle');
@@ -189,8 +186,7 @@ test.describe('Cloud Sync', () => {
     });
 
     test('should have sync settings section', async ({ page }) => {
-      await page.click('[data-view="settings"]');
-      await page.waitForSelector('.settings-view');
+      await navigateTo(page, 'settings');
 
       // Cloud sync section should exist (use .first() since there may be multiple matches)
       const syncSection = page.locator('[data-i18n="cloudSync"]').first();
@@ -206,8 +202,7 @@ test.describe('Cloud Sync', () => {
       await addTestEntry(page, '001');
 
       // Entry should be recorded
-      await page.click('[data-view="results"]');
-      await page.waitForSelector('.results-list');
+      await navigateTo(page, 'results');
 
       const results = page.locator('.result-item');
       await expect(results).toHaveCount(1);
@@ -223,11 +218,10 @@ test.describe('Cloud Sync', () => {
 
       // Reload page
       await page.reload();
-      await page.waitForSelector('.clock-time');
+      await page.waitForSelector('.clock-time', { timeout: 5000 });
 
       // Check entries persisted
-      await page.click('[data-view="results"]');
-      await page.waitForSelector('.results-list');
+      await navigateTo(page, 'results');
 
       const results = page.locator('.result-item');
       await expect(results).toHaveCount(2);
@@ -241,7 +235,7 @@ test.describe('Cloud Sync', () => {
       await addTestEntry(page, '055');
 
       // Verify entry recorded
-      await page.click('[data-view="results"]');
+      await navigateTo(page, 'results');
       const results = page.locator('.result-item');
       await expect(results).toHaveCount(1);
       await expect(results.first().locator('.result-bib')).toContainText('055');
@@ -254,7 +248,7 @@ test.describe('Cloud Sync', () => {
       await addTestEntry(page, '099');
 
       // Verify entry recorded locally
-      await page.click('[data-view="results"]');
+      await navigateTo(page, 'results');
       const results = page.locator('.result-item');
       await expect(results).toHaveCount(1);
     });
@@ -262,10 +256,11 @@ test.describe('Cloud Sync', () => {
 });
 
 test.describe('Sync Settings Persistence', () => {
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+
   test('should be able to enable sync', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await page.waitForSelector('.settings-view');
+    await setupPage(page);
+    await navigateTo(page, 'settings');
 
     // Enable sync
     if (!(await isToggleOn(page, '#sync-toggle'))) {
@@ -277,9 +272,8 @@ test.describe('Sync Settings Persistence', () => {
   });
 
   test('should persist sync disabled state', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
-    await page.waitForSelector('.settings-view');
+    await setupPage(page);
+    await navigateTo(page, 'settings');
 
     // Disable sync
     if (await isToggleOn(page, '#sync-toggle')) {
@@ -288,9 +282,8 @@ test.describe('Sync Settings Persistence', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time');
-    await page.click('[data-view="settings"]');
-    await page.waitForSelector('.settings-view');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await navigateTo(page, 'settings');
 
     // Should still be disabled
     await expect(page.locator('#sync-toggle')).not.toBeChecked();
@@ -298,12 +291,17 @@ test.describe('Sync Settings Persistence', () => {
 });
 
 test.describe('Sync Integration', () => {
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+
+  test.beforeEach(async ({ page }) => {
+    await setupPage(page);
+  });
+
   test('should show sync status in results view header', async ({ page }) => {
-    await page.goto('/');
     await enableSync(page, 'HEADER-TEST');
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Sync indicator may be visible in header
     // This depends on implementation
@@ -311,7 +309,6 @@ test.describe('Sync Integration', () => {
   });
 
   test('should handle rapid entry recording with sync', async ({ page }) => {
-    await page.goto('/');
     await enableSync(page, 'RAPID-TEST');
 
     // Rapidly add multiple entries
@@ -321,7 +318,7 @@ test.describe('Sync Integration', () => {
     }
 
     // Verify all entries recorded
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     const results = page.locator('.result-item');
     await expect(results).toHaveCount(5);
   });
@@ -332,9 +329,10 @@ test.describe('Sync Integration', () => {
 // ============================================
 
 test.describe('Cloud Sync Improvements', () => {
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
   });
 
   test.describe('Device Counter in Status Bar', () => {
@@ -345,7 +343,7 @@ test.describe('Cloud Sync Improvements', () => {
       await page.waitForTimeout(3000);
 
       // Go to timer view to see status bar
-      await page.click('[data-view="timer"]');
+      await navigateTo(page, 'timer');
 
       // The sync indicator should be visible
       const syncIndicator = page.locator('#sync-indicator');
@@ -364,16 +362,15 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Open second page (simulates second device)
       const page2 = await context.newPage();
-      await page2.goto('/');
-      await page2.waitForSelector('.clock-time');
+      await setupPage(page2);
       await enableSync(page2, raceId);
 
       // Wait for both to sync
       await page.waitForTimeout(5000);
 
       // Both pages should show sync indicator
-      await page.click('[data-view="timer"]');
-      await page2.click('[data-view="timer"]');
+      await navigateTo(page, 'timer');
+      await navigateTo(page2, 'timer');
 
       const syncIndicator1 = page.locator('#sync-indicator');
       const syncIndicator2 = page2.locator('#sync-indicator');
@@ -398,12 +395,10 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Second device uses lowercase
       const page2 = await context.newPage();
-      await page2.goto('/');
-      await page2.waitForSelector('.clock-time');
+      await setupPage(page2);
 
       // Enable sync on page2 and dismiss any modal
-      await page2.click('[data-view="settings"]');
-      await page2.waitForSelector('.settings-view');
+      await navigateTo(page2, 'settings');
       if (!(await isToggleOn(page2, '#sync-toggle'))) {
         await clickToggle(page2, '#sync-toggle');
       }
@@ -421,12 +416,11 @@ test.describe('Cloud Sync Improvements', () => {
       await page2.waitForTimeout(3000);
 
       // Check if entry synced to second device
-      await page2.click('[data-view="results"]');
+      await navigateTo(page2, 'results');
       await page2.waitForTimeout(1000);
 
       // The entry should be visible on page2 if sync works correctly
       // (this depends on actual API being available)
-      const results = page2.locator('.result-item');
       // At minimum, verify results view is accessible
       await expect(page2.locator('.results-list')).toBeVisible();
 
@@ -443,7 +437,7 @@ test.describe('Cloud Sync Improvements', () => {
 
   test.describe('Existing Race Indicator', () => {
     test('should show race exists indicator element', async ({ page }) => {
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       // Enable sync first
       const toggle = page.locator('#sync-toggle');
@@ -458,7 +452,7 @@ test.describe('Cloud Sync Improvements', () => {
     });
 
     test('should update indicator when race ID is typed', async ({ page }) => {
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       // Enable sync
       const toggle = page.locator('#sync-toggle');
@@ -491,7 +485,7 @@ test.describe('Cloud Sync Improvements', () => {
       await page.waitForTimeout(2000);
 
       // Clear the race ID and re-enter it to trigger check
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       // Wait for sync toggle to be visible and enabled
       if (!(await isToggleOn(page, '#sync-toggle'))) {
@@ -547,19 +541,14 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Open second device
       const page2 = await context.newPage();
-      await page2.goto('/');
-      await page2.waitForSelector('.clock-time');
-      await disableSimpleMode(page2);
+      await setupPageFullMode(page2);
       await enableSync(page2, raceId);
 
       // Wait for sync
       await page2.waitForTimeout(3000);
 
       // Second device should show synced entries
-      await page2.click('[data-view="results"]');
-      const results = page2.locator('.result-item');
-      const count = await results.count();
-
+      await navigateTo(page2, 'results');
       // At minimum, the results list should be accessible
       await expect(page2.locator('.results-list')).toBeVisible();
 
@@ -569,7 +558,7 @@ test.describe('Cloud Sync Improvements', () => {
 
   test.describe('Photo Sync', () => {
     test('should enable photo capture in settings', async ({ page }) => {
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       // Find photo toggle
       const photoToggle = page.locator('#photo-toggle');
@@ -604,7 +593,7 @@ test.describe('Cloud Sync Improvements', () => {
     test('should handle entries with photos in results', async ({ page }) => {
       // Enable sync and photo capture
       await enableSync(page, 'PHOTO-SYNC-TEST-' + Date.now());
-      await page.click('[data-view="settings"]');
+      await navigateTo(page, 'settings');
 
       const photoToggle = page.locator('#photo-toggle');
       const isOn = await photoToggle.evaluate(el => el.checked);
@@ -616,7 +605,7 @@ test.describe('Cloud Sync Improvements', () => {
       await addTestEntry(page, '001');
 
       // Check results view
-      await page.click('[data-view="results"]');
+      await navigateTo(page, 'results');
       const results = page.locator('.result-item');
       await expect(results).toHaveCount(1);
     });
@@ -628,16 +617,18 @@ test.describe('Cloud Sync Improvements', () => {
 // ============================================
 
 test.describe('Verification Steps', () => {
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+
   test('Verification: Device counter shows and updates', async ({ page }) => {
     // Open app with sync enabled
-    await page.goto('/');
+    await setupPage(page);
     await enableSync(page, 'VERIFY-DEVICE-' + Date.now());
 
     // Wait for sync to connect
     await page.waitForTimeout(3000);
 
     // Go to timer view
-    await page.click('[data-view="timer"]');
+    await navigateTo(page, 'timer');
 
     // Sync indicator should be visible
     const syncIndicator = page.locator('#sync-indicator');
@@ -646,7 +637,7 @@ test.describe('Verification Steps', () => {
 
   test('Verification: Case-insensitive race ID works', async ({ page }) => {
     // Create race with uppercase
-    await page.goto('/');
+    await setupPage(page);
     const raceId = 'VERIFY-CASE-UPPER-' + Date.now();
     await enableSync(page, raceId);
     await addTestEntry(page, '001');
@@ -656,9 +647,8 @@ test.describe('Verification Steps', () => {
 
     // Reload and use lowercase - manually handle the race change modal
     await page.reload();
-    await page.waitForSelector('.clock-time');
-    await page.click('[data-view="settings"]');
-    await page.waitForSelector('.settings-view');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await navigateTo(page, 'settings');
 
     if (!(await isToggleOn(page, '#sync-toggle'))) {
       await clickToggle(page, '#sync-toggle');
@@ -674,14 +664,14 @@ test.describe('Verification Steps', () => {
     await dismissRaceChangeModal(page);
 
     // Entry should still be visible
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForTimeout(2000);
     await expect(page.locator('.results-list')).toBeVisible();
   });
 
   test('Verification: Race exists indicator appears', async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await setupPage(page);
+    await navigateTo(page, 'settings');
 
     // Enable sync
     const toggle = page.locator('#sync-toggle');
@@ -704,13 +694,10 @@ test.describe('Verification Steps', () => {
   });
 
   test('Verification: Auto-increment bib works', async ({ page }) => {
-    await page.goto('/');
-
-    // Disable simple mode
-    await disableSimpleMode(page);
+    await setupPageFullMode(page);
 
     // Enable auto-increment (should be on by default)
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
     const autoToggle = page.locator('#auto-toggle');
     const isOn = await autoToggle.evaluate(el => el.checked);
     if (!isOn) {
@@ -718,11 +705,8 @@ test.describe('Verification Steps', () => {
     }
 
     // Go to timer and record entry
-    await page.click('[data-view="timer"]');
-    await page.click('[data-action="clear"]');
-    await page.click('[data-num="0"]');
-    await page.click('[data-num="0"]');
-    await page.click('[data-num="1"]');
+    await navigateTo(page, 'timer');
+    await enterBib(page, 1);
 
     // Record timestamp
     await page.click('#timestamp-btn');
@@ -739,9 +723,10 @@ test.describe('Verification Steps', () => {
 // ============================================
 
 test.describe('Delete Sync', () => {
+  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
   });
 
   test('should delete entry locally and remove from results', async ({ page }) => {
@@ -753,7 +738,7 @@ test.describe('Delete Sync', () => {
     await addTestEntry(page, '001');
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForSelector('.result-item');
 
     // Verify entry exists
@@ -781,7 +766,7 @@ test.describe('Delete Sync', () => {
     await addTestEntry(page, '003');
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForSelector('.result-item');
 
     // Verify 3 entries
@@ -797,14 +782,14 @@ test.describe('Delete Sync', () => {
 
     // Reload page and re-enable sync
     await page.reload();
-    await page.waitForSelector('.clock-time');
+    await page.waitForSelector('.clock-time', { timeout: 5000 });
     await enableSync(page, uniqueRaceId);
 
     // Wait for sync
     await page.waitForTimeout(3000);
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForTimeout(1000);
 
     // Deleted entry should not reappear (still 2 entries or fewer)
@@ -824,7 +809,7 @@ test.describe('Delete Sync', () => {
     await page.waitForTimeout(2000);
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForSelector('.result-item');
 
     // Delete entry
@@ -841,11 +826,11 @@ test.describe('Delete Sync', () => {
   test('should handle multi-delete with sync', async ({ page }) => {
     // Enable sync and disable simple mode for multi-select
     const uniqueRaceId = 'MULTI-DELETE-' + Date.now();
+    await setupPageFullMode(page);
     await enableSync(page, uniqueRaceId);
-    await disableSimpleMode(page);
 
     // Add multiple entries
-    await page.click('[data-view="timer"]');
+    await navigateTo(page, 'timer');
     for (let i = 1; i <= 3; i++) {
       await page.click('[data-action="clear"]');
       await page.click(`[data-num="${i}"]`);
@@ -854,7 +839,7 @@ test.describe('Delete Sync', () => {
     }
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForSelector('.result-item');
 
     // Enter select mode if available

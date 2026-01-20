@@ -5,32 +5,11 @@
  */
 
 import { test, expect } from '@playwright/test';
-
-// Helper to click a toggle by clicking its label wrapper
-async function clickToggle(page, toggleSelector) {
-  await page.locator(`label:has(${toggleSelector})`).click();
-}
-
-// Helper to check if toggle is on
-async function isToggleOn(page, toggleSelector) {
-  return await page.locator(toggleSelector).isChecked();
-}
-
-// Helper to disable simple mode
-async function disableSimpleMode(page) {
-  if (await isToggleOn(page, '#simple-mode-toggle')) {
-    await clickToggle(page, '#simple-mode-toggle');
-  }
-}
-
-// Helper to get current language
-async function getCurrentLanguage(page) {
-  return await page.evaluate(() => localStorage.getItem('skiTimerLang') || 'de');
-}
+import { setupPage, setupPageEnglish, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
 
 // Helper to set language
 async function setLanguage(page, lang) {
-  await page.click('[data-view="settings"]');
+  await navigateTo(page, 'settings');
   const langToggle = page.locator('#lang-toggle');
   const activeLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
 
@@ -42,8 +21,8 @@ async function setLanguage(page, lang) {
 
 test.describe('Language Toggle', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-view="settings"]');
+    await setupPage(page);
+    await navigateTo(page, 'settings');
   });
 
   test('should have language toggle button', async ({ page }) => {
@@ -78,14 +57,13 @@ test.describe('Language Toggle', () => {
 
 test.describe('German Language (Default)', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear language setting to get default
-    await page.goto('/');
-    await page.evaluate(() => localStorage.removeItem('skiTimerLang'));
-    await page.reload();
+    await setupPage(page);
   });
 
   test('should default to German', async ({ page }) => {
-    const lang = await getCurrentLanguage(page);
+    const lang = await page.evaluate(() => {
+      return localStorage.getItem('skiTimerLang') || 'de';
+    });
     expect(lang).toBe('de');
   });
 
@@ -99,7 +77,7 @@ test.describe('German Language (Default)', () => {
   });
 
   test('should show German settings labels', async ({ page }) => {
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Settings title should be German
     const settingsTitle = page.locator('.settings-section-title').first();
@@ -120,10 +98,10 @@ test.describe('German Language (Default)', () => {
   test('should show timing point code in results', async ({ page }) => {
     // Record an entry
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Timing point shows the code (F for Finish) not translated label
     const pointLabel = page.locator('.result-point').first();
@@ -133,13 +111,11 @@ test.describe('German Language (Default)', () => {
 
 test.describe('English Language', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'en');
-    await page.click('[data-view="timer"]');
+    await setupPageEnglish(page);
   });
 
-  test('should show English when toggled', async ({ page }) => {
-    await page.click('[data-view="settings"]');
+  test('should show English when set', async ({ page }) => {
+    await navigateTo(page, 'settings');
 
     // Language toggle shows current language (EN when English is selected)
     const langToggle = page.locator('#lang-toggle');
@@ -149,10 +125,10 @@ test.describe('English Language', () => {
   test('should show F for Finish in English', async ({ page }) => {
     // Record an entry
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Timing point should show "F" for Finish
     const pointLabel = page.locator('.result-point').first();
@@ -160,7 +136,7 @@ test.describe('English Language', () => {
   });
 
   test('should show English settings labels', async ({ page }) => {
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Check for English text - Settings title
     const settingsTitle = page.locator('.settings-section-title').first();
@@ -171,11 +147,12 @@ test.describe('English Language', () => {
 });
 
 test.describe('Language Consistency Across Views', () => {
-  test('should maintain language in Timer view', async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'en');
+  test.beforeEach(async ({ page }) => {
+    await setupPageEnglish(page);
+  });
 
-    await page.click('[data-view="timer"]');
+  test('should maintain language in Timer view', async ({ page }) => {
+    await navigateTo(page, 'timer');
 
     // Timestamp button should have English text
     const timestampBtn = page.locator('#timestamp-btn');
@@ -183,32 +160,25 @@ test.describe('Language Consistency Across Views', () => {
   });
 
   test('should maintain language in Results view', async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'en');
-
     // Add an entry
-    await page.click('[data-view="timer"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
 
     // Results should show English labels
     await expect(page.locator('.results-header')).toBeVisible();
   });
 
   test('should maintain language after navigation', async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'en');
-
     // Navigate through all views
-    await page.click('[data-view="timer"]');
-    await page.click('[data-view="results"]');
-    await page.click('[data-view="settings"]');
-    await page.click('[data-view="timer"]');
+    await navigateTo(page, 'timer');
+    await navigateTo(page, 'results');
+    await navigateTo(page, 'settings');
+    await navigateTo(page, 'timer');
 
     // Language should still be English (toggle shows current language)
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
     const langToggle = page.locator('#lang-toggle');
     await expect(langToggle).toContainText('EN');
   });
@@ -216,9 +186,7 @@ test.describe('Language Consistency Across Views', () => {
 
 test.describe('Date Formatting by Language', () => {
   test('should format date in German format', async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'de');
-    await page.click('[data-view="timer"]');
+    await setupPage(page);
 
     const dateDisplay = page.locator('.clock-date');
     const dateText = await dateDisplay.textContent();
@@ -229,9 +197,7 @@ test.describe('Date Formatting by Language', () => {
   });
 
   test('should format date in English format', async ({ page }) => {
-    await page.goto('/');
-    await setLanguage(page, 'en');
-    await page.click('[data-view="timer"]');
+    await setupPageEnglish(page);
 
     const dateDisplay = page.locator('.clock-date');
     const dateText = await dateDisplay.textContent();
@@ -243,16 +209,15 @@ test.describe('Date Formatting by Language', () => {
 
 test.describe('Status Labels by Language', () => {
   test('should show status in current language', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('.clock-time');
+    await setupPage(page);
 
     // Add entry
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
-    await page.waitForTimeout(600);
+    await waitForConfirmationToHide(page);
 
     // Go to results
-    await page.click('[data-view="results"]');
+    await navigateTo(page, 'results');
     await page.waitForSelector('.result-item');
 
     // Click on result bib to open edit modal
@@ -271,13 +236,7 @@ test.describe('Status Labels by Language', () => {
 
 test.describe('Timing Point Labels by Language', () => {
   test('should show Start as S in both languages', async ({ page }) => {
-    await page.goto('/');
-
-    // Disable simple mode to see Start button
-    await page.click('[data-view="settings"]');
-    await disableSimpleMode(page);
-
-    await page.click('[data-view="timer"]');
+    await setupPageFullMode(page);
 
     const startBtn = page.locator('[data-point="S"]');
     const text = await startBtn.textContent();
@@ -287,7 +246,7 @@ test.describe('Timing Point Labels by Language', () => {
   });
 
   test('should show Finish/Ziel appropriately', async ({ page }) => {
-    await page.goto('/');
+    await setupPage(page);
 
     const finishBtn = page.locator('[data-point="F"]');
     const text = await finishBtn.textContent();
@@ -299,24 +258,16 @@ test.describe('Timing Point Labels by Language', () => {
 
 test.describe('Empty State Messages', () => {
   test('should show empty state message in German', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
-    await setLanguage(page, 'de');
-
-    await page.reload();
-    await page.click('[data-view="results"]');
+    await setupPage(page);
+    await navigateTo(page, 'results');
 
     const emptyState = page.locator('.empty-state');
     await expect(emptyState).toBeVisible();
   });
 
   test('should show empty state message in English', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
-    await setLanguage(page, 'en');
-
-    await page.reload();
-    await page.click('[data-view="results"]');
+    await setupPageEnglish(page);
+    await navigateTo(page, 'results');
 
     const emptyState = page.locator('.empty-state');
     await expect(emptyState).toBeVisible();

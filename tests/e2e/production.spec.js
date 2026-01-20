@@ -170,7 +170,7 @@ test.describe('Production PWA - Core Functionality', () => {
     test('should delete last digit', async ({ page }) => {
       await page.click('[data-num="7"]');
       await page.click('[data-num="8"]');
-      await page.click('#btn-delete');
+      await page.click('[data-action="delete"]');
 
       const bibDisplay = page.locator('.bib-display');
       await expect(bibDisplay).toContainText('7');

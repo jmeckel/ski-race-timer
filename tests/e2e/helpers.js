@@ -1,0 +1,177 @@
+/**
+ * E2E Test Helpers
+ * Shared utilities for all E2E tests
+ */
+
+/**
+ * Setup page with onboarding bypassed and clean state
+ * Call this in beforeEach to ensure consistent test state
+ */
+export async function setupPage(page) {
+  // Set localStorage to bypass onboarding before navigating
+  await page.addInitScript(() => {
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+    // Set default settings for consistent test state
+    // Keys must match the store's DEFAULT_SETTINGS: auto, haptic, sound, sync, gps, simple, photoCapture, syncPhotos
+    localStorage.setItem('skiTimerSettings', JSON.stringify({
+      auto: true,
+      haptic: true,
+      sound: false,
+      sync: false,
+      syncPhotos: false,
+      gps: false,
+      simple: true,
+      photoCapture: false
+    }));
+    localStorage.setItem('skiTimerLang', 'de');
+  });
+
+  await page.goto('/');
+  // Wait for app to be ready (clock is rendered)
+  await page.waitForSelector('.clock-time', { timeout: 5000 });
+}
+
+/**
+ * Setup page with full mode enabled (not simple mode)
+ */
+export async function setupPageFullMode(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+    // Keys must match the store's DEFAULT_SETTINGS
+    localStorage.setItem('skiTimerSettings', JSON.stringify({
+      auto: true,
+      haptic: true,
+      sound: false,
+      sync: false,
+      syncPhotos: false,
+      gps: false,
+      simple: false,  // Full mode = simple OFF
+      photoCapture: false
+    }));
+    localStorage.setItem('skiTimerLang', 'de');
+  });
+
+  await page.goto('/');
+  await page.waitForSelector('.clock-time', { timeout: 5000 });
+}
+
+/**
+ * Setup page with English language
+ */
+export async function setupPageEnglish(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+    // Keys must match the store's DEFAULT_SETTINGS
+    localStorage.setItem('skiTimerSettings', JSON.stringify({
+      auto: true,
+      haptic: true,
+      sound: false,
+      sync: false,
+      syncPhotos: false,
+      gps: false,
+      simple: true,
+      photoCapture: false
+    }));
+    localStorage.setItem('skiTimerLang', 'en');
+  });
+
+  await page.goto('/');
+  await page.waitForSelector('.clock-time', { timeout: 5000 });
+}
+
+/**
+ * Setup page with sync enabled
+ */
+export async function setupPageWithSync(page, raceId = 'TEST-RACE') {
+  await page.addInitScript((raceId) => {
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+    // Keys must match the store's DEFAULT_SETTINGS
+    localStorage.setItem('skiTimerSettings', JSON.stringify({
+      auto: true,
+      haptic: true,
+      sound: false,
+      sync: true,  // Sync enabled
+      syncPhotos: false,
+      gps: false,
+      simple: false,  // Full mode for sync testing
+      photoCapture: false
+    }));
+    localStorage.setItem('skiTimerLang', 'de');
+    localStorage.setItem('skiTimerRaceId', raceId);
+  }, raceId);
+
+  await page.goto('/');
+  await page.waitForSelector('.clock-time', { timeout: 5000 });
+}
+
+/**
+ * Clear all app data
+ */
+export async function clearAppData(page) {
+  await page.evaluate(() => {
+    localStorage.removeItem('skiTimerEntries');
+    localStorage.removeItem('skiTimerSettings');
+    localStorage.removeItem('skiTimerRaceId');
+    localStorage.removeItem('skiTimerDeviceId');
+    localStorage.removeItem('skiTimerAuthToken');
+    localStorage.removeItem('skiTimerRecentRaces');
+    // Keep onboarding bypassed
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+  });
+}
+
+/**
+ * Click a toggle by clicking its label wrapper
+ */
+export async function clickToggle(page, toggleSelector) {
+  await page.locator(`label:has(${toggleSelector})`).click();
+}
+
+/**
+ * Check if toggle is on
+ */
+export async function isToggleOn(page, toggleSelector) {
+  return await page.locator(toggleSelector).isChecked();
+}
+
+/**
+ * Navigate to a specific view
+ */
+export async function navigateTo(page, view) {
+  // data-view values match view names directly: timer, results, settings
+  await page.click(`[data-view="${view}"]`);
+}
+
+/**
+ * Record a timestamp with optional bib number
+ */
+export async function recordTimestamp(page, bib = null) {
+  if (bib) {
+    // Clear current bib first
+    await page.click('[data-action="clear"]');
+    // Enter new bib
+    for (const digit of bib.toString()) {
+      await page.click(`[data-num="${digit}"]`);
+    }
+  }
+  await page.click('#timestamp-btn');
+  // Wait for confirmation overlay
+  await page.waitForSelector('.confirmation-overlay', { timeout: 2000 });
+}
+
+/**
+ * Wait for confirmation overlay to disappear
+ */
+export async function waitForConfirmationToHide(page) {
+  await page.waitForSelector('.confirmation-overlay', { state: 'hidden', timeout: 3000 });
+}
+
+/**
+ * Enter bib number via number pad
+ */
+export async function enterBib(page, bib) {
+  await page.click('[data-action="clear"]');
+  for (const digit of bib.toString().padStart(3, '0')) {
+    await page.click(`[data-num="${digit}"]`);
+  }
+}
