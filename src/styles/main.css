@@ -1466,8 +1466,8 @@ body {
       "bib        last"
       "numpad     clock"
       "numpad     timestamp";
-    padding: 8px 16px;
-    gap: 8px 16px;
+    padding: 8px 16px 16px;
+    gap: 12px 20px;
     align-items: stretch;
   }
 
@@ -1558,12 +1558,13 @@ body {
     align-self: stretch;
   }
 
-  /* Right column: Last recorded */
+  /* Right column: Last recorded (compact, same height as clock) */
   .timer-view .last-recorded {
     grid-area: last;
     justify-content: center;
-    padding: 6px 8px;
-    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    align-self: center;
   }
 
   /* Results View - Wider layout */
@@ -1617,8 +1618,8 @@ body {
 /* Landscape with very short height (phones) */
 @media (orientation: landscape) and (max-height: 500px) {
   .timer-view.active {
-    padding: 4px 10px;
-    gap: 4px 10px;
+    padding: 4px 10px 10px;
+    gap: 6px 12px;
   }
 
   .timer-view .bib-display {
