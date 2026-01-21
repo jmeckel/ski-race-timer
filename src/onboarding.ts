@@ -352,11 +352,15 @@ export class OnboardingController {
       case 'next':
         if (await this.validateCurrentStep()) {
           await this.saveCurrentStep();
+          // Force save after each step to ensure persistence
+          store.forceSave();
           this.goToStep(this.currentStep + 1);
         }
         break;
       case 'skip':
-        // Skip race setup but still continue
+        // Skip current step but ensure previous data is persisted
+        // Force save to persist any data entered in prior steps
+        store.forceSave();
         this.goToStep(this.currentStep + 1);
         break;
       case 'finish':

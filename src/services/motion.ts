@@ -36,9 +36,11 @@ class MotionService {
   private unsubscribeBattery: (() => void) | null = null;
 
   // Raw orientation values (degrees)
-  private rawBeta = 0;   // Front-to-back tilt (-180 to 180)
+  // Initialize to neutral holding positions so button isn't skewed before first event
+  private rawBeta = 45;  // Front-to-back tilt (-180 to 180) - 45° is typical holding angle
   private rawGamma = 0;  // Left-to-right tilt (-90 to 90)
   private rawAlpha = 0;  // Device rotation (0 to 360)
+  private hasReceivedData = false;  // Track if we've received actual orientation data
 
   // Smoothed values (-1 to 1)
   private state: MotionState = {
@@ -154,9 +156,11 @@ class MotionService {
 
     if (event.beta !== null) {
       this.rawBeta = event.beta;
+      this.hasReceivedData = true;
     }
     if (event.gamma !== null) {
       this.rawGamma = event.gamma;
+      this.hasReceivedData = true;
     }
     if (event.alpha !== null) {
       this.rawAlpha = event.alpha;
@@ -207,16 +211,20 @@ class MotionService {
     let targetTiltY: number;
 
     // Adjust gamma/beta mapping based on screen orientation
+    // All orientations center around typical holding angle (~45° from horizontal)
     switch (orientation) {
       case 90: // Landscape left (device rotated clockwise)
-        // Beta becomes left-right, gamma becomes forward-back
+        // Beta becomes left-right (no offset needed for left-right)
+        // Gamma becomes forward-back (adjust for holding angle)
         targetTiltX = Math.max(-1, Math.min(1, -this.rawBeta / MAX_TILT_ANGLE));
-        targetTiltY = Math.max(-1, Math.min(1, this.rawGamma / MAX_TILT_ANGLE));
+        const adjustedGamma90 = this.rawGamma - 45;
+        targetTiltY = Math.max(-1, Math.min(1, adjustedGamma90 / MAX_TILT_ANGLE));
         break;
       case -90:
       case 270: // Landscape right (device rotated counter-clockwise)
         targetTiltX = Math.max(-1, Math.min(1, this.rawBeta / MAX_TILT_ANGLE));
-        targetTiltY = Math.max(-1, Math.min(1, -this.rawGamma / MAX_TILT_ANGLE));
+        const adjustedGamma270 = this.rawGamma + 45;
+        targetTiltY = Math.max(-1, Math.min(1, -adjustedGamma270 / MAX_TILT_ANGLE));
         break;
       case 180: // Upside down portrait
         targetTiltX = Math.max(-1, Math.min(1, -this.rawGamma / MAX_TILT_ANGLE));
@@ -343,6 +351,11 @@ class MotionService {
       rotation: 0,
       active: false
     };
+    // Reset raw values to neutral positions
+    this.rawBeta = 45;
+    this.rawGamma = 0;
+    this.rawAlpha = 0;
+    this.hasReceivedData = false;
     this.updateCSSProperties();
 
     // Clear callbacks

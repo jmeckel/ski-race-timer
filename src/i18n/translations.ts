@@ -56,10 +56,10 @@ export const translations: Record<Language, Translations> = {
 
     // Sync
     connected: 'Sync',
-    connecting: 'Connecting...',
-    syncing: 'Syncing...',
-    offline: 'Offline',
-    syncError: 'Sync error',
+    connecting: '...',
+    syncing: 'Sync',
+    offline: 'X',
+    syncError: '!',
     syncReceived: 'Synced from cloud',
     raceId: 'Race ID',
     invalidRaceId: 'Invalid Race ID. Use letters, numbers, hyphens, underscores only.',
@@ -307,10 +307,10 @@ export const translations: Record<Language, Translations> = {
 
     // Sync
     connected: 'Sync',
-    connecting: 'Verbinde...',
-    syncing: 'Synchronisiere...',
-    offline: 'Offline',
-    syncError: 'Sync-Fehler',
+    connecting: '...',
+    syncing: 'Sync',
+    offline: 'X',
+    syncError: '!',
     syncReceived: 'Von Cloud synchronisiert',
     raceId: 'Rennen-ID',
     invalidRaceId: 'Ungültige Rennen-ID. Nur Buchstaben, Zahlen, Bindestriche, Unterstriche.',
