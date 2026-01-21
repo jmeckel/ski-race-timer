@@ -6,6 +6,7 @@ import { showToast } from './components';
 import { t } from './i18n/translations';
 import { generateDeviceName } from './utils/id';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
+import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { fetchWithTimeout } from './utils/errors';
 import type { Language, RaceInfo } from './types';
 
@@ -246,14 +247,9 @@ export class OnboardingController {
     if (races.length === 0) {
       dropdown.innerHTML = `<div class="recent-races-empty">${t('noRecentRaces', lang)}</div>`;
     } else {
-      dropdown.innerHTML = races.map(race => this.renderRecentRaceItem(race)).join('');
-
-      // Add click handlers to each item
-      dropdown.querySelectorAll('.recent-race-item').forEach((item, index) => {
-        item.addEventListener('click', () => {
-          const race = races[index];
-          this.selectRecentRace(race, inputId, dropdown);
-        });
+      dropdown.innerHTML = renderRecentRaceItems(races);
+      attachRecentRaceItemHandlers(dropdown, races, (race) => {
+        this.selectRecentRace(race, inputId, dropdown);
       });
     }
   }
@@ -300,19 +296,6 @@ export class OnboardingController {
     });
 
     return todaysRaces;
-  }
-
-  /**
-   * Render a single recent race item
-   */
-  private renderRecentRaceItem(race: RecentRace): string {
-    const entryText = race.entryCount !== undefined ? `${race.entryCount} entries` : '';
-    return `
-      <div class="recent-race-item" data-race-id="${race.raceId}">
-        <span class="recent-race-id">${race.raceId}</span>
-        <span class="recent-race-meta">${entryText}</span>
-      </div>
-    `;
   }
 
   /**
@@ -508,24 +491,28 @@ export class OnboardingController {
     const summary = document.getElementById('onboarding-summary');
 
     if (summary) {
-      summary.innerHTML = `
-        <div class="onboarding-summary-item">
-          <span>${t('deviceNameLabel', lang)}</span>
-          <strong>${state.deviceName}</strong>
-        </div>
-        <div class="onboarding-summary-item">
-          <span>${t('photoCaptureLabel', lang)}</span>
-          <strong>${state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)}</strong>
-        </div>
-        <div class="onboarding-summary-item">
-          <span>${t('raceIdLabel', lang)}</span>
-          <strong>${state.raceId || '—'}</strong>
-        </div>
-        <div class="onboarding-summary-item">
-          <span>${t('syncStatusLabel', lang)}</span>
-          <strong>${state.settings.sync ? t('enabled', lang) : t('disabled', lang)}</strong>
-        </div>
-      `;
+      summary.innerHTML = '';
+
+      const rows: Array<[string, string]> = [
+        [t('deviceNameLabel', lang), state.deviceName],
+        [t('photoCaptureLabel', lang), state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)],
+        [t('raceIdLabel', lang), state.raceId || '—'],
+        [t('syncStatusLabel', lang), state.settings.sync ? t('enabled', lang) : t('disabled', lang)]
+      ];
+
+      rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'onboarding-summary-item';
+
+        const labelEl = document.createElement('span');
+        labelEl.textContent = label;
+
+        const valueEl = document.createElement('strong');
+        valueEl.textContent = value;
+
+        row.append(labelEl, valueEl);
+        summary.appendChild(row);
+      });
     }
   }
 

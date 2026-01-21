@@ -267,8 +267,10 @@ test.describe('Edge Cases', () => {
   test('should handle concurrent operations', async ({ page }) => {
     // Add entry while navigating
     await page.click('[data-num="1"]');
+    const timestampButton = page.locator('#timestamp-btn');
+    await expect(timestampButton).toBeVisible();
     await Promise.all([
-      page.click('#timestamp-btn'),
+      timestampButton.click({ force: true }),
       page.click('[data-view="results"]')
     ]);
 

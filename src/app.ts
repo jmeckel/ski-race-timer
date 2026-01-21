@@ -7,6 +7,7 @@ import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, log
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
+import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
 import type { Entry, TimingPoint, Language, RaceInfo } from './types';
@@ -1917,14 +1918,9 @@ async function showSettingsRecentRacesDropdown(dropdown: HTMLElement): Promise<v
   if (races.length === 0) {
     dropdown.innerHTML = `<div class="recent-races-empty">${t('noRecentRaces', lang)}</div>`;
   } else {
-    dropdown.innerHTML = races.map(race => renderRecentRaceItem(race)).join('');
-
-    // Add click handlers to each item
-    dropdown.querySelectorAll('.recent-race-item').forEach((item, index) => {
-      item.addEventListener('click', () => {
-        const race = races[index];
-        selectSettingsRecentRace(race, dropdown);
-      });
+    dropdown.innerHTML = renderRecentRaceItems(races);
+    attachRecentRaceItemHandlers(dropdown, races, (race) => {
+      selectSettingsRecentRace(race, dropdown);
     });
   }
 }
@@ -1971,19 +1967,6 @@ async function fetchRacesFromApi(): Promise<RecentRace[]> {
   });
 
   return todaysRaces;
-}
-
-/**
- * Render a single recent race item
- */
-function renderRecentRaceItem(race: RecentRace): string {
-  const entryText = race.entryCount !== undefined ? `${race.entryCount} entries` : '';
-  return `
-    <div class="recent-race-item" data-race-id="${race.raceId}">
-      <span class="recent-race-id">${race.raceId}</span>
-      <span class="recent-race-meta">${entryText}</span>
-    </div>
-  `;
 }
 
 /**
