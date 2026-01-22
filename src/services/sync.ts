@@ -104,6 +104,7 @@ class SyncService {
   private isProcessingQueue = false;
   private visibilityHandler: (() => void) | null = null;
   private wasPollingBeforeHidden = false;
+  private wasQueueProcessingBeforeHidden = false;
 
   // Adaptive polling state
   private consecutiveNoChanges = 0; // Track polls with no changes
@@ -147,18 +148,29 @@ class SyncService {
         if (document.hidden) {
           // Page is hidden - stop polling to save battery
           this.wasPollingBeforeHidden = this.pollInterval !== null;
+          this.wasQueueProcessingBeforeHidden = this.queueInterval !== null;
           if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = null;
+          }
+          if (this.queueInterval) {
+            clearInterval(this.queueInterval);
+            this.queueInterval = null;
           }
         } else {
           // Page is visible again - resume polling if it was active before
           if (this.wasPollingBeforeHidden) {
             this.startPolling();
           }
+          if (this.wasQueueProcessingBeforeHidden) {
+            this.startQueueProcessor();
+          }
         }
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
+      if (document.hidden) {
+        this.visibilityHandler();
+      }
     }
 
     // Subscribe to battery status changes for adaptive polling

@@ -68,6 +68,7 @@ let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Track search input listener for cleanup on re-init
 let searchInputListener: ((e: Event) => void) | null = null;
+let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
 
 // Track race check request ID to ignore stale responses
 let raceCheckRequestId = 0;
@@ -1032,12 +1033,15 @@ function initSettingsView(): void {
     });
 
     // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const target = e.target as Node;
-      if (!settingsRecentRacesBtn.contains(target) && !settingsRecentRacesDropdown.contains(target)) {
-        settingsRecentRacesDropdown.style.display = 'none';
-      }
-    });
+    if (!settingsRecentRacesDocumentHandler) {
+      settingsRecentRacesDocumentHandler = (e) => {
+        const target = e.target as Node;
+        if (!settingsRecentRacesBtn.contains(target) && !settingsRecentRacesDropdown.contains(target)) {
+          settingsRecentRacesDropdown.style.display = 'none';
+        }
+      };
+      document.addEventListener('click', settingsRecentRacesDocumentHandler);
+    }
   }
 
   // Device name input

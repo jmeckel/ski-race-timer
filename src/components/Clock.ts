@@ -138,6 +138,10 @@ export class Clock {
         }
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
+      if (document.hidden && this.animationId !== null) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
     }
 
     // Subscribe to battery changes for adaptive frame rate

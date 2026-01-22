@@ -47,6 +47,7 @@ export class OnboardingController {
   private currentStep = 1;
   private totalSteps = 5;
   private updateTranslationsCallback: (() => void) | null = null;
+  private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
 
   constructor() {
     this.modal = document.getElementById('onboarding-modal');
@@ -208,12 +209,15 @@ export class OnboardingController {
       });
 
       // Close dropdown when clicking outside
-      document.addEventListener('click', (e) => {
-        const target = e.target as Node;
-        if (!recentRacesBtn.contains(target) && !recentRacesDropdown.contains(target)) {
-          recentRacesDropdown.style.display = 'none';
-        }
-      });
+      if (!this.recentRacesDocumentHandler) {
+        this.recentRacesDocumentHandler = (e) => {
+          const target = e.target as Node;
+          if (!recentRacesBtn.contains(target) && !recentRacesDropdown.contains(target)) {
+            recentRacesDropdown.style.display = 'none';
+          }
+        };
+        document.addEventListener('click', this.recentRacesDocumentHandler);
+      }
     }
   }
 
@@ -572,5 +576,10 @@ export class OnboardingController {
     // Show success feedback
     feedbackSuccess();
     showToast(t('onboardingComplete', store.getState().currentLang), 'success');
+
+    if (this.recentRacesDocumentHandler) {
+      document.removeEventListener('click', this.recentRacesDocumentHandler);
+      this.recentRacesDocumentHandler = null;
+    }
   }
 }
