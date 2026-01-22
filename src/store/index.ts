@@ -661,8 +661,11 @@ class Store {
 
   toggleSetting(key: keyof Settings) {
     const settings = { ...this.state.settings };
-    settings[key] = !settings[key];
-    this.setState({ settings });
+    const current = settings[key];
+    if (typeof current === 'boolean') {
+      settings[key] = (!current) as Settings[typeof key];
+      this.setState({ settings });
+    }
   }
 
   // ===== Sync State =====
