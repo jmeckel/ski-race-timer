@@ -139,6 +139,30 @@ describe('GPS Service', () => {
     });
   });
 
+  describe('pause', () => {
+    it('should pause GPS without clearing last position', () => {
+      gpsService.start();
+
+      successCallback({
+        coords: {
+          latitude: 47.0,
+          longitude: 8.0,
+          accuracy: 5,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      });
+
+      gpsService.pause();
+
+      expect(mockClearWatch).toHaveBeenCalledWith(1);
+      expect(gpsService.getPosition()).not.toBeNull();
+    });
+  });
+
   describe('position handling', () => {
     it('should store position on update', () => {
       gpsService.start();

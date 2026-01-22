@@ -564,6 +564,86 @@ body {
   animation: recordFlash 0.3s ease-out;
 }
 
+/* ===== Auto Finish Timing ===== */
+.auto-finish-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 16px 16px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+}
+
+.auto-finish-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #0b0b0b;
+}
+
+.auto-finish-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auto-finish-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.auto-finish-gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--auto-finish-line, 50%);
+  width: var(--auto-finish-gate, 20%);
+  transform: translateX(-50%);
+  background: rgba(59, 130, 246, 0.12);
+  border-left: 2px solid rgba(59, 130, 246, 0.4);
+  border-right: 2px solid rgba(59, 130, 246, 0.4);
+}
+
+.auto-finish-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--auto-finish-line, 50%);
+  width: 2px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.auto-finish-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auto-finish-status {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.auto-finish-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.auto-finish-control input[type="range"] {
+  flex: 1;
+}
+
 /* ===== Results View ===== */
 .results-view {
   display: flex;
@@ -844,6 +924,12 @@ body {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.modal-btn:focus-visible,
+.edit-run-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Race Exists Indicator */

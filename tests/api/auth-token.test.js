@@ -13,12 +13,42 @@ import crypto from 'crypto';
 // ============================================
 
 const mockRedisData = new Map();
+const mockRateLimitData = new Map();
 
 const createMockRedis = () => ({
   get: vi.fn((key) => Promise.resolve(mockRedisData.get(key) || null)),
   set: vi.fn((key, value, ...args) => {
     mockRedisData.set(key, value);
     return Promise.resolve('OK');
+  }),
+  multi: vi.fn(() => {
+    const commands = [];
+    const chain = {
+      incr: (key) => {
+        commands.push(['incr', key]);
+        return chain;
+      },
+      expire: (key, ttl) => {
+        commands.push(['expire', key, ttl]);
+        return chain;
+      },
+      exec: () => {
+        const results = commands.map(([command, key]) => {
+          if (command === 'incr') {
+            const current = mockRateLimitData.get(key) || 0;
+            const next = current + 1;
+            mockRateLimitData.set(key, next);
+            return [null, next];
+          }
+          if (command === 'expire') {
+            return [null, 1];
+          }
+          return [null, null];
+        });
+        return Promise.resolve(results);
+      }
+    };
+    return chain;
   }),
   on: vi.fn(),
   connect: vi.fn(() => Promise.resolve())
@@ -51,6 +81,34 @@ function decodeJwtPayload(token) {
 // ============================================
 
 const CLIENT_PIN_KEY = 'admin:clientPin';
+const RATE_LIMIT_WINDOW = 60;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
+function getClientIP(req) {
+  const forwarded = req.headers?.['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.headers?.['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+}
+
+async function checkRateLimit(redis, ip) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - (now % RATE_LIMIT_WINDOW);
+  const key = `ratelimit:auth:${ip}:${windowStart}`;
+
+  const multi = redis.multi();
+  multi.incr(key);
+  multi.expire(key, RATE_LIMIT_WINDOW + 10);
+  const results = await multi.exec();
+  const count = results?.[0]?.[1] ?? 0;
+
+  return {
+    allowed: count <= RATE_LIMIT_MAX_REQUESTS,
+    remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - count),
+    reset: windowStart + RATE_LIMIT_WINDOW
+  };
+}
 
 async function handler(req, res, redis) {
   const corsHeaders = {
@@ -94,6 +152,20 @@ async function handler(req, res, redis) {
   }
 
   try {
+    const clientIP = getClientIP(req);
+    const rateLimitResult = await checkRateLimit(redis, clientIP);
+
+    mockRes.setHeader('X-RateLimit-Limit', RATE_LIMIT_MAX_REQUESTS);
+    mockRes.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
+    mockRes.setHeader('X-RateLimit-Reset', rateLimitResult.reset);
+
+    if (!rateLimitResult.allowed) {
+      return mockRes.status(429).json({
+        error: 'Too many attempts. Please try again later.',
+        retryAfter: rateLimitResult.reset - Math.floor(Date.now() / 1000)
+      });
+    }
+
     const { pin } = req.body || {};
 
     if (!pin || typeof pin !== 'string') {
@@ -169,6 +241,7 @@ describe('API: /api/auth/token', () => {
 
   beforeEach(() => {
     mockRedisData.clear();
+    mockRateLimitData.clear();
     mockRedis = createMockRedis();
   });
 
@@ -235,6 +308,30 @@ describe('API: /api/auth/token', () => {
 
         expect(result.status).toBe(400);
         expect(result.body.error).toBe('PIN must be exactly 4 digits');
+      });
+    });
+
+    describe('Rate Limiting', () => {
+      it('should return 429 after too many attempts from same IP', async () => {
+        const req = { method: 'POST', headers: { 'x-forwarded-for': '1.2.3.4' }, body: { pin: '1234' } };
+
+        for (let i = 0; i < RATE_LIMIT_MAX_REQUESTS; i++) {
+          const result = await handler(req, {}, mockRedis);
+          expect(result.status).toBe(200);
+        }
+
+        const blocked = await handler(req, {}, mockRedis);
+        expect(blocked.status).toBe(429);
+        expect(blocked.body.error).toBe('Too many attempts. Please try again later.');
+      });
+
+      it('should include rate limit headers', async () => {
+        const req = { method: 'POST', headers: { 'x-forwarded-for': '5.6.7.8' }, body: { pin: '1234' } };
+        const result = await handler(req, {}, mockRedis);
+
+        expect(result.headers['X-RateLimit-Limit']).toBe(RATE_LIMIT_MAX_REQUESTS);
+        expect(result.headers['X-RateLimit-Remaining']).toBe(RATE_LIMIT_MAX_REQUESTS - 1);
+        expect(result.headers['X-RateLimit-Reset']).toBeDefined();
       });
     });
 

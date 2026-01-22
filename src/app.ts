@@ -2,7 +2,7 @@ import { store } from './store';
 import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, autoFinishTimingService, type AutoFinishStatus } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -10,6 +10,7 @@ import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
+import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
 import type { Entry, TimingPoint, Language, RaceInfo } from './types';
@@ -63,6 +64,13 @@ let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
 let onboardingController: OnboardingController | null = null;
+let autoFinishPanel: HTMLElement | null = null;
+let autoFinishVideo: HTMLVideoElement | null = null;
+let autoFinishStatus: HTMLElement | null = null;
+let autoFinishLineSlider: HTMLInputElement | null = null;
+let autoFinishGateSlider: HTMLInputElement | null = null;
+let autoFinishSensitivitySlider: HTMLInputElement | null = null;
+let autoFinishCurrentStatus: AutoFinishStatus = 'idle';
 
 // MEMORY LEAK FIX: Track debounced timeouts for cleanup on page unload
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -93,6 +101,7 @@ export function initApp(): void {
   initTimingPoints();
   initRunSelector();
   initTimestampButton();
+  initAutoFinishTiming();
   initResultsView();
   initSettingsView();
   initModals();
@@ -104,9 +113,6 @@ export function initApp(): void {
 
   // Initialize services based on settings
   const settings = store.getState().settings;
-  if (settings.gps) {
-    gpsService.start();
-  }
   // Auto-start sync if enabled, race ID exists, AND user has valid auth token
   // Token proves user previously authenticated - no PIN needed on restart
   if (settings.sync && store.getState().raceId) {
@@ -124,9 +130,7 @@ export function initApp(): void {
       }, 500);
     }
   }
-  if (settings.photoCapture) {
-    cameraService.initialize();
-  }
+  applyViewServices(store.getState());
 
   // Listen for race deleted events from sync service
   window.addEventListener('race-deleted', handleRaceDeleted as EventListener);
@@ -322,6 +326,92 @@ function initTimestampButton(): void {
 }
 
 /**
+ * Initialize auto finish timing UI
+ */
+function initAutoFinishTiming(): void {
+  autoFinishPanel = document.getElementById('auto-finish-panel');
+  autoFinishVideo = document.getElementById('auto-finish-video') as HTMLVideoElement | null;
+  autoFinishStatus = document.getElementById('auto-finish-status');
+  autoFinishLineSlider = document.getElementById('auto-finish-line-slider') as HTMLInputElement | null;
+  autoFinishGateSlider = document.getElementById('auto-finish-gate-slider') as HTMLInputElement | null;
+  autoFinishSensitivitySlider = document.getElementById('auto-finish-sensitivity-slider') as HTMLInputElement | null;
+
+  if (autoFinishVideo) {
+    autoFinishTimingService.attachVideoElement(autoFinishVideo);
+  }
+
+  const handleRangeChange = () => {
+    const state = store.getState();
+    store.updateSettings({
+      autoFinishLinePosition: autoFinishLineSlider ? Number(autoFinishLineSlider.value) : state.settings.autoFinishLinePosition,
+      autoFinishGateWidth: autoFinishGateSlider ? Number(autoFinishGateSlider.value) : state.settings.autoFinishGateWidth,
+      autoFinishSensitivity: autoFinishSensitivitySlider ? Number(autoFinishSensitivitySlider.value) : state.settings.autoFinishSensitivity
+    });
+  };
+
+  autoFinishLineSlider?.addEventListener('input', handleRangeChange);
+  autoFinishGateSlider?.addEventListener('input', handleRangeChange);
+  autoFinishSensitivitySlider?.addEventListener('input', handleRangeChange);
+
+  syncAutoFinishUi(store.getState());
+  updateAutoFinishTiming(store.getState());
+}
+
+function getAutoFinishConfig(state: ReturnType<typeof store.getState>) {
+  return {
+    linePosition: state.settings.autoFinishLinePosition / 100,
+    gateWidth: state.settings.autoFinishGateWidth / 100,
+    sensitivity: state.settings.autoFinishSensitivity / 100
+  };
+}
+
+function syncAutoFinishUi(state: ReturnType<typeof store.getState>): void {
+  if (!autoFinishPanel) return;
+
+  if (autoFinishLineSlider) autoFinishLineSlider.value = String(state.settings.autoFinishLinePosition);
+  if (autoFinishGateSlider) autoFinishGateSlider.value = String(state.settings.autoFinishGateWidth);
+  if (autoFinishSensitivitySlider) autoFinishSensitivitySlider.value = String(state.settings.autoFinishSensitivity);
+
+  autoFinishPanel.style.setProperty('--auto-finish-line', `${state.settings.autoFinishLinePosition}%`);
+  autoFinishPanel.style.setProperty('--auto-finish-gate', `${state.settings.autoFinishGateWidth}%`);
+}
+
+function updateAutoFinishStatus(status: AutoFinishStatus): void {
+  if (!autoFinishStatus) return;
+  autoFinishCurrentStatus = status;
+  const lang = store.getState().currentLang;
+  const statusText = {
+    idle: t('autoFinishStatusIdle', lang),
+    armed: t('autoFinishStatusArmed', lang),
+    paused: t('autoFinishStatusPaused', lang),
+    triggered: t('autoFinishStatusTriggered', lang)
+  }[status];
+  autoFinishStatus.textContent = statusText;
+}
+
+function updateAutoFinishTiming(state: ReturnType<typeof store.getState>): void {
+  if (!autoFinishPanel) return;
+  const enabled = state.settings.autoFinishTiming && state.currentView === 'timer';
+
+  autoFinishPanel.style.display = enabled ? 'flex' : 'none';
+  syncAutoFinishUi(state);
+
+  if (!enabled) {
+    autoFinishTimingService.stop();
+    updateAutoFinishStatus('idle');
+    return;
+  }
+
+  autoFinishTimingService.start(
+    getAutoFinishConfig(state),
+    (timestamp) => {
+      recordAutoFinishTimestamp(timestamp);
+    },
+    (status) => updateAutoFinishStatus(status)
+  );
+}
+
+/**
  * Record a timestamp entry
  */
 async function recordTimestamp(): Promise<void> {
@@ -436,6 +526,38 @@ async function recordTimestamp(): Promise<void> {
     // Update last recorded display
     updateLastRecorded(entry);
 
+  } finally {
+    store.setRecording(false);
+  }
+}
+
+/**
+ * Record a timestamp entry from auto finish timing
+ */
+async function recordAutoFinishTimestamp(timestamp: string): Promise<void> {
+  const state = store.getState();
+  if (state.isRecording) return;
+
+  const gpsCoords = gpsService.getCoordinates();
+  store.setRecording(true);
+
+  try {
+    const entry: Entry = {
+      id: generateEntryId(state.deviceId),
+      bib: '',
+      point: 'F',
+      run: state.selectedRun,
+      timestamp,
+      status: 'ok',
+      deviceId: state.deviceId,
+      deviceName: state.deviceName,
+      gpsCoords
+    };
+
+    store.addEntry(entry);
+    feedbackSuccess();
+    showConfirmation(entry);
+    syncService.broadcastEntry(entry);
   } finally {
     store.setRecording(false);
   }
@@ -808,7 +930,6 @@ function initSettingsView(): void {
   if (gpsToggle) {
     gpsToggle.addEventListener('change', () => {
       store.updateSettings({ gps: gpsToggle.checked });
-      gpsService.toggle(gpsToggle.checked);
     });
   }
 
@@ -881,9 +1002,18 @@ function initSettingsView(): void {
 
   // Auto-increment toggle
   const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
+  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
   if (autoToggle) {
     autoToggle.addEventListener('change', () => {
       store.updateSettings({ auto: autoToggle.checked });
+    });
+  }
+
+  // Auto finish timing toggle
+  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
+  if (autoFinishToggle) {
+    autoFinishToggle.addEventListener('change', () => {
+      store.updateSettings({ autoFinishTiming: autoFinishToggle.checked });
     });
   }
 
@@ -908,7 +1038,6 @@ function initSettingsView(): void {
   if (photoToggle) {
     photoToggle.addEventListener('change', () => {
       store.updateSettings({ photoCapture: photoToggle.checked });
-      cameraService.toggle(photoToggle.checked);
     });
   }
 
@@ -1446,6 +1575,11 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
     }
   }
 
+  if (changedKeys.includes('currentView') || changedKeys.includes('settings')) {
+    applyViewServices(state);
+    updateAutoFinishTiming(state);
+  }
+
   // Update bib display
   if (changedKeys.includes('bibInput')) {
     updateBibDisplay();
@@ -1720,6 +1854,7 @@ function updateSettingsInputs(): void {
   if (gpsToggle) gpsToggle.checked = settings.gps;
   if (syncToggle) syncToggle.checked = settings.sync;
   if (autoToggle) autoToggle.checked = settings.auto;
+  if (autoFinishToggle) autoFinishToggle.checked = settings.autoFinishTiming;
   if (hapticToggle) hapticToggle.checked = settings.haptic;
   if (soundToggle) soundToggle.checked = settings.sound;
   if (photoToggle) photoToggle.checked = settings.photoCapture;
@@ -1776,6 +1911,7 @@ function updateTranslations(): void {
 
   // Update dynamically set text that depends on language
   updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
+  updateAutoFinishStatus(autoFinishCurrentStatus);
 }
 
 /**
@@ -2560,6 +2696,9 @@ function handleBeforeUnload(): void {
 
   // Cleanup sync service
   syncService.cleanup();
+
+  // Cleanup auto finish timing service
+  autoFinishTimingService.stop();
 
   // Cleanup camera service
   cameraService.stop();

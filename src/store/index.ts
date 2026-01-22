@@ -37,6 +37,10 @@ const DEFAULT_SETTINGS: Settings = {
   gps: true,          // GPS enabled by default for accurate timestamps
   simple: false,  // Normal mode is default (simple mode toggle is hidden)
   photoCapture: false,
+  autoFinishTiming: false,
+  autoFinishLinePosition: 50,
+  autoFinishGateWidth: 20,
+  autoFinishSensitivity: 60,
   // Liquid Glass UI settings - enabled by default for modern look
   motionEffects: true,
   glassEffects: true,

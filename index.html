@@ -62,14 +62,40 @@
 
     <!-- Main Content -->
     <main id="main">
-      <!-- Timer View -->
-      <div class="view timer-view active">
-        <!-- Clock -->
-        <div class="clock-container glass-enable-target" id="clock-container"></div>
+        <!-- Timer View -->
+        <div class="view timer-view active">
+          <!-- Clock -->
+          <div class="clock-container glass-enable-target" id="clock-container"></div>
 
-        <!-- Timing Points and Run Selector -->
-        <div class="timing-controls">
-          <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
+          <!-- Auto Finish Timing -->
+          <div class="auto-finish-panel glass-enable-target" id="auto-finish-panel" style="display: none;">
+            <div class="auto-finish-video-wrap">
+              <video id="auto-finish-video" autoplay playsinline muted></video>
+              <div class="auto-finish-overlay">
+                <div class="auto-finish-gate" id="auto-finish-gate"></div>
+                <div class="auto-finish-line" id="auto-finish-line"></div>
+              </div>
+            </div>
+            <div class="auto-finish-controls">
+              <div class="auto-finish-status" id="auto-finish-status" data-i18n="autoFinishStatusIdle">Auto timing idle</div>
+              <label class="auto-finish-control">
+                <span data-i18n="autoFinishLinePosition">Line position</span>
+                <input type="range" id="auto-finish-line-slider" min="10" max="90" value="50">
+              </label>
+              <label class="auto-finish-control">
+                <span data-i18n="autoFinishGateWidth">Gate width</span>
+                <input type="range" id="auto-finish-gate-slider" min="8" max="40" value="20">
+              </label>
+              <label class="auto-finish-control">
+                <span data-i18n="autoFinishSensitivity">Sensitivity</span>
+                <input type="range" id="auto-finish-sensitivity-slider" min="20" max="90" value="60">
+              </label>
+            </div>
+          </div>
+
+          <!-- Timing Points and Run Selector -->
+          <div class="timing-controls">
+            <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
             <button class="timing-point-btn glass-surface-3 active" data-point="S" role="radio" aria-checked="false" data-advanced>
               <span data-i18n="start">Start</span>
             </button>
@@ -309,6 +335,16 @@
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="auto-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="autoFinishTiming">Auto Finish Timing</span>
+              <span class="setting-description" data-i18n="autoFinishTimingDesc">Use the camera to auto-trigger finish timestamps</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-finish-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>

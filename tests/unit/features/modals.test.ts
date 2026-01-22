@@ -59,6 +59,46 @@ describe('Modal Feature Module', () => {
     });
   });
 
+  describe('focus management', () => {
+    beforeEach(() => {
+      modal1.innerHTML = `
+        <div class="modal-content">
+          <button id="first-btn">First</button>
+          <button id="last-btn">Last</button>
+        </div>
+      `;
+    });
+
+    it('should move focus to first focusable element on open', () => {
+      openModal(modal1);
+      vi.runAllTimers();
+      const first = modal1.querySelector('#first-btn');
+      expect(document.activeElement).toBe(first);
+    });
+
+    it('should wrap focus with Tab and Shift+Tab', () => {
+      openModal(modal1);
+      vi.runAllTimers();
+      const first = modal1.querySelector('#first-btn');
+      const last = modal1.querySelector('#last-btn');
+
+      (last as HTMLElement).focus();
+      last?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+      expect(document.activeElement).toBe(first);
+
+      (first as HTMLElement).focus();
+      first?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+      expect(document.activeElement).toBe(last);
+    });
+
+    it('should close modal on Escape', () => {
+      openModal(modal1);
+      vi.runAllTimers();
+      modal1.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(modal1.classList.contains('closing')).toBe(true);
+    });
+  });
+
   describe('closeModal', () => {
     it('should add "closing" class immediately', () => {
       modal1.classList.add('show');

@@ -77,6 +77,20 @@ class GpsService {
   }
 
   /**
+   * Pause watching GPS position without clearing last known location
+   */
+  pause(): void {
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+
+    this.wasActiveBeforeHidden = false;
+    store.setGpsStatus('inactive');
+    console.log('GPS watching paused');
+  }
+
+  /**
    * Stop watching GPS position
    */
   stop(): void {

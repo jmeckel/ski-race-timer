@@ -26,6 +26,8 @@ class CameraService {
   private cameraState: CameraState = 'stopped';
   private visibilityHandler: (() => void) | null = null;
   private pendingVisibilityChange: 'hidden' | 'visible' | null = null;
+  private previewElement: HTMLVideoElement | null = null;
+  private ownsVideoElement = false;
 
   /**
    * Initialize the camera service
@@ -43,14 +45,20 @@ class CameraService {
         throw new Error('Camera API not available');
       }
 
-      // Create hidden video element
-      this.videoElement = document.createElement('video');
-      this.videoElement.setAttribute('autoplay', '');
-      this.videoElement.setAttribute('playsinline', '');
-      this.videoElement.style.position = 'absolute';
-      this.videoElement.style.left = '-9999px';
-      this.videoElement.style.top = '-9999px';
-      document.body.appendChild(this.videoElement);
+      // Use preview element if provided, otherwise create hidden video element
+      if (this.previewElement) {
+        this.videoElement = this.previewElement;
+        this.ownsVideoElement = false;
+      } else {
+        this.videoElement = document.createElement('video');
+        this.videoElement.setAttribute('autoplay', '');
+        this.videoElement.setAttribute('playsinline', '');
+        this.videoElement.style.position = 'absolute';
+        this.videoElement.style.left = '-9999px';
+        this.videoElement.style.top = '-9999px';
+        document.body.appendChild(this.videoElement);
+        this.ownsVideoElement = true;
+      }
 
       // Create hidden canvas for photo capture
       this.canvasElement = document.createElement('canvas');
@@ -156,14 +164,19 @@ class CameraService {
 
     try {
       if (!this.videoElement) {
-        // Video element was removed, need to recreate
-        this.videoElement = document.createElement('video');
-        this.videoElement.setAttribute('autoplay', '');
-        this.videoElement.setAttribute('playsinline', '');
-        this.videoElement.style.position = 'absolute';
-        this.videoElement.style.left = '-9999px';
-        this.videoElement.style.top = '-9999px';
-        document.body.appendChild(this.videoElement);
+        if (this.previewElement) {
+          this.videoElement = this.previewElement;
+          this.ownsVideoElement = false;
+        } else {
+          this.videoElement = document.createElement('video');
+          this.videoElement.setAttribute('autoplay', '');
+          this.videoElement.setAttribute('playsinline', '');
+          this.videoElement.style.position = 'absolute';
+          this.videoElement.style.left = '-9999px';
+          this.videoElement.style.top = '-9999px';
+          document.body.appendChild(this.videoElement);
+          this.ownsVideoElement = true;
+        }
       }
 
       // Request camera access
@@ -283,8 +296,10 @@ class CameraService {
 
     if (this.videoElement) {
       this.videoElement.srcObject = null;
-      this.videoElement.remove();
-      this.videoElement = null;
+      if (this.ownsVideoElement) {
+        this.videoElement.remove();
+        this.videoElement = null;
+      }
     }
 
     // Clean up canvas element reference
@@ -308,6 +323,40 @@ class CameraService {
    */
   isReady(): boolean {
     return this.cameraState === 'ready';
+  }
+
+  /**
+   * Attach or detach a preview element for camera stream
+   */
+  setPreviewElement(element: HTMLVideoElement | null): void {
+    this.previewElement = element;
+    if (!element) {
+      if (this.videoElement && !this.ownsVideoElement) {
+        this.videoElement.srcObject = null;
+        this.videoElement = null;
+      }
+      return;
+    }
+
+    if (this.videoElement !== element) {
+      if (this.videoElement && this.ownsVideoElement) {
+        this.videoElement.remove();
+      }
+      this.videoElement = element;
+      this.ownsVideoElement = false;
+    }
+
+    if (this.stream) {
+      this.videoElement.srcObject = this.stream;
+      this.videoElement.play().catch(() => null);
+    }
+  }
+
+  /**
+   * Get the active video element (preview or hidden)
+   */
+  getVideoElement(): HTMLVideoElement | null {
+    return this.videoElement;
   }
 
   /**

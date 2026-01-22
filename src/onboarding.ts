@@ -8,6 +8,7 @@ import { generateDeviceName } from './utils/id';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { fetchWithTimeout } from './utils/errors';
+import { openModal, closeModal } from './features/modals';
 import type { Language, RaceInfo } from './types';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
@@ -24,19 +25,6 @@ function debounce<T extends (...args: unknown[]) => unknown>(
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
-}
-
-/**
- * Close modal with animation
- */
-function closeModal(modal: HTMLElement | null): void {
-  if (!modal || !modal.classList.contains('show')) return;
-
-  modal.classList.add('closing');
-
-  setTimeout(() => {
-    modal.classList.remove('show', 'closing');
-  }, 150);
 }
 
 /**
@@ -106,7 +94,7 @@ export class OnboardingController {
     if (photoToggle) photoToggle.checked = false;
 
     this.updateUI();
-    this.modal.classList.add('show');
+    openModal(this.modal);
 
     // Pre-fill device name with current value
     const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;

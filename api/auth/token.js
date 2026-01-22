@@ -32,6 +32,46 @@ function setCorsHeaders(res) {
 // Redis key for client PIN hash
 const CLIENT_PIN_KEY = 'admin:clientPin';
 
+// Rate limiting configuration (per IP)
+const RATE_LIMIT_WINDOW = 60; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max PIN exchanges per minute per IP
+
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+}
+
+async function checkRateLimit(client, ip) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - (now % RATE_LIMIT_WINDOW);
+  const key = `ratelimit:auth:${ip}:${windowStart}`;
+
+  try {
+    const multi = client.multi();
+    multi.incr(key);
+    multi.expire(key, RATE_LIMIT_WINDOW + 10);
+    const results = await multi.exec();
+    const count = results?.[0]?.[1] ?? 0;
+
+    return {
+      allowed: count <= RATE_LIMIT_MAX_REQUESTS,
+      remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - count),
+      reset: windowStart + RATE_LIMIT_WINDOW
+    };
+  } catch (error) {
+    console.error('Rate limit check error:', error.message);
+    // Fail open to avoid blocking auth if Redis has a hiccup
+    return {
+      allowed: true,
+      remaining: RATE_LIMIT_MAX_REQUESTS,
+      reset: windowStart + RATE_LIMIT_WINDOW
+    };
+  }
+}
+
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -54,6 +94,22 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Apply rate limiting before PIN processing
+    const clientIP = getClientIP(req);
+    const rateLimitResult = await checkRateLimit(client, clientIP);
+
+    // Set rate limit headers
+    res.setHeader('X-RateLimit-Limit', RATE_LIMIT_MAX_REQUESTS);
+    res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
+    res.setHeader('X-RateLimit-Reset', rateLimitResult.reset);
+
+    if (!rateLimitResult.allowed) {
+      return res.status(429).json({
+        error: 'Too many attempts. Please try again later.',
+        retryAfter: rateLimitResult.reset - Math.floor(Date.now() / 1000)
+      });
+    }
+
     const { pin } = req.body || {};
 
     if (!pin || typeof pin !== 'string') {
