@@ -1,6 +1,8 @@
 import { store } from './store';
 import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
+// DISABLED: Motion effects disabled to save battery
+// import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -282,8 +284,9 @@ function initRunSelector(): void {
   });
 }
 
-// Track if we've requested motion permission
-let motionPermissionRequested = false;
+// DISABLED: Motion effects disabled to save battery
+// // Track if we've requested motion permission
+// let motionPermissionRequested = false;
 
 /**
  * Initialize timestamp button
@@ -293,18 +296,19 @@ function initTimestampButton(): void {
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
-    // Request motion permission on first click (iOS 13+ requires user gesture)
-    if (!motionPermissionRequested && store.getState().settings.motionEffects) {
-      motionPermissionRequested = true;
-      if (motionService.requiresPermission()) {
-        const granted = await motionService.requestPermission();
-        if (granted) {
-          await motionService.initialize();
-        }
-      } else if (motionService.isSupported()) {
-        await motionService.initialize();
-      }
-    }
+    // DISABLED: Motion effects disabled to save battery
+    // // Request motion permission on first click (iOS 13+ requires user gesture)
+    // if (!motionPermissionRequested && store.getState().settings.motionEffects) {
+    //   motionPermissionRequested = true;
+    //   if (motionService.requiresPermission()) {
+    //     const granted = await motionService.requestPermission();
+    //     if (granted) {
+    //       await motionService.initialize();
+    //     }
+    //   } else if (motionService.isSupported()) {
+    //     await motionService.initialize();
+    //   }
+    // }
     await recordTimestamp();
   });
 
@@ -1822,21 +1826,23 @@ function applyGlassEffectSettings(): void {
     });
   }
 
-  // Motion effects toggle
-  if (settings.motionEffects && settings.glassEffects) {
-    root.classList.remove('no-motion-effects');
-    // Initialize motion service if supported
-    if (motionService.isSupported()) {
-      // Note: On iOS 13+, permission must be requested from a user gesture
-      // We'll initialize without permission request here - the settings toggle will handle it
-      if (!motionService.requiresPermission()) {
-        motionService.initialize();
-      }
-    }
-  } else {
-    root.classList.add('no-motion-effects');
-    motionService.pause();
-  }
+  // DISABLED: Motion effects disabled to save battery
+  // // Motion effects toggle
+  // if (settings.motionEffects && settings.glassEffects) {
+  //   root.classList.remove('no-motion-effects');
+  //   // Initialize motion service if supported
+  //   if (motionService.isSupported()) {
+  //     // Note: On iOS 13+, permission must be requested from a user gesture
+  //     // We'll initialize without permission request here - the settings toggle will handle it
+  //     if (!motionService.requiresPermission()) {
+  //       motionService.initialize();
+  //     }
+  //   }
+  // } else {
+  //   root.classList.add('no-motion-effects');
+  //   motionService.pause();
+  // }
+  root.classList.add('no-motion-effects');
 
   // Outdoor mode toggle (high contrast)
   if (settings.outdoorMode) {
@@ -2564,8 +2570,9 @@ function handleBeforeUnload(): void {
   // Cleanup wake lock service
   wakeLockService.disable();
 
-  // Cleanup motion service
-  motionService.cleanup();
+  // DISABLED: Motion effects disabled to save battery
+  // // Cleanup motion service
+  // motionService.cleanup();
 
   // Cleanup toast singleton and its event listener
   destroyToast();
