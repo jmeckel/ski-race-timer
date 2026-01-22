@@ -391,12 +391,13 @@ function updateAutoFinishStatus(status: AutoFinishStatus): void {
 
 function updateAutoFinishTiming(state: ReturnType<typeof store.getState>): void {
   if (!autoFinishPanel) return;
-  const enabled = state.settings.autoFinishTiming && state.currentView === 'timer';
+  const enabled = state.settings.autoFinishTiming;
+  const showPanel = enabled && state.currentView === 'settings';
 
-  autoFinishPanel.style.display = enabled ? 'flex' : 'none';
+  autoFinishPanel.style.display = showPanel ? 'flex' : 'none';
   syncAutoFinishUi(state);
 
-  if (!enabled) {
+  if (!enabled || state.currentView !== 'timer') {
     autoFinishTimingService.stop();
     updateAutoFinishStatus('idle');
     return;
