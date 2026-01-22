@@ -60,6 +60,20 @@ const MAX_UNDO_STACK = 50;
  */
 type StateListener = (state: Readonly<AppState>, changedKeys: (keyof AppState)[]) => void;
 
+type BooleanSettingKey =
+  | 'auto'
+  | 'haptic'
+  | 'sound'
+  | 'sync'
+  | 'syncPhotos'
+  | 'gps'
+  | 'simple'
+  | 'photoCapture'
+  | 'autoFinishTiming'
+  | 'motionEffects'
+  | 'glassEffects'
+  | 'outdoorMode';
+
 // Error callback for listener exceptions
 type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
 
@@ -659,13 +673,10 @@ class Store {
     this.setState({ settings });
   }
 
-  toggleSetting(key: keyof Settings) {
+  toggleSetting(key: BooleanSettingKey) {
     const settings = { ...this.state.settings };
-    const current = settings[key];
-    if (typeof current === 'boolean') {
-      settings[key] = (!current) as Settings[typeof key];
-      this.setState({ settings });
-    }
+    settings[key] = !settings[key];
+    this.setState({ settings });
   }
 
   // ===== Sync State =====

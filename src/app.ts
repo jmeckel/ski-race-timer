@@ -1002,7 +1002,6 @@ function initSettingsView(): void {
 
   // Auto-increment toggle
   const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
-  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
   if (autoToggle) {
     autoToggle.addEventListener('change', () => {
       store.updateSettings({ auto: autoToggle.checked });
@@ -1839,6 +1838,7 @@ function updateSettingsInputs(): void {
   const gpsToggle = document.getElementById('gps-toggle') as HTMLInputElement;
   const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
   const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
+  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
   const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
   const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement;
   const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
