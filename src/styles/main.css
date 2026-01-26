@@ -121,6 +121,7 @@ body {
  * Note: bottom safe area is on tab-bar so its background fills the safe area.
  */
 .app {
+  position: relative; /* For absolute positioning of confirmation overlay */
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1243,23 +1244,19 @@ body {
 
 /* ===== Confirmation Overlay ===== */
 /* Non-blocking overlay - allows interaction with elements below */
-/* Uses inset:0 + flexbox centering instead of transform to fix iOS Safari rendering */
+/* Uses position:absolute inside .app to avoid iOS Safari fixed positioning issues */
 .confirmation-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 900;
   pointer-events: none;
-  /* Force GPU layer for iOS Safari */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
 }
 
 .confirmation-overlay .confirmation-content {
   padding: 32px 48px;
-  /* Solid fallback background for iOS, enhanced with backdrop-filter where supported */
   background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1267,9 +1264,6 @@ body {
   border: 4px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  /* Force GPU layer for iOS Safari */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
 }
 
 /* Timing point colored borders for quick visual verification */
@@ -1295,13 +1289,11 @@ body {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    -webkit-transform: scale(0.8) translateZ(0);
-    transform: scale(0.8) translateZ(0);
+    transform: scale(0.8);
   }
   to {
     opacity: 1;
-    -webkit-transform: scale(1) translateZ(0);
-    transform: scale(1) translateZ(0);
+    transform: scale(1);
   }
 }
 

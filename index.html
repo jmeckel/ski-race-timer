@@ -438,28 +438,28 @@
         <span data-i18n="settings">Settings</span>
       </button>
     </nav>
-  </div>
 
-  <!-- Confirmation Overlay -->
-  <div class="confirmation-overlay glass-surface-1 glass-enable-target" id="confirmation-overlay">
-    <div class="confirmation-content">
-      <div class="confirmation-bib">---</div>
-      <div class="confirmation-point">-</div>
-      <div class="confirmation-run" data-advanced>-</div>
-      <div class="confirmation-time">--:--:--.---</div>
-      <div class="confirmation-duplicate" style="display: none;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 9v4M12 17h.01"/>
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
-        <span data-i18n="duplicateWarning">Duplicate entry</span>
-      </div>
-      <div class="confirmation-zero-bib" style="display: none;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 9v4M12 17h.01"/>
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
-        <span data-i18n="zeroBibWarning">Bib 000 - verify entry</span>
+    <!-- Confirmation Overlay (inside app for iOS compatibility) -->
+    <div class="confirmation-overlay glass-surface-1 glass-enable-target" id="confirmation-overlay">
+      <div class="confirmation-content">
+        <div class="confirmation-bib">---</div>
+        <div class="confirmation-point">-</div>
+        <div class="confirmation-run" data-advanced>-</div>
+        <div class="confirmation-time">--:--:--.---</div>
+        <div class="confirmation-duplicate" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v4M12 17h.01"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          <span data-i18n="duplicateWarning">Duplicate entry</span>
+        </div>
+        <div class="confirmation-zero-bib" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v4M12 17h.01"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          <span data-i18n="zeroBibWarning">Bib 000 - verify entry</span>
+        </div>
       </div>
     </div>
   </div>
