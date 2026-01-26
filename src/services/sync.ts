@@ -1084,6 +1084,7 @@ class SyncService {
         params.set('gateStart', String(state.gateAssignment[0]));
         params.set('gateEnd', String(state.gateAssignment[1]));
         params.set('isReady', String(state.isJudgeReady));
+        params.set('firstGateColor', state.firstGateColor);
       }
 
       const response = await fetchWithTimeout(
@@ -1154,7 +1155,8 @@ class SyncService {
             deviceId: state.deviceId,
             deviceName: state.deviceName,
             gateRange: state.gateAssignment,
-            isReady: state.isJudgeReady
+            isReady: state.isJudgeReady,
+            firstGateColor: state.firstGateColor
           })
         },
         FETCH_TIMEOUT

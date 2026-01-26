@@ -12,7 +12,8 @@ import type {
   SyncQueueItem,
   DeviceInfo,
   DeviceRole,
-  FaultType
+  FaultType,
+  GateColor
 } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { isValidEntry, migrateSchema } from '../utils/validation';
@@ -32,6 +33,7 @@ const STORAGE_KEYS = {
   // Gate Judge keys
   DEVICE_ROLE: 'skiTimerDeviceRole',
   GATE_ASSIGNMENT: 'skiTimerGateAssignment',
+  FIRST_GATE_COLOR: 'skiTimerFirstGateColor',
   FAULT_ENTRIES: 'skiTimerFaultEntries'
 } as const;
 
@@ -160,6 +162,7 @@ class Store {
     // Load Gate Judge state
     const deviceRole = (localStorage.getItem(STORAGE_KEYS.DEVICE_ROLE) || 'timer') as DeviceRole;
     let gateAssignment: [number, number] | null = null;
+    let firstGateColor: GateColor = 'red';  // Default to red
     let faultEntries: FaultEntry[] = [];
 
     try {
@@ -169,6 +172,11 @@ class Store {
         if (Array.isArray(parsed) && parsed.length === 2) {
           gateAssignment = parsed as [number, number];
         }
+      }
+      // Load first gate color
+      const storedColor = localStorage.getItem(STORAGE_KEYS.FIRST_GATE_COLOR);
+      if (storedColor === 'red' || storedColor === 'blue') {
+        firstGateColor = storedColor;
       }
     } catch (e) {
       console.error('Failed to parse gate assignment:', e);
@@ -205,6 +213,7 @@ class Store {
       // Gate Judge State
       deviceRole,
       gateAssignment,
+      firstGateColor,
       faultEntries,
       selectedFaultBib: '',
       isJudgeReady: false,
@@ -378,6 +387,7 @@ class Store {
       } else {
         localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
       }
+      localStorage.setItem(STORAGE_KEYS.FIRST_GATE_COLOR, this.state.firstGateColor);
       localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
     } catch (e) {
       console.error('Failed to save to storage:', e);
@@ -733,6 +743,27 @@ class Store {
 
   setGateAssignment(assignment: [number, number] | null) {
     this.setState({ gateAssignment: assignment });
+  }
+
+  setFirstGateColor(color: GateColor) {
+    this.setState({ firstGateColor: color });
+  }
+
+  /**
+   * Get the color of a specific gate number based on firstGateColor
+   * Gates alternate: if gate 4 is red, gate 5 is blue, gate 6 is red, etc.
+   */
+  getGateColor(gateNumber: number): GateColor {
+    const { gateAssignment, firstGateColor } = this.state;
+    if (!gateAssignment) return firstGateColor;
+
+    const [startGate] = gateAssignment;
+    const offset = gateNumber - startGate;
+    // Alternating: even offset = firstGateColor, odd offset = opposite
+    if (offset % 2 === 0) {
+      return firstGateColor;
+    }
+    return firstGateColor === 'red' ? 'blue' : 'red';
   }
 
   setSelectedFaultBib(bib: string) {

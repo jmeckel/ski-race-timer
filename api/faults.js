@@ -297,7 +297,7 @@ async function atomicDeleteFault(client, redisKey, faultIdStr, sanitizedDeviceId
 /**
  * Update gate assignment for a device
  */
-async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceName, gateRange, isReady) {
+async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceName, gateRange, isReady, firstGateColor) {
   if (!deviceId || !gateRange) return;
 
   const assignmentsKey = `race:${normalizedRaceId}:gate_assignments`;
@@ -306,7 +306,8 @@ async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceNa
     gateStart: gateRange[0],
     gateEnd: gateRange[1],
     lastSeen: Date.now(),
-    isReady: isReady === true
+    isReady: isReady === true,
+    firstGateColor: firstGateColor || 'red'
   });
 
   await client.hset(assignmentsKey, deviceId, assignmentData);
@@ -339,7 +340,8 @@ async function getGateAssignments(client, normalizedRaceId) {
           gateStart: assignment.gateStart,
           gateEnd: assignment.gateEnd,
           lastSeen: assignment.lastSeen,
-          isReady: assignment.isReady === true
+          isReady: assignment.isReady === true,
+          firstGateColor: assignment.firstGateColor || 'red'
         });
       }
     } catch (e) {
@@ -425,7 +427,7 @@ export default async function handler(req, res) {
       const gateAssignments = await getGateAssignments(client, normalizedRaceId);
 
       // Update gate assignment if provided in query
-      const { deviceId, deviceName, gateStart, gateEnd, isReady } = req.query;
+      const { deviceId, deviceName, gateStart, gateEnd, isReady, firstGateColor } = req.query;
       if (deviceId && gateStart && gateEnd) {
         await updateGateAssignment(
           client,
@@ -433,7 +435,8 @@ export default async function handler(req, res) {
           deviceId,
           deviceName,
           [parseInt(gateStart, 10), parseInt(gateEnd, 10)],
-          isReady === 'true'
+          isReady === 'true',
+          firstGateColor || 'red'
         );
       }
 
@@ -446,7 +449,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { fault, deviceId, deviceName, gateRange, isReady } = req.body || {};
+      const { fault, deviceId, deviceName, gateRange, isReady, firstGateColor } = req.body || {};
 
       if (!fault) {
         return res.status(400).json({ error: 'fault is required' });
@@ -493,7 +496,7 @@ export default async function handler(req, res) {
 
       // Update gate assignment if provided
       if (gateRange && Array.isArray(gateRange) && gateRange.length === 2) {
-        await updateGateAssignment(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName, gateRange, isReady === true);
+        await updateGateAssignment(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName, gateRange, isReady === true, firstGateColor || 'red');
       }
 
       // Get updated gate assignments

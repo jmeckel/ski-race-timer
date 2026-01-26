@@ -1874,6 +1874,15 @@ function openGateAssignmentModal(): void {
     }
   }
 
+  // Set gate color selector to current value
+  const colorSelector = document.getElementById('gate-color-selector');
+  if (colorSelector) {
+    colorSelector.querySelectorAll('.gate-color-btn').forEach(btn => {
+      const color = btn.getAttribute('data-color');
+      btn.classList.toggle('active', color === state.firstGateColor);
+    });
+  }
+
   openModal(document.getElementById('gate-assignment-modal'));
 }
 
@@ -1881,6 +1890,19 @@ function openGateAssignmentModal(): void {
  * Initialize gate assignment modal handlers
  */
 function initGateAssignmentModal(): void {
+  // Gate color selector toggle
+  const colorSelector = document.getElementById('gate-color-selector');
+  if (colorSelector) {
+    colorSelector.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.gate-color-btn');
+      if (!btn) return;
+
+      colorSelector.querySelectorAll('.gate-color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      feedbackTap();
+    });
+  }
+
   const saveBtn = document.getElementById('save-gate-assignment-btn');
   if (saveBtn) {
     saveBtn.addEventListener('click', () => {
@@ -1894,7 +1916,12 @@ function initGateAssignmentModal(): void {
       const validStart = Math.min(start, end);
       const validEnd = Math.max(start, end);
 
+      // Get selected gate color
+      const selectedColorBtn = document.querySelector('#gate-color-selector .gate-color-btn.active');
+      const selectedColor = (selectedColorBtn?.getAttribute('data-color') || 'red') as import('./types').GateColor;
+
       store.setGateAssignment([validStart, validEnd]);
+      store.setFirstGateColor(selectedColor);
       updateGateRangeDisplay();
       closeModal(document.getElementById('gate-assignment-modal'));
       feedbackSuccess();
@@ -2109,13 +2136,15 @@ function openFaultRecordingModal(preselectedBib?: string): void {
     store.setSelectedFaultBib('');
   }
 
-  // Populate gate selector based on assignment
+  // Populate gate selector based on assignment with gate colors
   const gateSelector = document.getElementById('fault-gate-selector');
   if (gateSelector && state.gateAssignment) {
     const [start, end] = state.gateAssignment;
     let gatesHtml = '';
     for (let i = start; i <= end; i++) {
-      gatesHtml += `<button class="fault-gate-btn" data-gate="${i}">${i}</button>`;
+      const gateColor = store.getGateColor(i);
+      const colorClass = gateColor === 'red' ? 'gate-red' : 'gate-blue';
+      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}">${i}</button>`;
     }
     gateSelector.innerHTML = gatesHtml;
 

@@ -3113,6 +3113,52 @@ body {
   padding-bottom: 8px;
 }
 
+/* Gate Color Selector */
+.gate-color-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.gate-color-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gate-color-btn:hover {
+  border-color: var(--text-tertiary);
+}
+
+.gate-color-btn.active {
+  border-color: var(--primary);
+  background: var(--primary)10;
+}
+
+.gate-color-btn.red.active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.gate-color-btn.blue.active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.gate-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
 /* Fault Modal */
 .fault-modal-content {
   max-width: 400px;
@@ -3211,6 +3257,29 @@ body {
   border-color: var(--warning);
   background: rgba(251, 191, 36, 0.15);
   color: var(--warning);
+}
+
+/* Gate color indicators */
+.fault-gate-btn.gate-red {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.fault-gate-btn.gate-blue {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #3b82f6;
+}
+
+.fault-gate-btn.gate-red.selected {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.fault-gate-btn.gate-blue.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
 }
 
 .fault-type-buttons {

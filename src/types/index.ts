@@ -80,6 +80,9 @@ export interface FaultEntry {
   deletionApprovedBy?: string;  // Chief judge who approved
 }
 
+// Gate color type (alternating colors in ski racing)
+export type GateColor = 'red' | 'blue';
+
 // Gate assignment tracking
 export interface GateAssignment {
   deviceId: string;
@@ -88,6 +91,7 @@ export interface GateAssignment {
   gateEnd: number;
   lastSeen: number;
   isReady?: boolean;  // Judge signals ready for race/run
+  firstGateColor?: GateColor;  // Color of the first gate in range
 }
 
 // Settings interface
@@ -156,6 +160,7 @@ export interface AppState {
   // Gate Judge State
   deviceRole: DeviceRole;
   gateAssignment: [number, number] | null;  // [start, end] gate range
+  firstGateColor: GateColor;  // Color of first gate (gates alternate red/blue)
   faultEntries: FaultEntry[];
   selectedFaultBib: string;  // Currently selected bib for fault entry
   isJudgeReady: boolean;  // Whether this judge has signaled ready
