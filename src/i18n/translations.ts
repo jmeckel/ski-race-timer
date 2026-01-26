@@ -39,6 +39,7 @@ export const translations: Record<Language, Translations> = {
     // Actions
     confirmDelete: 'Delete Entry',
     confirmDeleteText: 'Are you sure you want to delete this entry?',
+    confirmDeleteFault: 'Delete this fault?',
     confirmClearAll: 'Clear All Results',
     clearAllText: 'This will delete all recorded entries. This action cannot be undone.',
     confirmUndoAdd: 'Undo Recording',
@@ -301,6 +302,7 @@ export const translations: Record<Language, Translations> = {
     judgeReady: 'Ready for race!',
     judgeNotReady: 'Ready status cleared',
     faultDeleted: 'Fault deleted',
+    recordedFaults: 'Recorded Faults',
     selectBib: 'Select Bib',
     selectGate: 'Gate',
     gate: 'Gate',
@@ -415,6 +417,7 @@ export const translations: Record<Language, Translations> = {
     // Actions
     confirmDelete: 'Eintrag löschen',
     confirmDeleteText: 'Möchten Sie diesen Eintrag wirklich löschen?',
+    confirmDeleteFault: 'Diesen Fehler löschen?',
     confirmClearAll: 'Alle löschen',
     clearAllText: 'Alle Einträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
     confirmUndoAdd: 'Erfassung rückgängig',
@@ -677,6 +680,7 @@ export const translations: Record<Language, Translations> = {
     judgeReady: 'Bereit für Rennen!',
     judgeNotReady: 'Bereit-Status zurückgesetzt',
     faultDeleted: 'Fehler gelöscht',
+    recordedFaults: 'Erfasste Fehler',
     selectBib: 'Startnr. wählen',
     selectGate: 'Tor',
     gate: 'Tor',

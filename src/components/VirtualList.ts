@@ -1035,6 +1035,48 @@ export class VirtualList {
   }
 
   /**
+   * Scroll to the top of the list
+   */
+  scrollToTop(): void {
+    this.scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /**
+   * Scroll to a specific entry by ID
+   * Expands the group containing the entry and scrolls to it
+   */
+  scrollToEntry(entryId: string | number): void {
+    // Find the group containing this entry
+    const id = String(entryId);
+    const group = this.groups.find(g => g.entries.some(e => e.id === id));
+    if (!group) return;
+
+    // Calculate the position of the group
+    let offset = 0;
+    for (const g of this.groups) {
+      if (g.id === group.id) break;
+      offset += this.getGroupHeight(g);
+    }
+
+    // If it's a multi-item group, expand it
+    if (group.isMultiItem) {
+      this.expandedGroups.add(group.id);
+      this.render();
+    }
+
+    // Scroll to the group
+    this.scrollContainer.scrollTo({ top: offset, behavior: 'smooth' });
+  }
+
+  /**
+   * Get the count of visible (filtered) entries
+   */
+  getVisibleCount(): number {
+    // Count all timing entries across all groups (after filtering)
+    return this.groups.reduce((sum, group) => sum + group.entries.length, 0);
+  }
+
+  /**
    * Clean up resources
    */
   destroy(): void {
