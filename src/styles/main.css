@@ -1252,17 +1252,24 @@ body {
   justify-content: center;
   z-index: 900;
   pointer-events: none;
+  /* Force GPU layer for iOS Safari */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .confirmation-overlay .confirmation-content {
   padding: 32px 48px;
-  background: rgba(10, 10, 10, 0.85);
+  /* Solid fallback background for iOS, enhanced with backdrop-filter where supported */
+  background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius);
   border: 4px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  /* Force GPU layer for iOS Safari */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* Timing point colored borders for quick visual verification */
@@ -1288,11 +1295,13 @@ body {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    -webkit-transform: scale(0.8) translateZ(0);
+    transform: scale(0.8) translateZ(0);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    -webkit-transform: scale(1) translateZ(0);
+    transform: scale(1) translateZ(0);
   }
 }
 
