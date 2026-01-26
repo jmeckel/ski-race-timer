@@ -13,7 +13,7 @@ import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/rec
 import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
-import type { Entry, TimingPoint, Language, RaceInfo } from './types';
+import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run } from './types';
 
 // Feature modules
 import { closeModal, closeAllModalsAnimated, openModal } from './features/modals';
@@ -96,6 +96,7 @@ export function initApp(): void {
   initTimestampButton();
   initResultsView();
   initSettingsView();
+  initGateJudgeView();
   initModals();
   initRaceManagement();
   initRippleEffects();
@@ -199,7 +200,7 @@ function initTabs(): void {
   const tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const view = btn.getAttribute('data-view') as 'timer' | 'results' | 'settings';
+      const view = btn.getAttribute('data-view') as 'timer' | 'results' | 'settings' | 'gateJudge';
       if (view) {
         store.setView(view);
         feedbackTap();
@@ -1070,6 +1071,474 @@ function initSettingsView(): void {
       store.setDeviceName(deviceNameInput.value.trim());
     });
   }
+
+  // Device Role toggle
+  initRoleToggle();
+}
+
+/**
+ * Initialize role toggle in settings
+ */
+function initRoleToggle(): void {
+  const roleToggle = document.getElementById('role-toggle');
+  if (!roleToggle) return;
+
+  roleToggle.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const role = target.getAttribute('data-role') as DeviceRole;
+    if (role && role !== store.getState().deviceRole) {
+      store.setDeviceRole(role);
+      updateRoleToggle();
+      updateGateJudgeTabVisibility();
+      feedbackTap();
+
+      // If switching to gateJudge and no gate assignment, show assignment modal
+      if (role === 'gateJudge' && !store.getState().gateAssignment) {
+        openModal(document.getElementById('gate-assignment-modal'));
+      }
+
+      // Switch to appropriate view
+      if (role === 'gateJudge') {
+        store.setView('gateJudge');
+      } else if (store.getState().currentView === 'gateJudge') {
+        store.setView('timer');
+      }
+    }
+  });
+}
+
+/**
+ * Update role toggle UI
+ */
+function updateRoleToggle(): void {
+  const roleToggle = document.getElementById('role-toggle');
+  if (!roleToggle) return;
+
+  const state = store.getState();
+  roleToggle.querySelectorAll('.role-option').forEach(option => {
+    const role = option.getAttribute('data-role');
+    option.classList.toggle('active', role === state.deviceRole);
+  });
+}
+
+/**
+ * Update Gate Judge tab visibility based on device role
+ */
+function updateGateJudgeTabVisibility(): void {
+  const gateJudgeTab = document.getElementById('gate-judge-tab');
+  if (!gateJudgeTab) return;
+
+  const state = store.getState();
+  gateJudgeTab.style.display = state.deviceRole === 'gateJudge' ? '' : 'none';
+}
+
+/**
+ * Initialize Gate Judge view
+ */
+function initGateJudgeView(): void {
+  // Initialize role toggle state
+  updateRoleToggle();
+  updateGateJudgeTabVisibility();
+
+  // Gate assignment change button
+  const gateChangeBtn = document.getElementById('gate-change-btn');
+  if (gateChangeBtn) {
+    gateChangeBtn.addEventListener('click', () => {
+      feedbackTap();
+      openGateAssignmentModal();
+    });
+  }
+
+  // Gate Judge run selector
+  const gateJudgeRunSelector = document.getElementById('gate-judge-run-selector');
+  if (gateJudgeRunSelector) {
+    gateJudgeRunSelector.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.run-btn');
+      if (!btn) return;
+
+      const runStr = btn.getAttribute('data-run');
+      const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
+      store.setSelectedRun(run);
+      feedbackTap();
+
+      // Update ARIA states
+      gateJudgeRunSelector.querySelectorAll('.run-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+      });
+
+      // Refresh active bibs list
+      updateActiveBibsList();
+    });
+  }
+
+  // Record fault button
+  const recordFaultBtn = document.getElementById('record-fault-btn');
+  if (recordFaultBtn) {
+    recordFaultBtn.addEventListener('click', () => {
+      feedbackTap();
+      openFaultRecordingModal();
+    });
+  }
+
+  // Initialize gate assignment modal handlers
+  initGateAssignmentModal();
+
+  // Initialize fault recording modal handlers
+  initFaultRecordingModal();
+
+  // Update gate range display
+  updateGateRangeDisplay();
+}
+
+/**
+ * Open gate assignment modal with current values
+ */
+function openGateAssignmentModal(): void {
+  const state = store.getState();
+  const startInput = document.getElementById('gate-start-input') as HTMLInputElement;
+  const endInput = document.getElementById('gate-end-input') as HTMLInputElement;
+
+  if (startInput && endInput) {
+    if (state.gateAssignment) {
+      startInput.value = String(state.gateAssignment[0]);
+      endInput.value = String(state.gateAssignment[1]);
+    } else {
+      startInput.value = '1';
+      endInput.value = '10';
+    }
+  }
+
+  openModal(document.getElementById('gate-assignment-modal'));
+}
+
+/**
+ * Initialize gate assignment modal handlers
+ */
+function initGateAssignmentModal(): void {
+  const saveBtn = document.getElementById('save-gate-assignment-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const startInput = document.getElementById('gate-start-input') as HTMLInputElement;
+      const endInput = document.getElementById('gate-end-input') as HTMLInputElement;
+
+      const start = parseInt(startInput.value, 10) || 1;
+      const end = parseInt(endInput.value, 10) || 10;
+
+      // Ensure start <= end
+      const validStart = Math.min(start, end);
+      const validEnd = Math.max(start, end);
+
+      store.setGateAssignment([validStart, validEnd]);
+      updateGateRangeDisplay();
+      closeModal(document.getElementById('gate-assignment-modal'));
+      feedbackSuccess();
+
+      const lang = store.getState().currentLang;
+      showToast(t('saved', lang), 'success');
+    });
+  }
+}
+
+/**
+ * Update gate range display in header
+ */
+function updateGateRangeDisplay(): void {
+  const display = document.getElementById('gate-range-display');
+  if (!display) return;
+
+  const state = store.getState();
+  if (state.gateAssignment) {
+    display.textContent = `${state.gateAssignment[0]}–${state.gateAssignment[1]}`;
+  } else {
+    display.textContent = '--';
+  }
+}
+
+/**
+ * Open fault recording modal
+ */
+function openFaultRecordingModal(preselectedBib?: string): void {
+  const state = store.getState();
+  const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  // Populate bib selector
+  const bibSelector = document.getElementById('fault-bib-selector');
+  if (bibSelector) {
+    bibSelector.innerHTML = activeBibs.map(bib => `
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${bib}">${bib}</button>
+    `).join('');
+
+    // Add click handlers
+    bibSelector.querySelectorAll('.fault-bib-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bibSelector.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+        if (bibInput) bibInput.value = '';
+        store.setSelectedFaultBib(btn.getAttribute('data-bib') || '');
+      });
+    });
+  }
+
+  // Clear manual bib input
+  const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+  if (bibInput) {
+    bibInput.value = preselectedBib || '';
+    bibInput.addEventListener('input', () => {
+      // Deselect any bib buttons when typing manually
+      bibSelector?.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
+      store.setSelectedFaultBib(bibInput.value.padStart(3, '0'));
+    });
+  }
+
+  // Set preselected bib
+  if (preselectedBib) {
+    store.setSelectedFaultBib(preselectedBib);
+  } else {
+    store.setSelectedFaultBib('');
+  }
+
+  // Populate gate selector based on assignment
+  const gateSelector = document.getElementById('fault-gate-selector');
+  if (gateSelector && state.gateAssignment) {
+    const [start, end] = state.gateAssignment;
+    let gatesHtml = '';
+    for (let i = start; i <= end; i++) {
+      gatesHtml += `<button class="fault-gate-btn" data-gate="${i}">${i}</button>`;
+    }
+    gateSelector.innerHTML = gatesHtml;
+
+    // Add click handlers
+    gateSelector.querySelectorAll('.fault-gate-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        gateSelector.querySelectorAll('.fault-gate-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  // Clear fault type selection
+  const faultTypeButtons = document.getElementById('fault-type-buttons');
+  if (faultTypeButtons) {
+    faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+  }
+
+  openModal(document.getElementById('fault-modal'));
+}
+
+/**
+ * Initialize fault recording modal handlers
+ */
+function initFaultRecordingModal(): void {
+  // Fault type buttons - click records fault immediately
+  const faultTypeButtons = document.getElementById('fault-type-buttons');
+  if (faultTypeButtons) {
+    faultTypeButtons.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.fault-type-btn');
+      if (!btn) return;
+
+      const faultType = btn.getAttribute('data-fault') as FaultType;
+      if (faultType) {
+        // Mark selected
+        faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        // Record the fault
+        recordFault(faultType);
+      }
+    });
+  }
+
+  // Mark OK button
+  const markOkBtn = document.getElementById('mark-ok-btn');
+  if (markOkBtn) {
+    markOkBtn.addEventListener('click', () => {
+      closeModal(document.getElementById('fault-modal'));
+      feedbackTap();
+    });
+  }
+}
+
+/**
+ * Record a fault entry
+ */
+function recordFault(faultType: FaultType): void {
+  const state = store.getState();
+
+  // Get selected bib
+  let bib = state.selectedFaultBib;
+  if (!bib) {
+    const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+    bib = bibInput?.value.padStart(3, '0') || '';
+  }
+
+  if (!bib) {
+    const lang = state.currentLang;
+    showToast(t('selectBib', lang), 'warning');
+    return;
+  }
+
+  // Get selected gate
+  const selectedGateBtn = document.querySelector('#fault-gate-selector .fault-gate-btn.selected');
+  const gateNumber = selectedGateBtn ? parseInt(selectedGateBtn.getAttribute('data-gate') || '0', 10) : 0;
+
+  if (!gateNumber) {
+    const lang = state.currentLang;
+    showToast(t('selectGate', lang), 'warning');
+    return;
+  }
+
+  // Create fault entry
+  const fault: FaultEntry = {
+    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    bib,
+    run: state.selectedRun,
+    gateNumber,
+    faultType,
+    timestamp: new Date().toISOString(),
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gateRange: state.gateAssignment || [1, 1]
+  };
+
+  store.addFaultEntry(fault);
+  feedbackWarning(); // Use warning feedback for fault (attention-getting)
+
+  // Show confirmation
+  showFaultConfirmation(fault);
+
+  // Close modal
+  closeModal(document.getElementById('fault-modal'));
+
+  // Refresh active bibs list
+  updateActiveBibsList();
+
+  const lang = state.currentLang;
+  showToast(t('faultRecorded', lang), 'success');
+}
+
+/**
+ * Show fault confirmation overlay
+ */
+function showFaultConfirmation(fault: FaultEntry): void {
+  const overlay = document.getElementById('fault-confirmation-overlay');
+  if (!overlay) return;
+
+  const bibEl = overlay.querySelector('.fault-confirmation-bib');
+  const gateEl = overlay.querySelector('.fault-confirmation-gate');
+  const typeEl = overlay.querySelector('.fault-confirmation-type');
+
+  const state = store.getState();
+
+  if (bibEl) bibEl.textContent = fault.bib;
+  if (gateEl) gateEl.textContent = `${t('gate', state.currentLang)} ${fault.gateNumber}`;
+  if (typeEl) typeEl.textContent = getFaultTypeLabel(fault.faultType, state.currentLang);
+
+  overlay.classList.add('show');
+
+  setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 1500);
+}
+
+/**
+ * Get localized fault type label
+ */
+function getFaultTypeLabel(faultType: FaultType, lang: Language): string {
+  const labels: Record<FaultType, string> = {
+    'MG': t('faultMGShort', lang),
+    'STR': t('faultSTRShort', lang),
+    'BR': t('faultBRShort', lang)
+  };
+  return labels[faultType] || faultType;
+}
+
+/**
+ * Update active bibs list in Gate Judge view
+ */
+function updateActiveBibsList(): void {
+  const list = document.getElementById('active-bibs-list');
+  const emptyState = document.getElementById('no-active-bibs');
+  if (!list) return;
+
+  const state = store.getState();
+  const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  // Clear existing bib cards (keep empty state)
+  list.querySelectorAll('.active-bib-card').forEach(card => card.remove());
+
+  if (activeBibs.length === 0) {
+    if (emptyState) emptyState.style.display = '';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  // Get start times for each bib
+  const startTimes = new Map<string, Date>();
+  state.entries.forEach(entry => {
+    if (entry.point === 'S' && entry.run === state.selectedRun) {
+      startTimes.set(entry.bib, new Date(entry.timestamp));
+    }
+  });
+
+  // Sort by start time (most recent first)
+  const sortedBibs = [...activeBibs].sort((a, b) => {
+    const timeA = startTimes.get(a)?.getTime() || 0;
+    const timeB = startTimes.get(b)?.getTime() || 0;
+    return timeB - timeA;
+  });
+
+  // Build bib cards
+  sortedBibs.forEach(bib => {
+    const startTime = startTimes.get(bib);
+    const faults = store.getFaultsForBib(bib, state.selectedRun);
+    const hasFault = faults.length > 0;
+
+    const card = document.createElement('div');
+    card.className = `active-bib-card${hasFault ? ' has-fault' : ''}`;
+    card.setAttribute('data-bib', bib);
+    card.setAttribute('role', 'listitem');
+
+    const timeStr = startTime ? formatTimeDisplay(startTime) : '--:--:--';
+
+    card.innerHTML = `
+      <div class="bib-card-info">
+        <span class="bib-card-number">${bib}</span>
+        <span class="bib-card-time">${timeStr}</span>
+        ${hasFault ? `<span class="bib-fault-indicator">${faults.length} ${t('faultCount', state.currentLang)}</span>` : ''}
+      </div>
+      <div class="bib-card-actions">
+        <button class="bib-action-btn fault" data-action="fault">${t('faultMGShort', state.currentLang)}</button>
+        <button class="bib-action-btn ok" data-action="ok">${t('ok', state.currentLang)}</button>
+      </div>
+    `;
+
+    // Click on card to select bib for fault entry
+    card.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const actionBtn = target.closest('.bib-action-btn');
+
+      if (actionBtn) {
+        const action = actionBtn.getAttribute('data-action');
+        if (action === 'fault') {
+          feedbackTap();
+          openFaultRecordingModal(bib);
+        } else if (action === 'ok') {
+          feedbackTap();
+          // Just tap feedback - bib is OK, no action needed
+          showToast(t('ok', state.currentLang), 'success', 1000);
+        }
+      }
+    });
+
+    list.appendChild(card);
+  });
 }
 
 /**
@@ -1489,6 +1958,31 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   // Update run selection
   if (changedKeys.includes('selectedRun')) {
     updateRunSelection();
+    // Also update Gate Judge run selector
+    updateGateJudgeRunSelection();
+    // Update active bibs when run changes
+    if (state.currentView === 'gateJudge') {
+      updateActiveBibsList();
+    }
+  }
+
+  // Update Gate Judge view when entries change (active bibs derived from entries)
+  if (changedKeys.includes('entries') && state.currentView === 'gateJudge') {
+    updateActiveBibsList();
+  }
+
+  // Update Gate Judge state
+  if (changedKeys.includes('deviceRole')) {
+    updateRoleToggle();
+    updateGateJudgeTabVisibility();
+  }
+
+  if (changedKeys.includes('gateAssignment')) {
+    updateGateRangeDisplay();
+  }
+
+  if (changedKeys.includes('faultEntries') && state.currentView === 'gateJudge') {
+    updateActiveBibsList();
   }
 
   // Update results list
@@ -1559,6 +2053,13 @@ function updateViewVisibility(): void {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-view') === state.currentView);
   });
+
+  // Update Gate Judge view when switching to it
+  if (state.currentView === 'gateJudge') {
+    updateActiveBibsList();
+    updateGateRangeDisplay();
+    updateGateJudgeRunSelection();
+  }
 }
 
 /**
@@ -1598,6 +2099,21 @@ function updateRunSelection(): void {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
   });
+}
+
+/**
+ * Update Gate Judge run selector
+ */
+function updateGateJudgeRunSelection(): void {
+  const state = store.getState();
+  const gateJudgeRunSelector = document.getElementById('gate-judge-run-selector');
+  if (gateJudgeRunSelector) {
+    gateJudgeRunSelector.querySelectorAll('.run-btn').forEach(btn => {
+      const isActive = btn.getAttribute('data-run') === String(state.selectedRun);
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-checked', String(isActive));
+    });
+  }
 }
 
 /**

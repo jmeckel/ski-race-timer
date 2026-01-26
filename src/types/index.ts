@@ -5,7 +5,18 @@ export type TimingPoint = 'S' | 'F';
 export type Run = 1 | 2;
 
 // Entry status types
-export type EntryStatus = 'ok' | 'dns' | 'dnf' | 'dsq';
+// 'flt' = finished with fault penalty (U8/U10 age categories)
+export type EntryStatus = 'ok' | 'dns' | 'dnf' | 'dsq' | 'flt';
+
+// Device role determines available views
+export type DeviceRole = 'timer' | 'gateJudge';
+
+// Fault types per FIS standards
+// MG = Missed Gate, STR = Straddling (Einfädler), BR = Binding Release
+export type FaultType = 'MG' | 'STR' | 'BR';
+
+// Age category for penalty calculation
+export type AgeCategory = 'U6' | 'U8' | 'U10' | 'U12' | 'U14' | 'U16' | 'masters';
 
 // Sync status types
 export type SyncStatus = 'disconnected' | 'connecting' | 'connected' | 'syncing' | 'error' | 'offline';
@@ -30,6 +41,29 @@ export interface Entry {
     longitude: number;
     accuracy: number;
   };
+}
+
+// Fault entry - linked to timing entries by bib+run
+export interface FaultEntry {
+  id: string;                    // Unique ID
+  bib: string;                   // Racer bib number (Startnummer)
+  run: Run;                      // Run 1 or 2 (Lauf)
+  gateNumber: number;            // Gate where fault occurred (Tornummer)
+  faultType: FaultType;          // Type of fault (Fehlerart)
+  timestamp: string;             // When recorded (ISO)
+  deviceId: string;              // Judge's device
+  deviceName: string;            // Judge name (Torrichter)
+  gateRange: [number, number];   // Gates this judge watches (e.g., [4, 12] = gates 4-12)
+  syncedAt?: number;
+}
+
+// Gate assignment tracking
+export interface GateAssignment {
+  deviceId: string;
+  deviceName: string;
+  gateStart: number;
+  gateEnd: number;
+  lastSeen: number;
 }
 
 // Settings interface
@@ -82,7 +116,7 @@ export interface Action {
 // Application state interface
 export interface AppState {
   // UI State
-  currentView: 'timer' | 'results' | 'settings';
+  currentView: 'timer' | 'results' | 'settings' | 'gateJudge';
   currentLang: Language;
   bibInput: string;
   selectedPoint: TimingPoint;
@@ -94,6 +128,12 @@ export interface AppState {
 
   // Data
   entries: Entry[];
+
+  // Gate Judge State
+  deviceRole: DeviceRole;
+  gateAssignment: [number, number] | null;  // [start, end] gate range
+  faultEntries: FaultEntry[];
+  selectedFaultBib: string;  // Currently selected bib for fault entry
 
   // Undo/Redo
   undoStack: Action[];

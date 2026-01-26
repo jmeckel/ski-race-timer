@@ -1,6 +1,7 @@
 import type {
   AppState,
   Entry,
+  FaultEntry,
   Settings,
   Action,
   SyncStatus,
@@ -8,7 +9,9 @@ import type {
   Run,
   Language,
   SyncQueueItem,
-  DeviceInfo
+  DeviceInfo,
+  DeviceRole,
+  FaultType
 } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { isValidEntry, migrateSchema } from '../utils/validation';
@@ -24,7 +27,11 @@ const STORAGE_KEYS = {
   RACE_ID: 'skiTimerRaceId',
   LAST_SYNCED_RACE_ID: 'skiTimerLastSyncedRaceId',
   SYNC_QUEUE: 'skiTimerSyncQueue',
-  SCHEMA_VERSION: 'skiTimerSchemaVersion'
+  SCHEMA_VERSION: 'skiTimerSchemaVersion',
+  // Gate Judge keys
+  DEVICE_ROLE: 'skiTimerDeviceRole',
+  GATE_ASSIGNMENT: 'skiTimerGateAssignment',
+  FAULT_ENTRIES: 'skiTimerFaultEntries'
 } as const;
 
 // Default settings
@@ -146,6 +153,35 @@ class Store {
     const raceId = localStorage.getItem(STORAGE_KEYS.RACE_ID) || '';
     const lastSyncedRaceId = localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
 
+    // Load Gate Judge state
+    const deviceRole = (localStorage.getItem(STORAGE_KEYS.DEVICE_ROLE) || 'timer') as DeviceRole;
+    let gateAssignment: [number, number] | null = null;
+    let faultEntries: FaultEntry[] = [];
+
+    try {
+      const gateAssignmentJson = localStorage.getItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+      if (gateAssignmentJson) {
+        const parsed = JSON.parse(gateAssignmentJson);
+        if (Array.isArray(parsed) && parsed.length === 2) {
+          gateAssignment = parsed as [number, number];
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse gate assignment:', e);
+    }
+
+    try {
+      const faultEntriesJson = localStorage.getItem(STORAGE_KEYS.FAULT_ENTRIES);
+      if (faultEntriesJson) {
+        const parsed = JSON.parse(faultEntriesJson);
+        if (Array.isArray(parsed)) {
+          faultEntries = parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse fault entries:', e);
+    }
+
     return {
       // UI State
       currentView: 'timer',
@@ -160,6 +196,12 @@ class Store {
 
       // Data
       entries,
+
+      // Gate Judge State
+      deviceRole,
+      gateAssignment,
+      faultEntries,
+      selectedFaultBib: '',
 
       // Undo/Redo
       undoStack: [],
@@ -315,6 +357,14 @@ class Store {
       localStorage.setItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID, this.state.lastSyncedRaceId);
       localStorage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(this.state.syncQueue));
       localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
+      // Gate Judge state
+      localStorage.setItem(STORAGE_KEYS.DEVICE_ROLE, this.state.deviceRole);
+      if (this.state.gateAssignment) {
+        localStorage.setItem(STORAGE_KEYS.GATE_ASSIGNMENT, JSON.stringify(this.state.gateAssignment));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+      }
+      localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
     } catch (e) {
       console.error('Failed to save to storage:', e);
       // Notify user of storage failure - this is critical for a timing app
@@ -603,7 +653,7 @@ class Store {
 
   // ===== UI State =====
 
-  setView(view: 'timer' | 'results' | 'settings') {
+  setView(view: 'timer' | 'results' | 'settings' | 'gateJudge') {
     this.setState({ currentView: view }, false);
   }
 
@@ -659,6 +709,65 @@ class Store {
 
   setRecording(isRecording: boolean) {
     this.setState({ isRecording }, false);
+  }
+
+  // ===== Gate Judge State =====
+
+  setDeviceRole(role: DeviceRole) {
+    this.setState({ deviceRole: role });
+  }
+
+  setGateAssignment(assignment: [number, number] | null) {
+    this.setState({ gateAssignment: assignment });
+  }
+
+  setSelectedFaultBib(bib: string) {
+    this.setState({ selectedFaultBib: bib }, false);
+  }
+
+  addFaultEntry(fault: FaultEntry) {
+    const faultEntries = [...this.state.faultEntries, fault];
+    this.setState({ faultEntries });
+  }
+
+  deleteFaultEntry(id: string) {
+    const faultEntries = this.state.faultEntries.filter(f => f.id !== id);
+    this.setState({ faultEntries });
+  }
+
+  updateFaultEntry(id: string, updates: Partial<FaultEntry>): boolean {
+    const index = this.state.faultEntries.findIndex(f => f.id === id);
+    if (index === -1) return false;
+
+    const faultEntries = [...this.state.faultEntries];
+    faultEntries[index] = { ...faultEntries[index], ...updates };
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  clearFaultEntries() {
+    this.setState({ faultEntries: [] });
+  }
+
+  /**
+   * Get faults for a specific bib and run
+   */
+  getFaultsForBib(bib: string, run: Run): FaultEntry[] {
+    return this.state.faultEntries.filter(f => f.bib === bib && f.run === run);
+  }
+
+  /**
+   * Get active bibs (started but not finished) for current run
+   */
+  getActiveBibs(run: Run): string[] {
+    const entries = this.state.entries;
+    const started = entries.filter(e => e.point === 'S' && e.run === run);
+    const finished = entries.filter(e => e.point === 'F' && e.run === run);
+    const finishedBibs = new Set(finished.map(e => e.bib));
+    return started
+      .filter(e => !finishedBibs.has(e.bib))
+      .map(e => e.bib)
+      .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   }
 
   // ===== Settings =====

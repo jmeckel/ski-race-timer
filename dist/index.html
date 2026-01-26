@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-Bmk9zWwO.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-DxVm9Cpj.css">
+  <script type="module" crossorigin src="/assets/main-vN1msgdX.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-Bwj5CFmm.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -137,7 +137,7 @@
         <div class="results-header">
           <!-- Search & Filter -->
           <div class="search-filter-bar" data-advanced>
-            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" placeholder="Search by bib...">
+            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search">
             <select class="filter-select" id="filter-point" aria-label="Filter by point">
               <option value="all" data-i18n="all">All</option>
               <option value="S">Start</option>
@@ -203,6 +203,51 @@
         </div>
       </div>
 
+      <!-- Gate Judge View -->
+      <div class="view gate-judge-view">
+        <!-- Gate Assignment Header -->
+        <div class="gate-judge-header">
+          <div class="gate-assignment-display">
+            <span class="gate-label" data-i18n="gates">Gates</span>
+            <span class="gate-range" id="gate-range-display">--</span>
+            <button class="gate-change-btn" id="gate-change-btn" data-i18n="changeGates">Change</button>
+          </div>
+          <div class="run-selector gate-judge-run-selector" id="gate-judge-run-selector" role="radiogroup" aria-label="Run">
+            <button class="run-btn glass-surface-3 active" data-run="1" role="radio" aria-checked="true">
+              <span data-i18n="run1">L1</span>
+            </button>
+            <button class="run-btn glass-surface-3" data-run="2" role="radio" aria-checked="false">
+              <span data-i18n="run2">L2</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Bibs Section -->
+        <div class="active-bibs-section">
+          <div class="section-title" data-i18n="activeBibs">On Course</div>
+          <div class="active-bibs-list" id="active-bibs-list" role="list">
+            <div class="empty-state" id="no-active-bibs">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12h8"/>
+              </svg>
+              <span data-i18n="noBibsOnCourse">No racers on course</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Record Fault Button -->
+        <button class="record-fault-btn glass-surface-1" id="record-fault-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+            <line x1="4" y1="22" x2="4" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+          </svg>
+          <span data-i18n="recordFault">Record Fault</span>
+        </button>
+      </div>
+
       <!-- Settings View -->
       <div class="view settings-view">
         <!-- Mode Toggle (hidden - normal mode is now the default) -->
@@ -243,7 +288,7 @@
               </span>
             </div>
             <div class="race-id-input-row">
-              <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 120px;">
+              <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;">
               <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -257,7 +302,7 @@
             <div class="setting-label">
               <span class="setting-title" data-i18n="deviceName">Device Name</span>
             </div>
-            <input type="text" class="text-input" id="device-name-input" placeholder="Timer 1" style="max-width: 150px;">
+            <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;">
           </div>
           <div class="setting-row" id="sync-photos-row">
             <div class="setting-label">
@@ -268,6 +313,21 @@
               <input type="checkbox" id="sync-photos-toggle" disabled>
               <span class="toggle-slider"></span>
             </label>
+          </div>
+        </div>
+
+        <!-- Device Role -->
+        <div class="settings-section">
+          <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="deviceRole">Device Role</span>
+              <span class="setting-description" data-i18n="deviceRoleDesc">Timer records times, Gate Judge records faults</span>
+            </div>
+            <div class="role-toggle" id="role-toggle">
+              <span class="role-option active" data-role="timer" data-i18n="roleTimer">Timer</span>
+              <span class="role-option" data-role="gateJudge" data-i18n="roleGateJudge">Gate Judge</span>
+            </div>
           </div>
         </div>
 
@@ -432,6 +492,13 @@
         </svg>
         <span data-i18n="results">Results</span>
       </button>
+      <button class="tab-btn" data-view="gateJudge" role="tab" aria-selected="false" id="gate-judge-tab" style="display: none;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+          <line x1="4" y1="22" x2="4" y2="15"/>
+        </svg>
+        <span data-i18n="gateJudgeTab">Gate</span>
+      </button>
       <button class="tab-btn" data-view="settings" role="tab" aria-selected="false">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="3"/>
@@ -547,7 +614,7 @@
         </button>
       </div>
       <div class="photo-viewer-image-container">
-        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Captured photo">
+        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="">
       </div>
       <div class="photo-viewer-metadata">
         <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
@@ -613,8 +680,8 @@
         <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
       </div>
       <div class="modal-body">
-        <div class="race-list" id="race-list">
-          <div class="race-list-loading" id="race-list-loading">
+        <div class="race-list" id="race-list" role="region" aria-live="polite">
+          <div class="race-list-loading" id="race-list-loading" aria-busy="true">
             <span data-i18n="loading">Loading...</span>
           </div>
           <div class="race-list-empty" id="race-list-empty" style="display: none;">
@@ -690,6 +757,96 @@
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn danger" id="confirm-delete-race-btn" data-i18n="delete">Delete</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Gate Assignment Modal -->
+  <div class="modal-overlay glass-enable-target" id="gate-assignment-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="gateAssignment">Gate Assignment</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" style="margin-bottom: 16px;">Enter the gate range you are responsible for:</p>
+        <div class="gate-range-inputs">
+          <div class="gate-input-group">
+            <label data-i18n="gatesFrom">From</label>
+            <input type="number" class="text-input gate-input" id="gate-start-input" min="1" max="99" value="1">
+          </div>
+          <span class="gate-range-separator">–</span>
+          <div class="gate-input-group">
+            <label data-i18n="gatesTo">To</label>
+            <input type="number" class="text-input gate-input" id="gate-end-input" min="1" max="99" value="10">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="save-gate-assignment-btn" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault Recording Modal -->
+  <div class="modal-overlay glass-enable-target" id="fault-modal">
+    <div class="modal-content glass-surface-1 fault-modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="recordFault">Record Fault</h2>
+      </div>
+      <div class="modal-body">
+        <!-- Bib Selection -->
+        <div class="fault-bib-section">
+          <label data-i18n="selectBib">Select Bib</label>
+          <div class="fault-bib-selector" id="fault-bib-selector">
+            <!-- Populated dynamically with active bibs -->
+          </div>
+          <div class="manual-bib-row">
+            <span>or enter manually:</span>
+            <input type="text" class="text-input" id="fault-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
+          </div>
+        </div>
+
+        <!-- Gate Selection -->
+        <div class="fault-gate-section">
+          <label data-i18n="selectGate">Gate</label>
+          <div class="fault-gate-selector" id="fault-gate-selector">
+            <!-- Populated dynamically based on gate assignment -->
+          </div>
+        </div>
+
+        <!-- Fault Type Selection -->
+        <div class="fault-type-section">
+          <label data-i18n="faultType">Fault Type</label>
+          <div class="fault-type-buttons" id="fault-type-buttons">
+            <button class="fault-type-btn" data-fault="MG">
+              <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
+              <span class="fault-type-label" data-i18n="faultMG">Missed Gate</span>
+            </button>
+            <button class="fault-type-btn" data-fault="STR">
+              <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
+              <span class="fault-type-label" data-i18n="faultSTR">Straddling</span>
+            </button>
+            <button class="fault-type-btn" data-fault="BR">
+              <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
+              <span class="fault-type-label" data-i18n="faultBR">Binding Release</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn success" id="mark-ok-btn" data-i18n="markOk">Mark OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault Confirmation Overlay -->
+  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay">
+    <div class="fault-confirmation-content">
+      <div class="fault-confirmation-icon">⚠️</div>
+      <div class="fault-confirmation-bib">---</div>
+      <div class="fault-confirmation-gate">Gate --</div>
+      <div class="fault-confirmation-type">--</div>
     </div>
   </div>
 
