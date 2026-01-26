@@ -18,7 +18,7 @@ import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, Dev
 // Feature modules
 import { closeModal, closeAllModalsAnimated, openModal } from './features/modals';
 import { initRippleEffects, createRipple, cleanupRippleEffects } from './features/ripple';
-import { exportResults, formatTimeForRaceHorology, escapeCSVField } from './features/export';
+import { exportResults, formatTimeForRaceHorology, escapeCSVField, exportChiefSummary, exportFaultSummaryWhatsApp } from './features/export';
 
 // Initialize Vercel Speed Insights
 injectSpeedInsights();
@@ -832,6 +832,41 @@ function initChiefJudgeToggle(): void {
 
   // Initialize penalty configuration handlers
   initPenaltyConfig();
+
+  // Initialize chief export handlers
+  initChiefExportHandlers();
+}
+
+/**
+ * Initialize chief judge export button handlers
+ */
+function initChiefExportHandlers(): void {
+  // CSV export button
+  const csvBtn = document.getElementById('export-csv-btn');
+  if (csvBtn) {
+    csvBtn.addEventListener('click', () => {
+      feedbackTap();
+      exportResults();
+    });
+  }
+
+  // Summary export button
+  const summaryBtn = document.getElementById('export-summary-btn');
+  if (summaryBtn) {
+    summaryBtn.addEventListener('click', () => {
+      feedbackTap();
+      exportChiefSummary();
+    });
+  }
+
+  // WhatsApp export button
+  const whatsappBtn = document.getElementById('export-whatsapp-btn');
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', () => {
+      feedbackTap();
+      exportFaultSummaryWhatsApp();
+    });
+  }
 }
 
 /**

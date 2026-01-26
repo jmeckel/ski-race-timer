@@ -3721,3 +3721,49 @@ body {
   color: var(--primary);
   white-space: nowrap;
 }
+
+/* ===== Chief Export Actions ===== */
+
+.chief-export-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--surface-elevated);
+  margin-top: auto;
+}
+
+.chief-export-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chief-export-btn:active {
+  transform: scale(0.97);
+  background: var(--surface-elevated);
+}
+
+.chief-export-btn svg {
+  flex-shrink: 0;
+}
+
+.chief-export-btn.whatsapp {
+  background: #25D366;
+  border-color: #25D366;
+  color: white;
+}
+
+.chief-export-btn.whatsapp:active {
+  background: #1fa855;
+}

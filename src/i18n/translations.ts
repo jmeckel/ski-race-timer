@@ -320,7 +320,8 @@ export const translations: Record<Language, Translations> = {
     racersWithFaults: 'Racers with faults',
     penaltyMode: '+Time',
     gateJudges: 'Gate Judges',
-    noJudgesConnected: 'No gate judges connected'
+    noJudgesConnected: 'No gate judges connected',
+    summary: 'Summary'
   },
 
   de: {
@@ -642,7 +643,8 @@ export const translations: Record<Language, Translations> = {
     racersWithFaults: 'Fahrer mit Fehlern',
     penaltyMode: '+Zeit',
     gateJudges: 'Torrichter',
-    noJudgesConnected: 'Keine Torrichter verbunden'
+    noJudgesConnected: 'Keine Torrichter verbunden',
+    summary: 'Übersicht'
   }
 };
 
