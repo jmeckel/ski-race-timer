@@ -368,7 +368,10 @@
               <div class="inline-bib-selector" id="inline-bib-selector">
                 <!-- Populated dynamically -->
               </div>
-              <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
+              <div class="inline-bib-manual-row">
+                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
+                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
+              </div>
             </div>
 
             <!-- Gate Selection -->
@@ -390,6 +393,10 @@
                 <button class="inline-fault-type-btn" data-fault="STR">
                   <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
                   <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
+                </button>
+                <button class="inline-fault-type-btn" data-fault="BD">
+                  <span class="fault-type-short" data-i18n="faultBDShort">BD</span>
+                  <span class="fault-type-long" data-i18n="faultBD">Binding Released</span>
                 </button>
               </div>
             </div>
