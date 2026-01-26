@@ -810,17 +810,33 @@ function initChiefJudgeToggle(): void {
   const toggleBtn = document.getElementById('chief-judge-toggle-btn');
   if (!toggleBtn) return;
 
-  toggleBtn.addEventListener('click', () => {
+  toggleBtn.addEventListener('click', async () => {
+    const state = store.getState();
+    const lang = state.currentLang;
+
+    // If already in Chief Judge mode, allow exiting without PIN
+    if (state.isChiefJudgeView) {
+      store.toggleChiefJudgeView();
+      updateChiefJudgeView();
+      feedbackTap();
+      showToast(t('chiefJudgeModeDisabled', lang), 'info');
+      return;
+    }
+
+    // Entering Chief Judge mode - require PIN verification if sync is enabled
+    if (state.settings.sync && state.raceId) {
+      const verified = await verifyPinForChiefJudge(lang);
+      if (!verified) {
+        // PIN verification failed or cancelled
+        return;
+      }
+    }
+
+    // PIN verified or sync not enabled - enter Chief Judge mode
     store.toggleChiefJudgeView();
     updateChiefJudgeView();
     feedbackTap();
-
-    const state = store.getState();
-    const lang = state.currentLang;
-    showToast(
-      state.isChiefJudgeView ? t('chiefJudgeModeEnabled', lang) : t('chiefJudgeModeDisabled', lang),
-      'info'
-    );
+    showToast(t('chiefJudgeModeEnabled', lang), 'info');
   });
 
   // Update visibility based on sync and faults
@@ -4300,6 +4316,43 @@ function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
     // Update modal text for race join context
     if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
     if (textEl) textEl.textContent = t('enterPinToJoinRace', lang);
+    if (errorEl) errorEl.style.display = 'none';
+    pinInput.value = '';
+
+    // Store resolver for the verify button handler
+    pinVerifyResolver = resolve;
+
+    modal.classList.add('show');
+    setTimeout(() => pinInput.focus(), 100);
+  });
+}
+
+/**
+ * Verify PIN for entering Chief Judge mode
+ * Uses same PIN as race management
+ */
+function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
+  return new Promise((resolve) => {
+    // If already authenticated with valid token, allow without verification
+    if (hasAuthToken()) {
+      resolve(true);
+      return;
+    }
+
+    const modal = document.getElementById('admin-pin-modal');
+    const titleEl = document.getElementById('admin-pin-modal-title');
+    const textEl = document.getElementById('admin-pin-modal-text');
+    const pinInput = document.getElementById('admin-pin-verify-input') as HTMLInputElement;
+    const errorEl = document.getElementById('admin-pin-error');
+
+    if (!modal || !pinInput) {
+      resolve(false);
+      return;
+    }
+
+    // Update modal text for Chief Judge context
+    if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
+    if (textEl) textEl.textContent = t('enterPinForChiefJudge', lang);
     if (errorEl) errorEl.style.display = 'none';
     pinInput.value = '';
 
