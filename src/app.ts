@@ -1747,6 +1747,8 @@ function initRoleToggle(): void {
       // Switch to appropriate view
       if (role === 'gateJudge') {
         store.setView('gateJudge');
+        // Refresh inline fault UI with current active bibs
+        refreshInlineFaultUI();
       } else if (store.getState().currentView === 'gateJudge') {
         store.setView('timer');
       }
@@ -3588,6 +3590,7 @@ function updateViewVisibility(): void {
     updateActiveBibsList();
     updateGateRangeDisplay();
     updateGateJudgeRunSelection();
+    refreshInlineFaultUI();
   }
 }
 
