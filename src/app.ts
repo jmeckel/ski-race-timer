@@ -866,6 +866,10 @@ function initChiefJudgeToggle(): void {
       updateInlineFaultsList();
       updateInlineBibSelector();
     }
+    // Update inline bib selector when entries change (new starts/finishes) and device is a gate judge
+    if (keys.includes('entries') && state.deviceRole === 'gateJudge') {
+      updateInlineBibSelector();
+    }
     // Update inline gate selector when gate assignment changes
     if (keys.includes('gateAssignment') && state.deviceRole === 'gateJudge') {
       updateInlineGateSelector();
