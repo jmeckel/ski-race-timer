@@ -218,13 +218,13 @@ export function exportJudgeReport(): void {
   const thinDivider = '─'.repeat(45);
 
   lines.push(divider);
-  lines.push('        TORRICHTERKARTE');
+  lines.push(`        ${t('gateJudgeCard', lang).toUpperCase()}`);
   lines.push(divider);
-  lines.push(`Rennen:     ${raceId}`);
-  lines.push(`Datum:      ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`);
-  lines.push(`Torrichter: ${deviceName}`);
+  lines.push(`${t('race', lang)}:     ${raceId}`);
+  lines.push(`${t('date', lang)}:      ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`);
+  lines.push(`${t('gateJudgeLabel', lang)}: ${deviceName}`);
   if (gateAssignment) {
-    lines.push(`Tore:       ${gateAssignment[0]} - ${gateAssignment[1]}`);
+    lines.push(`${t('gates', lang)}:       ${gateAssignment[0]} - ${gateAssignment[1]}`);
   }
   lines.push(thinDivider);
 
@@ -240,12 +240,17 @@ export function exportJudgeReport(): void {
     return `  ${bib}   │  ${gate}  │ ${type} │ ${time}`;
   };
 
+  const bibHeader = t('bib', lang);
+  const gateHeader = t('gate', lang);
+  const faultHeader = t('faultType', lang);
+  const timeHeader = t('time', lang);
+
   if (run1Faults.length > 0 || run2Faults.length === 0) {
-    lines.push(`Lauf 1:`);
-    lines.push('Startnr │ Tor  │ Fehler    │ Zeit');
+    lines.push(`${t('runLabel', lang)} 1:`);
+    lines.push(`${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`);
     lines.push('────────┼──────┼───────────┼───────────────');
     if (run1Faults.length === 0) {
-      lines.push('  Keine Fehler erfasst');
+      lines.push(`  ${t('noFaultsEntered', lang)}`);
     } else {
       run1Faults.forEach(f => lines.push(formatFaultRow(f)));
     }
@@ -253,17 +258,17 @@ export function exportJudgeReport(): void {
   }
 
   if (run2Faults.length > 0) {
-    lines.push(`Lauf 2:`);
-    lines.push('Startnr │ Tor  │ Fehler    │ Zeit');
+    lines.push(`${t('runLabel', lang)} 2:`);
+    lines.push(`${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`);
     lines.push('────────┼──────┼───────────┼───────────────');
     run2Faults.forEach(f => lines.push(formatFaultRow(f)));
     lines.push('');
   }
 
   lines.push(thinDivider);
-  lines.push('Unterschrift: ________________________');
+  lines.push(`${t('signature', lang)}: ________________________`);
   lines.push('');
-  lines.push(`Legende: MG=${lang === 'de' ? 'Verfehlt' : 'Missed'}, ${lang === 'de' ? 'EF' : 'STR'}=${lang === 'de' ? 'Einfädler' : 'Straddling'}, ${lang === 'de' ? 'AB' : 'BR'}=${lang === 'de' ? 'Bindung' : 'Binding'}`);
+  lines.push(`${t('legend', lang)}: MG=${t('missedGateLegend', lang)}, ${getFaultTypeCode('STR', lang)}=${t('straddlingLegend', lang)}, ${getFaultTypeCode('BR', lang)}=${t('bindingLegend', lang)}`);
   lines.push(divider);
 
   const content = lines.join('\n');
@@ -274,7 +279,7 @@ export function exportJudgeReport(): void {
 
   const link = document.createElement('a');
   link.href = url;
-  link.download = getExportFilename(`${raceId}_Torrichterkarte_${deviceName.replace(/\s+/g, '_')}`, 'txt');
+  link.download = getExportFilename(`${raceId}_${t('gateJudgeCard', lang)}_${deviceName.replace(/\s+/g, '_')}`, 'txt');
 
   document.body.appendChild(link);
   link.click();
@@ -297,7 +302,7 @@ export function exportFaultSummaryWhatsApp(): void {
   const raceId = state.raceId || 'RACE';
 
   if (faults.length === 0) {
-    showToast(lang === 'de' ? 'Keine Fehler zum Exportieren' : 'No faults to export', 'warning');
+    showToast(t('noFaultsToExport', lang), 'warning');
     return;
   }
 
@@ -315,7 +320,7 @@ export function exportFaultSummaryWhatsApp(): void {
   const lines: string[] = [];
 
   // Header
-  lines.push(`📋 ${lang === 'de' ? 'Torfehler' : 'Gate Faults'} - ${raceId}`);
+  lines.push(`📋 ${t('gateFaults', lang)} - ${raceId}`);
   lines.push('');
 
   // Group by run
@@ -343,9 +348,9 @@ export function exportFaultSummaryWhatsApp(): void {
 
   // Run 1
   if (run1Bibs.length > 0) {
-    lines.push(`🏁 ${lang === 'de' ? 'Lauf 1' : 'Run 1'}:`);
+    lines.push(`🏁 ${t('runLabel', lang)} 1:`);
     if (state.usePenaltyMode) {
-      lines.push(`🟡 ${lang === 'de' ? 'STRAFZEIT' : 'PENALTY'}:`);
+      lines.push(`🟡 ${t('penaltyLabel', lang)}:`);
     } else {
       lines.push(`🔴 DSQ:`);
     }
@@ -359,9 +364,9 @@ export function exportFaultSummaryWhatsApp(): void {
 
   // Run 2
   if (run2Bibs.length > 0) {
-    lines.push(`🏁 ${lang === 'de' ? 'Lauf 2' : 'Run 2'}:`);
+    lines.push(`🏁 ${t('runLabel', lang)} 2:`);
     if (state.usePenaltyMode) {
-      lines.push(`🟡 ${lang === 'de' ? 'STRAFZEIT' : 'PENALTY'}:`);
+      lines.push(`🟡 ${t('penaltyLabel', lang)}:`);
     } else {
       lines.push(`🔴 DSQ:`);
     }
@@ -383,7 +388,7 @@ export function exportFaultSummaryWhatsApp(): void {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(content).then(() => {
       feedbackSuccess();
-      showToast(lang === 'de' ? 'In Zwischenablage kopiert' : 'Copied to clipboard', 'success');
+      showToast(t('copiedToClipboard', lang), 'success');
     }).catch(() => {
       // Fallback: download as file
       downloadTextFile(content, getExportFilename(`${raceId}_WhatsApp`, 'txt'));
@@ -404,7 +409,7 @@ export function exportChiefSummary(): void {
   const raceId = state.raceId || 'RACE';
 
   if (faults.length === 0) {
-    showToast(lang === 'de' ? 'Keine Fehler zum Exportieren' : 'No faults to export', 'warning');
+    showToast(t('noFaultsToExport', lang), 'warning');
     return;
   }
 
@@ -428,9 +433,9 @@ export function exportChiefSummary(): void {
   const formatRunSummary = (runBibs: [string, FaultEntry[]][], runNum: number) => {
     if (runBibs.length === 0) return;
 
-    lines.push(`${lang === 'de' ? 'ZUSAMMENFASSUNG TORFEHLER' : 'GATE FAULT SUMMARY'} - ${lang === 'de' ? 'Lauf' : 'Run'} ${runNum}`);
+    lines.push(`${t('faultSummaryTitle', lang)} - ${t('runLabel', lang)} ${runNum}`);
     lines.push(divider);
-    lines.push(`Startnr │ ${lang === 'de' ? 'Fehler' : 'Faults'}           │ ${lang === 'de' ? 'Strafzeit' : 'Penalty'} │ Status`);
+    lines.push(`${t('bib', lang).substring(0, 7).padEnd(7)} │ ${t('faults', lang).padEnd(16)} │ ${t('penalty', lang).padStart(9)} │ Status`);
     lines.push('────────┼──────────────────┼───────────┼────────');
 
     runBibs
@@ -448,8 +453,8 @@ export function exportChiefSummary(): void {
         let statusStr: string;
         if (state.usePenaltyMode) {
           const penalty = racerFaults.length * state.penaltySeconds;
-          penaltyStr = `${penalty} ${lang === 'de' ? 'Sek' : 'sec'}`.padStart(9);
-          statusStr = lang === 'de' ? 'STR' : 'FLT';
+          penaltyStr = `${penalty} ${t('sec', lang)}`.padStart(9);
+          statusStr = t('flt', lang);
         } else {
           penaltyStr = '-'.padStart(9);
           statusStr = 'DSQ';
@@ -468,11 +473,11 @@ export function exportChiefSummary(): void {
   formatRunSummary(run2Bibs, 2);
 
   lines.push(divider);
-  lines.push(`${lang === 'de' ? 'Erstellt' : 'Generated'}: ${new Date().toLocaleString(lang === 'de' ? 'de-DE' : 'en-US')}`);
+  lines.push(`${t('generated', lang)}: ${new Date().toLocaleString(lang === 'de' ? 'de-DE' : 'en-US')}`);
 
   const content = lines.join('\n');
 
-  downloadTextFile(content, getExportFilename(`${raceId}_${lang === 'de' ? 'Zusammenfassung' : 'Summary'}`, 'txt'));
+  downloadTextFile(content, getExportFilename(`${raceId}_${t('summary', lang)}`, 'txt'));
 
   feedbackSuccess();
   showToast(t('exported', lang), 'success');

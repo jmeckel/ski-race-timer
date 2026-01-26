@@ -1533,10 +1533,12 @@ function updateRoleToggle(): void {
  * Update tab visibility based on device role
  * Timer role: show Timer tab, hide Gate Judge tab
  * Gate Judge role: hide Timer tab, show Gate Judge tab
+ * Also reorders tabs so Gate tab appears first (like Timer in timer mode)
  */
 function updateGateJudgeTabVisibility(): void {
   const timerTab = document.getElementById('timer-tab');
   const gateJudgeTab = document.getElementById('gate-judge-tab');
+  const tabBar = document.querySelector('.tab-bar');
 
   const state = store.getState();
   const isGateJudge = state.deviceRole === 'gateJudge';
@@ -1544,6 +1546,11 @@ function updateGateJudgeTabVisibility(): void {
   // Swap tabs based on role
   if (timerTab) timerTab.style.display = isGateJudge ? 'none' : '';
   if (gateJudgeTab) gateJudgeTab.style.display = isGateJudge ? '' : 'none';
+
+  // Add/remove class for tab reordering (Gate first, Results, Settings)
+  if (tabBar) {
+    tabBar.classList.toggle('gate-judge-mode', isGateJudge);
+  }
 }
 
 /**
@@ -1722,6 +1729,9 @@ function updateOtherJudgesCoverage(): void {
 
   // Update judges ready indicator in header
   updateJudgesReadyIndicator(otherAssignments);
+
+  // Also update individual judge ready indicator (for gate judge mode)
+  updateJudgeReadyStatus();
 }
 
 /**
@@ -1772,6 +1782,61 @@ function updateJudgesReadyIndicator(assignments?: import('./types').GateAssignme
 
   // Add highlight when all are ready
   indicator.classList.toggle('all-ready', readyJudges === totalJudges && totalJudges > 0);
+}
+
+/**
+ * Update the judge ready indicator in gate judge mode
+ * Replaces GPS indicator, shows color-coded ready status:
+ * - Red: No judges ready
+ * - Yellow: Some but not all ready
+ * - Green: All judges ready
+ */
+function updateJudgeReadyStatus(): void {
+  const gpsIndicator = document.getElementById('gps-indicator');
+  const judgeReadyIndicator = document.getElementById('judge-ready-indicator');
+  if (!judgeReadyIndicator) return;
+
+  const state = store.getState();
+  const isGateJudge = state.deviceRole === 'gateJudge';
+
+  // In gate judge mode: hide GPS, show judge ready indicator
+  // In timer mode: show GPS (if enabled), hide judge ready indicator
+  if (gpsIndicator) {
+    gpsIndicator.style.display = (!isGateJudge && state.settings.gps) ? 'flex' : 'none';
+  }
+
+  if (!isGateJudge) {
+    judgeReadyIndicator.style.display = 'none';
+    return;
+  }
+
+  // Show the indicator in gate judge mode
+  judgeReadyIndicator.style.display = 'flex';
+
+  // Calculate ready status from all judges
+  const otherAssignments = syncService.getOtherGateAssignments();
+  let totalJudges = otherAssignments.length;
+  let readyJudges = otherAssignments.filter(a => a.isReady).length;
+
+  // Include this device if it has a gate assignment
+  if (state.gateAssignment) {
+    totalJudges++;
+    if (state.isJudgeReady) readyJudges++;
+  }
+
+  // Update indicator classes based on ready state
+  judgeReadyIndicator.classList.remove('none-ready', 'some-ready', 'all-ready');
+
+  if (totalJudges === 0) {
+    // No judges at all - show as none ready
+    judgeReadyIndicator.classList.add('none-ready');
+  } else if (readyJudges === 0) {
+    judgeReadyIndicator.classList.add('none-ready');
+  } else if (readyJudges === totalJudges) {
+    judgeReadyIndicator.classList.add('all-ready');
+  } else {
+    judgeReadyIndicator.classList.add('some-ready');
+  }
 }
 
 /**
@@ -2496,6 +2561,12 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
   if (changedKeys.includes('deviceRole')) {
     updateRoleToggle();
     updateGateJudgeTabVisibility();
+    updateJudgeReadyStatus();
+  }
+
+  // Update judge ready status when ready state changes
+  if (changedKeys.includes('isJudgeReady')) {
+    updateJudgeReadyStatus();
   }
 
   if (changedKeys.includes('gateAssignment')) {
@@ -2520,9 +2591,10 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
     updateSyncStatusIndicator();
   }
 
-  // Update GPS status
+  // Update GPS status and judge ready indicator
   if (changedKeys.includes('gpsStatus') || changedKeys.includes('settings')) {
     updateGpsIndicator();
+    updateJudgeReadyStatus();
   }
 
   // Update photo capture indicator on timestamp button
@@ -2550,6 +2622,7 @@ function updateUI(): void {
   updateEntryCountBadge();
   updateSyncStatusIndicator();
   updateGpsIndicator();
+  updateJudgeReadyStatus();
   updatePhotoCaptureIndicator();
   updateUndoButton();
   updateSettingsInputs();

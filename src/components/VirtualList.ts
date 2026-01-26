@@ -1,7 +1,19 @@
-import type { Entry } from '../types';
+import type { Entry, FaultEntry, Run } from '../types';
 import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
+
+// Display item can be either a timing entry or an orphan fault (fault with no corresponding timing entry)
+interface DisplayItem {
+  id: string;
+  type: 'entry' | 'fault';
+  bib: string;
+  run: Run;
+  timestamp: string;
+  entry?: Entry;
+  faults?: FaultEntry[];
+  deviceName?: string;
+}
 
 // Virtual list configuration
 const ITEM_HEIGHT = 72; // Height of each result item in pixels
@@ -22,7 +34,7 @@ export class VirtualList {
   private scrollContainer: HTMLElement;
   private contentContainer: HTMLElement;
   private entries: Entry[] = [];
-  private filteredEntries: Entry[] = [];
+  private filteredItems: DisplayItem[] = [];
   private visibleItems: Map<string, HTMLElement> = new Map();
   private scrollTop = 0;
   private containerHeight = 0;
@@ -138,32 +150,102 @@ export class VirtualList {
    * Apply current filters
    */
   applyFilters(searchTerm?: string, pointFilter?: string, statusFilter?: string): void {
-    let filtered = [...this.entries];
+    const state = store.getState();
+    let filteredEntries = [...this.entries];
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(e =>
+      filteredEntries = filteredEntries.filter(e =>
         e.bib.toLowerCase().includes(term) ||
         e.deviceName?.toLowerCase().includes(term)
       );
     }
 
     if (pointFilter && pointFilter !== 'all') {
-      filtered = filtered.filter(e => e.point === pointFilter);
+      filteredEntries = filteredEntries.filter(e => e.point === pointFilter);
     }
 
     if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(e => e.status === statusFilter);
+      filteredEntries = filteredEntries.filter(e => e.status === statusFilter);
+    }
+
+    // Convert entries to display items
+    const displayItems: DisplayItem[] = filteredEntries.map(entry => ({
+      id: entry.id,
+      type: 'entry' as const,
+      bib: entry.bib,
+      run: entry.run ?? 1,
+      timestamp: entry.timestamp,
+      entry,
+      deviceName: entry.deviceName
+    }));
+
+    // Find orphan faults (faults without a corresponding Finish entry)
+    // Group faults by bib+run
+    const faultsByBibRun = new Map<string, FaultEntry[]>();
+    for (const fault of state.faultEntries) {
+      const key = `${fault.bib}-${fault.run}`;
+      if (!faultsByBibRun.has(key)) {
+        faultsByBibRun.set(key, []);
+      }
+      faultsByBibRun.get(key)!.push(fault);
+    }
+
+    // Find which bib+run combinations have Finish entries
+    const finishEntryKeys = new Set(
+      this.entries
+        .filter(e => e.point === 'F')
+        .map(e => `${e.bib}-${e.run ?? 1}`)
+    );
+
+    // Create display items for orphan faults (no Finish entry)
+    for (const [key, faults] of faultsByBibRun) {
+      if (!finishEntryKeys.has(key)) {
+        const [bib, runStr] = key.split('-');
+        const run = parseInt(runStr, 10) as Run;
+        const latestFault = faults.reduce((a, b) =>
+          new Date(a.timestamp) > new Date(b.timestamp) ? a : b
+        );
+
+        // Apply search filter to orphan faults
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          if (!bib.toLowerCase().includes(term) &&
+              !latestFault.deviceName?.toLowerCase().includes(term)) {
+            continue;
+          }
+        }
+
+        // Skip if point filter is set (faults don't have S/F point)
+        if (pointFilter && pointFilter !== 'all') {
+          continue;
+        }
+
+        // For status filter, show faults when filtering for dsq/flt or all
+        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'dsq' && statusFilter !== 'flt') {
+          continue;
+        }
+
+        displayItems.push({
+          id: `fault-${key}`,
+          type: 'fault',
+          bib,
+          run,
+          timestamp: latestFault.timestamp,
+          faults,
+          deviceName: latestFault.deviceName
+        });
+      }
     }
 
     // Sort by bib number descending (highest first)
-    filtered.sort((a, b) => {
+    displayItems.sort((a, b) => {
       const bibA = parseInt(a.bib, 10) || 0;
       const bibB = parseInt(b.bib, 10) || 0;
       return bibB - bibA;
     });
 
-    this.filteredEntries = filtered;
+    this.filteredItems = displayItems;
     this.updateContentHeight();
     this.render();
   }
@@ -172,7 +254,7 @@ export class VirtualList {
    * Update content container height
    */
   private updateContentHeight(): void {
-    const totalHeight = this.filteredEntries.length * ITEM_HEIGHT;
+    const totalHeight = this.filteredItems.length * ITEM_HEIGHT;
     this.contentContainer.style.height = `${totalHeight}px`;
   }
 
@@ -188,7 +270,7 @@ export class VirtualList {
    * Render visible items
    */
   render(): void {
-    if (this.filteredEntries.length === 0) {
+    if (this.filteredItems.length === 0) {
       this.renderEmpty();
       return;
     }
@@ -202,7 +284,7 @@ export class VirtualList {
     // Calculate visible range
     const startIndex = Math.max(0, Math.floor(this.scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
     const endIndex = Math.min(
-      this.filteredEntries.length,
+      this.filteredItems.length,
       Math.ceil((this.scrollTop + this.containerHeight) / ITEM_HEIGHT) + BUFFER_SIZE
     );
 
@@ -211,23 +293,27 @@ export class VirtualList {
 
     // Render visible items
     for (let i = startIndex; i < endIndex; i++) {
-      const entry = this.filteredEntries[i];
-      visibleIds.add(entry.id);
+      const displayItem = this.filteredItems[i];
+      visibleIds.add(displayItem.id);
 
-      let item = this.visibleItems.get(entry.id);
-      const isSelected = state.selectedEntries.has(entry.id);
+      let item = this.visibleItems.get(displayItem.id);
+      const isSelected = displayItem.entry ? state.selectedEntries.has(displayItem.entry.id) : false;
 
       if (!item) {
-        item = this.createItem(entry);
-        this.visibleItems.set(entry.id, item);
+        item = displayItem.type === 'entry' && displayItem.entry
+          ? this.createItem(displayItem.entry)
+          : this.createFaultItem(displayItem);
+        this.visibleItems.set(displayItem.id, item);
         this.contentContainer.appendChild(item);
       }
 
       // Update position
       item.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
 
-      // Update selection state
-      item.classList.toggle('selected', isSelected);
+      // Update selection state (only for entries, not orphan faults)
+      if (displayItem.type === 'entry') {
+        item.classList.toggle('selected', isSelected);
+      }
     }
 
     // Remove items no longer visible
@@ -353,6 +439,88 @@ export class VirtualList {
   }
 
   /**
+   * Create a list item element for orphan fault (fault with no timing entry)
+   */
+  private createFaultItem(displayItem: DisplayItem): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'result-item fault-only-item';
+    item.setAttribute('role', 'listitem');
+    item.setAttribute('data-fault-id', displayItem.id);
+    item.style.cssText = `
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: ${ITEM_HEIGHT}px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface-elevated);
+      border-left: 3px solid var(--warning);
+    `;
+
+    const bibStr = formatBib(displayItem.bib || '---');
+    const state = store.getState();
+    const lang = state.currentLang;
+    const run = displayItem.run;
+    const runColor = getRunColor(run);
+    const runLabel = getRunLabel(run, lang);
+    const faults = displayItem.faults || [];
+
+    // Format fault details
+    const faultDetails = faults
+      .sort((a, b) => a.gateNumber - b.gateNumber)
+      .map(f => `T${f.gateNumber} (${f.faultType})`)
+      .join(', ');
+
+    const faultBadgeHtml = `
+      <span class="result-fault-badge" title="${faultDetails}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
+      </span>
+    `;
+
+    // Determine status based on penalty mode
+    const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
+    const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
+
+    item.innerHTML = `
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
+        ${escapeHtml(bibStr)}
+      </div>
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
+        ${t('gate', lang)}
+      </div>
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary);">
+          ${escapeHtml(faultDetails)}
+        </div>
+        ${displayItem.deviceName ? `
+          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary);">
+            ${escapeHtml(displayItem.deviceName)}
+          </div>
+        ` : ''}
+      </div>
+      ${faultBadgeHtml}
+      <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
+        ${escapeHtml(statusLabel)}
+      </span>
+    `;
+
+    // Touch feedback
+    item.addEventListener('touchstart', () => {
+      item.style.background = 'var(--surface-elevated)';
+    }, { passive: true });
+
+    item.addEventListener('touchend', () => {
+      item.style.background = 'var(--surface)';
+    }, { passive: true });
+
+    return item;
+  }
+
+  /**
    * Render empty state
    */
   private renderEmpty(): void {
@@ -384,7 +552,7 @@ export class VirtualList {
    * Scroll to entry
    */
   scrollToEntry(entryId: string): void {
-    const index = this.filteredEntries.findIndex(e => e.id === entryId);
+    const index = this.filteredItems.findIndex(item => item.id === entryId);
     if (index !== -1) {
       const top = index * ITEM_HEIGHT;
       this.scrollContainer.scrollTo({ top, behavior: 'smooth' });
@@ -395,7 +563,7 @@ export class VirtualList {
    * Get visible count
    */
   getVisibleCount(): number {
-    return this.filteredEntries.length;
+    return this.filteredItems.length;
   }
 
   /**

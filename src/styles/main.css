@@ -248,6 +248,52 @@ body {
   50% { transform: scale(1.05); }
 }
 
+/* Individual Judge Ready Indicator (shown in gate judge mode instead of GPS) */
+.judge-ready-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.judge-ready-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--error);
+  animation: pulse 2s infinite;
+}
+
+.judge-ready-text {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* None ready - red */
+.judge-ready-indicator.none-ready .judge-ready-dot {
+  background: var(--error);
+  box-shadow: 0 0 8px var(--error);
+}
+
+/* Some ready - yellow */
+.judge-ready-indicator.some-ready .judge-ready-dot {
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
+}
+
+/* All ready - green */
+.judge-ready-indicator.all-ready .judge-ready-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.judge-ready-indicator.all-ready .judge-ready-text {
+  color: var(--success);
+}
+
 .entry-count-badge {
   padding: 4px 10px;
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.85) 0%, rgba(234, 88, 12, 0.75) 100%);
@@ -1017,6 +1063,23 @@ body {
 
 .tab-btn.active svg {
   transform: scale(1.05);
+}
+
+/* Gate Judge mode tab reordering - Gate tab first, then Results, then Settings */
+.tab-bar.gate-judge-mode #gate-judge-tab {
+  order: 1;
+}
+
+.tab-bar.gate-judge-mode [data-view="results"] {
+  order: 2;
+}
+
+.tab-bar.gate-judge-mode [data-view="settings"] {
+  order: 3;
+}
+
+.tab-bar.gate-judge-mode #timer-tab {
+  order: 4;
 }
 
 /* ===== Modal ===== */

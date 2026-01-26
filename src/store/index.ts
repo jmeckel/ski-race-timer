@@ -184,7 +184,8 @@ class Store {
 
     return {
       // UI State
-      currentView: 'timer',
+      // Set initial view based on device role (gate judge starts on gate view, timer on timer view)
+      currentView: deviceRole === 'gateJudge' ? 'gateJudge' : 'timer',
       currentLang: lang,
       bibInput: '',
       selectedPoint: 'F',

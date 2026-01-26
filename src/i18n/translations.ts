@@ -321,7 +321,31 @@ export const translations: Record<Language, Translations> = {
     penaltyMode: '+Time',
     gateJudges: 'Gate Judges',
     noJudgesConnected: 'No gate judges connected',
-    summary: 'Summary'
+    summary: 'Summary',
+
+    // Export
+    exportCSV: 'CSV',
+    exportWhatsApp: 'WhatsApp',
+    noFaultsToExport: 'No faults to export',
+    copiedToClipboard: 'Copied to clipboard',
+    gateJudgeCard: 'Gate Judge Card',
+    race: 'Race',
+    date: 'Date',
+    gateJudgeLabel: 'Gate Judge',
+    runLabel: 'Run',
+    noFaultsEntered: 'No faults entered',
+    signature: 'Signature',
+    legend: 'Legend',
+    missedGateLegend: 'Missed',
+    straddlingLegend: 'Straddling',
+    bindingLegend: 'Binding',
+    gateFaults: 'Gate Faults',
+    penaltyLabel: 'PENALTY',
+    faultSummaryTitle: 'GATE FAULT SUMMARY',
+    faults: 'Faults',
+    penalty: 'Penalty',
+    sec: 'sec',
+    generated: 'Generated'
   },
 
   de: {
@@ -644,7 +668,31 @@ export const translations: Record<Language, Translations> = {
     penaltyMode: '+Zeit',
     gateJudges: 'Torrichter',
     noJudgesConnected: 'Keine Torrichter verbunden',
-    summary: 'Übersicht'
+    summary: 'Übersicht',
+
+    // Export
+    exportCSV: 'CSV',
+    exportWhatsApp: 'WhatsApp',
+    noFaultsToExport: 'Keine Fehler zum Exportieren',
+    copiedToClipboard: 'In Zwischenablage kopiert',
+    gateJudgeCard: 'Torrichterkarte',
+    race: 'Rennen',
+    date: 'Datum',
+    gateJudgeLabel: 'Torrichter',
+    runLabel: 'Lauf',
+    noFaultsEntered: 'Keine Fehler erfasst',
+    signature: 'Unterschrift',
+    legend: 'Legende',
+    missedGateLegend: 'Verfehlt',
+    straddlingLegend: 'Einfädler',
+    bindingLegend: 'Bindung',
+    gateFaults: 'Torfehler',
+    penaltyLabel: 'STRAFZEIT',
+    faultSummaryTitle: 'ZUSAMMENFASSUNG TORFEHLER',
+    faults: 'Fehler',
+    penalty: 'Strafzeit',
+    sec: 'Sek',
+    generated: 'Erstellt'
   }
 };
 
