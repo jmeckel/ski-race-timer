@@ -1,7 +1,7 @@
 /**
  * API Tests - Auth Token Endpoint
  *
- * Tests for the /api/auth/token endpoint (api/auth/token.js)
+ * Tests for the /api/v1/auth/token endpoint (api/v1/auth/token.js)
  * Tests PIN-to-JWT token exchange
  */
 
@@ -236,7 +236,7 @@ function generateMockToken(payload) {
 // Tests
 // ============================================
 
-describe('API: /api/auth/token', () => {
+describe('API: /api/v1/auth/token', () => {
   let mockRedis;
 
   beforeEach(() => {
@@ -260,7 +260,7 @@ describe('API: /api/auth/token', () => {
     });
   });
 
-  describe('POST /api/auth/token', () => {
+  describe('POST /api/v1/auth/token', () => {
     describe('PIN Validation', () => {
       it('should return 400 when PIN is missing', async () => {
         const req = { method: 'POST', body: {} };

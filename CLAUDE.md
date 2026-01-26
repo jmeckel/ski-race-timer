@@ -19,15 +19,19 @@ Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for s
 
 ```
 .
-├── api/                    # Vercel serverless functions
-│   ├── auth/
-│   │   └── token.js       # JWT token exchange endpoint
-│   ├── admin/
-│   │   ├── races.js       # Race management API
-│   │   └── pin.js         # PIN management API
-│   ├── lib/
-│   │   └── jwt.js         # Shared JWT utilities
-│   └── sync.js            # Cloud sync API
+├── api/                    # Vercel serverless functions (v1)
+│   ├── v1/                 # Versioned API endpoints
+│   │   ├── auth/
+│   │   │   └── token.js   # JWT token exchange endpoint
+│   │   ├── admin/
+│   │   │   ├── races.js   # Race management API
+│   │   │   ├── pin.js     # PIN management API
+│   │   │   └── reset-pin.js # PIN reset (server-side auth)
+│   │   ├── sync.js        # Cloud sync API
+│   │   └── faults.js      # Fault entries API
+│   └── lib/
+│       ├── jwt.js         # Shared JWT utilities
+│       └── response.js    # Shared API response utilities
 ├── src/
 │   ├── app.ts             # Main application logic
 │   ├── main.ts            # App entry point and initialization
@@ -76,6 +80,9 @@ Located in `src/features/`, these modules extract reusable functionality:
 - **modals.ts** - Modal open/close utilities with animation support
 - **ripple.ts** - Material Design ripple effect for touch feedback
 - **export.ts** - CSV export in Race Horology format
+- **gateJudge.ts** - Gate Judge UI and inline fault entry (dependency injection)
+- **chiefJudge.ts** - Chief Judge panel, fault summaries, deletion approvals
+- **editModals.ts** - Entry and fault edit modal handling
 
 ### Utility Modules
 
@@ -90,7 +97,7 @@ Located in `src/utils/`:
 ### Multi-Device Sync
 
 Cross-device sync uses Redis (via ioredis) with polling:
-- **API endpoint**: `/api/sync` handles GET (fetch), POST (add), DELETE (remove)
+- **API endpoint**: `/api/v1/sync` handles GET (fetch), POST (add), DELETE (remove)
 - **Polling interval**: 5 seconds (30 seconds on error)
 - **BroadcastChannel**: Used for same-browser tab sync
 - **Race ID**: Case-insensitive unique identifier to group synced devices
@@ -99,7 +106,7 @@ Cross-device sync uses Redis (via ioredis) with polling:
 
 JWT-based authentication protects sync and admin APIs:
 
-1. **Token Exchange**: User enters 4-digit PIN → `/api/auth/token` returns JWT
+1. **Token Exchange**: User enters 4-digit PIN → `/api/v1/auth/token` returns JWT
 2. **Token Storage**: JWT stored in localStorage (`skiTimerAuthToken`)
 3. **Token Usage**: API calls include `Authorization: Bearer <token>` header
 4. **Token Expiry**: 24-hour expiry, auto-prompts re-authentication
@@ -124,21 +131,39 @@ Exports use semicolon delimiter and standard timing designators:
 
 ## API Endpoints
 
-### `/api/auth/token` (POST)
+All endpoints use the `/api/v1/` prefix. Legacy `/api/*` paths are rewritten to v1 for backwards compatibility.
+
+### `/api/v1/auth/token` (POST)
 Exchange PIN for JWT token.
 - **Body**: `{ pin: "1234" }`
 - **Response**: `{ success: true, token: "jwt...", isNewPin?: true }`
 
-### `/api/sync` (GET/POST/DELETE)
+### `/api/v1/sync` (GET/POST/DELETE)
 Cloud sync for race entries. Requires JWT token when PIN is set.
 - **GET**: Fetch entries for race
 - **POST**: Add/update entry
 - **DELETE**: Remove entry
 
-### `/api/admin/races` (GET/DELETE)
+### `/api/v1/faults` (GET/POST/DELETE)
+Fault entries for gate judges. Requires JWT token.
+- **GET**: Fetch faults for race
+- **POST**: Add/update fault entry
+- **DELETE**: Remove fault entry
+
+### `/api/v1/admin/races` (GET/DELETE)
 Race management. Requires JWT token.
 - **GET**: List all races with metadata
 - **DELETE**: Delete race and set tombstone for connected clients
+
+### `/api/v1/admin/pin` (GET/POST)
+PIN hash management. Requires JWT token.
+- **GET**: Get current PIN hash status
+- **POST**: Set PIN hash
+
+### `/api/v1/admin/reset-pin` (POST)
+Reset PIN (server-side authentication via X-Server-Pin header).
+- **Header**: `X-Server-Pin: <server-pin>`
+- **Response**: `{ success: true, message: "PIN has been reset..." }`
 
 ## Testing
 

@@ -1,7 +1,7 @@
 /**
  * API Tests - Sync Endpoint
  *
- * Tests for the /api/sync endpoint (api/sync.js)
+ * Tests for the /api/v1/sync endpoint (api/v1/sync.js)
  * Uses mocked Redis client to test handler logic
  */
 
@@ -382,7 +382,7 @@ async function handler(req, res, redis) {
 // Tests
 // ============================================
 
-describe('API: /api/sync', () => {
+describe('API: /api/v1/sync', () => {
   let mockRedis;
 
   beforeEach(() => {
@@ -407,7 +407,7 @@ describe('API: /api/sync', () => {
     });
   });
 
-  describe('GET /api/sync', () => {
+  describe('GET /api/v1/sync', () => {
     it('should return 400 when raceId is missing', async () => {
       const req = { method: 'GET', query: {} };
       const result = await handler(req, {}, mockRedis);
@@ -459,7 +459,7 @@ describe('API: /api/sync', () => {
     });
   });
 
-  describe('POST /api/sync', () => {
+  describe('POST /api/v1/sync', () => {
     const validEntry = {
       id: 1704067200000,
       bib: '001',

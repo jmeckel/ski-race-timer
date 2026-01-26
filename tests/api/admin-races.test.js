@@ -1,7 +1,7 @@
 /**
  * API Tests - Admin Races Endpoint
  *
- * Tests for the /api/admin/races endpoint (api/admin/races.js)
+ * Tests for the /api/v1/admin/races endpoint (api/v1/admin/races.js)
  * Uses mocked Redis client to test handler logic
  */
 
@@ -223,7 +223,7 @@ async function handler(req, res, redis) {
 // Tests
 // ============================================
 
-describe('API: /api/admin/races', () => {
+describe('API: /api/v1/admin/races', () => {
   let mockRedis;
 
   beforeEach(() => {

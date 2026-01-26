@@ -128,9 +128,9 @@ Unit tests cover isolated functions from the application.
 
 ## API Tests
 
-API tests verify the `/api/sync` endpoint behavior.
+API tests verify the `/api/v1/*` endpoint behavior. All API endpoints use v1 versioning.
 
-### GET /api/sync
+### GET /api/v1/sync
 
 - Returns empty entries for new race
 - Returns existing entries for valid race
@@ -138,7 +138,7 @@ API tests verify the `/api/sync` endpoint behavior.
 - Returns 400 for invalid raceId format
 - Handles corrupted data gracefully
 
-### POST /api/sync
+### POST /api/v1/sync
 
 - Creates new entry successfully
 - Prevents duplicate entries
@@ -147,7 +147,7 @@ API tests verify the `/api/sync` endpoint behavior.
 - Enforces max entries limit
 - Sets CORS headers
 
-### OPTIONS /api/sync
+### OPTIONS /api/v1/sync
 
 - Returns CORS preflight response
 
@@ -305,7 +305,7 @@ globalThis.fetch = vi.fn(() =>
 localStorageMock.setItem('key', 'value');
 
 // Mock in Playwright
-await page.route('/api/*', route => {
+await page.route('/api/v1/*', route => {
   route.fulfill({ json: { entries: [] } });
 });
 ```
