@@ -3,20 +3,21 @@ import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRu
 import { store } from '../store';
 import { t } from '../i18n/translations';
 
-// Display item can be either a timing entry or an orphan fault (fault with no corresponding timing entry)
-interface DisplayItem {
-  id: string;
-  type: 'entry' | 'fault';
+// Group of items for the same bib+run
+interface DisplayGroup {
+  id: string;           // bib-run
   bib: string;
   run: Run;
-  timestamp: string;
-  entry?: Entry;
-  faults?: FaultEntry[];
-  deviceName?: string;
+  entries: Entry[];     // Timing entries (Start, Finish)
+  faults: FaultEntry[]; // Fault entries
+  isMultiItem: boolean; // Has more than 1 item total
+  latestTimestamp: string;
 }
 
 // Virtual list configuration
 const ITEM_HEIGHT = 72; // Height of each result item in pixels
+const SUB_ITEM_HEIGHT = 56; // Height of sub-items when expanded
+const GROUP_HEADER_HEIGHT = 72; // Height of group header
 const BUFFER_SIZE = 5; // Number of items to render above/below viewport
 const SCROLL_DEBOUNCE = 16; // ~60fps
 const RESIZE_DEBOUNCE = 100; // Debounce resize events for battery efficiency
@@ -34,7 +35,8 @@ export class VirtualList {
   private scrollContainer: HTMLElement;
   private contentContainer: HTMLElement;
   private entries: Entry[] = [];
-  private filteredItems: DisplayItem[] = [];
+  private groups: DisplayGroup[] = [];
+  private expandedGroups: Set<string> = new Set();
   private visibleItems: Map<string, HTMLElement> = new Map();
   private scrollTop = 0;
   private containerHeight = 0;
@@ -71,7 +73,6 @@ export class VirtualList {
 
     // Set up scroll listener with cancellable debounce
     this.scrollHandler = () => {
-      // Clear any pending timeout to debounce
       if (this.scrollDebounceTimeout !== null) {
         clearTimeout(this.scrollDebounceTimeout);
       }
@@ -81,7 +82,6 @@ export class VirtualList {
           this.onScroll();
         } catch (error) {
           console.error('VirtualList scroll error:', error);
-          // Continue to allow future scroll events
         }
       }, SCROLL_DEBOUNCE);
     };
@@ -89,7 +89,6 @@ export class VirtualList {
 
     // Set up resize observer with debounce for battery efficiency
     this.resizeObserver = new ResizeObserver(() => {
-      // Debounce resize events to prevent excessive renders during animations
       if (this.resizeDebounceTimeout !== null) {
         clearTimeout(this.resizeDebounceTimeout);
       }
@@ -120,34 +119,12 @@ export class VirtualList {
    * Set entries to display
    */
   setEntries(entries: Entry[]): void {
-    // Detect changed entries and invalidate their cached DOM elements
-    for (const entry of entries) {
-      const oldEntry = this.entries.find(e => e.id === entry.id);
-      if (oldEntry) {
-        // Check if entry data changed (compare relevant fields)
-        const hasChanged =
-          oldEntry.bib !== entry.bib ||
-          oldEntry.point !== entry.point ||
-          oldEntry.status !== entry.status ||
-          oldEntry.photo !== entry.photo;
-
-        if (hasChanged) {
-          // Remove cached item so it gets re-created
-          const cachedItem = this.visibleItems.get(entry.id);
-          if (cachedItem) {
-            cachedItem.remove();
-            this.visibleItems.delete(entry.id);
-          }
-        }
-      }
-    }
-
     this.entries = entries;
     this.applyFilters();
   }
 
   /**
-   * Apply current filters
+   * Apply current filters and group items
    */
   applyFilters(searchTerm?: string, pointFilter?: string, statusFilter?: string): void {
     const state = store.getState();
@@ -169,93 +146,166 @@ export class VirtualList {
       filteredEntries = filteredEntries.filter(e => e.status === statusFilter);
     }
 
-    // Convert entries to display items
-    const displayItems: DisplayItem[] = filteredEntries.map(entry => ({
-      id: entry.id,
-      type: 'entry' as const,
-      bib: entry.bib,
-      run: entry.run ?? 1,
-      timestamp: entry.timestamp,
-      entry,
-      deviceName: entry.deviceName
-    }));
+    // Group entries by bib+run
+    const groupMap = new Map<string, DisplayGroup>();
 
-    // Find orphan faults (faults without a corresponding Finish entry)
-    // Group faults by bib+run
-    const faultsByBibRun = new Map<string, FaultEntry[]>();
-    for (const fault of state.faultEntries) {
-      const key = `${fault.bib}-${fault.run}`;
-      if (!faultsByBibRun.has(key)) {
-        faultsByBibRun.set(key, []);
-      }
-      faultsByBibRun.get(key)!.push(fault);
-    }
+    // Add timing entries to groups
+    for (const entry of filteredEntries) {
+      const run = entry.run ?? 1;
+      const key = `${entry.bib}-${run}`;
 
-    // Find which bib+run combinations have Finish entries
-    const finishEntryKeys = new Set(
-      this.entries
-        .filter(e => e.point === 'F')
-        .map(e => `${e.bib}-${e.run ?? 1}`)
-    );
-
-    // Create display items for orphan faults (no Finish entry)
-    for (const [key, faults] of faultsByBibRun) {
-      if (!finishEntryKeys.has(key)) {
-        const [bib, runStr] = key.split('-');
-        const run = parseInt(runStr, 10) as Run;
-        const latestFault = faults.reduce((a, b) =>
-          new Date(a.timestamp) > new Date(b.timestamp) ? a : b
-        );
-
-        // Apply search filter to orphan faults
-        if (searchTerm) {
-          const term = searchTerm.toLowerCase();
-          if (!bib.toLowerCase().includes(term) &&
-              !latestFault.deviceName?.toLowerCase().includes(term)) {
-            continue;
-          }
-        }
-
-        // Skip if point filter is set (faults don't have S/F point)
-        if (pointFilter && pointFilter !== 'all') {
-          continue;
-        }
-
-        // For status filter, show faults when filtering for dsq/flt or all
-        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'dsq' && statusFilter !== 'flt') {
-          continue;
-        }
-
-        displayItems.push({
-          id: `fault-${key}`,
-          type: 'fault',
-          bib,
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          id: key,
+          bib: entry.bib,
           run,
-          timestamp: latestFault.timestamp,
-          faults,
-          deviceName: latestFault.deviceName
+          entries: [],
+          faults: [],
+          isMultiItem: false,
+          latestTimestamp: entry.timestamp
         });
       }
+
+      const group = groupMap.get(key)!;
+      group.entries.push(entry);
+      if (new Date(entry.timestamp) > new Date(group.latestTimestamp)) {
+        group.latestTimestamp = entry.timestamp;
+      }
     }
 
-    // Sort by bib number descending (highest first)
-    displayItems.sort((a, b) => {
+    // Add faults to groups
+    for (const fault of state.faultEntries) {
+      const key = `${fault.bib}-${fault.run}`;
+
+      // Apply search filter
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (!fault.bib.toLowerCase().includes(term) &&
+            !fault.deviceName?.toLowerCase().includes(term)) {
+          continue;
+        }
+      }
+
+      // Skip faults if point filter is set (faults don't have S/F)
+      if (pointFilter && pointFilter !== 'all') {
+        continue;
+      }
+
+      // For status filter, include faults when filtering for dsq/flt or all
+      if (statusFilter && statusFilter !== 'all' && statusFilter !== 'dsq' && statusFilter !== 'flt') {
+        continue;
+      }
+
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          id: key,
+          bib: fault.bib,
+          run: fault.run,
+          entries: [],
+          faults: [],
+          isMultiItem: false,
+          latestTimestamp: fault.timestamp
+        });
+      }
+
+      const group = groupMap.get(key)!;
+      group.faults.push(fault);
+      if (new Date(fault.timestamp) > new Date(group.latestTimestamp)) {
+        group.latestTimestamp = fault.timestamp;
+      }
+    }
+
+    // Calculate isMultiItem for each group
+    for (const group of groupMap.values()) {
+      const totalItems = group.entries.length + group.faults.length;
+      group.isMultiItem = totalItems > 1;
+    }
+
+    // Sort groups by bib number descending
+    this.groups = Array.from(groupMap.values()).sort((a, b) => {
       const bibA = parseInt(a.bib, 10) || 0;
       const bibB = parseInt(b.bib, 10) || 0;
       return bibB - bibA;
     });
 
-    this.filteredItems = displayItems;
+    // Clear visible items cache when data changes
+    for (const item of this.visibleItems.values()) {
+      item.remove();
+    }
+    this.visibleItems.clear();
+
     this.updateContentHeight();
     this.render();
   }
 
   /**
-   * Update content container height
+   * Toggle group expansion
+   */
+  toggleGroup(groupId: string): void {
+    if (this.expandedGroups.has(groupId)) {
+      this.expandedGroups.delete(groupId);
+    } else {
+      this.expandedGroups.add(groupId);
+    }
+
+    // Clear cache and re-render
+    for (const item of this.visibleItems.values()) {
+      item.remove();
+    }
+    this.visibleItems.clear();
+
+    this.updateContentHeight();
+    this.render();
+  }
+
+  /**
+   * Calculate total content height
    */
   private updateContentHeight(): void {
-    const totalHeight = this.filteredItems.length * ITEM_HEIGHT;
+    let totalHeight = 0;
+
+    for (const group of this.groups) {
+      if (!group.isMultiItem) {
+        // Single item - fixed height
+        totalHeight += ITEM_HEIGHT;
+      } else if (this.expandedGroups.has(group.id)) {
+        // Expanded group - header + sub-items
+        const subItemCount = group.entries.length + group.faults.length;
+        totalHeight += GROUP_HEADER_HEIGHT + (subItemCount * SUB_ITEM_HEIGHT);
+      } else {
+        // Collapsed group - just header
+        totalHeight += GROUP_HEADER_HEIGHT;
+      }
+    }
+
     this.contentContainer.style.height = `${totalHeight}px`;
+  }
+
+  /**
+   * Get the Y position for a group by index
+   */
+  private getGroupPosition(index: number): number {
+    let position = 0;
+
+    for (let i = 0; i < index && i < this.groups.length; i++) {
+      position += this.getGroupHeight(this.groups[i]);
+    }
+
+    return position;
+  }
+
+  /**
+   * Get height of a group
+   */
+  private getGroupHeight(group: DisplayGroup): number {
+    if (!group.isMultiItem) {
+      return ITEM_HEIGHT;
+    }
+    if (this.expandedGroups.has(group.id)) {
+      const subItemCount = group.entries.length + group.faults.length;
+      return GROUP_HEADER_HEIGHT + (subItemCount * SUB_ITEM_HEIGHT);
+    }
+    return GROUP_HEADER_HEIGHT;
   }
 
   /**
@@ -270,7 +320,7 @@ export class VirtualList {
    * Render visible items
    */
   render(): void {
-    if (this.filteredItems.length === 0) {
+    if (this.groups.length === 0) {
       this.renderEmpty();
       return;
     }
@@ -281,39 +331,37 @@ export class VirtualList {
       emptyState.remove();
     }
 
-    // Calculate visible range
-    const startIndex = Math.max(0, Math.floor(this.scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
-    const endIndex = Math.min(
-      this.filteredItems.length,
-      Math.ceil((this.scrollTop + this.containerHeight) / ITEM_HEIGHT) + BUFFER_SIZE
-    );
-
     const state = store.getState();
     const visibleIds = new Set<string>();
+    const viewportTop = this.scrollTop;
+    const viewportBottom = this.scrollTop + this.containerHeight;
 
-    // Render visible items
-    for (let i = startIndex; i < endIndex; i++) {
-      const displayItem = this.filteredItems[i];
-      visibleIds.add(displayItem.id);
+    // Render visible groups
+    let currentY = 0;
 
-      let item = this.visibleItems.get(displayItem.id);
-      const isSelected = displayItem.entry ? state.selectedEntries.has(displayItem.entry.id) : false;
+    for (let i = 0; i < this.groups.length; i++) {
+      const group = this.groups[i];
+      const groupHeight = this.getGroupHeight(group);
+      const groupBottom = currentY + groupHeight;
 
-      if (!item) {
-        item = displayItem.type === 'entry' && displayItem.entry
-          ? this.createItem(displayItem.entry)
-          : this.createFaultItem(displayItem);
-        this.visibleItems.set(displayItem.id, item);
-        this.contentContainer.appendChild(item);
+      // Check if group is in viewport (with buffer)
+      const inViewport = groupBottom >= viewportTop - (BUFFER_SIZE * ITEM_HEIGHT) &&
+                        currentY <= viewportBottom + (BUFFER_SIZE * ITEM_HEIGHT);
+
+      if (inViewport) {
+        if (!group.isMultiItem) {
+          // Single item - render as flat
+          this.renderSingleItem(group, currentY, visibleIds);
+        } else if (this.expandedGroups.has(group.id)) {
+          // Expanded group - render header + sub-items
+          this.renderExpandedGroup(group, currentY, visibleIds);
+        } else {
+          // Collapsed group - render just header
+          this.renderCollapsedGroup(group, currentY, visibleIds);
+        }
       }
 
-      // Update position
-      item.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
-
-      // Update selection state (only for entries, not orphan faults)
-      if (displayItem.type === 'entry') {
-        item.classList.toggle('selected', isSelected);
-      }
+      currentY += groupHeight;
     }
 
     // Remove items no longer visible
@@ -326,9 +374,193 @@ export class VirtualList {
   }
 
   /**
-   * Create a list item element
+   * Render a single-item group (flat format - current behavior)
    */
-  private createItem(entry: Entry): HTMLElement {
+  private renderSingleItem(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+    const itemId = `single-${group.id}`;
+    visibleIds.add(itemId);
+
+    let item = this.visibleItems.get(itemId);
+
+    if (!item) {
+      if (group.entries.length > 0) {
+        item = this.createEntryItem(group.entries[0], group.faults);
+      } else if (group.faults.length > 0) {
+        item = this.createFaultOnlyItem(group);
+      } else {
+        return;
+      }
+      this.visibleItems.set(itemId, item);
+      this.contentContainer.appendChild(item);
+    }
+
+    item.style.transform = `translateY(${yPosition}px)`;
+  }
+
+  /**
+   * Render a collapsed multi-item group (just header)
+   */
+  private renderCollapsedGroup(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+    const headerId = `header-${group.id}`;
+    visibleIds.add(headerId);
+
+    let header = this.visibleItems.get(headerId);
+
+    if (!header) {
+      header = this.createGroupHeader(group, false);
+      this.visibleItems.set(headerId, header);
+      this.contentContainer.appendChild(header);
+    }
+
+    header.style.transform = `translateY(${yPosition}px)`;
+  }
+
+  /**
+   * Render an expanded multi-item group (header + sub-items)
+   */
+  private renderExpandedGroup(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+    // Render header
+    const headerId = `header-${group.id}`;
+    visibleIds.add(headerId);
+
+    let header = this.visibleItems.get(headerId);
+
+    if (!header) {
+      header = this.createGroupHeader(group, true);
+      this.visibleItems.set(headerId, header);
+      this.contentContainer.appendChild(header);
+    }
+
+    header.style.transform = `translateY(${yPosition}px)`;
+
+    // Render sub-items
+    let subY = yPosition + GROUP_HEADER_HEIGHT;
+
+    // Render timing entries
+    for (let i = 0; i < group.entries.length; i++) {
+      const entry = group.entries[i];
+      const subId = `sub-entry-${entry.id}`;
+      visibleIds.add(subId);
+
+      let subItem = this.visibleItems.get(subId);
+
+      if (!subItem) {
+        subItem = this.createSubEntryItem(entry);
+        this.visibleItems.set(subId, subItem);
+        this.contentContainer.appendChild(subItem);
+      }
+
+      subItem.style.transform = `translateY(${subY}px)`;
+      subY += SUB_ITEM_HEIGHT;
+    }
+
+    // Render faults
+    for (let i = 0; i < group.faults.length; i++) {
+      const fault = group.faults[i];
+      const subId = `sub-fault-${fault.id}`;
+      visibleIds.add(subId);
+
+      let subItem = this.visibleItems.get(subId);
+
+      if (!subItem) {
+        subItem = this.createSubFaultItem(fault);
+        this.visibleItems.set(subId, subItem);
+        this.contentContainer.appendChild(subItem);
+      }
+
+      subItem.style.transform = `translateY(${subY}px)`;
+      subY += SUB_ITEM_HEIGHT;
+    }
+  }
+
+  /**
+   * Create group header element
+   */
+  private createGroupHeader(group: DisplayGroup, isExpanded: boolean): HTMLElement {
+    const header = document.createElement('div');
+    header.className = `result-group-header ${isExpanded ? 'expanded' : ''}`;
+    header.setAttribute('data-group-id', group.id);
+    header.style.cssText = `
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: ${GROUP_HEADER_HEIGHT}px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface-elevated);
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+
+    const bibStr = formatBib(group.bib || '---');
+    const state = store.getState();
+    const lang = state.currentLang;
+    const runColor = getRunColor(group.run);
+    const runLabel = getRunLabel(group.run, lang);
+
+    const entryCount = group.entries.length;
+    const faultCount = group.faults.length;
+    const hasFaults = faultCount > 0;
+
+    // Summary text
+    const summaryParts: string[] = [];
+    if (entryCount > 0) {
+      summaryParts.push(`${entryCount} ${entryCount === 1 ? 'time' : 'times'}`);
+    }
+    if (faultCount > 0) {
+      summaryParts.push(`${faultCount} ${faultCount === 1 ? 'fault' : 'faults'}`);
+    }
+    const summaryText = summaryParts.join(', ');
+
+    // Chevron icon
+    const chevronSvg = `
+      <svg class="group-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    `;
+
+    header.innerHTML = `
+      ${chevronSvg}
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
+        ${escapeHtml(bibStr)}
+      </div>
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+        <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
+          ${escapeHtml(summaryText)}
+        </div>
+      </div>
+      ${hasFaults ? `
+        <span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+          ${faultCount}× FLT
+        </span>
+      ` : ''}
+    `;
+
+    // Click to toggle
+    header.addEventListener('click', () => {
+      this.toggleGroup(group.id);
+    });
+
+    // Touch feedback
+    header.addEventListener('touchstart', () => {
+      header.style.background = 'var(--surface-elevated)';
+    }, { passive: true });
+
+    header.addEventListener('touchend', () => {
+      header.style.background = 'var(--surface)';
+    }, { passive: true });
+
+    return header;
+  }
+
+  /**
+   * Create a timing entry item (for single-item groups)
+   */
+  private createEntryItem(entry: Entry, faults: FaultEntry[]): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-item';
     item.setAttribute('role', 'listitem');
@@ -359,8 +591,6 @@ export class VirtualList {
     const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
 
-    // Get faults for this bib and run (only show on Finish entries)
-    const faults = entry.point === 'F' ? state.faultEntries.filter(f => f.bib === entry.bib && f.run === run) : [];
     const hasFaults = faults.length > 0;
     const faultBadgeHtml = hasFaults ? `
       <span class="result-fault-badge" title="${faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', ')}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
@@ -439,16 +669,16 @@ export class VirtualList {
   }
 
   /**
-   * Create a list item element for orphan fault (fault with no timing entry)
+   * Create a fault-only item (for single-item groups with only faults)
    */
-  private createFaultItem(displayItem: DisplayItem): HTMLElement {
+  private createFaultOnlyItem(group: DisplayGroup): HTMLElement {
     const item = document.createElement('div');
-    const faults = displayItem.faults || [];
+    const faults = group.faults;
     const hasMarkedForDeletion = faults.some(f => f.markedForDeletion);
 
     item.className = `result-item fault-only-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
     item.setAttribute('role', 'listitem');
-    item.setAttribute('data-fault-id', displayItem.id);
+    item.setAttribute('data-fault-id', group.id);
     item.style.cssText = `
       position: absolute;
       left: 0;
@@ -465,14 +695,12 @@ export class VirtualList {
       cursor: pointer;
     `;
 
-    const bibStr = formatBib(displayItem.bib || '---');
+    const bibStr = formatBib(group.bib || '---');
     const state = store.getState();
     const lang = state.currentLang;
-    const run = displayItem.run;
-    const runColor = getRunColor(run);
-    const runLabel = getRunLabel(run, lang);
+    const runColor = getRunColor(group.run);
+    const runLabel = getRunLabel(group.run, lang);
 
-    // Format fault details
     const faultDetails = faults
       .sort((a, b) => a.gateNumber - b.gateNumber)
       .map(f => `T${f.gateNumber} (${f.faultType})${f.markedForDeletion ? ' ⚠' : ''}`)
@@ -484,11 +712,9 @@ export class VirtualList {
       </span>
     `;
 
-    // Determine status based on penalty mode and deletion state
     const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
     const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
 
-    // Deletion pending badge (shown separately from fault status) - static style to save battery
     const deletionPendingBadge = hasMarkedForDeletion ? `
       <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -511,9 +737,9 @@ export class VirtualList {
         <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
-        ${displayItem.deviceName ? `
+        ${faults[0]?.deviceName ? `
           <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary);">
-            ${escapeHtml(displayItem.deviceName)}
+            ${escapeHtml(faults[0].deviceName)}
           </div>
         ` : ''}
       </div>
@@ -531,14 +757,12 @@ export class VirtualList {
       </button>
     `;
 
-    // Click on item opens edit modal for first fault
+    // Click opens edit modal for first fault
     item.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      // Don't trigger edit if clicking delete button
       if (target.closest('.fault-delete-btn')) return;
 
       if (faults.length > 0) {
-        // Dispatch custom event for fault edit
         const event = new CustomEvent('fault-edit-request', {
           bubbles: true,
           detail: { fault: faults[0] }
@@ -547,12 +771,11 @@ export class VirtualList {
       }
     });
 
-    // Delete button - marks first fault for deletion
+    // Delete button
     const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
     if (deleteBtn && faults.length > 0) {
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Dispatch custom event for fault deletion
         const event = new CustomEvent('fault-delete-request', {
           bubbles: true,
           detail: { fault: faults[0] }
@@ -574,10 +797,208 @@ export class VirtualList {
   }
 
   /**
+   * Create a sub-item for timing entry (inside expanded group)
+   */
+  private createSubEntryItem(entry: Entry): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'result-sub-item entry-sub-item';
+    item.setAttribute('data-entry-id', entry.id);
+    item.style.cssText = `
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: ${SUB_ITEM_HEIGHT}px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 0 48px;
+      gap: 12px;
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--background);
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+
+    const date = new Date(entry.timestamp);
+    const timeStr = formatTime(date);
+    const state = store.getState();
+    const lang = state.currentLang;
+    const pointColor = getPointColor(entry.point);
+    const pointLabel = getPointLabel(entry.point, lang);
+
+    item.innerHTML = `
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
+        ${escapeHtml(pointLabel)}
+      </div>
+      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+        <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
+          ${escapeHtml(timeStr)}
+        </div>
+        ${entry.deviceName ? `
+          <div class="result-device" style="font-size: 0.65rem; color: var(--text-tertiary);">
+            ${escapeHtml(entry.deviceName)}
+          </div>
+        ` : ''}
+      </div>
+      ${entry.status !== 'ok' ? `
+        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
+          ${escapeHtml(entry.status.toUpperCase())}
+        </span>
+      ` : ''}
+      <button class="result-edit-btn" aria-label="Edit entry" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
+    `;
+
+    // Edit button
+    const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.options.onItemClick?.(entry, e as MouseEvent);
+    });
+
+    // Delete button
+    const deleteBtn = item.querySelector('.result-delete') as HTMLButtonElement;
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.options.onItemDelete?.(entry);
+    });
+
+    // Click on row opens edit
+    item.addEventListener('click', (e) => {
+      this.options.onItemClick?.(entry, e);
+    });
+
+    // Touch feedback
+    item.addEventListener('touchstart', () => {
+      item.style.background = 'var(--surface)';
+    }, { passive: true });
+
+    item.addEventListener('touchend', () => {
+      item.style.background = 'var(--surface-elevated)';
+    }, { passive: true });
+
+    return item;
+  }
+
+  /**
+   * Create a sub-item for fault (inside expanded group)
+   */
+  private createSubFaultItem(fault: FaultEntry): HTMLElement {
+    const item = document.createElement('div');
+    const hasMarkedForDeletion = fault.markedForDeletion;
+
+    item.className = `result-sub-item fault-sub-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
+    item.setAttribute('data-fault-id', fault.id);
+    item.style.cssText = `
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: ${SUB_ITEM_HEIGHT}px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 0 48px;
+      gap: 12px;
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--background);
+      border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
+      ${hasMarkedForDeletion ? 'opacity: 0.6;' : ''}
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+
+    const state = store.getState();
+    const lang = state.currentLang;
+    const gateColor = store.getGateColor(fault.gateNumber);
+    const gateColorHex = gateColor === 'red' ? '#ef4444' : '#3b82f6';
+
+    item.innerHTML = `
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
+        T${fault.gateNumber}
+      </div>
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${gateColor}"></div>
+      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
+          ${fault.faultType}
+        </span>
+        ${fault.deviceName ? `
+          <span style="font-size: 0.65rem; color: var(--text-tertiary);">
+            ${escapeHtml(fault.deviceName)}
+          </span>
+        ` : ''}
+      </div>
+      ${hasMarkedForDeletion ? `
+        <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
+          DEL
+        </span>
+      ` : ''}
+      <button class="result-edit-btn" aria-label="Edit fault" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
+    `;
+
+    // Edit button
+    const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const event = new CustomEvent('fault-edit-request', {
+        bubbles: true,
+        detail: { fault }
+      });
+      item.dispatchEvent(event);
+    });
+
+    // Delete button
+    const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const event = new CustomEvent('fault-delete-request', {
+        bubbles: true,
+        detail: { fault }
+      });
+      item.dispatchEvent(event);
+    });
+
+    // Click opens edit
+    item.addEventListener('click', () => {
+      const event = new CustomEvent('fault-edit-request', {
+        bubbles: true,
+        detail: { fault }
+      });
+      item.dispatchEvent(event);
+    });
+
+    // Touch feedback
+    item.addEventListener('touchstart', () => {
+      item.style.background = 'var(--surface)';
+    }, { passive: true });
+
+    item.addEventListener('touchend', () => {
+      item.style.background = 'var(--surface-elevated)';
+    }, { passive: true });
+
+    return item;
+  }
+
+  /**
    * Render empty state
    */
   private renderEmpty(): void {
-    // Clear existing items
     for (const item of this.visibleItems.values()) {
       item.remove();
     }
@@ -587,155 +1008,60 @@ export class VirtualList {
     this.contentContainer.innerHTML = `
       <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;">
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
         </svg>
-        <span id="empty-state-text">${t('noEntries', state.currentLang)}</span>
+        <span>${t('noEntries', state.currentLang)}</span>
       </div>
     `;
   }
 
   /**
-   * Scroll to top
-   */
-  scrollToTop(): void {
-    this.scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  /**
-   * Scroll to entry
-   */
-  scrollToEntry(entryId: string): void {
-    const index = this.filteredItems.findIndex(item => item.id === entryId);
-    if (index !== -1) {
-      const top = index * ITEM_HEIGHT;
-      this.scrollContainer.scrollTo({ top, behavior: 'smooth' });
-    }
-  }
-
-  /**
-   * Get visible count
-   */
-  getVisibleCount(): number {
-    return this.filteredItems.length;
-  }
-
-  /**
-   * Pause the virtual list when results tab is inactive
-   * Stops store subscription, scroll listener, and resize observer to save resources
+   * Pause rendering (for battery optimization)
    */
   pause(): void {
-    if (this.isPaused) return;
     this.isPaused = true;
-
-    // Unsubscribe from store updates
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
-    }
-
-    // Stop ResizeObserver
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
-
-    // Cancel pending debounce timeouts
-    if (this.scrollDebounceTimeout !== null) {
-      clearTimeout(this.scrollDebounceTimeout);
-      this.scrollDebounceTimeout = null;
-    }
-    if (this.resizeDebounceTimeout !== null) {
-      clearTimeout(this.resizeDebounceTimeout);
-      this.resizeDebounceTimeout = null;
-    }
-
-    // Remove scroll listener
-    if (this.scrollHandler) {
-      this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
-    }
   }
 
   /**
-   * Resume the virtual list when results tab becomes active
-   * Re-subscribes to store, restarts observers, and refreshes data
+   * Resume rendering
    */
   resume(): void {
-    if (!this.isPaused) return;
     this.isPaused = false;
-
-    // Re-subscribe to store updates
-    if (!this.unsubscribe) {
-      this.unsubscribe = store.subscribe((state, changedKeys) => {
-        if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries') || changedKeys.includes('faultEntries')) {
-          if (this.isPaused) {
-            this.needsRefreshOnResume = true;
-          } else {
-            this.setEntries(state.entries);
-          }
-        }
-      });
-    }
-
-    // Re-observe with ResizeObserver
-    if (this.resizeObserver) {
-      this.resizeObserver.observe(this.scrollContainer);
-    }
-
-    // Re-add scroll listener
-    if (this.scrollHandler) {
-      this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
-    }
-
-    // Refresh data if entries changed while paused
     if (this.needsRefreshOnResume) {
       this.needsRefreshOnResume = false;
-      this.setEntries(store.getState().entries);
+      this.render();
     }
-
-    // Update container height and re-render
-    this.containerHeight = this.scrollContainer.clientHeight;
-    this.render();
   }
 
   /**
-   * Check if virtual list is paused
-   */
-  isPausedState(): boolean {
-    return this.isPaused;
-  }
-
-  /**
-   * Cleanup
+   * Clean up resources
    */
   destroy(): void {
-    // Unsubscribe from store
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
+    // Clean up scroll listener
+    if (this.scrollHandler) {
+      this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
     }
 
-    // Disconnect ResizeObserver to prevent memory leak
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
-    }
-
-    // Cancel pending debounce timeouts to prevent callbacks firing after destroy
+    // Clean up debounce timeouts
     if (this.scrollDebounceTimeout !== null) {
       clearTimeout(this.scrollDebounceTimeout);
-      this.scrollDebounceTimeout = null;
     }
     if (this.resizeDebounceTimeout !== null) {
       clearTimeout(this.resizeDebounceTimeout);
-      this.resizeDebounceTimeout = null;
     }
 
-    // Remove scroll listener to prevent memory leak
-    if (this.scrollHandler) {
-      this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
-      this.scrollHandler = null;
+    // Clean up resize observer
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
 
-    this.visibleItems.clear();
-    this.container.innerHTML = '';
+    // Clean up store subscription
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
+
+    // Clear DOM
+    this.scrollContainer.remove();
   }
 }
