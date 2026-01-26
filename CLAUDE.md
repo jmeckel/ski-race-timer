@@ -163,6 +163,22 @@ npm run test:all
 3. Set `JWT_SECRET` environment variable in Vercel dashboard
 4. Deploy - environment variables auto-configured
 
+## Version Management
+
+**Always bump the version number in `package.json` after completing features or fixes.**
+
+Follow semantic versioning (MAJOR.MINOR.PATCH):
+- **PATCH** (x.x.1): Bug fixes, small tweaks, typo corrections
+- **MINOR** (x.1.0): New features, enhancements, non-breaking changes
+- **MAJOR** (1.0.0): Breaking changes, major rewrites, significant API changes
+
+Examples:
+- Single bug fix → bump patch (4.1.0 → 4.1.1)
+- New feature like "Gate Judge" → bump minor (4.0.0 → 4.1.0)
+- Complete rewrite or breaking change → bump major (4.1.0 → 5.0.0)
+
+Commit the version bump separately with a message like "Bump version to X.Y.Z" summarizing what changed.
+
 ## Key Implementation Details
 
 - **Translations**: In `src/i18n/translations.ts`, toggled via language setting. Default: German
