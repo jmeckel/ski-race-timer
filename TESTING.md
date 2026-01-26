@@ -40,7 +40,8 @@ tests/
 │   ├── utils.test.js        # Utility function tests
 │   └── validation.test.js   # Validation function tests
 ├── api/
-│   └── sync.test.js         # API endpoint tests
+│   ├── sync.test.js         # Sync API endpoint tests
+│   └── faults-role.test.js  # Faults role-based access control tests
 ├── integration/
 │   └── (future)             # Integration tests
 └── e2e/
@@ -150,6 +151,23 @@ API tests verify the `/api/v1/*` endpoint behavior. All API endpoints use v1 ver
 ### OPTIONS /api/v1/sync
 
 - Returns CORS preflight response
+
+### Faults Role Validation (`tests/api/faults-role.test.js`)
+
+Tests for role-based access control on the `/api/v1/faults` endpoint.
+
+| Test | Description | Expected |
+|------|-------------|----------|
+| DELETE with timer role | User with timer role attempts to delete fault | 403 Forbidden |
+| DELETE with gateJudge role | User with gateJudge role attempts to delete fault | 403 Forbidden |
+| DELETE with chiefJudge role | User with chiefJudge role deletes fault | 200 OK |
+| DELETE without auth | Unauthenticated request | 401 Unauthorized |
+| DELETE with invalid token | Invalid JWT token | 401 Unauthorized |
+| GET with timer role | Fetch faults with timer role | 200 OK |
+| GET with gateJudge role | Fetch faults with gateJudge role | 200 OK |
+| GET with chiefJudge role | Fetch faults with chiefJudge role | 200 OK |
+
+**Key Security Principle**: Only `chiefJudge` role can delete faults. All other roles (timer, gateJudge) can read but not delete.
 
 ## E2E Tests
 

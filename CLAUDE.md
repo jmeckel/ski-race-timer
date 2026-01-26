@@ -112,6 +112,20 @@ JWT-based authentication protects sync and admin APIs:
 4. **Token Expiry**: 24-hour expiry, auto-prompts re-authentication
 5. **Backwards Compatible**: Legacy PIN hash still accepted for migration
 
+### Role-Based Access Control
+
+JWT tokens include a `role` claim for authorization:
+
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| `timer` | Default role for timing devices | Read/write entries and faults |
+| `gateJudge` | Gate judge devices | Read/write entries and faults |
+| `chiefJudge` | Chief judge with elevated privileges | All above + **delete faults** |
+
+- **Fault deletion** requires `chiefJudge` role (server-side enforced)
+- Role is specified when exchanging PIN for token: `{ pin: "1234", role: "chiefJudge" }`
+- Entering Chief Judge mode in the UI triggers re-authentication with `chiefJudge` role
+
 ### CSV Export Format (Race Horology)
 
 Exports use semicolon delimiter and standard timing designators:
@@ -134,9 +148,10 @@ Exports use semicolon delimiter and standard timing designators:
 All endpoints use the `/api/v1/` prefix. Legacy `/api/*` paths are rewritten to v1 for backwards compatibility.
 
 ### `/api/v1/auth/token` (POST)
-Exchange PIN for JWT token.
-- **Body**: `{ pin: "1234" }`
-- **Response**: `{ success: true, token: "jwt...", isNewPin?: true }`
+Exchange PIN for JWT token with optional role.
+- **Body**: `{ pin: "1234", role?: "timer" | "gateJudge" | "chiefJudge" }`
+- **Response**: `{ success: true, token: "jwt...", role: "timer", isNewPin?: true }`
+- **Default role**: `timer` if not specified
 
 ### `/api/v1/sync` (GET/POST/DELETE)
 Cloud sync for race entries. Requires JWT token when PIN is set.
@@ -146,9 +161,9 @@ Cloud sync for race entries. Requires JWT token when PIN is set.
 
 ### `/api/v1/faults` (GET/POST/DELETE)
 Fault entries for gate judges. Requires JWT token.
-- **GET**: Fetch faults for race
-- **POST**: Add/update fault entry
-- **DELETE**: Remove fault entry
+- **GET**: Fetch faults for race (any authenticated role)
+- **POST**: Add/update fault entry (any authenticated role)
+- **DELETE**: Remove fault entry (**requires `chiefJudge` role**, returns 403 otherwise)
 
 ### `/api/v1/admin/races` (GET/DELETE)
 Race management. Requires JWT token.
