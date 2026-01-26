@@ -198,20 +198,33 @@ async function atomicAddFault(client, redisKey, enrichedFault, sanitizedDeviceId
       };
     }
 
-    // Check for duplicates (same fault from same device)
+    // Check for existing fault (same fault from same device)
     const faultId = String(enrichedFault.id);
-    const isDuplicate = existing.faults.some(
+    const existingIndex = existing.faults.findIndex(
       f => String(f.id) === faultId && f.deviceId === sanitizedDeviceId
     );
 
-    if (isDuplicate) {
-      await client.unwatch();
-      return { success: true, existing, isDuplicate: true };
-    }
+    if (existingIndex !== -1) {
+      const existingFault = existing.faults[existingIndex];
+      // Update if version is newer or if marking for deletion
+      const shouldUpdate =
+        (enrichedFault.currentVersion > (existingFault.currentVersion || 1)) ||
+        (enrichedFault.markedForDeletion !== existingFault.markedForDeletion);
 
-    // Add fault
-    existing.faults.push(enrichedFault);
-    existing.lastUpdated = Date.now();
+      if (shouldUpdate) {
+        // Update existing fault with new data
+        existing.faults[existingIndex] = enrichedFault;
+        existing.lastUpdated = Date.now();
+      } else {
+        // No update needed, return as duplicate
+        await client.unwatch();
+        return { success: true, existing, isDuplicate: true };
+      }
+    } else {
+      // Add new fault
+      existing.faults.push(enrichedFault);
+      existing.lastUpdated = Date.now();
+    }
 
     const multi = client.multi();
     multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
@@ -446,7 +459,7 @@ export default async function handler(req, res) {
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
       const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
 
-      // Build enriched fault
+      // Build enriched fault with version history and deletion flags
       const enrichedFault = {
         id: String(fault.id),
         bib: sanitizeString(fault.bib, 10),
@@ -457,7 +470,17 @@ export default async function handler(req, res) {
         deviceId: sanitizedDeviceId,
         deviceName: sanitizedDeviceName,
         gateRange: fault.gateRange,
-        syncedAt: Date.now()
+        syncedAt: Date.now(),
+        // Version tracking fields
+        currentVersion: fault.currentVersion || 1,
+        versionHistory: Array.isArray(fault.versionHistory) ? fault.versionHistory : [],
+        // Deletion workflow fields
+        markedForDeletion: fault.markedForDeletion === true,
+        markedForDeletionAt: fault.markedForDeletionAt || null,
+        markedForDeletionBy: fault.markedForDeletionBy || null,
+        markedForDeletionByDeviceId: fault.markedForDeletionByDeviceId || null,
+        deletionApprovedAt: fault.deletionApprovedAt || null,
+        deletionApprovedBy: fault.deletionApprovedBy || null
       };
 
       const addResult = await atomicAddFault(client, faultsKey, enrichedFault, sanitizedDeviceId);

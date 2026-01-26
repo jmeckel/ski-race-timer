@@ -224,6 +224,23 @@
               <button class="penalty-adj-btn" data-adj="+1">+</button>
             </div>
           </div>
+          <!-- Pending Deletions Section (Chief Judge approval needed) -->
+          <div class="pending-deletions-section" id="pending-deletions-section" style="display: none;">
+            <div class="pending-deletions-header">
+              <span class="pending-deletions-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 9v4M12 17h.01"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span data-i18n="pendingDeletions">Pending Deletions</span>
+              </span>
+              <span class="pending-deletions-count" id="pending-deletions-count">0</span>
+            </div>
+            <div class="pending-deletions-list" id="pending-deletions-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
           <div class="fault-summary-header">
             <span class="fault-summary-title" data-i18n="faultSummary">Fault Summary</span>
             <span class="fault-summary-count" id="fault-summary-count">0</span>
@@ -956,6 +973,76 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn success" id="mark-ok-btn" data-i18n="markOk">Mark OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault Edit Modal -->
+  <div class="modal-overlay glass-enable-target" id="fault-edit-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="editFault">Edit Fault</h2>
+      </div>
+      <div class="modal-body">
+        <!-- Bib Input -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
+          <input type="text" class="text-input" id="fault-edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <!-- Gate Input -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="gate">Gate</label>
+          <input type="number" class="text-input" id="fault-edit-gate-input" min="1" max="99" style="width: 80px;">
+          <span class="fault-edit-gate-range" id="fault-edit-gate-range" style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 8px;"></span>
+        </div>
+        <!-- Fault Type -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultType">Fault Type</label>
+          <select class="filter-select" id="fault-edit-type-select" style="width: 100%;">
+            <option value="MG" data-i18n="faultMG">Missed Gate</option>
+            <option value="STR" data-i18n="faultSTR">Straddling</option>
+            <option value="BR" data-i18n="faultBR">Binding Release</option>
+          </select>
+        </div>
+        <!-- Run Selector -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
+          <div class="edit-run-selector" id="fault-edit-run-selector">
+            <button class="edit-run-btn active" data-run="1" type="button">1</button>
+            <button class="edit-run-btn" data-run="2" type="button">2</button>
+          </div>
+        </div>
+        <!-- Version History -->
+        <div class="fault-version-history" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--surface-elevated);">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="versionHistory">Version History</label>
+          <select class="filter-select" id="fault-version-select" style="width: 100%;">
+            <!-- Populated dynamically -->
+          </select>
+          <button class="modal-btn secondary" id="restore-version-btn" style="margin-top: 8px; width: 100%;" data-i18n="restoreVersion">Restore Selected Version</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="save-fault-edit-btn" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Fault for Deletion Modal -->
+  <div class="modal-overlay glass-enable-target" id="mark-deletion-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="markForDeletion">Mark for Deletion</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" data-i18n="markForDeletionText">This fault will be marked for deletion and requires Chief Judge approval to permanently delete.</p>
+        <div class="mark-deletion-details" id="mark-deletion-details" style="margin-top: 12px; padding: 12px; background: var(--surface-elevated); border-radius: var(--radius); font-family: 'JetBrains Mono', monospace;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn danger" id="confirm-mark-deletion-btn" data-i18n="markForDeletion">Mark for Deletion</button>
       </div>
     </div>
   </div>

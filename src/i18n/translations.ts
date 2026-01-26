@@ -345,7 +345,29 @@ export const translations: Record<Language, Translations> = {
     faults: 'Faults',
     penalty: 'Penalty',
     sec: 'sec',
-    generated: 'Generated'
+    generated: 'Generated',
+
+    // Fault Edit & Version History
+    editFault: 'Edit Fault',
+    versionHistory: 'Version History',
+    restoreVersion: 'Restore Selected Version',
+    currentVersion: 'Current',
+    originalVersion: 'Original',
+    restored: 'Restored',
+    versionRestored: 'Version restored',
+
+    // Deletion Workflow
+    markForDeletion: 'Mark for Deletion',
+    markForDeletionText: 'This fault will be marked for deletion and requires Chief Judge approval to permanently delete.',
+    markedForDeletion: 'Marked for deletion',
+    deletionPending: 'Deletion pending',
+    pendingDeletions: 'Pending Deletions',
+    approveDeletion: 'Approve Deletion',
+    rejectDeletion: 'Reject Deletion',
+    deletionMarkedBy: 'Marked by',
+    deletionApproved: 'Deletion approved',
+    deletionRejected: 'Deletion rejected',
+    cannotEditPendingDeletion: 'Cannot edit fault pending deletion'
   },
 
   de: {
@@ -692,7 +714,29 @@ export const translations: Record<Language, Translations> = {
     faults: 'Fehler',
     penalty: 'Strafzeit',
     sec: 'Sek',
-    generated: 'Erstellt'
+    generated: 'Erstellt',
+
+    // Fault Edit & Version History
+    editFault: 'Fehler bearbeiten',
+    versionHistory: 'Versionshistorie',
+    restoreVersion: 'Version wiederherstellen',
+    currentVersion: 'Aktuell',
+    originalVersion: 'Original',
+    restored: 'Wiederhergestellt',
+    versionRestored: 'Version wiederhergestellt',
+
+    // Deletion Workflow
+    markForDeletion: 'Zum Löschen markieren',
+    markForDeletionText: 'Dieser Fehler wird zum Löschen markiert und benötigt die Genehmigung des Obmanns für die endgültige Löschung.',
+    markedForDeletion: 'Zum Löschen markiert',
+    deletionPending: 'Löschung ausstehend',
+    pendingDeletions: 'Ausstehende Löschungen',
+    approveDeletion: 'Löschung genehmigen',
+    rejectDeletion: 'Löschung ablehnen',
+    deletionMarkedBy: 'Markiert von',
+    deletionApproved: 'Löschung genehmigt',
+    deletionRejected: 'Löschung abgelehnt',
+    cannotEditPendingDeletion: 'Fehler mit ausstehender Löschung kann nicht bearbeitet werden'
   }
 };
 

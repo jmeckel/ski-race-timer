@@ -443,7 +443,10 @@ export class VirtualList {
    */
   private createFaultItem(displayItem: DisplayItem): HTMLElement {
     const item = document.createElement('div');
-    item.className = 'result-item fault-only-item';
+    const faults = displayItem.faults || [];
+    const hasMarkedForDeletion = faults.some(f => f.markedForDeletion);
+
+    item.className = `result-item fault-only-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
     item.setAttribute('role', 'listitem');
     item.setAttribute('data-fault-id', displayItem.id);
     item.style.cssText = `
@@ -457,7 +460,9 @@ export class VirtualList {
       gap: 12px;
       background: var(--surface);
       border-bottom: 1px solid var(--surface-elevated);
-      border-left: 3px solid var(--warning);
+      border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
+      ${hasMarkedForDeletion ? 'opacity: 0.6;' : ''}
+      cursor: pointer;
     `;
 
     const bibStr = formatBib(displayItem.bib || '---');
@@ -466,12 +471,11 @@ export class VirtualList {
     const run = displayItem.run;
     const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
-    const faults = displayItem.faults || [];
 
     // Format fault details
     const faultDetails = faults
       .sort((a, b) => a.gateNumber - b.gateNumber)
-      .map(f => `T${f.gateNumber} (${f.faultType})`)
+      .map(f => `T${f.gateNumber} (${f.faultType})${f.markedForDeletion ? ' ⚠' : ''}`)
       .join(', ');
 
     const faultBadgeHtml = `
@@ -481,11 +485,11 @@ export class VirtualList {
     `;
 
     // Determine status based on penalty mode
-    const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
-    const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
+    const statusLabel = hasMarkedForDeletion ? '⚠' : (state.usePenaltyMode ? t('flt', lang) : 'DSQ');
+    const statusColor = hasMarkedForDeletion ? 'var(--error)' : (state.usePenaltyMode ? 'var(--warning)' : 'var(--error)');
 
     item.innerHTML = `
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px; ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
       <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
@@ -493,7 +497,7 @@ export class VirtualList {
       </div>
       <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary);">
+        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
         ${displayItem.deviceName ? `
@@ -506,7 +510,42 @@ export class VirtualList {
       <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
         ${escapeHtml(statusLabel)}
       </span>
+      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 8px; cursor: pointer; opacity: 0.7;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
     `;
+
+    // Click on item opens edit modal for first fault
+    item.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      // Don't trigger edit if clicking delete button
+      if (target.closest('.fault-delete-btn')) return;
+
+      if (faults.length > 0) {
+        // Dispatch custom event for fault edit
+        const event = new CustomEvent('fault-edit-request', {
+          bubbles: true,
+          detail: { fault: faults[0] }
+        });
+        item.dispatchEvent(event);
+      }
+    });
+
+    // Delete button - marks first fault for deletion
+    const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
+    if (deleteBtn && faults.length > 0) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Dispatch custom event for fault deletion
+        const event = new CustomEvent('fault-delete-request', {
+          bubbles: true,
+          detail: { fault: faults[0] }
+        });
+        item.dispatchEvent(event);
+      });
+    }
 
     // Touch feedback
     item.addEventListener('touchstart', () => {

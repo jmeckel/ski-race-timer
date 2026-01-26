@@ -3539,6 +3539,185 @@ body {
   color: var(--text-tertiary);
 }
 
+/* Fault row actions (edit/delete buttons) */
+.fault-row-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.fault-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fault-row-btn:hover {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.fault-row-btn.edit-fault-btn:hover {
+  color: var(--primary);
+}
+
+.fault-row-btn.delete-fault-btn:hover {
+  color: var(--error);
+}
+
+.fault-row-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Fault entry row - marked for deletion */
+.fault-entry-row.marked-for-deletion {
+  opacity: 0.6;
+}
+
+.fault-gate-num.strikethrough {
+  text-decoration: line-through;
+}
+
+.fault-type-badge.marked {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.deletion-pending-badge {
+  font-size: 0.75rem;
+  color: var(--error);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Pending Deletions Section */
+.pending-deletions-section {
+  margin-bottom: 16px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.pending-deletions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.pending-deletions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--error);
+  font-size: 0.875rem;
+}
+
+.pending-deletions-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: var(--error);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pending-deletions-list {
+  padding: 8px;
+}
+
+.pending-deletion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+.pending-deletion-item:last-child {
+  margin-bottom: 0;
+}
+
+.pending-deletion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pending-deletion-fault {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pending-deletion-meta {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.pending-deletion-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pending-deletion-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pending-deletion-btn.approve {
+  background: var(--success);
+  color: white;
+}
+
+.pending-deletion-btn.approve:active {
+  transform: scale(0.95);
+}
+
+.pending-deletion-btn.reject {
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+}
+
+.pending-deletion-btn.reject:hover {
+  background: var(--error);
+  color: white;
+}
+
+.pending-deletion-btn.reject:active {
+  transform: scale(0.95);
+}
+
 .fault-card-actions {
   display: flex;
   gap: 8px;

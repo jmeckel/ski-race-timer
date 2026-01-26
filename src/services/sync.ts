@@ -1271,6 +1271,6 @@ export async function syncFault(fault: FaultEntry): Promise<void> {
 }
 
 // Helper function to delete fault from cloud
-export async function deleteFaultFromCloud(faultId: string, faultDeviceId?: string): Promise<boolean> {
-  return syncService.deleteFaultFromCloud(faultId, faultDeviceId);
+export async function deleteFaultFromCloud(fault: FaultEntry): Promise<boolean> {
+  return syncService.deleteFaultFromCloud(fault.id, fault.deviceId);
 }

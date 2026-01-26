@@ -43,6 +43,17 @@ export interface Entry {
   };
 }
 
+// Fault version for audit trail
+export interface FaultVersion {
+  version: number;              // Incrementing version number
+  timestamp: string;            // When this version was created (ISO)
+  editedBy: string;             // Device name of who made the change
+  editedByDeviceId: string;     // Device ID for audit
+  changeType: 'create' | 'edit' | 'restore';  // Type of change
+  data: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion' | 'markedForDeletionAt' | 'markedForDeletionBy' | 'markedForDeletionByDeviceId' | 'deletionApprovedAt' | 'deletionApprovedBy'>;  // Complete fault data at this version (without meta fields)
+  changeDescription?: string;   // Optional: what changed
+}
+
 // Fault entry - linked to timing entries by bib+run
 export interface FaultEntry {
   id: string;                    // Unique ID
@@ -55,6 +66,18 @@ export interface FaultEntry {
   deviceName: string;            // Judge name (Torrichter)
   gateRange: [number, number];   // Gates this judge watches (e.g., [4, 12] = gates 4-12)
   syncedAt?: number;
+
+  // Version tracking
+  currentVersion: number;       // Current version number (starts at 1)
+  versionHistory: FaultVersion[]; // All previous versions
+
+  // Deletion workflow
+  markedForDeletion: boolean;   // True if marked for deletion
+  markedForDeletionAt?: string; // When marked (ISO timestamp)
+  markedForDeletionBy?: string; // Who marked it (device name)
+  markedForDeletionByDeviceId?: string; // Device ID
+  deletionApprovedAt?: string;  // When approved (ISO timestamp)
+  deletionApprovedBy?: string;  // Chief judge who approved
 }
 
 // Gate assignment tracking

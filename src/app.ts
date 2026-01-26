@@ -660,6 +660,22 @@ function initResultsView(): void {
     onViewPhoto: (entry) => openPhotoViewer(entry)
   });
 
+  // Listen for fault edit requests from VirtualList
+  container.addEventListener('fault-edit-request', ((e: CustomEvent) => {
+    const fault = e.detail?.fault as FaultEntry;
+    if (fault) {
+      openFaultEditModal(fault);
+    }
+  }) as EventListener);
+
+  // Listen for fault delete requests from VirtualList
+  container.addEventListener('fault-delete-request', ((e: CustomEvent) => {
+    const fault = e.detail?.fault as FaultEntry;
+    if (fault) {
+      openMarkDeletionModal(fault);
+    }
+  }) as EventListener);
+
   // Load initial entries
   const state = store.getState();
   virtualList.setEntries(state.entries);
@@ -818,6 +834,7 @@ function initChiefJudgeToggle(): void {
     // Refresh fault summary panel when faults or penalty config change and panel is visible
     if ((keys.includes('faultEntries') || keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) && state.isChiefJudgeView) {
       updateFaultSummaryPanel();
+      updatePendingDeletionsPanel();
     }
     // Update penalty UI when config changes
     if (keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) {
@@ -973,6 +990,7 @@ function updateChiefJudgeView(): void {
   // Populate panels when entering chief mode
   if (state.isChiefJudgeView) {
     updateFaultSummaryPanel();
+    updatePendingDeletionsPanel();
     updateJudgesOverview();
   }
 }
@@ -1096,20 +1114,47 @@ function updateFaultSummaryPanel(): void {
     // Check if this racer is finalized
     const isFinalized = store.isRacerFinalized(bib, run);
 
-    // Calculate penalty using configurable values
-    const penaltySeconds = state.usePenaltyMode ? racerFaults.length * state.penaltySeconds : 0;
+    // Count active faults (not marked for deletion) for penalty calculation
+    const activeFaults = racerFaults.filter(f => !f.markedForDeletion);
+    const pendingDeletionFaults = racerFaults.filter(f => f.markedForDeletion);
+
+    // Calculate penalty using configurable values (only count active faults)
+    const penaltySeconds = state.usePenaltyMode ? activeFaults.length * state.penaltySeconds : 0;
     const resultStatus = state.usePenaltyMode ? 'flt' : 'dsq';
 
-    // Build fault rows
-    const faultRows = racerFaults.map(fault => `
-      <div class="fault-entry-row">
-        <div class="fault-gate-info">
-          <span class="fault-gate-num">${t('gate', lang)} ${fault.gateNumber}</span>
-          <span class="fault-type-badge">${getFaultTypeLabel(fault.faultType, lang)}</span>
+    // Build fault rows with edit/delete buttons
+    const faultRows = racerFaults.map(fault => {
+      const isMarkedForDeletion = fault.markedForDeletion;
+      const deletionInfo = isMarkedForDeletion && fault.markedForDeletionBy
+        ? `${t('deletionPending', lang)} (${fault.markedForDeletionBy})`
+        : '';
+
+      return `
+        <div class="fault-entry-row${isMarkedForDeletion ? ' marked-for-deletion' : ''}" data-fault-id="${fault.id}">
+          <div class="fault-gate-info">
+            <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${fault.gateNumber}</span>
+            <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
+            ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${deletionInfo}">⚠</span>` : ''}
+          </div>
+          <span class="fault-judge-name">${fault.deviceName}</span>
+          <div class="fault-row-actions">
+            <button class="fault-row-btn edit-fault-btn" data-fault-id="${fault.id}" title="${t('edit', lang)}" ${isMarkedForDeletion ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button class="fault-row-btn delete-fault-btn" data-fault-id="${fault.id}" title="${isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang)}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                ${isMarkedForDeletion
+                  ? '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/>'
+                  : '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'}
+              </svg>
+            </button>
+          </div>
         </div>
-        <span class="fault-judge-name">${fault.deviceName}</span>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     // Build action button (finalize or finalized badge)
     const actionHtml = isFinalized
@@ -1165,6 +1210,171 @@ function updateFaultSummaryPanel(): void {
   const finalizeButtons = summaryList.querySelectorAll('.finalize-btn');
   finalizeButtons.forEach(btn => {
     btn.addEventListener('click', handleFinalizeClick);
+  });
+
+  // Add click handlers for edit fault buttons
+  const editFaultButtons = summaryList.querySelectorAll('.edit-fault-btn');
+  editFaultButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const faultId = (btn as HTMLElement).dataset.faultId;
+      if (faultId) {
+        const fault = store.getState().faultEntries.find(f => f.id === faultId);
+        if (fault) {
+          openFaultEditModal(fault);
+        }
+      }
+    });
+  });
+
+  // Add click handlers for delete/mark for deletion buttons
+  const deleteFaultButtons = summaryList.querySelectorAll('.delete-fault-btn');
+  deleteFaultButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const faultId = (btn as HTMLElement).dataset.faultId;
+      if (faultId) {
+        const fault = store.getState().faultEntries.find(f => f.id === faultId);
+        if (fault) {
+          if (fault.markedForDeletion) {
+            // Reject deletion - restore the fault
+            handleRejectFaultDeletion(fault);
+          } else {
+            // Mark for deletion
+            openMarkDeletionModal(fault);
+          }
+        }
+      }
+    });
+  });
+}
+
+/**
+ * Handle rejecting a fault deletion (restore it)
+ */
+function handleRejectFaultDeletion(fault: FaultEntry): void {
+  const success = store.rejectFaultDeletion(fault.id);
+
+  if (success) {
+    // Sync the updated fault to cloud
+    const restoredFault = store.getState().faultEntries.find(f => f.id === fault.id);
+    if (restoredFault) {
+      syncFault(restoredFault);
+    }
+
+    const lang = store.getState().currentLang;
+    showToast(t('deletionRejected', lang), 'success');
+    feedbackSuccess();
+    updateFaultSummaryPanel();
+    updatePendingDeletionsPanel();
+  }
+}
+
+/**
+ * Handle approving a fault deletion (chief judge action)
+ */
+function handleApproveFaultDeletion(fault: FaultEntry): void {
+  const faultId = fault.id;
+  const success = store.approveFaultDeletion(faultId);
+
+  if (success) {
+    // Sync deletion to cloud
+    deleteFaultFromCloud(fault);
+
+    const lang = store.getState().currentLang;
+    showToast(t('deletionApproved', lang), 'success');
+    feedbackDelete();
+    updateFaultSummaryPanel();
+    updatePendingDeletionsPanel();
+  }
+}
+
+/**
+ * Update the pending deletions panel in Chief Judge view
+ * Shows faults marked for deletion awaiting approval
+ */
+function updatePendingDeletionsPanel(): void {
+  const section = document.getElementById('pending-deletions-section');
+  const list = document.getElementById('pending-deletions-list');
+  const countEl = document.getElementById('pending-deletions-count');
+
+  if (!section || !list || !countEl) return;
+
+  const pendingDeletions = store.getPendingDeletions();
+  const state = store.getState();
+  const lang = state.currentLang;
+
+  // Update count and visibility
+  countEl.textContent = String(pendingDeletions.length);
+  section.style.display = pendingDeletions.length > 0 ? 'block' : 'none';
+
+  if (pendingDeletions.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+
+  // Build pending deletion items
+  const itemsHtml = pendingDeletions.map(fault => {
+    const timeStr = fault.markedForDeletionAt
+      ? new Date(fault.markedForDeletionAt).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : '';
+
+    return `
+      <div class="pending-deletion-item" data-fault-id="${fault.id}">
+        <div class="pending-deletion-info">
+          <span class="pending-deletion-fault">
+            #${fault.bib.padStart(3, '0')} T${fault.gateNumber} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}
+          </span>
+          <span class="pending-deletion-meta">
+            ${t('deletionMarkedBy', lang)}: ${fault.markedForDeletionBy || '?'} (${timeStr})
+          </span>
+        </div>
+        <div class="pending-deletion-actions">
+          <button class="pending-deletion-btn approve" data-fault-id="${fault.id}" title="${t('approveDeletion', lang)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </button>
+          <button class="pending-deletion-btn reject" data-fault-id="${fault.id}" title="${t('rejectDeletion', lang)}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.innerHTML = itemsHtml;
+
+  // Add click handlers
+  list.querySelectorAll('.pending-deletion-btn.approve').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const faultId = (btn as HTMLElement).dataset.faultId;
+      if (faultId) {
+        const fault = pendingDeletions.find(f => f.id === faultId);
+        if (fault) {
+          handleApproveFaultDeletion(fault);
+        }
+      }
+    });
+  });
+
+  list.querySelectorAll('.pending-deletion-btn.reject').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const faultId = (btn as HTMLElement).dataset.faultId;
+      if (faultId) {
+        const fault = pendingDeletions.find(f => f.id === faultId);
+        if (fault) {
+          handleRejectFaultDeletion(fault);
+        }
+      }
+    });
   });
 }
 
@@ -1976,8 +2186,8 @@ function recordFault(faultType: FaultType): void {
     return;
   }
 
-  // Create fault entry
-  const fault: FaultEntry = {
+  // Create fault entry (without version fields - added by store)
+  const fault = {
     id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     bib,
     run: state.selectedRun,
@@ -1992,11 +2202,12 @@ function recordFault(faultType: FaultType): void {
   store.addFaultEntry(fault);
   feedbackWarning(); // Use warning feedback for fault (attention-getting)
 
-  // Sync fault to cloud
-  syncFault(fault);
-
-  // Show confirmation
-  showFaultConfirmation(fault);
+  // Get the fault with version fields from store and sync to cloud
+  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
+  if (storedFault) {
+    syncFault(storedFault);
+    showFaultConfirmation(storedFault);
+  }
 
   // Close modal
   closeModal(document.getElementById('fault-modal'));
@@ -2042,6 +2253,271 @@ function getFaultTypeLabel(faultType: FaultType, lang: Language): string {
     'BR': t('faultBRShort', lang)
   };
   return labels[faultType] || faultType;
+}
+
+// Track currently editing fault for edit modal
+let editingFaultId: string | null = null;
+
+/**
+ * Initialize fault edit modal handlers
+ */
+function initFaultEditModal(): void {
+  // Save fault edit button
+  const saveFaultEditBtn = document.getElementById('save-fault-edit-btn');
+  if (saveFaultEditBtn) {
+    saveFaultEditBtn.addEventListener('click', handleSaveFaultEdit);
+  }
+
+  // Restore version button
+  const restoreVersionBtn = document.getElementById('restore-version-btn');
+  if (restoreVersionBtn) {
+    restoreVersionBtn.addEventListener('click', handleRestoreFaultVersion);
+  }
+
+  // Fault edit bib input - numeric only validation
+  const faultEditBibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  if (faultEditBibInput) {
+    faultEditBibInput.addEventListener('input', () => {
+      faultEditBibInput.value = faultEditBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
+    });
+  }
+
+  // Fault edit run selector
+  const faultEditRunSelector = document.getElementById('fault-edit-run-selector');
+  if (faultEditRunSelector) {
+    faultEditRunSelector.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.edit-run-btn');
+      if (!btn) return;
+
+      faultEditRunSelector.querySelectorAll('.edit-run-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+    });
+  }
+
+  // Confirm mark deletion button
+  const confirmMarkDeletionBtn = document.getElementById('confirm-mark-deletion-btn');
+  if (confirmMarkDeletionBtn) {
+    confirmMarkDeletionBtn.addEventListener('click', handleConfirmMarkDeletion);
+  }
+}
+
+/**
+ * Open fault edit modal
+ */
+function openFaultEditModal(fault: FaultEntry): void {
+  // Don't allow editing faults marked for deletion
+  if (fault.markedForDeletion) {
+    const lang = store.getState().currentLang;
+    showToast(t('cannotEditPendingDeletion', lang), 'warning');
+    return;
+  }
+
+  const modal = document.getElementById('fault-edit-modal');
+  if (!modal) return;
+
+  editingFaultId = fault.id;
+  const state = store.getState();
+  const lang = state.currentLang;
+
+  // Populate fields
+  const bibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
+  const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
+  const gateRangeSpan = document.getElementById('fault-edit-gate-range');
+  const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+
+  if (bibInput) bibInput.value = fault.bib || '';
+  if (gateInput) gateInput.value = String(fault.gateNumber);
+  if (typeSelect) typeSelect.value = fault.faultType;
+
+  // Show gate range info
+  if (gateRangeSpan && fault.gateRange) {
+    gateRangeSpan.textContent = `(${t('gates', lang)} ${fault.gateRange[0]}-${fault.gateRange[1]})`;
+  }
+
+  // Update run selector buttons
+  const runSelector = document.getElementById('fault-edit-run-selector');
+  if (runSelector) {
+    runSelector.querySelectorAll('.edit-run-btn').forEach(btn => {
+      const btnRun = btn.getAttribute('data-run');
+      btn.classList.toggle('active', btnRun === String(fault.run));
+    });
+  }
+
+  // Populate version history dropdown
+  if (versionSelect) {
+    versionSelect.innerHTML = '';
+
+    // Add current version
+    const currentOption = document.createElement('option');
+    currentOption.value = String(fault.currentVersion || 1);
+    currentOption.textContent = `v${fault.currentVersion || 1} - ${t('currentVersion', lang)}`;
+    versionSelect.appendChild(currentOption);
+
+    // Add history versions (newest first, excluding current)
+    const history = fault.versionHistory || [];
+    const sortedHistory = [...history]
+      .sort((a, b) => b.version - a.version)
+      .filter(v => v.version !== fault.currentVersion);
+
+    for (const version of sortedHistory) {
+      const option = document.createElement('option');
+      option.value = String(version.version);
+      const date = new Date(version.timestamp);
+      const timeStr = date.toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const changeLabel = version.changeType === 'create' ? t('originalVersion', lang) :
+                          version.changeType === 'restore' ? t('restored', lang) :
+                          version.editedBy;
+      option.textContent = `v${version.version} - ${changeLabel} (${timeStr})`;
+      versionSelect.appendChild(option);
+    }
+  }
+
+  openModal(modal);
+}
+
+/**
+ * Handle saving fault edit
+ */
+function handleSaveFaultEdit(): void {
+  if (!editingFaultId) return;
+
+  const state = store.getState();
+  const fault = state.faultEntries.find(f => f.id === editingFaultId);
+  if (!fault) return;
+
+  const bibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
+  const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
+  const runSelector = document.getElementById('fault-edit-run-selector');
+
+  const newBib = bibInput?.value.padStart(3, '0') || fault.bib;
+  const newGate = parseInt(gateInput?.value || String(fault.gateNumber), 10);
+  const newType = (typeSelect?.value || fault.faultType) as FaultType;
+
+  // Get selected run
+  const selectedRunBtn = runSelector?.querySelector('.edit-run-btn.active');
+  const newRun = selectedRunBtn ? parseInt(selectedRunBtn.getAttribute('data-run') || '1', 10) as Run : fault.run;
+
+  // Build changes description
+  const changes: string[] = [];
+  if (newBib !== fault.bib) changes.push(`bib: ${fault.bib} → ${newBib}`);
+  if (newGate !== fault.gateNumber) changes.push(`gate: ${fault.gateNumber} → ${newGate}`);
+  if (newType !== fault.faultType) changes.push(`type: ${fault.faultType} → ${newType}`);
+  if (newRun !== fault.run) changes.push(`run: ${fault.run} → ${newRun}`);
+
+  const changeDescription = changes.length > 0 ? changes.join(', ') : undefined;
+
+  // Update with version history
+  const success = store.updateFaultEntryWithHistory(editingFaultId, {
+    bib: newBib,
+    gateNumber: newGate,
+    faultType: newType,
+    run: newRun
+  }, changeDescription);
+
+  if (success) {
+    // Sync updated fault to cloud
+    const updatedFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (updatedFault) {
+      syncFault(updatedFault);
+    }
+
+    const lang = state.currentLang;
+    showToast(t('saved', lang), 'success');
+    feedbackSuccess();
+  }
+
+  closeModal(document.getElementById('fault-edit-modal'));
+  editingFaultId = null;
+}
+
+/**
+ * Handle restoring a fault version
+ */
+function handleRestoreFaultVersion(): void {
+  if (!editingFaultId) return;
+
+  const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+  const selectedVersion = parseInt(versionSelect?.value || '0', 10);
+
+  if (!selectedVersion) return;
+
+  const state = store.getState();
+  const fault = state.faultEntries.find(f => f.id === editingFaultId);
+
+  // Don't restore to current version
+  if (fault && selectedVersion === fault.currentVersion) {
+    return;
+  }
+
+  const success = store.restoreFaultVersion(editingFaultId, selectedVersion);
+
+  if (success) {
+    // Sync restored fault to cloud
+    const restoredFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (restoredFault) {
+      syncFault(restoredFault);
+    }
+
+    const lang = state.currentLang;
+    showToast(t('versionRestored', lang), 'success');
+    feedbackSuccess();
+
+    closeModal(document.getElementById('fault-edit-modal'));
+    editingFaultId = null;
+  }
+}
+
+/**
+ * Open mark deletion confirmation modal
+ */
+function openMarkDeletionModal(fault: FaultEntry): void {
+  const modal = document.getElementById('mark-deletion-modal');
+  if (!modal) return;
+
+  editingFaultId = fault.id;
+  const state = store.getState();
+  const lang = state.currentLang;
+
+  // Populate details
+  const detailsEl = document.getElementById('mark-deletion-details');
+  if (detailsEl) {
+    detailsEl.innerHTML = `
+      <div>#${fault.bib.padStart(3, '0')} T${fault.gateNumber} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}</div>
+    `;
+  }
+
+  openModal(modal);
+}
+
+/**
+ * Handle confirming mark for deletion
+ */
+function handleConfirmMarkDeletion(): void {
+  if (!editingFaultId) return;
+
+  const success = store.markFaultForDeletion(editingFaultId);
+
+  if (success) {
+    // Sync the updated fault to cloud
+    const markedFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (markedFault) {
+      syncFault(markedFault);
+    }
+
+    const lang = store.getState().currentLang;
+    showToast(t('markedForDeletion', lang), 'info');
+    feedbackTap();
+  }
+
+  closeModal(document.getElementById('mark-deletion-modal'));
+  editingFaultId = null;
 }
 
 /**
@@ -2210,6 +2686,9 @@ function initModals(): void {
       }
     });
   }
+
+  // Initialize fault edit modal handlers
+  initFaultEditModal();
 }
 
 /**

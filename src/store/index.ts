@@ -2,6 +2,7 @@ import type {
   AppState,
   Entry,
   FaultEntry,
+  FaultVersion,
   Settings,
   Action,
   SyncStatus,
@@ -800,16 +801,44 @@ class Store {
     this.setState({ usePenaltyMode: usePenalty }, false);
   }
 
-  addFaultEntry(fault: FaultEntry) {
-    const faultEntries = [...this.state.faultEntries, fault];
+  /**
+   * Add a new fault entry with version tracking
+   */
+  addFaultEntry(fault: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>) {
+    // Create initial version
+    const initialVersion: FaultVersion = {
+      version: 1,
+      timestamp: new Date().toISOString(),
+      editedBy: fault.deviceName,
+      editedByDeviceId: fault.deviceId,
+      changeType: 'create',
+      data: { ...fault } as FaultVersion['data']
+    };
+
+    // Add version tracking fields
+    const faultWithVersion: FaultEntry = {
+      ...fault,
+      currentVersion: 1,
+      versionHistory: [initialVersion],
+      markedForDeletion: false
+    };
+
+    const faultEntries = [...this.state.faultEntries, faultWithVersion];
     this.setState({ faultEntries });
   }
 
+  /**
+   * Delete a fault entry (hard delete - use markFaultForDeletion for soft delete)
+   */
   deleteFaultEntry(id: string) {
     const faultEntries = this.state.faultEntries.filter(f => f.id !== id);
     this.setState({ faultEntries });
   }
 
+  /**
+   * Update a fault entry (simple update without version tracking)
+   * Use updateFaultEntryWithHistory for version-tracked updates
+   */
   updateFaultEntry(id: string, updates: Partial<FaultEntry>): boolean {
     const index = this.state.faultEntries.findIndex(f => f.id === id);
     if (index === -1) return false;
@@ -818,6 +847,161 @@ class Store {
     faultEntries[index] = { ...faultEntries[index], ...updates };
     this.setState({ faultEntries });
     return true;
+  }
+
+  /**
+   * Update a fault entry with version history tracking
+   * Creates a new version before applying updates
+   */
+  updateFaultEntryWithHistory(
+    id: string,
+    updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType'>>,
+    changeDescription?: string
+  ): boolean {
+    const index = this.state.faultEntries.findIndex(f => f.id === id);
+    if (index === -1) return false;
+
+    const oldFault = this.state.faultEntries[index];
+
+    // Don't allow editing faults marked for deletion
+    if (oldFault.markedForDeletion) return false;
+
+    const newVersion = oldFault.currentVersion + 1;
+
+    // Create version record of the new state
+    const newVersionRecord: FaultVersion = {
+      version: newVersion,
+      timestamp: new Date().toISOString(),
+      editedBy: this.state.deviceName,
+      editedByDeviceId: this.state.deviceId,
+      changeType: 'edit',
+      data: {
+        id: oldFault.id,
+        bib: updates.bib ?? oldFault.bib,
+        run: updates.run ?? oldFault.run,
+        gateNumber: updates.gateNumber ?? oldFault.gateNumber,
+        faultType: updates.faultType ?? oldFault.faultType,
+        timestamp: oldFault.timestamp,
+        deviceId: oldFault.deviceId,
+        deviceName: oldFault.deviceName,
+        gateRange: oldFault.gateRange,
+        syncedAt: oldFault.syncedAt
+      },
+      changeDescription
+    };
+
+    const faultEntries = [...this.state.faultEntries];
+    faultEntries[index] = {
+      ...oldFault,
+      ...updates,
+      currentVersion: newVersion,
+      versionHistory: [...(oldFault.versionHistory || []), newVersionRecord]
+    };
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  /**
+   * Restore a fault to a previous version
+   */
+  restoreFaultVersion(id: string, versionNumber: number): boolean {
+    const index = this.state.faultEntries.findIndex(f => f.id === id);
+    if (index === -1) return false;
+
+    const oldFault = this.state.faultEntries[index];
+
+    // Don't allow restoring faults marked for deletion
+    if (oldFault.markedForDeletion) return false;
+
+    // Find the version to restore
+    const versionToRestore = oldFault.versionHistory?.find(v => v.version === versionNumber);
+    if (!versionToRestore) return false;
+
+    const newVersion = oldFault.currentVersion + 1;
+
+    // Create a restore version record
+    const restoreVersionRecord: FaultVersion = {
+      version: newVersion,
+      timestamp: new Date().toISOString(),
+      editedBy: this.state.deviceName,
+      editedByDeviceId: this.state.deviceId,
+      changeType: 'restore',
+      data: { ...versionToRestore.data },
+      changeDescription: `Restored to version ${versionNumber}`
+    };
+
+    const faultEntries = [...this.state.faultEntries];
+    faultEntries[index] = {
+      ...oldFault,
+      // Restore the data fields
+      bib: versionToRestore.data.bib,
+      run: versionToRestore.data.run,
+      gateNumber: versionToRestore.data.gateNumber,
+      faultType: versionToRestore.data.faultType,
+      // Keep version tracking
+      currentVersion: newVersion,
+      versionHistory: [...(oldFault.versionHistory || []), restoreVersionRecord]
+    };
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  /**
+   * Mark a fault for deletion (requires chief judge approval)
+   */
+  markFaultForDeletion(id: string): boolean {
+    const index = this.state.faultEntries.findIndex(f => f.id === id);
+    if (index === -1) return false;
+
+    const faultEntries = [...this.state.faultEntries];
+    faultEntries[index] = {
+      ...faultEntries[index],
+      markedForDeletion: true,
+      markedForDeletionAt: new Date().toISOString(),
+      markedForDeletionBy: this.state.deviceName,
+      markedForDeletionByDeviceId: this.state.deviceId
+    };
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  /**
+   * Chief judge approves deletion - actually deletes the fault
+   */
+  approveFaultDeletion(id: string): boolean {
+    const fault = this.state.faultEntries.find(f => f.id === id);
+    if (!fault || !fault.markedForDeletion) return false;
+
+    // Actually delete the fault
+    const faultEntries = this.state.faultEntries.filter(f => f.id !== id);
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  /**
+   * Chief judge rejects deletion - clears the marked flag
+   */
+  rejectFaultDeletion(id: string): boolean {
+    const index = this.state.faultEntries.findIndex(f => f.id === id);
+    if (index === -1) return false;
+
+    const faultEntries = [...this.state.faultEntries];
+    faultEntries[index] = {
+      ...faultEntries[index],
+      markedForDeletion: false,
+      markedForDeletionAt: undefined,
+      markedForDeletionBy: undefined,
+      markedForDeletionByDeviceId: undefined
+    };
+    this.setState({ faultEntries });
+    return true;
+  }
+
+  /**
+   * Get faults pending deletion (for chief judge view)
+   */
+  getPendingDeletions(): FaultEntry[] {
+    return this.state.faultEntries.filter(f => f.markedForDeletion);
   }
 
   clearFaultEntries() {
@@ -837,9 +1021,13 @@ class Store {
    */
   mergeFaultsFromCloud(cloudFaults: FaultEntry[], deletedIds: string[] = []): number {
     let addedCount = 0;
-    const existingIds = new Set(this.state.faultEntries.map(f => `${f.id}-${f.deviceId}`));
+    let updatedCount = 0;
+    const existingFaultsMap = new Map(
+      this.state.faultEntries.map(f => [`${f.id}-${f.deviceId}`, f])
+    );
     const deletedSet = new Set(deletedIds);
     const newFaults: FaultEntry[] = [];
+    const updatedFaults: FaultEntry[] = [];
 
     for (const fault of cloudFaults) {
       // Skip faults from this device (we already have them)
@@ -849,23 +1037,50 @@ class Store {
       const deleteKey = `${fault.id}:${fault.deviceId}`;
       if (deletedSet.has(deleteKey) || deletedSet.has(fault.id)) continue;
 
-      // Skip duplicates
       const key = `${fault.id}-${fault.deviceId}`;
-      if (existingIds.has(key)) continue;
+      const existingFault = existingFaultsMap.get(key);
 
-      newFaults.push(fault);
-      existingIds.add(key);
-      addedCount++;
+      if (existingFault) {
+        // Check if cloud version is newer or has different deletion status
+        const cloudVersion = fault.currentVersion || 1;
+        const localVersion = existingFault.currentVersion || 1;
+
+        if (cloudVersion > localVersion ||
+            fault.markedForDeletion !== existingFault.markedForDeletion) {
+          // Update existing fault with cloud data
+          updatedFaults.push(fault);
+          updatedCount++;
+        }
+        // Otherwise keep local version
+      } else {
+        // New fault from cloud
+        newFaults.push(fault);
+        addedCount++;
+      }
     }
 
-    if (newFaults.length > 0) {
-      const faultEntries = [...this.state.faultEntries, ...newFaults];
+    if (newFaults.length > 0 || updatedFaults.length > 0) {
+      // Start with current faults
+      let faultEntries = [...this.state.faultEntries];
+
+      // Update existing faults
+      for (const updated of updatedFaults) {
+        const key = `${updated.id}-${updated.deviceId}`;
+        const index = faultEntries.findIndex(f => `${f.id}-${f.deviceId}` === key);
+        if (index !== -1) {
+          faultEntries[index] = updated;
+        }
+      }
+
+      // Add new faults
+      faultEntries = [...faultEntries, ...newFaults];
+
       // Sort by timestamp
       faultEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       this.setState({ faultEntries });
     }
 
-    return addedCount;
+    return addedCount + updatedCount;
   }
 
   /**
