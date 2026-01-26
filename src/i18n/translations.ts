@@ -648,7 +648,7 @@ export const translations: Record<Language, Translations> = {
 
     // Gate Judge (Torrichter)
     gateJudge: 'Torrichter',
-    gateJudgeTab: 'Torr',
+    gateJudgeTab: 'Tor',
     deviceRole: 'Geräte-Rolle',
     deviceRoleDesc: 'Timer erfasst Zeiten, Torrichter erfasst Fehler',
     roleTimer: 'Zeitnehmer',
