@@ -3,7 +3,7 @@ import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './co
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
 import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
-import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
+import { hasAuthToken, exchangePinForToken, clearAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
 import { isValidRaceId } from './utils/validation';
@@ -1191,6 +1191,23 @@ function initGateJudgeView(): void {
     });
   }
 
+  // Ready toggle button
+  const readyToggleBtn = document.getElementById('ready-toggle-btn');
+  if (readyToggleBtn) {
+    readyToggleBtn.addEventListener('click', () => {
+      const state = store.getState();
+      const newReadyState = !state.isJudgeReady;
+      store.setJudgeReady(newReadyState);
+      feedbackSuccess();
+      updateReadyButtonState();
+      // Show confirmation
+      const lang = state.currentLang;
+      showToast(newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang), 'success');
+    });
+    // Set initial state
+    updateReadyButtonState();
+  }
+
   // Initialize gate assignment modal handlers
   initGateAssignmentModal();
 
@@ -1263,6 +1280,93 @@ function updateGateRangeDisplay(): void {
   } else {
     display.textContent = '--';
   }
+
+  // Also update other judges coverage
+  updateOtherJudgesCoverage();
+}
+
+/**
+ * Update display of other gate judges' coverage
+ */
+function updateOtherJudgesCoverage(): void {
+  const coverageContainer = document.getElementById('other-judges-coverage');
+  const coverageList = document.getElementById('other-judges-list');
+  if (!coverageContainer || !coverageList) return;
+
+  const state = store.getState();
+  if (!state.settings.sync) {
+    coverageContainer.style.display = 'none';
+    return;
+  }
+
+  const otherAssignments = syncService.getOtherGateAssignments();
+
+  if (otherAssignments.length === 0) {
+    coverageContainer.style.display = 'none';
+    return;
+  }
+
+  coverageContainer.style.display = 'flex';
+  coverageList.innerHTML = otherAssignments.map(a => `
+    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${a.deviceName}${a.isReady ? ' - Ready' : ''}">
+      ${a.isReady ? '<span class="ready-check">✓</span>' : ''}
+      <span class="device-name">${a.deviceName.slice(0, 15)}</span>
+      <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
+    </div>
+  `).join('');
+
+  // Update judges ready indicator in header
+  updateJudgesReadyIndicator(otherAssignments);
+}
+
+/**
+ * Update ready button visual state
+ */
+function updateReadyButtonState(): void {
+  const btn = document.getElementById('ready-toggle-btn');
+  if (!btn) return;
+
+  const state = store.getState();
+  btn.classList.toggle('ready', state.isJudgeReady);
+}
+
+/**
+ * Update judges ready indicator in header (visible to all devices)
+ */
+function updateJudgesReadyIndicator(assignments?: import('./types').GateAssignment[]): void {
+  const indicator = document.getElementById('judges-ready-indicator');
+  const countEl = document.getElementById('judges-ready-count');
+  if (!indicator || !countEl) return;
+
+  const state = store.getState();
+  if (!state.settings.sync) {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  // Get assignments if not provided
+  const judgeAssignments = assignments || syncService.getOtherGateAssignments();
+
+  // Count total judges (including this device if gate judge)
+  let totalJudges = judgeAssignments.length;
+  let readyJudges = judgeAssignments.filter(a => a.isReady).length;
+
+  // Include this device if it's a gate judge with assignment
+  if (state.deviceRole === 'gateJudge' && state.gateAssignment) {
+    totalJudges++;
+    if (state.isJudgeReady) readyJudges++;
+  }
+
+  if (totalJudges === 0) {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  indicator.style.display = 'flex';
+  countEl.textContent = `${readyJudges}/${totalJudges}`;
+
+  // Add highlight when all are ready
+  indicator.classList.toggle('all-ready', readyJudges === totalJudges && totalJudges > 0);
 }
 
 /**
@@ -1417,6 +1521,9 @@ function recordFault(faultType: FaultType): void {
 
   store.addFaultEntry(fault);
   feedbackWarning(); // Use warning feedback for fault (attention-getting)
+
+  // Sync fault to cloud
+  syncFault(fault);
 
   // Show confirmation
   showFaultConfirmation(fault);

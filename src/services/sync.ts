@@ -1,5 +1,5 @@
 import { store } from '../store';
-import type { Entry, SyncResponse, DeviceInfo } from '../types';
+import type { Entry, SyncResponse, DeviceInfo, FaultEntry, GateAssignment } from '../types';
 import { isValidEntry } from '../utils/validation';
 import { fetchWithTimeout } from '../utils/errors';
 import { photoStorage } from './photoStorage';
@@ -10,6 +10,7 @@ import { addRecentRace } from '../utils/recentRaces';
 
 // API configuration
 const API_BASE = '/api/sync';
+const FAULTS_API_BASE = '/api/faults';
 const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 
 // Get auth headers for sync API requests (JWT token)
@@ -141,6 +142,9 @@ class SyncService {
 
     // Push existing local entries to cloud
     this.pushLocalEntries();
+
+    // Push existing local faults to cloud
+    this.pushLocalFaults();
 
     // Add visibility change handler to pause/resume polling for battery optimization
     if (!this.visibilityHandler) {
@@ -645,6 +649,9 @@ class SyncService {
         addRecentRace(state.raceId, this.lastSyncTimestamp, cloudEntries.length);
       }
 
+      // Also fetch faults (for gate judge view and results display)
+      await this.fetchCloudFaults();
+
       this.adjustPollingInterval(true, hasChanges);
     } catch (error) {
       console.error('Cloud sync fetch error:', error);
@@ -1052,6 +1059,189 @@ class SyncService {
       totalSize: uploadSize + downloadSize
     };
   }
+
+  // ===== Fault Sync Methods =====
+
+  /**
+   * Fetch faults from cloud
+   * Called alongside entry polling
+   */
+  async fetchCloudFaults(): Promise<void> {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return;
+
+    // Only fetch faults if device is a gate judge or if we want to show faults in results
+    // For now, always fetch to support showing faults in results view
+    try {
+      const params = new URLSearchParams({
+        raceId: state.raceId,
+        deviceId: state.deviceId,
+        deviceName: state.deviceName
+      });
+
+      // Include gate assignment and ready status if this device is a gate judge
+      if (state.deviceRole === 'gateJudge' && state.gateAssignment) {
+        params.set('gateStart', String(state.gateAssignment[0]));
+        params.set('gateEnd', String(state.gateAssignment[1]));
+        params.set('isReady', String(state.isJudgeReady));
+      }
+
+      const response = await fetchWithTimeout(
+        `${FAULTS_API_BASE}?${params}`,
+        { headers: getAuthHeaders() },
+        FETCH_TIMEOUT
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Auth expired - handled by main sync
+          return;
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Validate response
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid fault data structure');
+      }
+
+      const cloudFaults = Array.isArray(data.faults) ? data.faults : [];
+      const deletedIds = Array.isArray(data.deletedIds)
+        ? data.deletedIds.filter((id: unknown): id is string => typeof id === 'string')
+        : [];
+
+      // Remove locally any faults that were deleted from cloud
+      if (deletedIds.length > 0) {
+        store.removeDeletedCloudFaults(deletedIds);
+      }
+
+      // Merge remote faults
+      if (cloudFaults.length > 0) {
+        const added = store.mergeFaultsFromCloud(cloudFaults, deletedIds);
+        if (added > 0) {
+          const lang = store.getState().currentLang;
+          this.showSyncToast(t('syncedFaultsFromCloud', lang).replace('{count}', String(added)));
+        }
+      }
+
+      // Store gate assignments for display (other judges' coverage)
+      if (Array.isArray(data.gateAssignments)) {
+        this.updateGateAssignments(data.gateAssignments);
+      }
+    } catch (error) {
+      console.error('Fault sync fetch error:', error);
+      // Don't change sync status for fault errors - main sync handles that
+    }
+  }
+
+  /**
+   * Send fault to cloud
+   */
+  async sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return false;
+
+    try {
+      const response = await fetchWithTimeout(
+        `${FAULTS_API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({
+            fault,
+            deviceId: state.deviceId,
+            deviceName: state.deviceName,
+            gateRange: state.gateAssignment,
+            isReady: state.isJudgeReady
+          })
+        },
+        FETCH_TIMEOUT
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Mark fault as synced
+      store.markFaultSynced(fault.id);
+
+      // Reset to fast polling when user is actively recording faults
+      this.resetToFastPolling();
+
+      return true;
+    } catch (error) {
+      console.error('Fault sync send error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete fault from cloud
+   */
+  async deleteFaultFromCloud(faultId: string, faultDeviceId?: string): Promise<boolean> {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return false;
+
+    try {
+      const response = await fetchWithTimeout(
+        `${FAULTS_API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({
+            faultId,
+            deviceId: faultDeviceId || state.deviceId
+          })
+        },
+        FETCH_TIMEOUT
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Fault sync delete error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Push local faults to cloud
+   */
+  async pushLocalFaults(): Promise<void> {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return;
+
+    for (const fault of state.faultEntries) {
+      // Only push faults from this device that haven't been synced
+      if (fault.deviceId === state.deviceId && !fault.syncedAt) {
+        await this.sendFaultToCloud(fault);
+      }
+    }
+  }
+
+  // Gate assignments from other devices (for UI display)
+  private otherGateAssignments: GateAssignment[] = [];
+
+  /**
+   * Update gate assignments from cloud response
+   */
+  private updateGateAssignments(assignments: GateAssignment[]): void {
+    const state = store.getState();
+    // Filter out this device's assignment
+    this.otherGateAssignments = assignments.filter(a => a.deviceId !== state.deviceId);
+  }
+
+  /**
+   * Get gate assignments from other devices
+   */
+  getOtherGateAssignments(): GateAssignment[] {
+    return this.otherGateAssignments;
+  }
 }
 
 // Singleton instance
@@ -1068,4 +1258,19 @@ export async function syncEntry(entry: Entry): Promise<void> {
   if (state.settings.sync && state.raceId) {
     await syncService.sendEntryToCloud(entry);
   }
+}
+
+// Helper function to sync fault to cloud
+export async function syncFault(fault: FaultEntry): Promise<void> {
+  const state = store.getState();
+
+  // Send to cloud if enabled
+  if (state.settings.sync && state.raceId) {
+    await syncService.sendFaultToCloud(fault);
+  }
+}
+
+// Helper function to delete fault from cloud
+export async function deleteFaultFromCloud(faultId: string, faultDeviceId?: string): Promise<boolean> {
+  return syncService.deleteFaultFromCloud(faultId, faultDeviceId);
 }

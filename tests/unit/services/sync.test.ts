@@ -464,16 +464,20 @@ describe('Sync Service', () => {
 
       syncService.initialize();
 
-      // Initial fetch
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      // Wait for initial async operations to complete (entries + faults fetch)
+      await vi.advanceTimersByTimeAsync(100);
+      // Initial fetch: 1 entry fetch + 1 fault fetch = 2 calls
+      expect(mockFetch).toHaveBeenCalledTimes(2);
 
       // Advance timer past poll interval (5 seconds)
       await vi.advanceTimersByTimeAsync(5000);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      // Poll 1: entry fetch + fault fetch = 2 more calls, total 4
+      expect(mockFetch).toHaveBeenCalledTimes(4);
 
       // Another interval
       await vi.advanceTimersByTimeAsync(5000);
-      expect(mockFetch).toHaveBeenCalledTimes(3);
+      // Poll 2: entry fetch + fault fetch = 2 more calls, total 6
+      expect(mockFetch).toHaveBeenCalledTimes(6);
     });
 
     it('should slow down polling after errors', async () => {

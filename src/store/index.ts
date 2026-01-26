@@ -202,6 +202,7 @@ class Store {
       gateAssignment,
       faultEntries,
       selectedFaultBib: '',
+      isJudgeReady: false,
 
       // Undo/Redo
       undoStack: [],
@@ -725,6 +726,14 @@ class Store {
     this.setState({ selectedFaultBib: bib }, false);
   }
 
+  setJudgeReady(ready: boolean) {
+    this.setState({ isJudgeReady: ready });
+  }
+
+  toggleJudgeReady() {
+    this.setState({ isJudgeReady: !this.state.isJudgeReady });
+  }
+
   addFaultEntry(fault: FaultEntry) {
     const faultEntries = [...this.state.faultEntries, fault];
     this.setState({ faultEntries });
@@ -754,6 +763,80 @@ class Store {
    */
   getFaultsForBib(bib: string, run: Run): FaultEntry[] {
     return this.state.faultEntries.filter(f => f.bib === bib && f.run === run);
+  }
+
+  /**
+   * Merge faults from cloud sync
+   * Returns number of faults added
+   */
+  mergeFaultsFromCloud(cloudFaults: FaultEntry[], deletedIds: string[] = []): number {
+    let addedCount = 0;
+    const existingIds = new Set(this.state.faultEntries.map(f => `${f.id}-${f.deviceId}`));
+    const deletedSet = new Set(deletedIds);
+    const newFaults: FaultEntry[] = [];
+
+    for (const fault of cloudFaults) {
+      // Skip faults from this device (we already have them)
+      if (fault.deviceId === this.state.deviceId) continue;
+
+      // Skip faults that were deleted
+      const deleteKey = `${fault.id}:${fault.deviceId}`;
+      if (deletedSet.has(deleteKey) || deletedSet.has(fault.id)) continue;
+
+      // Skip duplicates
+      const key = `${fault.id}-${fault.deviceId}`;
+      if (existingIds.has(key)) continue;
+
+      newFaults.push(fault);
+      existingIds.add(key);
+      addedCount++;
+    }
+
+    if (newFaults.length > 0) {
+      const faultEntries = [...this.state.faultEntries, ...newFaults];
+      // Sort by timestamp
+      faultEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      this.setState({ faultEntries });
+    }
+
+    return addedCount;
+  }
+
+  /**
+   * Remove faults that were deleted from cloud
+   */
+  removeDeletedCloudFaults(deletedIds: string[]): number {
+    const deletedSet = new Set(deletedIds);
+    let removedCount = 0;
+
+    const faultEntries = this.state.faultEntries.filter(fault => {
+      const deleteKey = `${fault.id}:${fault.deviceId}`;
+      const isDeleted = deletedSet.has(deleteKey) || deletedSet.has(fault.id);
+
+      if (isDeleted) {
+        removedCount++;
+        return false;
+      }
+      return true;
+    });
+
+    if (removedCount > 0) {
+      this.setState({ faultEntries });
+    }
+
+    return removedCount;
+  }
+
+  /**
+   * Mark a fault as synced
+   */
+  markFaultSynced(faultId: string) {
+    const index = this.state.faultEntries.findIndex(f => f.id === faultId);
+    if (index !== -1) {
+      const faultEntries = [...this.state.faultEntries];
+      faultEntries[index] = { ...faultEntries[index], syncedAt: Date.now() };
+      this.setState({ faultEntries });
+    }
   }
 
   /**

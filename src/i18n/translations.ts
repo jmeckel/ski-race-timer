@@ -137,6 +137,7 @@ export const translations: Record<Language, Translations> = {
     // Photo sync
     photoTooLarge: 'Photo too large for sync',
     syncedEntriesFromCloud: 'Synced {count} entries from cloud',
+    syncedFaultsFromCloud: 'Synced {count} faults from cloud',
     crossDeviceDuplicate: 'Duplicate: Bib {bib} {point} already recorded by {device}',
 
     // Photo sync settings
@@ -280,6 +281,7 @@ export const translations: Record<Language, Translations> = {
     gatesFrom: 'From',
     gatesTo: 'To',
     changeGates: 'Change',
+    otherJudges: 'Other judges:',
     activeBibs: 'On Course',
     noBibsOnCourse: 'No racers on course',
     recordFault: 'Record Fault',
@@ -291,6 +293,9 @@ export const translations: Record<Language, Translations> = {
     faultSTRShort: 'STR',
     faultBRShort: 'BR',
     faultRecorded: 'Fault recorded',
+    signalReady: 'Ready',
+    judgeReady: 'Ready for race!',
+    judgeNotReady: 'Ready status cleared',
     faultDeleted: 'Fault deleted',
     selectBib: 'Select Bib',
     selectGate: 'Gate',
@@ -441,6 +446,7 @@ export const translations: Record<Language, Translations> = {
     // Photo sync
     photoTooLarge: 'Foto zu groß für Sync',
     syncedEntriesFromCloud: '{count} Einträge aus Cloud synchronisiert',
+    syncedFaultsFromCloud: '{count} Torfehler aus Cloud synchronisiert',
     crossDeviceDuplicate: 'Duplikat: Startnr. {bib} {point} bereits von {device} erfasst',
 
     // Photo sync settings
@@ -584,6 +590,7 @@ export const translations: Record<Language, Translations> = {
     gatesFrom: 'Von',
     gatesTo: 'Bis',
     changeGates: 'Ändern',
+    otherJudges: 'Andere Torrichter:',
     activeBibs: 'Auf der Strecke',
     noBibsOnCourse: 'Keine Fahrer auf der Strecke',
     recordFault: 'Fehler erfassen',
@@ -595,6 +602,9 @@ export const translations: Record<Language, Translations> = {
     faultSTRShort: 'EF',
     faultBRShort: 'AB',
     faultRecorded: 'Fehler erfasst',
+    signalReady: 'Bereit',
+    judgeReady: 'Bereit für Rennen!',
+    judgeNotReady: 'Bereit-Status zurückgesetzt',
     faultDeleted: 'Fehler gelöscht',
     selectBib: 'Startnr. wählen',
     selectGate: 'Tor',

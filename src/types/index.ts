@@ -64,6 +64,7 @@ export interface GateAssignment {
   gateStart: number;
   gateEnd: number;
   lastSeen: number;
+  isReady?: boolean;  // Judge signals ready for race/run
 }
 
 // Settings interface
@@ -134,6 +135,7 @@ export interface AppState {
   gateAssignment: [number, number] | null;  // [start, end] gate range
   faultEntries: FaultEntry[];
   selectedFaultBib: string;  // Currently selected bib for fault entry
+  isJudgeReady: boolean;  // Whether this judge has signaled ready
 
   // Undo/Redo
   undoStack: Action[];

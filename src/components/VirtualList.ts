@@ -95,7 +95,7 @@ export class VirtualList {
 
     // Subscribe to store updates
     this.unsubscribe = store.subscribe((state, changedKeys) => {
-      if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries')) {
+      if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries') || changedKeys.includes('faultEntries')) {
         this.setEntries(state.entries);
       }
     });
@@ -265,12 +265,22 @@ export class VirtualList {
     const date = new Date(entry.timestamp);
     const timeStr = formatTime(date);
     const bibStr = formatBib(entry.bib || '---');
-    const lang = store.getState().currentLang;
+    const state = store.getState();
+    const lang = state.currentLang;
     const pointColor = getPointColor(entry.point);
     const pointLabel = getPointLabel(entry.point, lang);
     const run = entry.run ?? 1;
     const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
+
+    // Get faults for this bib and run (only show on Finish entries)
+    const faults = entry.point === 'F' ? state.faultEntries.filter(f => f.bib === entry.bib && f.run === run) : [];
+    const hasFaults = faults.length > 0;
+    const faultBadgeHtml = hasFaults ? `
+      <span class="result-fault-badge" title="${faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', ')}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0].gateNumber}`}
+      </span>
+    ` : '';
 
     item.innerHTML = `
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
@@ -290,6 +300,7 @@ export class VirtualList {
           </div>
         ` : ''}
       </div>
+      ${faultBadgeHtml}
       ${entry.status !== 'ok' ? `
         <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
           ${escapeHtml(entry.status.toUpperCase())}
@@ -433,7 +444,7 @@ export class VirtualList {
     // Re-subscribe to store updates
     if (!this.unsubscribe) {
       this.unsubscribe = store.subscribe((state, changedKeys) => {
-        if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries')) {
+        if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries') || changedKeys.includes('faultEntries')) {
           if (this.isPaused) {
             this.needsRefreshOnResume = true;
           } else {

@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-VUpW1rRK.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-CFo_Jn8w.css">
+  <script type="module" crossorigin src="/assets/main-kNuPdQOp.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main--as60zpI.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -47,6 +47,12 @@
           <span class="sync-dot"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
           <span class="sync-device-count" id="sync-device-count" style="display: none;"></span>
+          <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            <span class="judges-ready-count" id="judges-ready-count">0/0</span>
+          </span>
         </div>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
           <span class="gps-dot"></span>
@@ -222,6 +228,12 @@
           </div>
         </div>
 
+        <!-- Other Judges Coverage (shows when syncing) -->
+        <div class="other-judges-coverage" id="other-judges-coverage" style="display: none;">
+          <span class="coverage-label" data-i18n="otherJudges">Other judges:</span>
+          <div class="coverage-list" id="other-judges-list"></div>
+        </div>
+
         <!-- Active Bibs Section -->
         <div class="active-bibs-section">
           <div class="section-title" data-i18n="activeBibs">On Course</div>
@@ -236,16 +248,27 @@
           </div>
         </div>
 
-        <!-- Record Fault Button -->
-        <button class="record-fault-btn glass-surface-1" id="record-fault-btn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-            <line x1="4" y1="22" x2="4" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-          </svg>
-          <span data-i18n="recordFault">Record Fault</span>
-        </button>
+        <!-- Action Buttons -->
+        <div class="gate-judge-actions">
+          <!-- Ready Toggle Button -->
+          <button class="ready-toggle-btn" id="ready-toggle-btn">
+            <svg class="ready-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            <span data-i18n="signalReady">Ready</span>
+          </button>
+
+          <!-- Record Fault Button -->
+          <button class="record-fault-btn glass-surface-1" id="record-fault-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+            </svg>
+            <span data-i18n="recordFault">Record Fault</span>
+          </button>
+        </div>
       </div>
 
       <!-- Settings View -->
