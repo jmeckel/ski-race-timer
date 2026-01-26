@@ -250,7 +250,10 @@ export const translations: Record<Language, Translations> = {
     errorRecoveryMessage: 'The app encountered an error. You can dismiss this and continue, or reload the app.',
     dismiss: 'Dismiss',
     reload: 'Reload',
-    operationFailed: 'Operation failed'
+    operationFailed: 'Operation failed',
+    raceIdPlaceholder: 'RACE-001',
+    deviceNamePlaceholder: 'Timer 1',
+    photoForBib: 'Photo for bib'
   },
 
   de: {
@@ -502,7 +505,10 @@ export const translations: Record<Language, Translations> = {
     errorRecoveryMessage: 'Die App hat einen Fehler festgestellt. Sie können diesen Hinweis schließen und fortfahren, oder die App neu laden.',
     dismiss: 'Schließen',
     reload: 'Neu laden',
-    operationFailed: 'Vorgang fehlgeschlagen'
+    operationFailed: 'Vorgang fehlgeschlagen',
+    raceIdPlaceholder: 'RENNEN-001',
+    deviceNamePlaceholder: 'Timer 1',
+    photoForBib: 'Foto für Startnr.'
   }
 };
 

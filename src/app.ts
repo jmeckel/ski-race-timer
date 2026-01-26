@@ -203,6 +203,10 @@ function initTabs(): void {
       if (view) {
         store.setView(view);
         feedbackTap();
+        // Update ARIA states for accessibility
+        tabBtns.forEach(t => {
+          t.setAttribute('aria-selected', t === btn ? 'true' : 'false');
+        });
       }
     });
   });
@@ -256,6 +260,10 @@ function initTimingPoints(): void {
     if (point) {
       store.setSelectedPoint(point);
       feedbackTap();
+      // Update ARIA states for accessibility
+      container.querySelectorAll('.timing-point-btn').forEach(b => {
+        b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+      });
     }
   });
 }
@@ -276,6 +284,10 @@ function initRunSelector(): void {
     const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
     store.setSelectedRun(run);
     feedbackTap();
+    // Update ARIA states for accessibility
+    container.querySelectorAll('.run-btn').forEach(b => {
+      b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+    });
   });
 }
 
@@ -307,9 +319,13 @@ function initTimestampButton(): void {
     await recordTimestamp();
   });
 
-  // Keyboard shortcut
+  // Keyboard shortcut - skip if user is typing in an input field
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && store.getState().currentView === 'timer') {
+    const activeTag = document.activeElement?.tagName;
+    if (e.key === 'Enter' &&
+        store.getState().currentView === 'timer' &&
+        activeTag !== 'INPUT' &&
+        activeTag !== 'TEXTAREA') {
       e.preventDefault();
       recordTimestamp();
     }
@@ -1357,8 +1373,15 @@ async function openPhotoViewer(entry: Entry): Promise<void> {
   const pointEl = document.getElementById('photo-viewer-point');
   const timeEl = document.getElementById('photo-viewer-time');
 
+  const state = store.getState();
+  const lang = state.currentLang;
+
   // Load photo from IndexedDB or use inline base64
   if (image) {
+    // Set descriptive alt text
+    const pointLabel = getPointLabel(entry.point, lang);
+    image.alt = `${t('photoForBib', lang)} ${entry.bib || '---'} - ${pointLabel}`;
+
     if (entry.photo === 'indexeddb') {
       // Photo stored in IndexedDB - load it
       image.src = ''; // Clear while loading
@@ -1378,8 +1401,7 @@ async function openPhotoViewer(entry: Entry): Promise<void> {
 
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
-    const state = store.getState();
-    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
+    pointEl.textContent = getPointLabel(entry.point, lang);
     const pointColor = getPointColor(entry.point);
     pointEl.style.background = pointColor;
     pointEl.style.color = 'var(--background)';
@@ -2760,7 +2782,8 @@ async function loadRaceList(): Promise<void> {
 
   if (!listContainer) return;
 
-  // Show loading
+  // Show loading and set ARIA busy state
+  listContainer.setAttribute('aria-busy', 'true');
   if (loadingEl) loadingEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
 
@@ -2786,7 +2809,8 @@ async function loadRaceList(): Promise<void> {
     const data = await response.json();
     const races: RaceInfo[] = data.races || [];
 
-    // Hide loading
+    // Hide loading and clear ARIA busy state
+    listContainer.setAttribute('aria-busy', 'false');
     if (loadingEl) loadingEl.style.display = 'none';
 
     if (races.length === 0) {
@@ -2802,6 +2826,7 @@ async function loadRaceList(): Promise<void> {
 
   } catch (error) {
     logError('Admin', 'loadRaceList', error, 'loadError');
+    listContainer.setAttribute('aria-busy', 'false');
     if (loadingEl) loadingEl.style.display = 'none';
   }
 }

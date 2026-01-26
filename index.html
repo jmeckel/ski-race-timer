@@ -135,7 +135,7 @@
         <div class="results-header">
           <!-- Search & Filter -->
           <div class="search-filter-bar" data-advanced>
-            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" placeholder="Search by bib...">
+            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search">
             <select class="filter-select" id="filter-point" aria-label="Filter by point">
               <option value="all" data-i18n="all">All</option>
               <option value="S">Start</option>
@@ -241,7 +241,7 @@
               </span>
             </div>
             <div class="race-id-input-row">
-              <input type="text" class="text-input" id="race-id-input" placeholder="RACE-001" style="max-width: 120px;">
+              <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;">
               <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -255,7 +255,7 @@
             <div class="setting-label">
               <span class="setting-title" data-i18n="deviceName">Device Name</span>
             </div>
-            <input type="text" class="text-input" id="device-name-input" placeholder="Timer 1" style="max-width: 150px;">
+            <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;">
           </div>
           <div class="setting-row" id="sync-photos-row">
             <div class="setting-label">
@@ -545,7 +545,7 @@
         </button>
       </div>
       <div class="photo-viewer-image-container">
-        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Captured photo">
+        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="">
       </div>
       <div class="photo-viewer-metadata">
         <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
@@ -611,8 +611,8 @@
         <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
       </div>
       <div class="modal-body">
-        <div class="race-list" id="race-list">
-          <div class="race-list-loading" id="race-list-loading">
+        <div class="race-list" id="race-list" role="region" aria-live="polite">
+          <div class="race-list-loading" id="race-list-loading" aria-busy="true">
             <span data-i18n="loading">Loading...</span>
           </div>
           <div class="race-list-empty" id="race-list-empty" style="display: none;">

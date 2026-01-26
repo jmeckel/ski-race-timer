@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import crypto from 'crypto';
 
 // Redis client
 let redis = null;
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify SERVER_API_PIN
+  // Verify SERVER_API_PIN with timing-safe comparison
   const serverPin = process.env.SERVER_API_PIN;
   const providedPin = req.headers['x-server-pin'];
 
@@ -56,7 +57,24 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'SERVER_API_PIN not configured on server' });
   }
 
-  if (!providedPin || providedPin !== serverPin) {
+  if (!providedPin) {
+    return res.status(401).json({ error: 'Invalid server PIN' });
+  }
+
+  // Use timing-safe comparison to prevent timing attacks
+  let pinValid = false;
+  try {
+    const serverPinBuffer = Buffer.from(serverPin, 'utf8');
+    const providedPinBuffer = Buffer.from(providedPin, 'utf8');
+    // Only compare if lengths match (timingSafeEqual requires equal lengths)
+    if (serverPinBuffer.length === providedPinBuffer.length) {
+      pinValid = crypto.timingSafeEqual(serverPinBuffer, providedPinBuffer);
+    }
+  } catch {
+    pinValid = false;
+  }
+
+  if (!pinValid) {
     return res.status(401).json({ error: 'Invalid server PIN' });
   }
 

@@ -496,7 +496,8 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
-  min-height: 0;
+  min-height: 44px;
+  min-width: 44px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -846,8 +847,24 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* Focus visible styles for all interactive elements */
 .modal-btn:focus-visible,
-.edit-run-btn:focus-visible {
+.edit-run-btn:focus-visible,
+.action-btn:focus-visible,
+.num-btn:focus-visible,
+.timing-point-btn:focus-visible,
+.run-btn:focus-visible,
+.timestamp-btn:focus-visible,
+.tab-btn:focus-visible,
+.toggle-switch input:focus-visible + .toggle-slider,
+.filter-select:focus-visible,
+.text-input:focus-visible,
+.search-input:focus-visible,
+.lang-option:focus-visible,
+.onboarding-btn:focus-visible,
+.recent-races-btn:focus-visible,
+.photo-viewer-close:focus-visible,
+.race-delete-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
