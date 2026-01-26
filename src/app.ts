@@ -1085,7 +1085,10 @@ function initRoleToggle(): void {
 
   roleToggle.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    const role = target.getAttribute('data-role') as DeviceRole;
+    const card = target.closest('.role-card-setting');
+    if (!card) return;
+
+    const role = card.getAttribute('data-role') as DeviceRole;
     if (role && role !== store.getState().deviceRole) {
       store.setDeviceRole(role);
       updateRoleToggle();
@@ -1115,21 +1118,27 @@ function updateRoleToggle(): void {
   if (!roleToggle) return;
 
   const state = store.getState();
-  roleToggle.querySelectorAll('.role-option').forEach(option => {
-    const role = option.getAttribute('data-role');
-    option.classList.toggle('active', role === state.deviceRole);
+  roleToggle.querySelectorAll('.role-card-setting').forEach(card => {
+    const role = card.getAttribute('data-role');
+    card.classList.toggle('active', role === state.deviceRole);
   });
 }
 
 /**
- * Update Gate Judge tab visibility based on device role
+ * Update tab visibility based on device role
+ * Timer role: show Timer tab, hide Gate Judge tab
+ * Gate Judge role: hide Timer tab, show Gate Judge tab
  */
 function updateGateJudgeTabVisibility(): void {
+  const timerTab = document.getElementById('timer-tab');
   const gateJudgeTab = document.getElementById('gate-judge-tab');
-  if (!gateJudgeTab) return;
 
   const state = store.getState();
-  gateJudgeTab.style.display = state.deviceRole === 'gateJudge' ? '' : 'none';
+  const isGateJudge = state.deviceRole === 'gateJudge';
+
+  // Swap tabs based on role
+  if (timerTab) timerTab.style.display = isGateJudge ? 'none' : '';
+  if (gateJudgeTab) gateJudgeTab.style.display = isGateJudge ? '' : 'none';
 }
 
 /**
@@ -2036,6 +2045,13 @@ function updateUI(): void {
 }
 
 /**
+ * Convert camelCase to kebab-case for CSS class names
+ */
+function toKebabCase(str: string): string {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
  * Update view visibility
  */
 function updateViewVisibility(): void {
@@ -2044,7 +2060,9 @@ function updateViewVisibility(): void {
     view.classList.remove('active');
   });
 
-  const activeView = document.querySelector(`.${state.currentView}-view`);
+  // Convert view name to kebab-case for CSS class (e.g., 'gateJudge' -> 'gate-judge')
+  const viewClass = toKebabCase(state.currentView);
+  const activeView = document.querySelector(`.${viewClass}-view`);
   if (activeView) {
     activeView.classList.add('active');
   }

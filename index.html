@@ -248,6 +248,27 @@
 
       <!-- Settings View -->
       <div class="view settings-view">
+        <!-- Device Role (Prominent at top) -->
+        <div class="settings-section role-section">
+          <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
+          <div class="role-cards-settings" id="role-toggle">
+            <button class="role-card-setting active" data-role="timer">
+              <div class="role-card-icon">⏱️</div>
+              <div class="role-card-content">
+                <span class="role-card-title" data-i18n="roleTimer">Timer</span>
+                <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
+              </div>
+            </button>
+            <button class="role-card-setting" data-role="gateJudge">
+              <div class="role-card-icon">🚩</div>
+              <div class="role-card-content">
+                <span class="role-card-title" data-i18n="roleGateJudge">Gate Judge</span>
+                <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- Mode Toggle (hidden - normal mode is now the default) -->
         <div class="settings-section" style="display:none">
           <div class="setting-row">
@@ -311,21 +332,6 @@
               <input type="checkbox" id="sync-photos-toggle" disabled>
               <span class="toggle-slider"></span>
             </label>
-          </div>
-        </div>
-
-        <!-- Device Role -->
-        <div class="settings-section">
-          <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="deviceRole">Device Role</span>
-              <span class="setting-description" data-i18n="deviceRoleDesc">Timer records times, Gate Judge records faults</span>
-            </div>
-            <div class="role-toggle" id="role-toggle">
-              <span class="role-option active" data-role="timer" data-i18n="roleTimer">Timer</span>
-              <span class="role-option" data-role="gateJudge" data-i18n="roleGateJudge">Gate Judge</span>
-            </div>
           </div>
         </div>
 
@@ -472,7 +478,7 @@
 
     <!-- Tab Bar -->
     <nav class="tab-bar glass-frosted glass-enable-target" role="tablist" aria-label="Main navigation">
-      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true">
+      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true" id="timer-tab">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
