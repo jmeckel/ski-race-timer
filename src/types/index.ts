@@ -220,6 +220,7 @@ export interface Translations {
   photoCapture: string;
   photoCaptured: string;
   photoError: string;
+  photoSaveFailed: string;
   [key: string]: string;
 }
 

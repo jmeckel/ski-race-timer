@@ -364,6 +364,7 @@ async function recordTimestamp(): Promise<void> {
               }
 
               // Store photo in IndexedDB (not in entry to save localStorage space)
+              // Note: Photo storage is best-effort - failures are logged but don't block timing
               const saved = await photoStorage.savePhoto(entryId, photo);
               if (saved) {
                 // Mark entry as having a photo - updateEntry returns false if entry was deleted
@@ -373,6 +374,11 @@ async function recordTimestamp(): Promise<void> {
                   console.warn('Entry deleted during photo save, removing orphaned photo:', entryId);
                   await photoStorage.deletePhoto(entryId);
                 }
+              } else {
+                // Photo save failed - log and notify user, but don't retry (performance priority)
+                console.warn('Photo save failed for entry:', entryId);
+                const lang = store.getState().currentLang;
+                showToast(t('photoSaveFailed', lang), 'warning');
               }
             } catch (err) {
               logWarning('Camera', 'photo save/update', err, 'photoError');

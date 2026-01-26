@@ -8,21 +8,13 @@ const JWT_ISSUER = 'ski-race-timer';
 
 /**
  * Get JWT secret from environment
- * IMPORTANT: Always set JWT_SECRET in production!
+ * SECURITY: Always fails if JWT_SECRET is not set - no fallback
  */
 function getJwtSecret() {
-  if (process.env.JWT_SECRET) {
-    return process.env.JWT_SECRET;
+  if (!process.env.JWT_SECRET) {
+    throw new Error('CRITICAL: JWT_SECRET environment variable must be set. Create a .env.local file for local development.');
   }
-
-  // In production (Vercel), fail if JWT_SECRET is not set
-  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL: JWT_SECRET environment variable must be set in production');
-  }
-
-  // Fallback for local development only
-  console.warn('WARNING: JWT_SECRET not set, using fallback. Set JWT_SECRET in production!');
-  return 'dev-only-fallback-secret-do-not-use-in-production';
+  return process.env.JWT_SECRET;
 }
 
 /**

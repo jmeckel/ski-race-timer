@@ -143,14 +143,19 @@ export default async function handler(req, res) {
     }
 
     // Verify provided PIN against stored hash
+    // SECURITY: Use constant-time comparison and identical error responses to prevent timing attacks
     const providedPinHash = hashPin(pin);
+    let pinValid = false;
 
     try {
-      if (!crypto.timingSafeEqual(Buffer.from(providedPinHash), Buffer.from(storedPinHash))) {
-        return res.status(401).json({ error: 'Invalid PIN' });
-      }
+      pinValid = crypto.timingSafeEqual(Buffer.from(providedPinHash), Buffer.from(storedPinHash));
     } catch (e) {
-      return res.status(401).json({ error: 'Invalid PIN format' });
+      // Buffer length mismatch - PIN is invalid
+      pinValid = false;
+    }
+
+    if (!pinValid) {
+      return res.status(401).json({ error: 'Invalid PIN' });
     }
 
     // PIN is valid, generate JWT token

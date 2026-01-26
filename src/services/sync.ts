@@ -500,7 +500,8 @@ class SyncService {
             // Replace full photo with marker
             processedEntries.push({ ...entry, photo: 'indexeddb' });
           } else {
-            // Failed to save - keep entry without photo
+            // Failed to save - keep entry without photo (performance priority, no retry)
+            console.warn('Sync: Photo storage failed for entry:', entry.id);
             processedEntries.push({ ...entry, photo: undefined });
           }
         } else {
