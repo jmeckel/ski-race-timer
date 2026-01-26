@@ -5,7 +5,7 @@ import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './co
 import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
-import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
+import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout, escapeHtml } from './utils';
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
@@ -1072,7 +1072,7 @@ function updateJudgesOverview(): void {
   const cardsHtml = allJudges.map(judge => `
     <div class="judge-card${judge.isReady ? ' ready' : ''}">
       <span class="judge-ready-indicator"></span>
-      <span class="judge-name" title="${judge.deviceName}">${judge.deviceName}</span>
+      <span class="judge-name" title="${escapeHtml(judge.deviceName)}">${escapeHtml(judge.deviceName)}</span>
       <span class="judge-gates">${judge.gateStart}–${judge.gateEnd}</span>
     </div>
   `).join('');
@@ -1165,7 +1165,7 @@ function updateFaultSummaryPanel(): void {
             <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
             ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${deletionInfo}">⚠</span>` : ''}
           </div>
-          <span class="fault-judge-name">${fault.deviceName}</span>
+          <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">
             <button class="fault-row-btn edit-fault-btn" data-fault-id="${fault.id}" title="${t('edit', lang)}" ${isMarkedForDeletion ? 'disabled' : ''}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1993,9 +1993,9 @@ function updateOtherJudgesCoverage(): void {
 
   coverageContainer.style.display = 'flex';
   coverageList.innerHTML = otherAssignments.map(a => `
-    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${a.deviceName}${a.isReady ? ' - Ready' : ''}">
+    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeHtml(a.deviceName)}${a.isReady ? ' - Ready' : ''}">
       ${a.isReady ? '<span class="ready-check">✓</span>' : ''}
-      <span class="device-name">${a.deviceName.slice(0, 15)}</span>
+      <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
     </div>
   `).join('');
@@ -2650,8 +2650,8 @@ function updateActiveBibsList(): void {
 
     card.innerHTML = `
       <div class="bib-card-info">
-        <span class="bib-card-number">${bib}</span>
-        <span class="bib-card-time">${timeStr}</span>
+        <span class="bib-card-number">${escapeHtml(bib)}</span>
+        <span class="bib-card-time">${escapeHtml(timeStr)}</span>
         ${hasFault ? `<span class="bib-fault-indicator">${faults.length} ${t('faultCount', state.currentLang)}</span>` : ''}
       </div>
       <div class="bib-card-actions">
@@ -2731,10 +2731,10 @@ function updateInlineFaultsList(): void {
 
     item.innerHTML = `
       <div class="gate-judge-fault-info">
-        <span class="gate-judge-fault-bib">${fault.bib}</span>
+        <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
         <div class="gate-judge-fault-details">
           <span class="gate-judge-fault-gate ${gateColor}">T${fault.gateNumber}</span>
-          <span class="gate-judge-fault-type">${fault.faultType}</span>
+          <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
         </div>
       </div>
       <button class="gate-judge-fault-delete" aria-label="Delete">
@@ -3013,9 +3013,9 @@ function openFaultDeleteConfirmation(fault: FaultEntry): void {
   const infoEl = modal.querySelector('.delete-fault-info');
   if (infoEl) {
     infoEl.innerHTML = `
-      <strong>#${fault.bib}</strong> -
+      <strong>#${escapeHtml(fault.bib)}</strong> -
       <span class="fault-gate ${gateColor}">T${fault.gateNumber}</span>
-      (${fault.faultType}) -
+      (${escapeHtml(fault.faultType)}) -
       ${t('run1', state.currentLang).replace('1', String(fault.run))}
     `;
   }

@@ -78,6 +78,9 @@ function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
 }
 
 // Redis key for client PIN
@@ -511,10 +514,22 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      // NOTE: Server-side chief judge role validation is not implemented.
-      // Currently relies on client-side enforcement + PIN protection.
-      // All authenticated users (with PIN) can delete faults.
-      // For enhanced security, implement role-based JWT claims.
+      // SECURITY TODO: Implement server-side role validation
+      // ====================================================
+      // Currently, fault deletion relies on:
+      // 1. PIN authentication (via JWT) - all authenticated users can delete
+      // 2. Client-side enforcement of "Chief Judge" role
+      // 3. Audit logging of all deletions with device info
+      //
+      // For enhanced security, implement:
+      // 1. Include role claim in JWT during token generation
+      // 2. Validate that role === 'chiefJudge' before allowing deletion
+      // 3. Example: if (authResult.payload?.role !== 'chiefJudge') return 403
+      //
+      // This requires changes to:
+      // - /api/auth/token.js: Accept role in request, include in JWT payload
+      // - Client: Request token with role claim when switching to chief judge mode
+      // ====================================================
       const { faultId, deviceId, deviceName, approvedBy } = req.body || {};
 
       if (!faultId) {
