@@ -29,10 +29,6 @@ const baseSettings = {
   gps: true,
   simple: false,
   photoCapture: false,
-  autoFinishTiming: false,
-  autoFinishLinePosition: 50,
-  autoFinishGateWidth: 20,
-  autoFinishSensitivity: 60,
   motionEffects: true,
   glassEffects: true,
   outdoorMode: false
@@ -92,23 +88,6 @@ describe('applyViewServices', () => {
     expect(gpsService.start).toHaveBeenCalled();
     expect(cameraService.initialize).toHaveBeenCalled();
     expect(gpsService.stop).not.toHaveBeenCalled();
-    expect(cameraService.stop).not.toHaveBeenCalled();
-  });
-
-  it('starts camera in timer view when auto finish timing is enabled', () => {
-    const state = createState({
-      currentView: 'timer',
-      settings: {
-        ...baseSettings,
-        gps: false,
-        photoCapture: false,
-        autoFinishTiming: true
-      }
-    });
-
-    applyViewServices(state);
-
-    expect(cameraService.initialize).toHaveBeenCalled();
     expect(cameraService.stop).not.toHaveBeenCalled();
   });
 

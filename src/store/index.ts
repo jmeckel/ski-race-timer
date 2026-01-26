@@ -37,10 +37,6 @@ const DEFAULT_SETTINGS: Settings = {
   gps: true,          // GPS enabled by default for accurate timestamps
   simple: false,  // Normal mode is default (simple mode toggle is hidden)
   photoCapture: false,
-  autoFinishTiming: false,
-  autoFinishLinePosition: 50,
-  autoFinishGateWidth: 20,
-  autoFinishSensitivity: 60,
   // Liquid Glass UI settings - enabled by default for modern look
   motionEffects: true,
   glassEffects: true,
@@ -69,7 +65,6 @@ type BooleanSettingKey =
   | 'gps'
   | 'simple'
   | 'photoCapture'
-  | 'autoFinishTiming'
   | 'motionEffects'
   | 'glassEffects'
   | 'outdoorMode';
@@ -453,6 +448,7 @@ class Store {
     this.pushUndo({
       type: 'UPDATE_ENTRY',
       data: oldEntry,
+      newData: newEntry,
       timestamp: Date.now()
     });
 
@@ -561,15 +557,14 @@ class Store {
         break;
       }
       case 'UPDATE_ENTRY': {
-        // For redo, we need to re-apply the update
-        // This is tricky because we only stored the old entry
-        // For now, we just restore the old entry (same as undo)
+        // For redo, re-apply the update using stored newData
         const oldEntry = action.data as Entry;
+        const newEntry = action.newData as Entry;
         const index = entries.findIndex(e => e.id === oldEntry.id);
-        if (index !== -1) {
-          entries[index] = oldEntry;
+        if (index !== -1 && newEntry) {
+          entries[index] = newEntry;
         }
-        result = oldEntry;
+        result = newEntry || oldEntry;
         break;
       }
     }

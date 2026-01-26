@@ -27,8 +27,6 @@ export function initGlobalErrorHandlers(): void {
 
   // Handle critical errors from our error system
   window.addEventListener('critical-error', handleCriticalError as EventListener);
-
-  console.log('[ErrorBoundary] Global error handlers initialized');
 }
 
 /**

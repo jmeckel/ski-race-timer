@@ -22,7 +22,6 @@ class WakeLockService {
    */
   async enable(): Promise<boolean> {
     if (!this.isSupported()) {
-      console.log('Wake Lock API not supported');
       return false;
     }
 
@@ -75,10 +74,8 @@ class WakeLockService {
       // Listen for release (e.g., when tab becomes hidden)
       this.wakeLock.addEventListener('release', () => {
         this.wakeLock = null;
-        console.log('Wake Lock released');
       });
 
-      console.log('Wake Lock acquired - screen will stay on');
       return true;
     } catch (err) {
       // Wake lock request can fail for various reasons:
@@ -104,7 +101,6 @@ class WakeLockService {
         console.warn('Wake Lock release error:', err);
       }
       this.wakeLock = null;
-      console.log('Wake Lock disabled');
     }
   }
 

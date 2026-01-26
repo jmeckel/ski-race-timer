@@ -182,7 +182,6 @@ class SyncService {
 
           // Adjust polling if battery level changed and we're actively polling
           if (previousLevel !== status.batteryLevel && this.pollInterval) {
-            console.log(`Battery level changed: ${previousLevel} -> ${status.batteryLevel}`);
             this.applyBatteryAwarePolling();
           }
         });
@@ -193,7 +192,6 @@ class SyncService {
     this.initNetworkMonitoring();
 
     store.setSyncStatus('connecting');
-    console.log('Sync service initialized for race:', state.raceId);
   }
 
   /**
@@ -264,7 +262,6 @@ class SyncService {
     // Check if Network Information API is available
     const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
     if (!connection) {
-      console.log('Network Information API not available');
       return;
     }
 
@@ -279,7 +276,6 @@ class SyncService {
 
         // Adjust polling if metered state changed and we're actively polling
         if (wasMetered !== this.isMeteredConnection && this.pollInterval) {
-          console.log(`Network metered state changed: ${wasMetered} -> ${this.isMeteredConnection}`);
           this.applyBatteryAwarePolling();
         }
       };
@@ -300,8 +296,6 @@ class SyncService {
       connection.type === 'cellular' ||
       connection.effectiveType === 'slow-2g' ||
       connection.effectiveType === '2g';
-
-    console.log(`Network state: metered=${this.isMeteredConnection}, type=${connection.type}, effective=${connection.effectiveType}`);
   }
 
   /**
@@ -376,7 +370,6 @@ class SyncService {
   private applyBatteryAwarePolling(): void {
     // Prevent concurrent interval adjustments
     if (this.isAdjustingInterval) {
-      console.log('Skipping battery polling adjustment - another adjustment in progress');
       return;
     }
     this.isAdjustingInterval = true;
@@ -400,7 +393,6 @@ class SyncService {
       if (this.pollInterval) {
         clearInterval(this.pollInterval);
         this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
-        console.log(`Sync polling: battery-adjusted (${newInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
       }
     } finally {
       this.isAdjustingInterval = false;
@@ -416,7 +408,6 @@ class SyncService {
   private adjustPollingInterval(success: boolean, hasChanges: boolean = false): void {
     // Prevent concurrent interval adjustments
     if (this.isAdjustingInterval) {
-      console.log('Skipping adaptive polling adjustment - another adjustment in progress');
       return;
     }
     this.isAdjustingInterval = true;
@@ -428,7 +419,6 @@ class SyncService {
         if (this.consecutiveErrors > 2 && this.pollInterval) {
           clearInterval(this.pollInterval);
           this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_ERROR);
-          console.log('Sync polling: error mode (30s)');
         }
         return;
       }
@@ -449,7 +439,6 @@ class SyncService {
           clearInterval(this.pollInterval);
           this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
         }
-        console.log(`Sync polling: active mode (${baseInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
       } else {
         // No changes - consider throttling
         this.consecutiveNoChanges++;
@@ -470,7 +459,6 @@ class SyncService {
               clearInterval(this.pollInterval);
               this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
             }
-            console.log(`Sync polling: idle mode (${newInterval / 1000}s, battery: ${this.currentBatteryLevel})`);
           }
         }
       }
@@ -591,7 +579,6 @@ class SyncService {
 
       // Check if race was deleted by admin
       if (data.deleted) {
-        console.log('Race was deleted by admin, dispatching race-deleted event');
         window.dispatchEvent(new CustomEvent('race-deleted', {
           detail: {
             raceId: state.raceId,
@@ -810,8 +797,6 @@ class SyncService {
     const state = store.getState();
     if (!state.settings.sync || !state.raceId) return;
 
-    console.log('Pushing', state.entries.length, 'local entries to cloud');
-
     for (const entry of state.entries) {
       // Only push entries from this device
       if (entry.deviceId === state.deviceId && !entry.syncedAt) {
@@ -937,7 +922,6 @@ class SyncService {
     this.isMeteredConnection = false;
 
     store.setSyncStatus('disconnected');
-    console.log('Sync service cleaned up');
   }
 
   /**
@@ -1081,10 +1065,6 @@ export async function syncEntry(entry: Entry): Promise<void> {
 
   // Send to cloud if enabled
   if (state.settings.sync && state.raceId) {
-    const success = await syncService.sendEntryToCloud(entry);
-    if (!success) {
-      // Entry will be added to queue by store
-      console.log('Entry queued for retry:', entry.id);
-    }
+    await syncService.sendEntryToCloud(entry);
   }
 }

@@ -53,7 +53,6 @@ class PhotoStorageService {
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('Photo storage initialized');
         resolve(true);
       };
 
@@ -64,7 +63,6 @@ class PhotoStorageService {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'entryId' });
           store.createIndex('timestamp', 'timestamp', { unique: false });
-          console.log('Photo store created');
         }
       };
     });
@@ -131,7 +129,6 @@ class PhotoStorageService {
         const request = store.put(record);
 
         request.onsuccess = () => {
-          console.log(`Photo saved for entry ${entryId}`);
           resolve(true);
         };
 
@@ -203,7 +200,6 @@ class PhotoStorageService {
         const request = store.delete(entryId);
 
         request.onsuccess = () => {
-          console.log(`Photo deleted for entry ${entryId}`);
           resolve(true);
         };
 
@@ -247,7 +243,6 @@ class PhotoStorageService {
         const request = store.clear();
 
         request.onsuccess = () => {
-          console.log('All photos cleared');
           resolve(true);
         };
 
@@ -331,7 +326,6 @@ class PhotoStorageService {
       this.db.close();
       this.db = null;
       this.initPromise = null;
-      console.log('Photo storage connection closed');
     }
   }
 }

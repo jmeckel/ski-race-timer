@@ -47,7 +47,6 @@ class BatteryService {
     }
 
     if (!this.isSupported()) {
-      console.log('Battery Status API not supported');
       return false;
     }
 
@@ -64,7 +63,6 @@ class BatteryService {
       this.battery.addEventListener('levelchange', this.levelChangeHandler);
       this.battery.addEventListener('chargingchange', this.chargingChangeHandler);
 
-      console.log('Battery service initialized:', this.currentStatus);
       return true;
     } catch (error) {
       console.warn('Failed to initialize battery service:', error);
@@ -106,7 +104,6 @@ class BatteryService {
     this.currentStatus = newStatus;
 
     if (statusChanged) {
-      console.log('Battery status changed:', newStatus);
       this.notifySubscribers();
     }
   }

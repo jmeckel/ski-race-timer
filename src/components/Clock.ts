@@ -169,9 +169,6 @@ export class Clock {
       default:
         this.frameSkipCount = FRAME_SKIP_NORMAL;
     }
-    if (previousSkip !== this.frameSkipCount) {
-      console.log(`Clock frame rate adjusted: battery=${level}, skip=${this.frameSkipCount}`);
-    }
   }
 
   /**

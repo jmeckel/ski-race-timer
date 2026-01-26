@@ -76,16 +76,9 @@ export function isValidSettings(settings: unknown): settings is Settings {
   const s = settings as Record<string, unknown>;
 
   // All settings should be booleans
-  const booleanKeys = ['auto', 'haptic', 'sound', 'sync', 'syncPhotos', 'gps', 'simple', 'photoCapture', 'autoFinishTiming'];
+  const booleanKeys = ['auto', 'haptic', 'sound', 'sync', 'syncPhotos', 'gps', 'simple', 'photoCapture'];
   for (const key of booleanKeys) {
     if (key in s && typeof s[key] !== 'boolean') return false;
-  }
-
-  const numberKeys = ['autoFinishLinePosition', 'autoFinishGateWidth', 'autoFinishSensitivity'];
-  for (const key of numberKeys) {
-    if (key in s && (typeof s[key] !== 'number' || !Number.isFinite(s[key] as number))) {
-      return false;
-    }
   }
 
   return true;
@@ -191,10 +184,6 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
     gps: true,          // GPS enabled by default for accurate timestamps
     simple: false,      // Normal mode is default
     photoCapture: false,
-    autoFinishTiming: false,
-    autoFinishLinePosition: 50,
-    autoFinishGateWidth: 20,
-    autoFinishSensitivity: 60,
     // Liquid Glass UI settings
     motionEffects: true,
     glassEffects: true,
@@ -237,10 +226,6 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
       gps: typeof s.gps === 'boolean' ? s.gps : defaultSettings.gps,
       simple: typeof s.simple === 'boolean' ? s.simple : defaultSettings.simple,
       photoCapture: typeof s.photoCapture === 'boolean' ? s.photoCapture : defaultSettings.photoCapture,
-      autoFinishTiming: typeof s.autoFinishTiming === 'boolean' ? s.autoFinishTiming : defaultSettings.autoFinishTiming,
-      autoFinishLinePosition: typeof s.autoFinishLinePosition === 'number' ? s.autoFinishLinePosition : defaultSettings.autoFinishLinePosition,
-      autoFinishGateWidth: typeof s.autoFinishGateWidth === 'number' ? s.autoFinishGateWidth : defaultSettings.autoFinishGateWidth,
-      autoFinishSensitivity: typeof s.autoFinishSensitivity === 'number' ? s.autoFinishSensitivity : defaultSettings.autoFinishSensitivity,
       // Liquid Glass UI settings
       motionEffects: typeof s.motionEffects === 'boolean' ? s.motionEffects : defaultSettings.motionEffects,
       glassEffects: typeof s.glassEffects === 'boolean' ? s.glassEffects : defaultSettings.glassEffects,

@@ -2,7 +2,7 @@ import { store } from './store';
 import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, autoFinishTimingService, type AutoFinishStatus } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, exchangePinForToken, clearAuthToken } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout } from './utils';
@@ -64,13 +64,6 @@ let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
 let onboardingController: OnboardingController | null = null;
-let autoFinishPanel: HTMLElement | null = null;
-let autoFinishVideo: HTMLVideoElement | null = null;
-let autoFinishStatus: HTMLElement | null = null;
-let autoFinishLineSlider: HTMLInputElement | null = null;
-let autoFinishGateSlider: HTMLInputElement | null = null;
-let autoFinishSensitivitySlider: HTMLInputElement | null = null;
-let autoFinishCurrentStatus: AutoFinishStatus = 'idle';
 
 // MEMORY LEAK FIX: Track debounced timeouts for cleanup on page unload
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -101,7 +94,6 @@ export function initApp(): void {
   initTimingPoints();
   initRunSelector();
   initTimestampButton();
-  initAutoFinishTiming();
   initResultsView();
   initSettingsView();
   initModals();
@@ -181,7 +173,6 @@ export function initApp(): void {
     });
   }
 
-  console.log('Ski Race Timer initialized');
 }
 
 /**
@@ -326,93 +317,6 @@ function initTimestampButton(): void {
 }
 
 /**
- * Initialize auto finish timing UI
- */
-function initAutoFinishTiming(): void {
-  autoFinishPanel = document.getElementById('auto-finish-panel');
-  autoFinishVideo = document.getElementById('auto-finish-video') as HTMLVideoElement | null;
-  autoFinishStatus = document.getElementById('auto-finish-status');
-  autoFinishLineSlider = document.getElementById('auto-finish-line-slider') as HTMLInputElement | null;
-  autoFinishGateSlider = document.getElementById('auto-finish-gate-slider') as HTMLInputElement | null;
-  autoFinishSensitivitySlider = document.getElementById('auto-finish-sensitivity-slider') as HTMLInputElement | null;
-
-  if (autoFinishVideo) {
-    autoFinishTimingService.attachVideoElement(autoFinishVideo);
-  }
-
-  const handleRangeChange = () => {
-    const state = store.getState();
-    store.updateSettings({
-      autoFinishLinePosition: autoFinishLineSlider ? Number(autoFinishLineSlider.value) : state.settings.autoFinishLinePosition,
-      autoFinishGateWidth: autoFinishGateSlider ? Number(autoFinishGateSlider.value) : state.settings.autoFinishGateWidth,
-      autoFinishSensitivity: autoFinishSensitivitySlider ? Number(autoFinishSensitivitySlider.value) : state.settings.autoFinishSensitivity
-    });
-  };
-
-  autoFinishLineSlider?.addEventListener('input', handleRangeChange);
-  autoFinishGateSlider?.addEventListener('input', handleRangeChange);
-  autoFinishSensitivitySlider?.addEventListener('input', handleRangeChange);
-
-  syncAutoFinishUi(store.getState());
-  updateAutoFinishTiming(store.getState());
-}
-
-function getAutoFinishConfig(state: ReturnType<typeof store.getState>) {
-  return {
-    linePosition: state.settings.autoFinishLinePosition / 100,
-    gateWidth: state.settings.autoFinishGateWidth / 100,
-    sensitivity: state.settings.autoFinishSensitivity / 100
-  };
-}
-
-function syncAutoFinishUi(state: ReturnType<typeof store.getState>): void {
-  if (!autoFinishPanel) return;
-
-  if (autoFinishLineSlider) autoFinishLineSlider.value = String(state.settings.autoFinishLinePosition);
-  if (autoFinishGateSlider) autoFinishGateSlider.value = String(state.settings.autoFinishGateWidth);
-  if (autoFinishSensitivitySlider) autoFinishSensitivitySlider.value = String(state.settings.autoFinishSensitivity);
-
-  autoFinishPanel.style.setProperty('--auto-finish-line', `${state.settings.autoFinishLinePosition}%`);
-  autoFinishPanel.style.setProperty('--auto-finish-gate', `${state.settings.autoFinishGateWidth}%`);
-}
-
-function updateAutoFinishStatus(status: AutoFinishStatus): void {
-  if (!autoFinishStatus) return;
-  autoFinishCurrentStatus = status;
-  const lang = store.getState().currentLang;
-  const statusText = {
-    idle: t('autoFinishStatusIdle', lang),
-    armed: t('autoFinishStatusArmed', lang),
-    paused: t('autoFinishStatusPaused', lang),
-    triggered: t('autoFinishStatusTriggered', lang)
-  }[status];
-  autoFinishStatus.textContent = statusText;
-}
-
-function updateAutoFinishTiming(state: ReturnType<typeof store.getState>): void {
-  if (!autoFinishPanel) return;
-  const enabled = state.settings.autoFinishTiming;
-  const showPanel = enabled && state.currentView === 'settings';
-
-  autoFinishPanel.style.display = showPanel ? 'flex' : 'none';
-  syncAutoFinishUi(state);
-
-  if (!enabled || state.currentView !== 'timer') {
-    autoFinishTimingService.stop();
-    updateAutoFinishStatus('idle');
-    return;
-  }
-
-  autoFinishTimingService.start(
-    getAutoFinishConfig(state),
-    (timestamp) => {
-      recordAutoFinishTimestamp(timestamp);
-    },
-    (status) => updateAutoFinishStatus(status)
-  );
-}
-
-/**
  * Record a timestamp entry
  */
 async function recordTimestamp(): Promise<void> {
@@ -476,7 +380,13 @@ async function recordTimestamp(): Promise<void> {
           }
         })
         .catch(err => {
-          logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
+          // Show specific toast for photo too large error
+          if (err instanceof Error && err.name === 'PhotoTooLargeError') {
+            const lang = store.getState().currentLang;
+            showToast(t('photoTooLarge', lang), 'warning');
+          } else {
+            logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
+          }
         });
     }
 
@@ -527,38 +437,6 @@ async function recordTimestamp(): Promise<void> {
     // Update last recorded display
     updateLastRecorded(entry);
 
-  } finally {
-    store.setRecording(false);
-  }
-}
-
-/**
- * Record a timestamp entry from auto finish timing
- */
-async function recordAutoFinishTimestamp(timestamp: string): Promise<void> {
-  const state = store.getState();
-  if (state.isRecording) return;
-
-  const gpsCoords = gpsService.getCoordinates();
-  store.setRecording(true);
-
-  try {
-    const entry: Entry = {
-      id: generateEntryId(state.deviceId),
-      bib: '',
-      point: 'F',
-      run: state.selectedRun,
-      timestamp,
-      status: 'ok',
-      deviceId: state.deviceId,
-      deviceName: state.deviceName,
-      gpsCoords
-    };
-
-    store.addEntry(entry);
-    feedbackSuccess();
-    showConfirmation(entry);
-    syncService.broadcastEntry(entry);
   } finally {
     store.setRecording(false);
   }
@@ -691,12 +569,9 @@ function updateLastRecorded(entry: Entry): void {
  * Show race change dialog
  */
 function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
-  console.log('showRaceChangeDialog called:', { type, lang });
   return new Promise((resolve) => {
     const modal = document.getElementById('race-change-modal');
-    console.log('Modal element:', modal);
     if (!modal) {
-      console.log('Modal not found!');
       resolve('cancel');
       return;
     }
@@ -738,9 +613,7 @@ function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Prom
     keepBtn?.addEventListener('click', handleKeep);
     cancelBtn?.addEventListener('click', handleCancel);
 
-    console.log('Adding show class to modal');
     modal.classList.add('show');
-    console.log('Modal classes after add:', modal.classList.toString());
   });
 }
 
@@ -1008,14 +881,6 @@ function initSettingsView(): void {
     });
   }
 
-  // Auto finish timing toggle
-  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
-  if (autoFinishToggle) {
-    autoFinishToggle.addEventListener('change', () => {
-      store.updateSettings({ autoFinishTiming: autoFinishToggle.checked });
-    });
-  }
-
   // Haptic toggle
   const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
   if (hapticToggle) {
@@ -1082,8 +947,6 @@ function initSettingsView(): void {
       const hasEntries = state.entries.length > 0;
       const wasPreviouslySynced = state.lastSyncedRaceId !== '';
       const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
-
-      console.log('Race ID change:', { newRaceId, currentRaceId: state.raceId, hasEntries, wasPreviouslySynced, isChangingRace, entriesCount: state.entries.length });
 
       if (hasEntries && isChangingRace) {
         if (wasPreviouslySynced) {
@@ -1391,10 +1254,15 @@ async function handleConfirmDelete(): Promise<void> {
     feedbackUndo();
     showToast(t('undone', state.currentLang), 'success');
 
-    // Sync undo to cloud if it was an ADD_ENTRY (entry was removed)
-    if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
+    // Cleanup if it was an ADD_ENTRY (entry was removed)
+    if (result && result.type === 'ADD_ENTRY') {
       const entry = result.data as Entry;
-      syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      // Delete orphaned photo from IndexedDB
+      await photoStorage.deletePhoto(entry.id);
+      // Sync undo to cloud
+      if (state.settings.sync && state.raceId) {
+        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      }
     }
     closeAllModals();
     return; // Early return - don't call feedbackDelete
@@ -1576,7 +1444,6 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
 
   if (changedKeys.includes('currentView') || changedKeys.includes('settings')) {
     applyViewServices(state);
-    updateAutoFinishTiming(state);
   }
 
   // Update bib display
@@ -1838,7 +1705,6 @@ function updateSettingsInputs(): void {
   const gpsToggle = document.getElementById('gps-toggle') as HTMLInputElement;
   const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
   const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
-  const autoFinishToggle = document.getElementById('auto-finish-toggle') as HTMLInputElement;
   const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
   const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement;
   const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
@@ -1854,7 +1720,6 @@ function updateSettingsInputs(): void {
   if (gpsToggle) gpsToggle.checked = settings.gps;
   if (syncToggle) syncToggle.checked = settings.sync;
   if (autoToggle) autoToggle.checked = settings.auto;
-  if (autoFinishToggle) autoFinishToggle.checked = settings.autoFinishTiming;
   if (hapticToggle) hapticToggle.checked = settings.haptic;
   if (soundToggle) soundToggle.checked = settings.sound;
   if (photoToggle) photoToggle.checked = settings.photoCapture;
@@ -1911,7 +1776,6 @@ function updateTranslations(): void {
 
   // Update dynamically set text that depends on language
   updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
-  updateAutoFinishStatus(autoFinishCurrentStatus);
 }
 
 /**
@@ -2164,7 +2028,6 @@ let pendingRaceDelete: string | null = null;
 async function initializeAdminPin(): Promise<void> {
   // If we already have a valid token, we're done
   if (hasAuthToken()) {
-    console.log('Auth token already exists');
     return;
   }
 
@@ -2173,17 +2036,7 @@ async function initializeAdminPin(): Promise<void> {
   // 1. Set the default PIN in Redis and return a token (if no PIN exists)
   // 2. Authenticate with existing default PIN (if it matches)
   // 3. Fail (if a different PIN is set in Redis)
-  const result = await authenticateWithPin(DEFAULT_ADMIN_PIN);
-  if (result.success) {
-    if (result.isNewPin) {
-      console.log('Default admin PIN initialized');
-    } else {
-      console.log('Authenticated with default PIN');
-    }
-  } else {
-    // A different PIN is set - user needs to authenticate manually
-    console.log('Custom PIN is set, manual authentication required');
-  }
+  await authenticateWithPin(DEFAULT_ADMIN_PIN);
 }
 
 /**
@@ -2688,9 +2541,6 @@ function handleBeforeUnload(): void {
 
   // Cleanup sync service
   syncService.cleanup();
-
-  // Cleanup auto finish timing service
-  autoFinishTimingService.stop();
 
   // Cleanup camera service
   cameraService.stop();

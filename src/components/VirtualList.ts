@@ -420,8 +420,6 @@ export class VirtualList {
     if (this.scrollHandler) {
       this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
     }
-
-    console.log('VirtualList paused');
   }
 
   /**
@@ -464,8 +462,6 @@ export class VirtualList {
     // Update container height and re-render
     this.containerHeight = this.scrollContainer.clientHeight;
     this.render();
-
-    console.log('VirtualList resumed');
   }
 
   /**

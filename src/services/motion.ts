@@ -74,7 +74,6 @@ class MotionService {
    */
   async requestPermission(): Promise<boolean> {
     if (!this.isSupported()) {
-      console.log('Motion: DeviceOrientation not supported');
       return false;
     }
 
@@ -91,7 +90,6 @@ class MotionService {
 
       const result = await requestPermission();
       this.hasPermission = result === 'granted';
-      console.log(`Motion: Permission ${result}`);
       return this.hasPermission;
     } catch (error) {
       console.warn('Motion: Permission request failed:', error);
@@ -108,13 +106,11 @@ class MotionService {
     }
 
     if (!this.isSupported()) {
-      console.log('Motion: Not supported on this device');
       return false;
     }
 
     // Request permission if needed (must be done in user gesture)
     if (this.requiresPermission() && !this.hasPermission) {
-      console.log('Motion: Permission required - call requestPermission() from user gesture');
       return false;
     }
 
@@ -142,7 +138,6 @@ class MotionService {
     this.state.active = true;
     this.updateCSSProperties();
 
-    console.log('Motion: Initialized');
     return true;
   }
 
@@ -363,8 +358,6 @@ class MotionService {
 
     this.isInitialized = false;
     this.hasPermission = false;
-
-    console.log('Motion: Cleaned up');
   }
 }
 

@@ -99,7 +99,6 @@ class CameraService {
         document.addEventListener('visibilitychange', this.visibilityHandler);
       }
 
-      console.log('Camera initialized successfully');
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Camera initialization failed';
@@ -119,7 +118,6 @@ class CameraService {
       if (this.cameraState === 'initializing' || this.cameraState === 'resuming') {
         // Mark pending change - will be handled when init/resume completes
         this.pendingVisibilityChange = 'hidden';
-        console.log('Camera: visibility changed to hidden during init/resume, will pause after');
       } else if (this.cameraState === 'ready') {
         this.pauseCamera();
       }
@@ -147,7 +145,6 @@ class CameraService {
     }
     this.cameraState = 'paused';
     store.setCameraReady(false);
-    console.log('Camera paused (page hidden)');
   }
 
   /**
@@ -157,7 +154,6 @@ class CameraService {
   private async reinitializeCamera(): Promise<void> {
     // Prevent concurrent reinitialize calls
     if (this.cameraState === 'resuming') {
-      console.log('Camera reinitialization already in progress, skipping');
       return;
     }
     this.cameraState = 'resuming';
@@ -201,13 +197,11 @@ class CameraService {
       if (this.pendingVisibilityChange === 'hidden') {
         this.pendingVisibilityChange = null;
         this.pauseCamera();
-        console.log('Camera paused immediately after reinit (page hidden during reinit)');
         return;
       }
 
       this.cameraState = 'ready';
       store.setCameraReady(true);
-      console.log('Camera reinitialized (page visible)');
     } catch (error) {
       console.error('Failed to reinitialize camera:', error);
       this.cameraState = 'stopped';
@@ -270,12 +264,11 @@ class CameraService {
       const base64 = dataUrl.split(',')[1];
       const sizeKB = Math.round(base64.length / 1024);
 
-      console.log(`Photo captured: ${sizeKB}KB`);
-
       // Check size limit
       if (sizeKB > PHOTO_MAX_SIZE_KB) {
-        console.warn(`Photo too large (${sizeKB}KB > ${PHOTO_MAX_SIZE_KB}KB limit), discarding`);
-        return null;
+        const error = new Error(`Photo too large (${sizeKB}KB > ${PHOTO_MAX_SIZE_KB}KB limit)`);
+        error.name = 'PhotoTooLargeError';
+        throw error;
       }
 
       return base64;
@@ -315,7 +308,6 @@ class CameraService {
     this.pendingVisibilityChange = null;
     this.cameraState = 'stopped';
     store.setCameraReady(false);
-    console.log('Camera stopped');
   }
 
   /**

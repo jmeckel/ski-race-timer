@@ -67,7 +67,6 @@ class GpsService {
         document.addEventListener('visibilitychange', this.visibilityHandler);
       }
 
-      console.log('GPS watching started');
       return true;
     } catch (error) {
       console.error('Failed to start GPS:', error);
@@ -87,7 +86,6 @@ class GpsService {
 
     this.wasActiveBeforeHidden = false;
     store.setGpsStatus('inactive');
-    console.log('GPS watching paused');
   }
 
   /**
@@ -108,7 +106,6 @@ class GpsService {
 
     this.lastPosition = null;
     store.setGpsStatus('inactive');
-    console.log('GPS watching stopped');
   }
 
   /**
@@ -119,8 +116,6 @@ class GpsService {
 
     const accuracy = position.coords.accuracy;
     store.setGpsStatus('active', accuracy);
-
-    console.log(`GPS position: ${accuracy.toFixed(1)}m accuracy`);
   }
 
   /**

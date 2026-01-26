@@ -42,10 +42,6 @@ export interface Settings {
   gps: boolean;         // GPS enabled
   simple: boolean;      // Simple mode
   photoCapture: boolean; // Photo capture on timestamp
-  autoFinishTiming: boolean; // Auto finish line timing
-  autoFinishLinePosition: number; // 0-100
-  autoFinishGateWidth: number; // 0-100
-  autoFinishSensitivity: number; // 0-100
   // Liquid Glass UI settings
   motionEffects: boolean;  // Enable accelerometer-reactive effects
   glassEffects: boolean;   // Enable glass/blur effects
@@ -79,6 +75,7 @@ export type ActionType =
 export interface Action {
   type: ActionType;
   data: Entry | Entry[];
+  newData?: Entry;  // For UPDATE_ENTRY redo support
   timestamp: number;
 }
 

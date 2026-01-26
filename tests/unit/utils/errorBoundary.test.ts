@@ -59,11 +59,6 @@ describe('Error Boundary Utility', () => {
       expect(addEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
       addEventListenerSpy.mockRestore();
     });
-
-    it('should log initialization message', () => {
-      initGlobalErrorHandlers();
-      expect(consoleLogSpy).toHaveBeenCalledWith('[ErrorBoundary] Global error handlers initialized');
-    });
   });
 
   describe('cleanupGlobalErrorHandlers', () => {

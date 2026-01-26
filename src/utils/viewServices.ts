@@ -15,8 +15,7 @@ export function applyViewServices(state: Readonly<AppState>): void {
     gpsService.stop();
   }
 
-  const needsCamera = state.settings.photoCapture || state.settings.autoFinishTiming;
-  if (isTimerView && needsCamera) {
+  if (isTimerView && state.settings.photoCapture) {
     cameraService.initialize();
   } else {
     cameraService.stop();
