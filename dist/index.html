@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-vN1msgdX.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-Bwj5CFmm.css">
+  <script type="module" crossorigin src="/assets/main-OQJeGaGU.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-DHr05Q3I.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -850,10 +850,10 @@
     </div>
   </div>
 
-  <!-- Onboarding Modal -->
-  <div class="modal-overlay" id="onboarding-modal">
+  <!-- Onboarding Modal (Full-screen setup wizard) -->
+  <div class="modal-overlay onboarding-fullscreen" id="onboarding-modal">
     <div class="onboarding-container">
-      <div class="onboarding-progress">
+      <div class="onboarding-progress" id="onboarding-progress">
         <span class="progress-dot active"></span>
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
@@ -862,7 +862,7 @@
       </div>
 
       <div class="onboarding-cards">
-        <!-- Card 1: Welcome -->
+        <!-- Card 1: Welcome + Language -->
         <div class="onboarding-card" data-step="1">
           <div class="onboarding-icon">⏱️</div>
           <h2 data-i18n="onboardingWelcome">Welcome to Ski Race Timer</h2>
@@ -874,10 +874,35 @@
           <button class="onboarding-btn primary" data-action="next" data-i18n="getStarted">Get Started</button>
         </div>
 
-        <!-- Card 2: Device Name -->
+        <!-- Card 2: Role Selection (NEW) -->
         <div class="onboarding-card" data-step="2" style="display:none">
-          <h2 data-i18n="onboardingDeviceName">Name Your Timer</h2>
-          <p data-i18n="onboardingDeviceNameDesc">This identifies your device when syncing</p>
+          <h2 data-i18n="onboardingRole">What's Your Role?</h2>
+          <p data-i18n="onboardingRoleDesc">Choose how you'll be helping at the race</p>
+          <div class="onboarding-role-select">
+            <button class="role-card selected" data-role="timer" id="onboarding-role-timer">
+              <div class="role-card-icon">⏱️</div>
+              <div class="role-card-content">
+                <span class="role-card-title" data-i18n="roleTimerTitle">Timer</span>
+                <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
+              </div>
+              <div class="role-card-check">✓</div>
+            </button>
+            <button class="role-card" data-role="gateJudge" id="onboarding-role-judge">
+              <div class="role-card-icon">🚩</div>
+              <div class="role-card-content">
+                <span class="role-card-title" data-i18n="roleJudgeTitle">Gate Judge</span>
+                <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
+              </div>
+              <div class="role-card-check">✓</div>
+            </button>
+          </div>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 3: Device Name -->
+        <div class="onboarding-card" data-step="3" style="display:none">
+          <h2 data-i18n="onboardingDeviceName" id="onboarding-device-name-title">Name Your Timer</h2>
+          <p data-i18n="onboardingDeviceNameDesc" id="onboarding-device-name-desc">This identifies your device when syncing</p>
           <div class="onboarding-input-row">
             <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
             <button class="onboarding-regenerate-btn" id="onboarding-regenerate-name" type="button" aria-label="Generate new name">
@@ -890,8 +915,8 @@
           <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
         </div>
 
-        <!-- Card 3: Photo Capture -->
-        <div class="onboarding-card" data-step="3" style="display:none">
+        <!-- Card 4a: Photo Capture (Timer path only) -->
+        <div class="onboarding-card" data-step="4" data-path="timer" style="display:none">
           <div class="onboarding-icon">📷</div>
           <h2 data-i18n="onboardingPhoto">Photo Documentation</h2>
           <p data-i18n="onboardingPhotoDesc">Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.</p>
@@ -905,8 +930,27 @@
           <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
         </div>
 
-        <!-- Card 4: Race Setup -->
-        <div class="onboarding-card" data-step="4" style="display:none">
+        <!-- Card 4b: Gate Assignment (Gate Judge path only) -->
+        <div class="onboarding-card" data-step="4" data-path="gateJudge" style="display:none">
+          <div class="onboarding-icon">🚩</div>
+          <h2 data-i18n="onboardingGates">Your Gate Assignment</h2>
+          <p data-i18n="onboardingGatesDesc">Enter the gate numbers you'll be watching. You can change this later.</p>
+          <div class="onboarding-gate-inputs">
+            <div class="gate-input-group">
+              <label data-i18n="gatesFrom">From</label>
+              <input type="number" class="text-input gate-input" id="onboarding-gate-start" min="1" max="99" value="1">
+            </div>
+            <span class="gate-range-separator">–</span>
+            <div class="gate-input-group">
+              <label data-i18n="gatesTo">To</label>
+              <input type="number" class="text-input gate-input" id="onboarding-gate-end" min="1" max="99" value="10">
+            </div>
+          </div>
+          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+        </div>
+
+        <!-- Card 5: Race Setup -->
+        <div class="onboarding-card" data-step="5" style="display:none">
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
@@ -932,13 +976,13 @@
           <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
         </div>
 
-        <!-- Card 5: Ready -->
-        <div class="onboarding-card" data-step="5" style="display:none">
+        <!-- Card 6: Ready -->
+        <div class="onboarding-card" data-step="6" style="display:none">
           <div class="onboarding-icon success">✓</div>
-          <h2 data-i18n="onboardingReady">Ready to Time!</h2>
+          <h2 data-i18n="onboardingReady" id="onboarding-ready-title">Ready to Time!</h2>
           <div class="onboarding-summary" id="onboarding-summary"></div>
-          <p class="onboarding-tip" data-i18n="onboardingTip">Tap the big red button to record timestamps</p>
-          <button class="onboarding-btn primary" data-action="finish" data-i18n="startTiming">Start Timing</button>
+          <p class="onboarding-tip" data-i18n="onboardingTip" id="onboarding-ready-tip">Tap the big red button to record timestamps</p>
+          <button class="onboarding-btn primary" data-action="finish" data-i18n="startTiming" id="onboarding-finish-btn">Start Timing</button>
         </div>
       </div>
     </div>

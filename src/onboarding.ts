@@ -9,7 +9,7 @@ import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/re
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { fetchWithTimeout } from './utils/errors';
 import { openModal, closeModal } from './features/modals';
-import type { Language, RaceInfo } from './types';
+import type { Language, RaceInfo, DeviceRole } from './types';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
 
@@ -33,7 +33,8 @@ function debounce<T extends (...args: unknown[]) => unknown>(
 export class OnboardingController {
   private modal: HTMLElement | null;
   private currentStep = 1;
-  private totalSteps = 5;
+  private totalSteps = 6;
+  private selectedRole: DeviceRole = 'timer';
   private updateTranslationsCallback: (() => void) | null = null;
   private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
 
@@ -65,6 +66,7 @@ export class OnboardingController {
     if (!this.modal) return;
 
     this.currentStep = 1;
+    this.selectedRole = 'timer';
 
     // Reset all cards - hide all except first
     this.modal.querySelectorAll('.onboarding-card').forEach((card, i) => {
@@ -92,6 +94,17 @@ export class OnboardingController {
 
     const photoToggle = document.getElementById('onboarding-photo-toggle') as HTMLInputElement;
     if (photoToggle) photoToggle.checked = false;
+
+    // Reset role selection
+    this.modal.querySelectorAll('.role-card').forEach(card => {
+      card.classList.toggle('selected', card.getAttribute('data-role') === 'timer');
+    });
+
+    // Reset gate inputs
+    const gateStart = document.getElementById('onboarding-gate-start') as HTMLInputElement;
+    const gateEnd = document.getElementById('onboarding-gate-end') as HTMLInputElement;
+    if (gateStart) gateStart.value = '1';
+    if (gateEnd) gateEnd.value = '10';
 
     this.updateUI();
     openModal(this.modal);
@@ -167,6 +180,19 @@ export class OnboardingController {
         }
       });
     }
+
+    // Role selection
+    this.modal.querySelectorAll('.role-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const role = card.getAttribute('data-role') as DeviceRole;
+        if (role) {
+          this.selectedRole = role;
+          this.modal!.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          feedbackTap();
+        }
+      });
+    });
 
     // Race ID input - check existence with debounce
     const raceIdInput = document.getElementById('onboarding-race-id') as HTMLInputElement;
@@ -351,7 +377,10 @@ export class OnboardingController {
     const lang = store.getState().currentLang;
 
     switch (this.currentStep) {
-      case 2: { // Device name
+      case 2: { // Role selection - always valid (defaults to timer)
+        return true;
+      }
+      case 3: { // Device name
         const deviceName = (document.getElementById('onboarding-device-name') as HTMLInputElement)?.value.trim();
         if (!deviceName) {
           showToast(t('deviceName', lang), 'warning');
@@ -359,10 +388,10 @@ export class OnboardingController {
         }
         return true;
       }
-      case 3: { // Photo capture - no validation needed
+      case 4: { // Photo capture (timer) or Gate assignment (judge) - no validation needed
         return true;
       }
-      case 4: { // Race setup
+      case 5: { // Race setup
         const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
         const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
 
@@ -390,19 +419,31 @@ export class OnboardingController {
    */
   private async saveCurrentStep(): Promise<void> {
     switch (this.currentStep) {
-      case 2: { // Save device name
+      case 2: { // Save device role
+        store.setDeviceRole(this.selectedRole);
+        break;
+      }
+      case 3: { // Save device name
         const deviceName = (document.getElementById('onboarding-device-name') as HTMLInputElement)?.value.trim();
         if (deviceName) {
           store.setDeviceName(deviceName);
         }
         break;
       }
-      case 3: { // Save photo capture setting
-        const photoEnabled = (document.getElementById('onboarding-photo-toggle') as HTMLInputElement)?.checked;
-        store.updateSettings({ photoCapture: photoEnabled });
+      case 4: { // Save photo capture (timer) or gate assignment (judge)
+        if (this.selectedRole === 'gateJudge') {
+          const gateStart = parseInt((document.getElementById('onboarding-gate-start') as HTMLInputElement)?.value || '1', 10);
+          const gateEnd = parseInt((document.getElementById('onboarding-gate-end') as HTMLInputElement)?.value || '10', 10);
+          const validStart = Math.min(gateStart, gateEnd);
+          const validEnd = Math.max(gateStart, gateEnd);
+          store.setGateAssignment([validStart, validEnd]);
+        } else {
+          const photoEnabled = (document.getElementById('onboarding-photo-toggle') as HTMLInputElement)?.checked;
+          store.updateSettings({ photoCapture: photoEnabled });
+        }
         break;
       }
-      case 4: { // Save race settings
+      case 5: { // Save race settings
         const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
         const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
 
@@ -427,25 +468,68 @@ export class OnboardingController {
   private goToStep(step: number): void {
     if (!this.modal || step < 1 || step > this.totalSteps) return;
 
-    // Hide current card
-    const currentCard = this.modal.querySelector(`[data-step="${this.currentStep}"]`) as HTMLElement;
-    if (currentCard) {
-      currentCard.style.display = 'none';
-    }
+    // Hide current card (may be path-specific)
+    this.modal.querySelectorAll(`[data-step="${this.currentStep}"]`).forEach(card => {
+      (card as HTMLElement).style.display = 'none';
+    });
 
     // Show new card
     this.currentStep = step;
-    const newCard = this.modal.querySelector(`[data-step="${step}"]`) as HTMLElement;
-    if (newCard) {
-      newCard.style.display = 'block';
+
+    // Step 4 has branching paths - show the correct one based on role
+    if (step === 4) {
+      const pathCard = this.modal.querySelector(`[data-step="4"][data-path="${this.selectedRole}"]`) as HTMLElement;
+      if (pathCard) {
+        pathCard.style.display = 'block';
+      }
+    } else {
+      const newCard = this.modal.querySelector(`[data-step="${step}"]:not([data-path])`) as HTMLElement;
+      if (newCard) {
+        newCard.style.display = 'block';
+      }
     }
+
+    // Update UI elements based on role
+    this.updateUIForRole();
 
     // Update progress dots
     this.updateProgressDots();
 
     // If final step, show summary
-    if (step === 5) {
+    if (step === 6) {
       this.showSummary();
+    }
+  }
+
+  /**
+   * Update UI elements based on selected role
+   */
+  private updateUIForRole(): void {
+    const lang = store.getState().currentLang;
+
+    // Update device name step labels
+    const titleEl = document.getElementById('onboarding-device-name-title');
+    const descEl = document.getElementById('onboarding-device-name-desc');
+    if (this.selectedRole === 'gateJudge') {
+      if (titleEl) titleEl.textContent = t('onboardingDeviceNameJudge', lang);
+      if (descEl) descEl.textContent = t('onboardingDeviceNameJudgeDesc', lang);
+    } else {
+      if (titleEl) titleEl.textContent = t('onboardingDeviceName', lang);
+      if (descEl) descEl.textContent = t('onboardingDeviceNameDesc', lang);
+    }
+
+    // Update final step for role
+    const readyTitle = document.getElementById('onboarding-ready-title');
+    const readyTip = document.getElementById('onboarding-ready-tip');
+    const finishBtn = document.getElementById('onboarding-finish-btn');
+    if (this.selectedRole === 'gateJudge') {
+      if (readyTitle) readyTitle.textContent = t('onboardingReadyJudge', lang);
+      if (readyTip) readyTip.textContent = t('onboardingTipJudge', lang);
+      if (finishBtn) finishBtn.textContent = t('startJudging', lang);
+    } else {
+      if (readyTitle) readyTitle.textContent = t('onboardingReady', lang);
+      if (readyTip) readyTip.textContent = t('onboardingTip', lang);
+      if (finishBtn) finishBtn.textContent = t('startTiming', lang);
     }
   }
 
@@ -485,12 +569,25 @@ export class OnboardingController {
     if (summary) {
       summary.innerHTML = '';
 
-      const rows: Array<[string, string]> = [
-        [t('deviceNameLabel', lang), state.deviceName],
-        [t('photoCaptureLabel', lang), state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)],
-        [t('raceIdLabel', lang), state.raceId || '—'],
-        [t('syncStatusLabel', lang), state.settings.sync ? t('enabled', lang) : t('disabled', lang)]
-      ];
+      const rows: Array<[string, string]> = [];
+
+      // Role
+      rows.push([t('deviceRole', lang), this.selectedRole === 'gateJudge' ? t('roleJudgeTitle', lang) : t('roleTimerTitle', lang)]);
+
+      // Device/Judge name
+      rows.push([this.selectedRole === 'gateJudge' ? t('onboardingDeviceNameJudge', lang) : t('deviceNameLabel', lang), state.deviceName]);
+
+      // Role-specific row
+      if (this.selectedRole === 'gateJudge') {
+        const gateRange = state.gateAssignment;
+        rows.push([t('gates', lang), gateRange ? `${gateRange[0]}–${gateRange[1]}` : '—']);
+      } else {
+        rows.push([t('photoCaptureLabel', lang), state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)]);
+      }
+
+      // Race ID & Sync
+      rows.push([t('raceIdLabel', lang), state.raceId || '—']);
+      rows.push([t('syncStatusLabel', lang), state.settings.sync ? t('enabled', lang) : t('disabled', lang)]);
 
       rows.forEach(([label, value]) => {
         const row = document.createElement('div');
@@ -559,7 +656,16 @@ export class OnboardingController {
 
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     closeModal(this.modal);
-    store.setView('timer');
+
+    // Navigate to appropriate view based on role
+    if (this.selectedRole === 'gateJudge') {
+      store.setView('gateJudge');
+      // Show gate judge tab
+      const gateJudgeTab = document.getElementById('gate-judge-tab');
+      if (gateJudgeTab) gateJudgeTab.style.display = '';
+    } else {
+      store.setView('timer');
+    }
 
     // Show success feedback
     feedbackSuccess();
