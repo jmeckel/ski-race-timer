@@ -417,8 +417,8 @@ async function recordTimestamp(): Promise<void> {
     // Sync to cloud
     syncService.broadcastEntry(entry);
 
-    // Auto-increment bib only on Finish (F) - Start keeps same bib for the racer
-    if (state.settings.auto && state.bibInput && state.selectedPoint === 'F') {
+    // Auto-increment bib after recording (for both Start and Finish)
+    if (state.settings.auto && state.bibInput) {
       const localNext = parseInt(state.bibInput, 10) + 1;
       // If sync is enabled, use the max of local next and cloud highest + 1
       const nextBib = state.settings.sync && state.cloudHighestBib > 0
@@ -432,7 +432,6 @@ async function recordTimestamp(): Promise<void> {
       // Clear bib if auto-increment is off
       store.setBibInput('');
     }
-    // If auto is on but point is Start, keep bib for finish recording
 
     // Update last recorded display
     updateLastRecorded(entry);
@@ -955,8 +954,10 @@ function initSettingsView(): void {
           if (action === 'export') {
             exportResults();
             store.clearAll();
+            await photoStorage.clearAll();
           } else if (action === 'delete') {
             store.clearAll();
+            await photoStorage.clearAll();
           } else {
             // Cancelled - restore old race ID
             raceIdInput.value = state.raceId;
@@ -967,6 +968,7 @@ function initSettingsView(): void {
           const action = await showRaceChangeDialog('unsynced', state.currentLang);
           if (action === 'delete') {
             store.clearAll();
+            await photoStorage.clearAll();
           } else if (action === 'cancel') {
             // Cancelled - restore old race ID
             raceIdInput.value = state.raceId;

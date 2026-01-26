@@ -1243,33 +1243,35 @@ body {
 
 /* ===== Confirmation Overlay ===== */
 /* Non-blocking overlay - allows interaction with elements below */
+/* Uses inset:0 + flexbox centering instead of transform to fix iOS Safari rendering */
 .confirmation-overlay {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.confirmation-overlay .confirmation-content {
   padding: 32px 48px;
   background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius);
   border: 4px solid rgba(255, 255, 255, 0.15);
-  z-index: 900;
-  pointer-events: none;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Timing point colored borders for quick visual verification */
-.confirmation-overlay[data-point="S"] {
+.confirmation-overlay[data-point="S"] .confirmation-content {
   border-color: var(--success);
   box-shadow: 0 0 40px rgba(34, 197, 94, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-.confirmation-overlay[data-point="F"] {
+.confirmation-overlay[data-point="F"] .confirmation-content {
   border-color: var(--secondary);
   box-shadow: 0 0 40px rgba(249, 115, 22, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
@@ -1278,7 +1280,7 @@ body {
   display: flex;
 }
 
-.confirmation-content {
+.confirmation-overlay .confirmation-content {
   text-align: center;
   animation: scaleIn 0.3s ease-out;
 }
@@ -2348,7 +2350,7 @@ body {
 }
 
 /* Confirmation Overlay Glass Enhancement */
-.confirmation-overlay.glass-surface-1 {
+.confirmation-overlay.glass-surface-1 .confirmation-content {
   background: linear-gradient(
     var(--glass-gradient-angle, 135deg),
     rgba(10, 10, 10, 0.92) 0%,
