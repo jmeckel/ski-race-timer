@@ -738,7 +738,7 @@ test.describe('Delete Sync', () => {
     await page.waitForTimeout(500);
 
     // Verify entry is removed
-    await expect(page.locator('.empty-state')).toBeVisible();
+    await expect(page.locator('.results-view .empty-state')).toBeVisible();
   });
 
   test('should sync deletion across page reload', async ({ page }) => {
@@ -806,7 +806,7 @@ test.describe('Delete Sync', () => {
     await page.waitForTimeout(500);
 
     // Entry should be gone
-    await expect(page.locator('.empty-state')).toBeVisible();
+    await expect(page.locator('.results-view .empty-state')).toBeVisible();
   });
 
   test('should handle multi-delete with sync', async ({ page }) => {

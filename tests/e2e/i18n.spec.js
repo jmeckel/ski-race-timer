@@ -261,7 +261,7 @@ test.describe('Empty State Messages', () => {
     await setupPage(page);
     await navigateTo(page, 'results');
 
-    const emptyState = page.locator('.empty-state');
+    const emptyState = page.locator('.results-view .empty-state');
     await expect(emptyState).toBeVisible();
   });
 
@@ -269,7 +269,7 @@ test.describe('Empty State Messages', () => {
     await setupPageEnglish(page);
     await navigateTo(page, 'results');
 
-    const emptyState = page.locator('.empty-state');
+    const emptyState = page.locator('.results-view .empty-state');
     await expect(emptyState).toBeVisible();
   });
 });

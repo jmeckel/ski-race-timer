@@ -14,7 +14,7 @@ test.describe('Results View', () => {
     });
 
     test('should show empty state when no entries', async ({ page }) => {
-      const emptyState = page.locator('.empty-state');
+      const emptyState = page.locator('.results-view .empty-state');
       await expect(emptyState).toBeVisible();
     });
   });
