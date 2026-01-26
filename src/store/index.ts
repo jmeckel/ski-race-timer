@@ -1219,10 +1219,13 @@ class Store {
     const started = entries.filter(e => e.point === 'S' && e.run === run);
     const finished = entries.filter(e => e.point === 'F' && e.run === run);
     const finishedBibs = new Set(finished.map(e => e.bib));
-    return started
-      .filter(e => !finishedBibs.has(e.bib))
-      .map(e => e.bib)
-      .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    // Use Set to deduplicate bibs (in case of multiple Start entries for same bib)
+    const activeBibSet = new Set(
+      started
+        .filter(e => !finishedBibs.has(e.bib))
+        .map(e => e.bib)
+    );
+    return Array.from(activeBibSet).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   }
 
   // ===== Settings =====
