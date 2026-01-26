@@ -2143,7 +2143,7 @@ function openFaultRecordingModal(preselectedBib?: string): void {
  * Initialize fault recording modal handlers
  */
 function initFaultRecordingModal(): void {
-  // Fault type buttons - click records fault immediately
+  // Fault type buttons - click selects the type (no auto-save)
   const faultTypeButtons = document.getElementById('fault-type-buttons');
   if (faultTypeButtons) {
     faultTypeButtons.addEventListener('click', (e) => {
@@ -2153,22 +2153,30 @@ function initFaultRecordingModal(): void {
 
       const faultType = btn.getAttribute('data-fault') as FaultType;
       if (faultType) {
-        // Mark selected
+        // Mark selected (just selection, no recording)
         faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-
-        // Record the fault
-        recordFault(faultType);
+        feedbackTap();
       }
     });
   }
 
-  // Mark OK button
-  const markOkBtn = document.getElementById('mark-ok-btn');
-  if (markOkBtn) {
-    markOkBtn.addEventListener('click', () => {
-      closeModal(document.getElementById('fault-modal'));
-      feedbackTap();
+  // Save Fault button - records the fault
+  const saveFaultBtn = document.getElementById('save-fault-btn');
+  if (saveFaultBtn) {
+    saveFaultBtn.addEventListener('click', () => {
+      // Get selected fault type
+      const selectedTypeBtn = document.querySelector('#fault-type-buttons .fault-type-btn.selected');
+      if (!selectedTypeBtn) {
+        const lang = store.getState().currentLang;
+        showToast(t('selectFaultType', lang), 'warning');
+        return;
+      }
+
+      const faultType = selectedTypeBtn.getAttribute('data-fault') as FaultType;
+      if (faultType) {
+        recordFault(faultType);
+      }
     });
   }
 }

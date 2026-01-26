@@ -307,6 +307,8 @@ export const translations: Record<Language, Translations> = {
     penaltyTime: 'Penalty',
     faultCount: 'faults',
     markOk: 'Mark OK',
+    saveFault: 'Save Fault',
+    selectFaultType: 'Please select a fault type',
     flt: 'FLT',
     statusFlt: 'Fault Penalty',
 
@@ -677,6 +679,8 @@ export const translations: Record<Language, Translations> = {
     penaltyTime: 'Strafzeit',
     faultCount: 'Fehler',
     markOk: 'OK markieren',
+    saveFault: 'Fehler speichern',
+    selectFaultType: 'Bitte Fehlerart wählen',
     flt: 'STR',
     statusFlt: 'Strafzeit',
 
