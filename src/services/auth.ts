@@ -54,7 +54,7 @@ export async function exchangePinForToken(pin: string): Promise<{
   isNewPin?: boolean;
 }> {
   try {
-    const response = await fetch('/api/auth/token', {
+    const response = await fetch('/api/v1/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin })

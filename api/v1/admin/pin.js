@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { validateAuth } from '../lib/jwt.js';
+import { validateAuth } from '../../lib/jwt.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -8,7 +8,7 @@ import {
   sendServiceUnavailable,
   sendAuthRequired,
   sendError
-} from '../lib/response.js';
+} from '../../lib/response.js';
 
 // Redis client
 let redis = null;

@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { validateAuth } from './lib/jwt.js';
+import { validateAuth } from '../lib/jwt.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -13,7 +13,7 @@ import {
   getClientIP,
   sanitizeString,
   safeJsonParse
-} from './lib/response.js';
+} from '../lib/response.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;

@@ -20,9 +20,9 @@ import {
 // Re-export auth functions for backwards compatibility
 export { hasAuthToken, setAuthToken, clearAuthToken, exchangePinForToken };
 
-// API configuration
-const API_BASE = '/api/sync';
-const FAULTS_API_BASE = '/api/faults';
+// API configuration (v1)
+const API_BASE = '/api/v1/sync';
+const FAULTS_API_BASE = '/api/v1/faults';
 
 // Sync configuration
 const POLL_INTERVAL_NORMAL = 5000; // 5 seconds - fast polling when active

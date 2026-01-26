@@ -9,10 +9,10 @@ import type { RaceInfo } from '../types';
 // ===== Constants =====
 
 const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
-const ADMIN_API_BASE = '/api/admin/races';
-const SYNC_API_BASE = '/api/sync';
-const AUTH_API_BASE = '/api/auth/token';
-const PIN_API_BASE = '/api/admin/pin';
+const ADMIN_API_BASE = '/api/v1/admin/races';
+const SYNC_API_BASE = '/api/v1/sync';
+const AUTH_API_BASE = '/api/v1/auth/token';
+const PIN_API_BASE = '/api/v1/admin/pin';
 
 const DEFAULT_TIMEOUT = 10000;
 const SHORT_TIMEOUT = 5000;

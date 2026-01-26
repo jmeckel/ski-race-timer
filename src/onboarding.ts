@@ -282,7 +282,7 @@ export class OnboardingController {
       return [];
     }
 
-    const response = await fetchWithTimeout('/api/admin/races', {
+    const response = await fetchWithTimeout('/api/v1/admin/races', {
       headers: { 'Authorization': `Bearer ${token}` }
     }, 5000);
 

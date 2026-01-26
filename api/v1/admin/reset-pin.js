@@ -6,7 +6,7 @@ import {
   sendError,
   sendMethodNotAllowed,
   sendServiceUnavailable
-} from '../lib/response.js';
+} from '../../lib/response.js';
 
 // Redis client
 let redis = null;

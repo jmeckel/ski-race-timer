@@ -157,7 +157,7 @@ describe('Token Management Functions', () => {
       expect(result.success).toBe(true);
       expect(result.token).toBe('jwt-token-12345');
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/auth/token',
+        '/api/v1/auth/token',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -323,7 +323,7 @@ describe('Sync Service', () => {
       await syncService.forceRefresh();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/sync?raceId=RACE001'),
+        expect.stringContaining('/api/v1/sync?raceId=RACE001'),
         expect.anything()
       );
     });
@@ -381,7 +381,7 @@ describe('Sync Service', () => {
 
       expect(result).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/sync?raceId='),
+        expect.stringContaining('/api/v1/sync?raceId='),
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

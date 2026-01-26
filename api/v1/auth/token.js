@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import crypto from 'crypto';
-import { generateToken, hashPin } from '../lib/jwt.js';
+import { generateToken, hashPin } from '../../lib/jwt.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -11,7 +11,7 @@ import {
   sendRateLimitExceeded,
   setRateLimitHeaders,
   getClientIP
-} from '../lib/response.js';
+} from '../../lib/response.js';
 
 // Redis client
 let redis = null;

@@ -24,7 +24,7 @@ import { exportResults, formatTimeForRaceHorology, escapeCSVField, exportChiefSu
 injectSpeedInsights();
 
 // Admin API configuration
-const ADMIN_API_BASE = '/api/admin/races';
+const ADMIN_API_BASE = '/api/v1/admin/races';
 const AUTH_TOKEN_KEY = 'skiTimerAuthToken'; // localStorage key for JWT auth token
 
 /**
@@ -4015,7 +4015,7 @@ async function fetchRacesFromApi(): Promise<RecentRace[]> {
     return [];
   }
 
-  const response = await fetchWithTimeout('/api/admin/races', {
+  const response = await fetchWithTimeout('/api/v1/admin/races', {
     headers: { 'Authorization': `Bearer ${token}` }
   }, 5000);
 
@@ -4366,7 +4366,7 @@ async function handleSavePin(): Promise<void> {
   // Update PIN in Redis via admin/pin API
   const newPinHash = await hashPin(newPin);
   try {
-    const response = await fetch('/api/admin/pin', {
+    const response = await fetch('/api/v1/admin/pin', {
       method: 'POST',
       headers: {
         ...getAdminAuthHeaders(),

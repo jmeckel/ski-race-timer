@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { validateAuth } from '../lib/jwt.js';
+import { validateAuth } from '../../lib/jwt.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -8,7 +8,7 @@ import {
   sendMethodNotAllowed,
   sendServiceUnavailable,
   sendAuthRequired
-} from '../lib/response.js';
+} from '../../lib/response.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll

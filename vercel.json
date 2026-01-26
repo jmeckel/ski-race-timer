@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/sync",
+      "destination": "/api/v1/sync"
+    },
+    {
+      "source": "/api/faults",
+      "destination": "/api/v1/faults"
+    },
+    {
+      "source": "/api/auth/token",
+      "destination": "/api/v1/auth/token"
+    },
+    {
+      "source": "/api/admin/pin",
+      "destination": "/api/v1/admin/pin"
+    },
+    {
+      "source": "/api/admin/races",
+      "destination": "/api/v1/admin/races"
+    },
+    {
+      "source": "/api/admin/reset-pin",
+      "destination": "/api/v1/admin/reset-pin"
+    }
+  ]
+}
