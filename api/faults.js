@@ -1,5 +1,19 @@
 import Redis from 'ioredis';
 import { validateAuth } from './lib/jwt.js';
+import {
+  handlePreflight,
+  sendSuccess,
+  sendError,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServiceUnavailable,
+  sendRateLimitExceeded,
+  sendAuthRequired,
+  setRateLimitHeaders,
+  getClientIP,
+  sanitizeString,
+  safeJsonParse
+} from './lib/response.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
@@ -70,30 +84,8 @@ function getRedis() {
   return redis;
 }
 
-// CORS configuration
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-}
-
 // Redis key for client PIN
 const CLIENT_PIN_KEY = 'admin:clientPin';
-
-// Get client IP from request
-function getClientIP(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
-}
 
 // Rate limiting using Redis
 async function checkRateLimit(client, ip, method) {
@@ -112,11 +104,12 @@ async function checkRateLimit(client, ip, method) {
     return {
       allowed: count <= limit,
       remaining: Math.max(0, limit - count),
-      reset: windowStart + RATE_LIMIT_WINDOW
+      reset: windowStart + RATE_LIMIT_WINDOW,
+      limit
     };
   } catch (error) {
     console.error('Rate limit check error:', error.message);
-    return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW };
+    return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW, limit };
   }
 }
 
@@ -158,23 +151,6 @@ function isValidFaultEntry(fault) {
   if (typeof fault.gateRange[0] !== 'number' || typeof fault.gateRange[1] !== 'number') return false;
 
   return true;
-}
-
-function sanitizeString(str, maxLength) {
-  if (!str || typeof str !== 'string') return '';
-  return str.slice(0, maxLength).replace(/[<>]/g, '');
-}
-
-function safeJsonParse(str, defaultValue) {
-  if (str === null || str === undefined || str === '') {
-    return defaultValue;
-  }
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    console.error('JSON parse error:', e.message);
-    return defaultValue;
-  }
 }
 
 /**
@@ -357,24 +333,19 @@ async function getGateAssignments(client, normalizedRaceId) {
 
 export default async function handler(req, res) {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    setCorsHeaders(res);
-    return res.status(200).end();
+  if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
+    return;
   }
-
-  setCorsHeaders(res);
 
   const { raceId } = req.query;
 
   // Validate raceId
   if (!raceId) {
-    return res.status(400).json({ error: 'raceId is required' });
+    return sendBadRequest(res, 'raceId is required');
   }
 
   if (!isValidRaceId(raceId)) {
-    return res.status(400).json({
-      error: 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.'
-    });
+    return sendBadRequest(res, 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.');
   }
 
   const normalizedRaceId = raceId.toLowerCase();
@@ -385,35 +356,27 @@ export default async function handler(req, res) {
     client = getRedis();
   } catch (error) {
     console.error('Redis initialization error:', error.message);
-    return res.status(503).json({ error: 'Database service unavailable' });
+    return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
   if (redisError) {
-    return res.status(503).json({ error: 'Database connection issue. Please try again.' });
+    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
   const rateLimitResult = await checkRateLimit(client, clientIP, req.method);
 
-  res.setHeader('X-RateLimit-Limit', req.method === 'POST' ? RATE_LIMIT_MAX_POSTS : RATE_LIMIT_MAX_REQUESTS);
-  res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
-  res.setHeader('X-RateLimit-Reset', rateLimitResult.reset);
+  setRateLimitHeaders(res, rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.reset);
 
   if (!rateLimitResult.allowed) {
-    return res.status(429).json({
-      error: 'Too many requests. Please try again later.',
-      retryAfter: rateLimitResult.reset - Math.floor(Date.now() / 1000)
-    });
+    return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
   }
 
   // Validate sync authorization
   const authResult = await validateAuth(req, client, CLIENT_PIN_KEY);
   if (!authResult.valid) {
-    return res.status(401).json({
-      error: authResult.error,
-      expired: authResult.expired || false
-    });
+    return sendAuthRequired(res, authResult.error, authResult.expired || false);
   }
 
   try {
@@ -443,7 +406,7 @@ export default async function handler(req, res) {
         );
       }
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         faults: Array.isArray(parsed.faults) ? parsed.faults : [],
         lastUpdated: parsed.lastUpdated || null,
         deletedIds: deletedIds || [],
@@ -455,11 +418,11 @@ export default async function handler(req, res) {
       const { fault, deviceId, deviceName, gateRange, isReady, firstGateColor } = req.body || {};
 
       if (!fault) {
-        return res.status(400).json({ error: 'fault is required' });
+        return sendBadRequest(res, 'fault is required');
       }
 
       if (!isValidFaultEntry(fault)) {
-        return res.status(400).json({ error: 'Invalid fault format' });
+        return sendBadRequest(res, 'Invalid fault format');
       }
 
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
@@ -492,9 +455,8 @@ export default async function handler(req, res) {
       const addResult = await atomicAddFault(client, faultsKey, enrichedFault, sanitizedDeviceId);
 
       if (!addResult.success) {
-        return res.status(addResult.error?.includes('limit') ? 400 : 409).json({
-          error: addResult.error
-        });
+        const status = addResult.error?.includes('limit') ? 400 : 409;
+        return sendError(res, addResult.error, status);
       }
 
       // Update gate assignment if provided
@@ -505,7 +467,7 @@ export default async function handler(req, res) {
       // Get updated gate assignments
       const gateAssignments = await getGateAssignments(client, normalizedRaceId);
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         success: true,
         faults: addResult.existing.faults,
         lastUpdated: addResult.existing.lastUpdated,
@@ -533,7 +495,7 @@ export default async function handler(req, res) {
       const { faultId, deviceId, deviceName, approvedBy } = req.body || {};
 
       if (!faultId) {
-        return res.status(400).json({ error: 'faultId is required' });
+        return sendBadRequest(res, 'faultId is required');
       }
 
       const faultIdStr = String(faultId);
@@ -547,7 +509,7 @@ export default async function handler(req, res) {
       const deleteResult = await atomicDeleteFault(client, faultsKey, faultIdStr, sanitizedDeviceId);
 
       if (!deleteResult.success) {
-        return res.status(409).json({ error: deleteResult.error });
+        return sendError(res, deleteResult.error, 409);
       }
 
       // Track deleted fault ID with metadata
@@ -556,21 +518,21 @@ export default async function handler(req, res) {
       await client.sadd(deletedKey, deleteKey);
       await client.expire(deletedKey, CACHE_EXPIRY_SECONDS);
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         success: true,
         deleted: deleteResult.wasRemoved,
         faultId: faultIdStr
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res);
   } catch (error) {
     console.error('Faults API error:', error.message);
 
     if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
-      return res.status(503).json({ error: 'Database connection failed. Please try again.' });
+      return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(res, 'Internal server error', 500);
   }
 }

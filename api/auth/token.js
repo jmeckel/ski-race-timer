@@ -1,6 +1,17 @@
 import Redis from 'ioredis';
 import crypto from 'crypto';
 import { generateToken, hashPin } from '../lib/jwt.js';
+import {
+  handlePreflight,
+  sendSuccess,
+  sendError,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServiceUnavailable,
+  sendRateLimitExceeded,
+  setRateLimitHeaders,
+  getClientIP
+} from '../lib/response.js';
 
 // Redis client
 let redis = null;
@@ -19,33 +30,12 @@ function getRedis() {
   return redis;
 }
 
-// CORS configuration
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-}
-
 // Redis key for client PIN hash
 const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Rate limiting configuration (per IP)
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 10; // Max PIN exchanges per minute per IP
-
-function getClientIP(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
-}
 
 async function checkRateLimit(client, ip) {
   const now = Math.floor(Date.now() / 1000);
@@ -77,15 +67,12 @@ async function checkRateLimit(client, ip) {
 
 export default async function handler(req, res) {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    setCorsHeaders(res);
-    return res.status(200).end();
+  if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
+    return;
   }
 
-  setCorsHeaders(res);
-
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res);
   }
 
   let client;
@@ -93,7 +80,7 @@ export default async function handler(req, res) {
     client = getRedis();
   } catch (error) {
     console.error('Redis initialization error:', error.message);
-    return res.status(503).json({ error: 'Database service unavailable' });
+    return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
   try {
@@ -102,26 +89,21 @@ export default async function handler(req, res) {
     const rateLimitResult = await checkRateLimit(client, clientIP);
 
     // Set rate limit headers
-    res.setHeader('X-RateLimit-Limit', RATE_LIMIT_MAX_REQUESTS);
-    res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
-    res.setHeader('X-RateLimit-Reset', rateLimitResult.reset);
+    setRateLimitHeaders(res, RATE_LIMIT_MAX_REQUESTS, rateLimitResult.remaining, rateLimitResult.reset);
 
     if (!rateLimitResult.allowed) {
-      return res.status(429).json({
-        error: 'Too many attempts. Please try again later.',
-        retryAfter: rateLimitResult.reset - Math.floor(Date.now() / 1000)
-      });
+      return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
     }
 
     const { pin } = req.body || {};
 
     if (!pin || typeof pin !== 'string') {
-      return res.status(400).json({ error: 'PIN is required' });
+      return sendBadRequest(res, 'PIN is required');
     }
 
     // Validate PIN format (4 digits)
     if (!/^\d{4}$/.test(pin)) {
-      return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
+      return sendBadRequest(res, 'PIN must be exactly 4 digits');
     }
 
     // Get stored PIN hash from Redis
@@ -137,7 +119,7 @@ export default async function handler(req, res) {
         createdAt: Date.now()
       });
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         success: true,
         token,
         isNewPin: true,
@@ -158,7 +140,7 @@ export default async function handler(req, res) {
     }
 
     if (!pinValid) {
-      return res.status(401).json({ error: 'Invalid PIN' });
+      return sendError(res, 'Invalid PIN', 401);
     }
 
     // PIN is valid, generate JWT token
@@ -166,13 +148,13 @@ export default async function handler(req, res) {
       authenticatedAt: Date.now()
     });
 
-    return res.status(200).json({
+    return sendSuccess(res, {
       success: true,
       token
     });
 
   } catch (error) {
     console.error('Token API error:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(res, 'Internal server error', 500);
   }
 }

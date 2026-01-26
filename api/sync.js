@@ -1,5 +1,19 @@
 import Redis from 'ioredis';
 import { validateAuth } from './lib/jwt.js';
+import {
+  handlePreflight,
+  sendSuccess,
+  sendError,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServiceUnavailable,
+  sendRateLimitExceeded,
+  sendAuthRequired,
+  setRateLimitHeaders,
+  getClientIP,
+  sanitizeString,
+  safeJsonParse
+} from './lib/response.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
@@ -82,43 +96,8 @@ function getRedis() {
   return redis;
 }
 
-/**
- * Check if Redis is healthy and ready for operations
- */
-async function isRedisHealthy() {
-  if (!redis || redisError) return false;
-  try {
-    await redis.ping();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// CORS configuration - use environment variable or default to production domain
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-}
-
 // Redis key for client PIN (same as admin/pin.js)
 const CLIENT_PIN_KEY = 'admin:clientPin';
-
-// Get client IP from request
-function getClientIP(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
-}
 
 // Rate limiting using Redis
 async function checkRateLimit(client, ip, method) {
@@ -140,12 +119,13 @@ async function checkRateLimit(client, ip, method) {
     return {
       allowed: count <= limit,
       remaining: Math.max(0, limit - count),
-      reset: windowStart + RATE_LIMIT_WINDOW
+      reset: windowStart + RATE_LIMIT_WINDOW,
+      limit
     };
   } catch (error) {
     console.error('Rate limit check error:', error.message);
     // Allow request if rate limiting fails (fail open)
-    return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW };
+    return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW, limit };
   }
 }
 
@@ -171,24 +151,6 @@ function isValidEntry(entry) {
   if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
   if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status)) return false;
   return true;
-}
-
-function sanitizeString(str, maxLength) {
-  if (!str || typeof str !== 'string') return '';
-  return str.slice(0, maxLength).replace(/[<>]/g, '');
-}
-
-function safeJsonParse(str, defaultValue) {
-  if (str === null || str === undefined || str === '') {
-    return defaultValue;
-  }
-  try {
-    const parsed = JSON.parse(str);
-    return parsed;
-  } catch (e) {
-    console.error('JSON parse error:', e.message);
-    return defaultValue;
-  }
 }
 
 // Update device heartbeat in Redis
@@ -425,25 +387,19 @@ async function getHighestBib(client, normalizedRaceId) {
 
 export default async function handler(req, res) {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    setCorsHeaders(res);
-    return res.status(200).end();
+  if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
+    return;
   }
-
-  // Set CORS headers for all responses
-  setCorsHeaders(res);
 
   const { raceId } = req.query;
 
   // Validate raceId
   if (!raceId) {
-    return res.status(400).json({ error: 'raceId is required' });
+    return sendBadRequest(res, 'raceId is required');
   }
 
   if (!isValidRaceId(raceId)) {
-    return res.status(400).json({
-      error: 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only (max 50 chars).'
-    });
+    return sendBadRequest(res, 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only (max 50 chars).');
   }
 
   // Normalize race ID to lowercase for case-insensitive matching
@@ -455,12 +411,12 @@ export default async function handler(req, res) {
     client = getRedis();
   } catch (error) {
     console.error('Redis initialization error:', error.message);
-    return res.status(503).json({ error: 'Database service unavailable' });
+    return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
   // Check for recent Redis errors
   if (redisError) {
-    return res.status(503).json({ error: 'Database connection issue. Please try again.' });
+    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
   // Apply rate limiting
@@ -468,25 +424,16 @@ export default async function handler(req, res) {
   const rateLimitResult = await checkRateLimit(client, clientIP, req.method);
 
   // Set rate limit headers
-  res.setHeader('X-RateLimit-Limit', req.method === 'POST' ? RATE_LIMIT_MAX_POSTS : RATE_LIMIT_MAX_REQUESTS);
-  res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
-  res.setHeader('X-RateLimit-Reset', rateLimitResult.reset);
+  setRateLimitHeaders(res, rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.reset);
 
   if (!rateLimitResult.allowed) {
-    return res.status(429).json({
-      error: 'Too many requests. Please try again later.',
-      retryAfter: rateLimitResult.reset - Math.floor(Date.now() / 1000)
-    });
+    return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
   }
 
   // Validate sync authorization (JWT or PIN hash)
   const authResult = await validateAuth(req, client, CLIENT_PIN_KEY);
   if (!authResult.valid) {
-    const status = authResult.expired ? 401 : 401;
-    return res.status(status).json({
-      error: authResult.error,
-      expired: authResult.expired || false
-    });
+    return sendAuthRequired(res, authResult.error, authResult.expired || false);
   }
 
   try {
@@ -496,7 +443,7 @@ export default async function handler(req, res) {
       const tombstoneData = await client.get(tombstoneKey);
       if (tombstoneData) {
         const tombstone = safeJsonParse(tombstoneData, {});
-        return res.status(200).json({
+        return sendSuccess(res, {
           deleted: true,
           deletedAt: tombstone.deletedAt || Date.now(),
           message: tombstone.message || 'Race deleted by administrator'
@@ -509,7 +456,7 @@ export default async function handler(req, res) {
         const parsed = safeJsonParse(data, null);
         const exists = parsed !== null;
         const entryCount = exists && Array.isArray(parsed.entries) ? parsed.entries.length : 0;
-        return res.status(200).json({ exists, entryCount });
+        return sendSuccess(res, { exists, entryCount });
       }
 
       // Update device heartbeat if deviceId provided (from query params)
@@ -531,7 +478,7 @@ export default async function handler(req, res) {
       // Get highest bib
       const highestBib = await getHighestBib(client, normalizedRaceId);
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         entries: Array.isArray(parsed.entries) ? parsed.entries : [],
         lastUpdated: parsed.lastUpdated || null,
         deviceCount,
@@ -546,7 +493,7 @@ export default async function handler(req, res) {
       const tombstoneData = await client.get(tombstoneKey);
       if (tombstoneData) {
         const tombstone = safeJsonParse(tombstoneData, {});
-        return res.status(200).json({
+        return sendSuccess(res, {
           deleted: true,
           deletedAt: tombstone.deletedAt || Date.now(),
           message: tombstone.message || 'Race deleted by administrator'
@@ -557,11 +504,11 @@ export default async function handler(req, res) {
 
       // Validate entry
       if (!entry) {
-        return res.status(400).json({ error: 'entry is required' });
+        return sendBadRequest(res, 'entry is required');
       }
 
       if (!isValidEntry(entry)) {
-        return res.status(400).json({ error: 'Invalid entry format' });
+        return sendBadRequest(res, 'Invalid entry format');
       }
 
       // Sanitize device info
@@ -604,9 +551,8 @@ export default async function handler(req, res) {
       const addResult = await atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId);
 
       if (!addResult.success) {
-        return res.status(addResult.error?.includes('limit') ? 400 : 409).json({
-          error: addResult.error
-        });
+        const status = addResult.error?.includes('limit') ? 400 : 409;
+        return sendError(res, addResult.error, status);
       }
 
       // Update device heartbeat
@@ -621,7 +567,7 @@ export default async function handler(req, res) {
       // Get highest bib
       const highestBib = await getHighestBib(client, normalizedRaceId);
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         success: true,
         entries: addResult.existing.entries,
         lastUpdated: addResult.existing.lastUpdated,
@@ -637,7 +583,7 @@ export default async function handler(req, res) {
 
       // Validate inputs
       if (!entryId) {
-        return res.status(400).json({ error: 'entryId is required' });
+        return sendBadRequest(res, 'entryId is required');
       }
 
       const entryIdStr = String(entryId);
@@ -647,7 +593,7 @@ export default async function handler(req, res) {
       const deleteResult = await atomicDeleteEntry(client, redisKey, entryIdStr, sanitizedDeviceId);
 
       if (!deleteResult.success) {
-        return res.status(409).json({ error: deleteResult.error });
+        return sendError(res, deleteResult.error, 409);
       }
 
       // Add to deleted entries set (tracks all deleted IDs for sync)
@@ -666,7 +612,7 @@ export default async function handler(req, res) {
       // Get active device count
       const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
 
-      return res.status(200).json({
+      return sendSuccess(res, {
         success: true,
         deleted: deleteResult.wasRemoved,
         entryId: entryIdStr,
@@ -674,15 +620,15 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res);
   } catch (error) {
     console.error('Sync API error:', error.message);
 
     // Don't expose internal error details to client
     if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
-      return res.status(503).json({ error: 'Database connection failed. Please try again.' });
+      return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(res, 'Internal server error', 500);
   }
 }

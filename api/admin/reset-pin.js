@@ -1,5 +1,12 @@
 import Redis from 'ioredis';
 import crypto from 'crypto';
+import {
+  handlePreflight,
+  sendSuccess,
+  sendError,
+  sendMethodNotAllowed,
+  sendServiceUnavailable
+} from '../lib/response.js';
 
 // Redis client
 let redis = null;
@@ -18,19 +25,6 @@ function getRedis() {
   return redis;
 }
 
-// CORS configuration
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Server-Pin');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-}
-
 // Redis key for client PIN hash
 const CLIENT_PIN_KEY = 'admin:clientPin';
 
@@ -40,16 +34,27 @@ const CLIENT_PIN_KEY = 'admin:clientPin';
  * Deletes the stored PIN hash, allowing the next PIN entry to become the new PIN
  */
 export default async function handler(req, res) {
-  // Handle CORS preflight
+  // Handle CORS preflight - note custom header for X-Server-Pin
   if (req.method === 'OPTIONS') {
-    setCorsHeaders(res);
+    // Use custom preflight handling for X-Server-Pin header
+    const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Server-Pin');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
     return res.status(200).end();
   }
 
-  setCorsHeaders(res);
+  // Set headers for non-preflight requests
+  const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res);
   }
 
   // Verify SERVER_API_PIN with timing-safe comparison
@@ -57,11 +62,11 @@ export default async function handler(req, res) {
   const providedPin = req.headers['x-server-pin'];
 
   if (!serverPin) {
-    return res.status(500).json({ error: 'SERVER_API_PIN not configured on server' });
+    return sendError(res, 'SERVER_API_PIN not configured on server', 500);
   }
 
   if (!providedPin) {
-    return res.status(401).json({ error: 'Invalid server PIN' });
+    return sendError(res, 'Invalid server PIN', 401);
   }
 
   // Use timing-safe comparison to prevent timing attacks
@@ -78,7 +83,7 @@ export default async function handler(req, res) {
   }
 
   if (!pinValid) {
-    return res.status(401).json({ error: 'Invalid server PIN' });
+    return sendError(res, 'Invalid server PIN', 401);
   }
 
   let client;
@@ -86,7 +91,7 @@ export default async function handler(req, res) {
     client = getRedis();
   } catch (error) {
     console.error('Redis initialization error:', error.message);
-    return res.status(503).json({ error: 'Database service unavailable' });
+    return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
   try {
@@ -95,12 +100,12 @@ export default async function handler(req, res) {
 
     console.log('Client PIN has been reset');
 
-    return res.status(200).json({
+    return sendSuccess(res, {
       success: true,
       message: 'PIN has been reset. The next PIN entered will become the new PIN.'
     });
   } catch (error) {
     console.error('Reset PIN error:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(res, 'Internal server error', 500);
   }
 }

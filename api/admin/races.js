@@ -1,5 +1,14 @@
 import Redis from 'ioredis';
 import { validateAuth } from '../lib/jwt.js';
+import {
+  handlePreflight,
+  sendSuccess,
+  sendError,
+  sendBadRequest,
+  sendMethodNotAllowed,
+  sendServiceUnavailable,
+  sendAuthRequired
+} from '../lib/response.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
@@ -38,19 +47,6 @@ function getRedis() {
     });
   }
   return redis;
-}
-
-// CORS configuration - default to production domain
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
 }
 
 // Device stale threshold (same as sync.js)
@@ -153,7 +149,6 @@ async function deleteRace(client, raceId) {
 
   const devicesKey = `race:${actualRaceId}:devices`;
   const highestBibKey = `race:${actualRaceId}:highestBib`;
-  const tombstoneKey = `race:${actualRaceId}:deleted`;
 
   // Set tombstone with expiry (use lowercase for tombstone for consistency)
   await client.set(
@@ -181,39 +176,33 @@ async function deleteRace(client, raceId) {
 
 export default async function handler(req, res) {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    setCorsHeaders(res);
-    return res.status(200).end();
+  if (handlePreflight(req, res, ['GET', 'DELETE', 'OPTIONS'])) {
+    return;
   }
-
-  setCorsHeaders(res);
 
   let client;
   try {
     client = getRedis();
   } catch (error) {
     console.error('Redis initialization error:', error.message);
-    return res.status(503).json({ error: 'Database service unavailable' });
+    return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
   if (redisError) {
-    return res.status(503).json({ error: 'Database connection issue. Please try again.' });
+    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
   // Authenticate admin request using JWT or PIN hash
   const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
   if (!auth.valid) {
-    return res.status(401).json({
-      error: auth.error || 'Unauthorized',
-      expired: auth.expired || false
-    });
+    return sendAuthRequired(res, auth.error || 'Unauthorized', auth.expired || false);
   }
 
   try {
     if (req.method === 'GET') {
       // List all races
       const races = await listRaces(client);
-      return res.status(200).json({ races });
+      return sendSuccess(res, { races });
     }
 
     if (req.method === 'DELETE') {
@@ -227,7 +216,7 @@ export default async function handler(req, res) {
           const result = await deleteRace(client, race.raceId);
           results.push({ raceId: race.raceId, ...result });
         }
-        return res.status(200).json({
+        return sendSuccess(res, {
           success: true,
           deleted: results.filter(r => r.success).length,
           total: races.length,
@@ -236,26 +225,26 @@ export default async function handler(req, res) {
       }
 
       if (!raceId) {
-        return res.status(400).json({ error: 'raceId is required (or use deleteAll=true)' });
+        return sendBadRequest(res, 'raceId is required (or use deleteAll=true)');
       }
 
       const result = await deleteRace(client, raceId);
 
       if (!result.success) {
-        return res.status(404).json({ error: result.error });
+        return sendError(res, result.error, 404);
       }
 
-      return res.status(200).json(result);
+      return sendSuccess(res, result);
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return sendMethodNotAllowed(res);
   } catch (error) {
     console.error('Admin API error:', error.message);
 
     if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
-      return res.status(503).json({ error: 'Database connection failed. Please try again.' });
+      return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 
-    return res.status(500).json({ error: 'Internal server error' });
+    return sendError(res, 'Internal server error', 500);
   }
 }
