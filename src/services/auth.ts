@@ -47,7 +47,7 @@ export function getAuthToken(): string | null {
 /**
  * Exchange PIN for JWT token
  */
-export async function exchangePinForToken(pin: string): Promise<{
+export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJudge' | 'chiefJudge'): Promise<{
   success: boolean;
   token?: string;
   error?: string;
@@ -57,7 +57,7 @@ export async function exchangePinForToken(pin: string): Promise<{
     const response = await fetch('/api/v1/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin })
+      body: JSON.stringify({ pin, role })
     });
 
     const data = await response.json();

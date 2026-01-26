@@ -49,9 +49,11 @@ function isAuthenticated(): boolean {
 /**
  * Authenticate with PIN and get JWT token
  * Returns true if authentication succeeded
+ * @param pin - The 4-digit PIN
+ * @param role - Optional role to request ('timer' | 'gateJudge' | 'chiefJudge')
  */
-async function authenticateWithPin(pin: string): Promise<{ success: boolean; error?: string; isNewPin?: boolean }> {
-  const result = await exchangePinForToken(pin);
+async function authenticateWithPin(pin: string, role?: 'timer' | 'gateJudge' | 'chiefJudge'): Promise<{ success: boolean; error?: string; isNewPin?: boolean }> {
+  const result = await exchangePinForToken(pin, role);
   if (result.success) {
     updatePinStatusDisplay();
   }
@@ -78,6 +80,8 @@ let raceCheckRequestId = 0;
 
 // Resolver for PIN verification promise (used by closeAllModals cleanup)
 let pinVerifyResolver: ((verified: boolean) => void) | null = null;
+// Flag to indicate Chief Judge verification (requires chiefJudge role token)
+let pinVerifyForChiefJudge = false;
 
 /**
  * Initialize the application
@@ -4764,15 +4768,10 @@ function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
 /**
  * Verify PIN for entering Chief Judge mode
  * Uses same PIN as race management
+ * Always requires re-authentication to get a token with chiefJudge role
  */
 function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
   return new Promise((resolve) => {
-    // If already authenticated with valid token, allow without verification
-    if (hasAuthToken()) {
-      resolve(true);
-      return;
-    }
-
     const modal = document.getElementById('admin-pin-modal');
     const titleEl = document.getElementById('admin-pin-modal-title');
     const textEl = document.getElementById('admin-pin-modal-text');
@@ -4791,7 +4790,9 @@ function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
     pinInput.value = '';
 
     // Store resolver for the verify button handler
+    // Mark this as a Chief Judge verification so the handler uses the right role
     pinVerifyResolver = resolve;
+    pinVerifyForChiefJudge = true;
 
     modal.classList.add('show');
     setTimeout(() => pinInput.focus(), 100);
@@ -4811,7 +4812,9 @@ async function handleRaceJoinPinVerify(): Promise<void> {
   const enteredPin = pinInput.value.trim();
 
   // Authenticate via JWT token exchange
-  const result = await authenticateWithPin(enteredPin);
+  // Use chiefJudge role if this is for Chief Judge mode verification
+  const role = pinVerifyForChiefJudge ? 'chiefJudge' : undefined;
+  const result = await authenticateWithPin(enteredPin, role);
 
   if (result.success) {
     // PIN correct
@@ -4820,6 +4823,7 @@ async function handleRaceJoinPinVerify(): Promise<void> {
     if (errorEl) errorEl.style.display = 'none';
     pinVerifyResolver(true);
     pinVerifyResolver = null;
+    pinVerifyForChiefJudge = false; // Reset flag
   } else {
     // PIN incorrect
     if (errorEl) errorEl.style.display = 'block';
@@ -4843,6 +4847,7 @@ function cancelRaceJoinPinVerify(): void {
     pinVerifyResolver(false);
     pinVerifyResolver = null;
   }
+  pinVerifyForChiefJudge = false; // Reset flag
 }
 
 /**

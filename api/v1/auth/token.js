@@ -95,7 +95,7 @@ export default async function handler(req, res) {
       return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
     }
 
-    const { pin } = req.body || {};
+    const { pin, role } = req.body || {};
 
     if (!pin || typeof pin !== 'string') {
       return sendBadRequest(res, 'PIN is required');
@@ -105,6 +105,10 @@ export default async function handler(req, res) {
     if (!/^\d{4}$/.test(pin)) {
       return sendBadRequest(res, 'PIN must be exactly 4 digits');
     }
+
+    // Validate role if provided
+    const validRoles = ['timer', 'gateJudge', 'chiefJudge'];
+    const userRole = role && validRoles.includes(role) ? role : 'timer';
 
     // Get stored PIN hash from Redis
     const storedPinHash = await client.get(CLIENT_PIN_KEY);
@@ -116,13 +120,15 @@ export default async function handler(req, res) {
       await client.set(CLIENT_PIN_KEY, newPinHash);
 
       const token = generateToken({
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        role: userRole
       });
 
       return sendSuccess(res, {
         success: true,
         token,
         isNewPin: true,
+        role: userRole,
         message: 'PIN set successfully'
       });
     }
@@ -145,12 +151,14 @@ export default async function handler(req, res) {
 
     // PIN is valid, generate JWT token
     const token = generateToken({
-      authenticatedAt: Date.now()
+      authenticatedAt: Date.now(),
+      role: userRole
     });
 
     return sendSuccess(res, {
       success: true,
-      token
+      token,
+      role: userRole
     });
 
   } catch (error) {
