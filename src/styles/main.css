@@ -1243,8 +1243,8 @@ body {
 }
 
 /* ===== Confirmation Overlay ===== */
-/* Non-blocking overlay - allows interaction with elements below */
 /* Uses position:absolute inside .app to avoid iOS Safari fixed positioning issues */
+/* Full-screen blur masks any layout changes behind the overlay */
 .confirmation-overlay {
   position: absolute;
   inset: 0;
@@ -1253,6 +1253,9 @@ body {
   justify-content: center;
   z-index: 900;
   pointer-events: none;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .confirmation-overlay .confirmation-content {
