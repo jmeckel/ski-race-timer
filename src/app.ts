@@ -1290,12 +1290,12 @@ function handleRejectFaultDeletion(fault: FaultEntry): void {
  * Handle approving a fault deletion (chief judge action)
  */
 function handleApproveFaultDeletion(fault: FaultEntry): void {
-  const faultId = fault.id;
-  const success = store.approveFaultDeletion(faultId);
+  // approveFaultDeletion now returns the fault with approval info, or null if failed
+  const approvedFault = store.approveFaultDeletion(fault.id);
 
-  if (success) {
-    // Sync deletion to cloud
-    deleteFaultFromCloud(fault);
+  if (approvedFault) {
+    // Sync deletion to cloud (with approval info recorded)
+    deleteFaultFromCloud(approvedFault);
 
     const lang = store.getState().currentLang;
     showToast(t('deletionApproved', lang), 'success');
@@ -2424,6 +2424,13 @@ function handleSaveFaultEdit(): void {
   const newGate = parseInt(gateInput?.value || String(fault.gateNumber), 10);
   const newType = (typeSelect?.value || fault.faultType) as FaultType;
 
+  // Gate range validation warning
+  const lang = state.currentLang;
+  if (fault.gateRange && (newGate < fault.gateRange[0] || newGate > fault.gateRange[1])) {
+    // Show warning but allow save (gate might have been reassigned)
+    showToast(t('gateOutOfRange', lang), 'warning');
+  }
+
   // Get selected run
   const selectedRunBtn = runSelector?.querySelector('.edit-run-btn.active');
   const newRun = selectedRunBtn ? parseInt(selectedRunBtn.getAttribute('data-run') || '1', 10) as Run : fault.run;
@@ -2452,7 +2459,6 @@ function handleSaveFaultEdit(): void {
       syncFault(updatedFault);
     }
 
-    const lang = state.currentLang;
     showToast(t('saved', lang), 'success');
     feedbackSuccess();
   }

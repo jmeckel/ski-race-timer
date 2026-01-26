@@ -508,7 +508,11 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const { faultId, deviceId } = req.body || {};
+      // NOTE: Server-side chief judge role validation is not implemented.
+      // Currently relies on client-side enforcement + PIN protection.
+      // All authenticated users (with PIN) can delete faults.
+      // For enhanced security, implement role-based JWT claims.
+      const { faultId, deviceId, deviceName, approvedBy } = req.body || {};
 
       if (!faultId) {
         return res.status(400).json({ error: 'faultId is required' });
@@ -516,6 +520,11 @@ export default async function handler(req, res) {
 
       const faultIdStr = String(faultId);
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
+      const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
+      const sanitizedApprovedBy = sanitizeString(approvedBy, MAX_DEVICE_NAME_LENGTH);
+
+      // Audit log for deletion
+      console.log(`[AUDIT] Fault deletion: race=${normalizedRaceId}, faultId=${faultIdStr}, deviceId=${sanitizedDeviceId}, deviceName=${sanitizedDeviceName}, approvedBy=${sanitizedApprovedBy}, ip=${clientIP}`);
 
       const deleteResult = await atomicDeleteFault(client, faultsKey, faultIdStr, sanitizedDeviceId);
 
@@ -523,7 +532,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: deleteResult.error });
       }
 
-      // Track deleted fault ID
+      // Track deleted fault ID with metadata
       const deletedKey = `race:${normalizedRaceId}:deleted_faults`;
       const deleteKey = sanitizedDeviceId ? `${faultIdStr}:${sanitizedDeviceId}` : faultIdStr;
       await client.sadd(deletedKey, deleteKey);

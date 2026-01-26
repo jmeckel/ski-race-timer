@@ -3593,7 +3593,7 @@ body {
 .deletion-pending-badge {
   font-size: 0.75rem;
   color: var(--error);
-  animation: pulse 1.5s infinite;
+  font-weight: 600;
 }
 
 @keyframes pulse {

@@ -54,6 +54,9 @@ const DEFAULT_SETTINGS: Settings = {
 // Maximum undo stack size
 const MAX_UNDO_STACK = 50;
 
+// Maximum version history entries to keep per fault (for performance)
+const MAX_VERSION_HISTORY = 50;
+
 /**
  * State change listener type
  *
@@ -890,12 +893,19 @@ class Store {
       changeDescription
     };
 
+    // Trim version history if it exceeds limit (keep most recent)
+    const existingHistory = oldFault.versionHistory || [];
+    let newHistory = [...existingHistory, newVersionRecord];
+    if (newHistory.length > MAX_VERSION_HISTORY) {
+      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
+    }
+
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
       ...oldFault,
       ...updates,
       currentVersion: newVersion,
-      versionHistory: [...(oldFault.versionHistory || []), newVersionRecord]
+      versionHistory: newHistory
     };
     this.setState({ faultEntries });
     return true;
@@ -930,6 +940,13 @@ class Store {
       changeDescription: `Restored to version ${versionNumber}`
     };
 
+    // Trim version history if it exceeds limit (keep most recent)
+    const existingHistory = oldFault.versionHistory || [];
+    let newHistory = [...existingHistory, restoreVersionRecord];
+    if (newHistory.length > MAX_VERSION_HISTORY) {
+      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
+    }
+
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
       ...oldFault,
@@ -940,7 +957,7 @@ class Store {
       faultType: versionToRestore.data.faultType,
       // Keep version tracking
       currentVersion: newVersion,
-      versionHistory: [...(oldFault.versionHistory || []), restoreVersionRecord]
+      versionHistory: newHistory
     };
     this.setState({ faultEntries });
     return true;
@@ -966,24 +983,65 @@ class Store {
   }
 
   /**
-   * Chief judge approves deletion - actually deletes the fault
+   * Chief judge approves deletion - returns fault with approval info, then deletes
+   * Returns the approved fault (with approval info) for syncing before deletion, or null if failed
    */
-  approveFaultDeletion(id: string): boolean {
+  approveFaultDeletion(id: string): FaultEntry | null {
     const fault = this.state.faultEntries.find(f => f.id === id);
-    if (!fault || !fault.markedForDeletion) return false;
+    if (!fault || !fault.markedForDeletion) return null;
 
-    // Actually delete the fault
+    // Create approved version of fault (for sync) before deleting
+    const approvedFault: FaultEntry = {
+      ...fault,
+      deletionApprovedAt: new Date().toISOString(),
+      deletionApprovedBy: this.state.deviceName
+    };
+
+    // Actually delete the fault from local state
     const faultEntries = this.state.faultEntries.filter(f => f.id !== id);
     this.setState({ faultEntries });
-    return true;
+
+    return approvedFault;
   }
 
   /**
-   * Chief judge rejects deletion - clears the marked flag
+   * Chief judge rejects deletion - clears the marked flag and adds version record
    */
   rejectFaultDeletion(id: string): boolean {
     const index = this.state.faultEntries.findIndex(f => f.id === id);
     if (index === -1) return false;
+
+    const oldFault = this.state.faultEntries[index];
+    const newVersion = oldFault.currentVersion + 1;
+
+    // Create version record for rejection
+    const rejectionVersionRecord: FaultVersion = {
+      version: newVersion,
+      timestamp: new Date().toISOString(),
+      editedBy: this.state.deviceName,
+      editedByDeviceId: this.state.deviceId,
+      changeType: 'edit',
+      data: {
+        id: oldFault.id,
+        bib: oldFault.bib,
+        run: oldFault.run,
+        gateNumber: oldFault.gateNumber,
+        faultType: oldFault.faultType,
+        timestamp: oldFault.timestamp,
+        deviceId: oldFault.deviceId,
+        deviceName: oldFault.deviceName,
+        gateRange: oldFault.gateRange,
+        syncedAt: oldFault.syncedAt
+      },
+      changeDescription: 'Deletion rejected by Chief Judge'
+    };
+
+    // Trim version history if it exceeds limit
+    const existingHistory = oldFault.versionHistory || [];
+    let newHistory = [...existingHistory, rejectionVersionRecord];
+    if (newHistory.length > MAX_VERSION_HISTORY) {
+      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
+    }
 
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
@@ -991,7 +1049,9 @@ class Store {
       markedForDeletion: false,
       markedForDeletionAt: undefined,
       markedForDeletionBy: undefined,
-      markedForDeletionByDeviceId: undefined
+      markedForDeletionByDeviceId: undefined,
+      currentVersion: newVersion,
+      versionHistory: newHistory
     };
     this.setState({ faultEntries });
     return true;

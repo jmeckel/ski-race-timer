@@ -309,6 +309,7 @@ export const translations: Record<Language, Translations> = {
     markOk: 'Mark OK',
     saveFault: 'Save Fault',
     selectFaultType: 'Please select a fault type',
+    gateOutOfRange: 'Gate is outside assigned range',
     flt: 'FLT',
     statusFlt: 'Fault Penalty',
 
@@ -681,6 +682,7 @@ export const translations: Record<Language, Translations> = {
     markOk: 'OK markieren',
     saveFault: 'Fehler speichern',
     selectFaultType: 'Bitte Fehlerart wählen',
+    gateOutOfRange: 'Tor liegt außerhalb des zugewiesenen Bereichs',
     flt: 'STR',
     statusFlt: 'Strafzeit',
 

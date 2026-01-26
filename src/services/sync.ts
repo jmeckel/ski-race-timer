@@ -1180,7 +1180,7 @@ class SyncService {
   /**
    * Delete fault from cloud
    */
-  async deleteFaultFromCloud(faultId: string, faultDeviceId?: string): Promise<boolean> {
+  async deleteFaultFromCloud(faultId: string, faultDeviceId?: string, approvedBy?: string): Promise<boolean> {
     const state = store.getState();
     if (!state.settings.sync || !state.raceId) return false;
 
@@ -1192,7 +1192,9 @@ class SyncService {
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({
             faultId,
-            deviceId: faultDeviceId || state.deviceId
+            deviceId: faultDeviceId || state.deviceId,
+            deviceName: state.deviceName,
+            approvedBy: approvedBy || state.deviceName
           })
         },
         FETCH_TIMEOUT
@@ -1272,5 +1274,5 @@ export async function syncFault(fault: FaultEntry): Promise<void> {
 
 // Helper function to delete fault from cloud
 export async function deleteFaultFromCloud(fault: FaultEntry): Promise<boolean> {
-  return syncService.deleteFaultFromCloud(fault.id, fault.deviceId);
+  return syncService.deleteFaultFromCloud(fault.id, fault.deviceId, fault.deletionApprovedBy);
 }

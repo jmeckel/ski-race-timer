@@ -488,9 +488,9 @@ export class VirtualList {
     const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
     const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
 
-    // Deletion pending badge (shown separately from fault status)
+    // Deletion pending badge (shown separately from fault status) - static style to save battery
     const deletionPendingBadge = hasMarkedForDeletion ? `
-      <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white; animation: pulse 1.5s infinite;">
+      <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 9v4M12 17h.01"/>
           <circle cx="12" cy="12" r="10"/>
