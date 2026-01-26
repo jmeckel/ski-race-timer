@@ -137,6 +137,14 @@ export interface AppState {
   selectedFaultBib: string;  // Currently selected bib for fault entry
   isJudgeReady: boolean;  // Whether this judge has signaled ready
 
+  // Chief Judge View State
+  isChiefJudgeView: boolean;  // Show chief judge panel in Results view
+  finalizedRacers: Set<string>;  // Set of "bib-run" keys for finalized racers
+
+  // Race penalty configuration
+  penaltySeconds: number;  // Seconds per fault (default: 5 for youth)
+  usePenaltyMode: boolean;  // true = penalty time, false = DSQ
+
   // Undo/Redo
   undoStack: Action[];
   redoStack: Action[];

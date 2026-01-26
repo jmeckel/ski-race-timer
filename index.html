@@ -139,6 +139,17 @@
       <!-- Results View -->
       <div class="view results-view">
         <div class="results-header">
+          <!-- Chief Judge Toggle -->
+          <div class="chief-judge-toggle-row" id="chief-judge-toggle-row">
+            <button class="chief-judge-toggle-btn" id="chief-judge-toggle-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span data-i18n="chiefJudge">Chief Judge</span>
+            </button>
+          </div>
           <!-- Search & Filter -->
           <div class="search-filter-bar" data-advanced>
             <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search">
@@ -175,6 +186,56 @@
 
         <!-- Results List (Virtual Scrolling) -->
         <div class="results-list" id="results-list" role="list" aria-label="Results"></div>
+
+        <!-- Chief Judge Panel (shown when chief mode is active) -->
+        <div class="chief-judge-panel" id="chief-judge-panel">
+          <!-- Gate Judges Overview -->
+          <div class="judges-overview" id="judges-overview">
+            <div class="judges-overview-header">
+              <span class="judges-overview-title" data-i18n="gateJudges">Gate Judges</span>
+              <span class="judges-overview-count" id="judges-overview-count">0</span>
+            </div>
+            <div class="judges-overview-list" id="judges-overview-list">
+              <!-- Populated dynamically -->
+              <div class="judges-overview-empty" id="judges-overview-empty" data-i18n="noJudgesConnected">
+                No gate judges connected
+              </div>
+            </div>
+          </div>
+
+          <!-- Penalty Configuration -->
+          <div class="penalty-config-row" id="penalty-config-row">
+            <div class="penalty-mode-toggle" id="penalty-mode-toggle">
+              <button class="penalty-mode-btn active" data-mode="penalty">
+                <span data-i18n="penaltyMode">+Time</span>
+              </button>
+              <button class="penalty-mode-btn" data-mode="dsq">
+                <span>DSQ</span>
+              </button>
+            </div>
+            <div class="penalty-seconds-selector" id="penalty-seconds-selector">
+              <button class="penalty-adj-btn" data-adj="-1">−</button>
+              <span class="penalty-seconds-value" id="penalty-seconds-value">5</span>
+              <span class="penalty-seconds-unit">s</span>
+              <button class="penalty-adj-btn" data-adj="+1">+</button>
+            </div>
+          </div>
+          <div class="fault-summary-header">
+            <span class="fault-summary-title" data-i18n="faultSummary">Fault Summary</span>
+            <span class="fault-summary-count" id="fault-summary-count">0</span>
+          </div>
+          <div class="fault-summary-list" id="fault-summary-list">
+            <!-- Fault cards will be populated dynamically -->
+            <div class="chief-empty-state" id="chief-empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span data-i18n="noFaultsRecorded">No faults recorded</span>
+            </div>
+          </div>
+        </div>
 
         <!-- Select Mode Bar -->
         <div class="select-mode-bar" id="select-mode-bar">

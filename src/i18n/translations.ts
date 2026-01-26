@@ -307,7 +307,20 @@ export const translations: Record<Language, Translations> = {
     faultCount: 'faults',
     markOk: 'Mark OK',
     flt: 'FLT',
-    statusFlt: 'Fault Penalty'
+    statusFlt: 'Fault Penalty',
+
+    // Chief Judge
+    chiefJudge: 'Chief Judge',
+    noFaultsRecorded: 'No faults recorded',
+    finalize: 'Finalize',
+    finalized: 'Finalized',
+    chiefJudgeMode: 'Chief Judge Mode',
+    chiefJudgeModeEnabled: 'Chief Judge mode enabled',
+    chiefJudgeModeDisabled: 'Chief Judge mode disabled',
+    racersWithFaults: 'Racers with faults',
+    penaltyMode: '+Time',
+    gateJudges: 'Gate Judges',
+    noJudgesConnected: 'No gate judges connected'
   },
 
   de: {
@@ -616,7 +629,20 @@ export const translations: Record<Language, Translations> = {
     faultCount: 'Fehler',
     markOk: 'OK markieren',
     flt: 'STR',
-    statusFlt: 'Strafzeit'
+    statusFlt: 'Strafzeit',
+
+    // Chief Judge (Obmann)
+    chiefJudge: 'Obmann',
+    noFaultsRecorded: 'Keine Fehler erfasst',
+    finalize: 'Bestätigen',
+    finalized: 'Bestätigt',
+    chiefJudgeMode: 'Obmann-Ansicht',
+    chiefJudgeModeEnabled: 'Obmann-Ansicht aktiviert',
+    chiefJudgeModeDisabled: 'Obmann-Ansicht deaktiviert',
+    racersWithFaults: 'Fahrer mit Fehlern',
+    penaltyMode: '+Zeit',
+    gateJudges: 'Torrichter',
+    noJudgesConnected: 'Keine Torrichter verbunden'
   }
 };
 

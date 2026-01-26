@@ -204,6 +204,14 @@ class Store {
       selectedFaultBib: '',
       isJudgeReady: false,
 
+      // Chief Judge View State
+      isChiefJudgeView: false,
+      finalizedRacers: new Set<string>(),
+
+      // Race penalty configuration (default: 5 sec penalty time for youth)
+      penaltySeconds: 5,
+      usePenaltyMode: true,
+
       // Undo/Redo
       undoStack: [],
       redoStack: [],
@@ -732,6 +740,63 @@ class Store {
 
   toggleJudgeReady() {
     this.setState({ isJudgeReady: !this.state.isJudgeReady });
+  }
+
+  setChiefJudgeView(enabled: boolean) {
+    this.setState({ isChiefJudgeView: enabled }, false);
+  }
+
+  toggleChiefJudgeView() {
+    this.setState({ isChiefJudgeView: !this.state.isChiefJudgeView }, false);
+  }
+
+  /**
+   * Finalize a racer (mark all faults as reviewed by chief judge)
+   */
+  finalizeRacer(bib: string, run: Run) {
+    const key = `${bib}-${run}`;
+    const finalizedRacers = new Set(this.state.finalizedRacers);
+    finalizedRacers.add(key);
+    this.setState({ finalizedRacers }, false);
+  }
+
+  /**
+   * Unfinalize a racer (allow further edits)
+   */
+  unfinalizeRacer(bib: string, run: Run) {
+    const key = `${bib}-${run}`;
+    const finalizedRacers = new Set(this.state.finalizedRacers);
+    finalizedRacers.delete(key);
+    this.setState({ finalizedRacers }, false);
+  }
+
+  /**
+   * Check if a racer is finalized
+   */
+  isRacerFinalized(bib: string, run: Run): boolean {
+    const key = `${bib}-${run}`;
+    return this.state.finalizedRacers.has(key);
+  }
+
+  /**
+   * Clear all finalized racers (e.g., when switching races)
+   */
+  clearFinalizedRacers() {
+    this.setState({ finalizedRacers: new Set() }, false);
+  }
+
+  /**
+   * Set penalty seconds per fault
+   */
+  setPenaltySeconds(seconds: number) {
+    this.setState({ penaltySeconds: Math.max(0, Math.min(60, seconds)) }, false);
+  }
+
+  /**
+   * Set penalty mode (penalty time vs DSQ)
+   */
+  setUsePenaltyMode(usePenalty: boolean) {
+    this.setState({ usePenaltyMode: usePenalty }, false);
   }
 
   addFaultEntry(fault: FaultEntry) {

@@ -782,6 +782,376 @@ function initResultsActions(): void {
       }
     });
   }
+
+  // Chief Judge toggle
+  initChiefJudgeToggle();
+}
+
+/**
+ * Initialize Chief Judge toggle button
+ */
+function initChiefJudgeToggle(): void {
+  const toggleBtn = document.getElementById('chief-judge-toggle-btn');
+  if (!toggleBtn) return;
+
+  toggleBtn.addEventListener('click', () => {
+    store.toggleChiefJudgeView();
+    updateChiefJudgeView();
+    feedbackTap();
+
+    const state = store.getState();
+    const lang = state.currentLang;
+    showToast(
+      state.isChiefJudgeView ? t('chiefJudgeModeEnabled', lang) : t('chiefJudgeModeDisabled', lang),
+      'info'
+    );
+  });
+
+  // Update visibility based on sync and faults
+  updateChiefJudgeToggleVisibility();
+
+  // Subscribe to state changes to update visibility and refresh panel
+  store.subscribe((state, keys) => {
+    if (keys.includes('settings') || keys.includes('faultEntries')) {
+      updateChiefJudgeToggleVisibility();
+    }
+    // Refresh fault summary panel when faults or penalty config change and panel is visible
+    if ((keys.includes('faultEntries') || keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) && state.isChiefJudgeView) {
+      updateFaultSummaryPanel();
+    }
+    // Update penalty UI when config changes
+    if (keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) {
+      updatePenaltyConfigUI();
+    }
+    // Update judges overview when entries change (sync polling) and panel is visible
+    // Entries change when sync happens, which is also when gate assignments are fetched
+    if ((keys.includes('entries') || keys.includes('faultEntries') || keys.includes('isJudgeReady')) && state.isChiefJudgeView) {
+      updateJudgesOverview();
+    }
+  });
+
+  // Initialize penalty configuration handlers
+  initPenaltyConfig();
+}
+
+/**
+ * Initialize penalty configuration UI handlers
+ */
+function initPenaltyConfig(): void {
+  // Mode toggle buttons
+  const modeToggle = document.getElementById('penalty-mode-toggle');
+  if (modeToggle) {
+    modeToggle.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.penalty-mode-btn');
+      if (!btn) return;
+
+      const mode = btn.getAttribute('data-mode');
+      if (mode === 'penalty') {
+        store.setUsePenaltyMode(true);
+      } else if (mode === 'dsq') {
+        store.setUsePenaltyMode(false);
+      }
+      feedbackTap();
+    });
+  }
+
+  // Penalty seconds adjustment buttons
+  const secondsSelector = document.getElementById('penalty-seconds-selector');
+  if (secondsSelector) {
+    secondsSelector.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.penalty-adj-btn');
+      if (!btn) return;
+
+      const adj = btn.getAttribute('data-adj');
+      const state = store.getState();
+      const current = state.penaltySeconds;
+
+      if (adj === '+1') {
+        store.setPenaltySeconds(current + 1);
+      } else if (adj === '-1') {
+        store.setPenaltySeconds(current - 1);
+      }
+      feedbackTap();
+    });
+  }
+
+  // Set initial UI state
+  updatePenaltyConfigUI();
+}
+
+/**
+ * Update penalty configuration UI to reflect current state
+ */
+function updatePenaltyConfigUI(): void {
+  const state = store.getState();
+  const configRow = document.getElementById('penalty-config-row');
+  const secondsValue = document.getElementById('penalty-seconds-value');
+  const modeToggle = document.getElementById('penalty-mode-toggle');
+
+  if (configRow) {
+    configRow.classList.toggle('dsq-mode', !state.usePenaltyMode);
+  }
+
+  if (secondsValue) {
+    secondsValue.textContent = String(state.penaltySeconds);
+  }
+
+  if (modeToggle) {
+    const buttons = modeToggle.querySelectorAll('.penalty-mode-btn');
+    buttons.forEach(btn => {
+      const mode = btn.getAttribute('data-mode');
+      const isActive = (mode === 'penalty' && state.usePenaltyMode) ||
+                       (mode === 'dsq' && !state.usePenaltyMode);
+      btn.classList.toggle('active', isActive);
+    });
+  }
+}
+
+/**
+ * Update Chief Judge toggle button visibility
+ * Only show when sync is enabled and there are faults to review
+ */
+function updateChiefJudgeToggleVisibility(): void {
+  const toggleRow = document.getElementById('chief-judge-toggle-row');
+  if (!toggleRow) return;
+
+  const state = store.getState();
+  // Show toggle when sync is enabled (even if no faults yet - chief may want to monitor)
+  const shouldShow = state.settings.sync;
+  toggleRow.style.display = shouldShow ? 'block' : 'none';
+}
+
+/**
+ * Update Chief Judge view state
+ */
+function updateChiefJudgeView(): void {
+  const state = store.getState();
+  const resultsView = document.querySelector('.results-view');
+  const toggleBtn = document.getElementById('chief-judge-toggle-btn');
+
+  if (!resultsView || !toggleBtn) return;
+
+  // Toggle active state on button and view
+  toggleBtn.classList.toggle('active', state.isChiefJudgeView);
+  resultsView.classList.toggle('chief-mode', state.isChiefJudgeView);
+
+  // Populate panels when entering chief mode
+  if (state.isChiefJudgeView) {
+    updateFaultSummaryPanel();
+    updateJudgesOverview();
+  }
+}
+
+/**
+ * Update the judges overview section in Chief Judge panel
+ */
+function updateJudgesOverview(): void {
+  const overviewList = document.getElementById('judges-overview-list');
+  const overviewCount = document.getElementById('judges-overview-count');
+  const emptyState = document.getElementById('judges-overview-empty');
+
+  if (!overviewList || !overviewCount) return;
+
+  // Get all gate assignments from sync service
+  const assignments = syncService.getOtherGateAssignments();
+
+  // Also include this device if it's a gate judge
+  const state = store.getState();
+  const allJudges: import('./types').GateAssignment[] = [...assignments];
+
+  if (state.deviceRole === 'gateJudge' && state.gateAssignment) {
+    allJudges.push({
+      deviceId: state.deviceId,
+      deviceName: state.deviceName,
+      gateStart: state.gateAssignment[0],
+      gateEnd: state.gateAssignment[1],
+      lastSeen: Date.now(),
+      isReady: state.isJudgeReady
+    });
+  }
+
+  // Update count
+  overviewCount.textContent = String(allJudges.length);
+
+  // Show/hide empty state
+  if (emptyState) {
+    emptyState.style.display = allJudges.length === 0 ? 'block' : 'none';
+  }
+
+  // Build judge cards
+  const existingCards = overviewList.querySelectorAll('.judge-card');
+  existingCards.forEach(card => card.remove());
+
+  if (allJudges.length === 0) return;
+
+  // Sort by gate start
+  allJudges.sort((a, b) => a.gateStart - b.gateStart);
+
+  const cardsHtml = allJudges.map(judge => `
+    <div class="judge-card${judge.isReady ? ' ready' : ''}">
+      <span class="judge-ready-indicator"></span>
+      <span class="judge-name" title="${judge.deviceName}">${judge.deviceName}</span>
+      <span class="judge-gates">${judge.gateStart}–${judge.gateEnd}</span>
+    </div>
+  `).join('');
+
+  if (emptyState) {
+    emptyState.insertAdjacentHTML('beforebegin', cardsHtml);
+  } else {
+    overviewList.innerHTML = cardsHtml;
+  }
+}
+
+/**
+ * Update the fault summary panel in Chief Judge view
+ * Groups faults by bib number and shows summary for each racer
+ */
+function updateFaultSummaryPanel(): void {
+  const summaryList = document.getElementById('fault-summary-list');
+  const summaryCount = document.getElementById('fault-summary-count');
+  const emptyState = document.getElementById('chief-empty-state');
+
+  if (!summaryList || !summaryCount) return;
+
+  const state = store.getState();
+  const lang = state.currentLang;
+  const faults = state.faultEntries;
+
+  // Group faults by bib number
+  const faultsByBib = new Map<string, import('./types').FaultEntry[]>();
+  for (const fault of faults) {
+    const key = `${fault.bib}-${fault.run}`;
+    if (!faultsByBib.has(key)) {
+      faultsByBib.set(key, []);
+    }
+    faultsByBib.get(key)!.push(fault);
+  }
+
+  // Update count badge
+  summaryCount.textContent = String(faultsByBib.size);
+
+  // Show/hide empty state
+  if (emptyState) {
+    emptyState.style.display = faultsByBib.size === 0 ? 'flex' : 'none';
+  }
+
+  if (faultsByBib.size === 0) {
+    // Clear any existing cards (except empty state)
+    const cards = summaryList.querySelectorAll('.fault-summary-card');
+    cards.forEach(card => card.remove());
+    return;
+  }
+
+  // Build fault summary cards HTML
+  const cardsHtml: string[] = [];
+
+  // Sort by bib number
+  const sortedEntries = Array.from(faultsByBib.entries()).sort((a, b) => {
+    const [keyA] = a;
+    const [keyB] = b;
+    const bibA = parseInt(keyA.split('-')[0], 10) || 0;
+    const bibB = parseInt(keyB.split('-')[0], 10) || 0;
+    return bibA - bibB;
+  });
+
+  for (const [key, racerFaults] of sortedEntries) {
+    const [bib, runStr] = key.split('-');
+    const run = parseInt(runStr, 10) as import('./types').Run;
+
+    // Check if this racer is finalized
+    const isFinalized = store.isRacerFinalized(bib, run);
+
+    // Calculate penalty using configurable values
+    const penaltySeconds = state.usePenaltyMode ? racerFaults.length * state.penaltySeconds : 0;
+    const resultStatus = state.usePenaltyMode ? 'flt' : 'dsq';
+
+    // Build fault rows
+    const faultRows = racerFaults.map(fault => `
+      <div class="fault-entry-row">
+        <div class="fault-gate-info">
+          <span class="fault-gate-num">${t('gate', lang)} ${fault.gateNumber}</span>
+          <span class="fault-type-badge">${getFaultTypeLabel(fault.faultType, lang)}</span>
+        </div>
+        <span class="fault-judge-name">${fault.deviceName}</span>
+      </div>
+    `).join('');
+
+    // Build action button (finalize or finalized badge)
+    const actionHtml = isFinalized
+      ? `<div class="finalized-badge">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+             <path d="M20 6L9 17l-5-5"/>
+           </svg>
+           ${t('finalized', lang)}
+         </div>`
+      : `<button class="finalize-btn" data-bib="${bib}" data-run="${run}">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+             <path d="M20 6L9 17l-5-5"/>
+           </svg>
+           ${t('finalize', lang)}
+         </button>`;
+
+    // Build status display based on penalty mode
+    const statusHtml = state.usePenaltyMode
+      ? `<span class="fault-card-penalty">+${penaltySeconds}s</span>
+         <span class="fault-card-result flt">${t('flt', lang)}</span>`
+      : `<span class="fault-card-result dsq">DSQ</span>`;
+
+    cardsHtml.push(`
+      <div class="fault-summary-card${isFinalized ? ' finalized' : ''}" data-bib="${bib}" data-run="${run}">
+        <div class="fault-card-header">
+          <span class="fault-card-bib">#${bib.padStart(3, '0')}</span>
+          <div class="fault-card-status">
+            ${statusHtml}
+          </div>
+        </div>
+        <div class="fault-card-body">
+          ${faultRows}
+        </div>
+        <div class="fault-card-actions">
+          ${actionHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  // Remove existing cards and add new ones
+  const existingCards = summaryList.querySelectorAll('.fault-summary-card');
+  existingCards.forEach(card => card.remove());
+
+  // Insert cards before empty state
+  if (emptyState) {
+    emptyState.insertAdjacentHTML('beforebegin', cardsHtml.join(''));
+  } else {
+    summaryList.innerHTML = cardsHtml.join('');
+  }
+
+  // Add click handlers for finalize buttons
+  const finalizeButtons = summaryList.querySelectorAll('.finalize-btn');
+  finalizeButtons.forEach(btn => {
+    btn.addEventListener('click', handleFinalizeClick);
+  });
+}
+
+/**
+ * Handle finalize button click in Chief Judge view
+ */
+function handleFinalizeClick(event: Event): void {
+  const btn = event.currentTarget as HTMLElement;
+  const bib = btn.dataset.bib;
+  const runStr = btn.dataset.run;
+
+  if (!bib || !runStr) return;
+
+  const run = parseInt(runStr, 10) as import('./types').Run;
+  store.finalizeRacer(bib, run);
+  feedbackSuccess();
+
+  const state = store.getState();
+  showToast(`#${bib.padStart(3, '0')} ${t('finalized', state.currentLang)}`, 'success');
+
+  // Update the panel to reflect the new finalized state
+  updateFaultSummaryPanel();
 }
 
 /**

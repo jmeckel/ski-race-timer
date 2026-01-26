@@ -3272,3 +3272,452 @@ body {
   background: var(--warning);
   color: var(--background);
 }
+
+/* ===== Chief Judge View ===== */
+
+/* Chief Judge Toggle Row */
+.chief-judge-toggle-row {
+  padding: 8px 0 4px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--surface-elevated);
+  display: none;  /* Hidden by default, shown when sync is enabled with faults */
+}
+
+.chief-judge-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid var(--surface-elevated);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.chief-judge-toggle-btn:active {
+  transform: scale(0.98);
+}
+
+.chief-judge-toggle-btn.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, #2563EB 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.chief-judge-toggle-btn svg {
+  flex-shrink: 0;
+}
+
+/* Chief Judge Panel (shown when toggle is active) */
+.chief-judge-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 16px 12px;
+}
+
+.chief-judge-panel.active {
+  display: flex;
+}
+
+/* Hide normal results when chief panel is active */
+.results-view.chief-mode .results-list,
+.results-view.chief-mode .search-filter-bar,
+.results-view.chief-mode .stats-row {
+  display: none;
+}
+
+.results-view.chief-mode .chief-judge-panel {
+  display: flex;
+}
+
+/* Fault Summary Header */
+.fault-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.fault-summary-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fault-summary-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--warning);
+  background: rgba(234, 179, 8, 0.15);
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+/* Fault Summary List */
+.fault-summary-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fault Summary Card (per racer) */
+.fault-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.fault-summary-card.finalized {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.fault-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--surface-elevated);
+}
+
+.fault-card-bib {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fault-card-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fault-card-penalty {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.fault-card-result {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.fault-card-result.flt {
+  background: var(--warning);
+  color: var(--background);
+}
+
+.fault-card-result.dsq {
+  background: var(--error);
+  color: white;
+}
+
+.fault-card-body {
+  padding: 12px 14px;
+}
+
+.fault-entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--surface-elevated);
+}
+
+.fault-entry-row:last-child {
+  border-bottom: none;
+}
+
+.fault-gate-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fault-gate-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fault-type-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+}
+
+.fault-judge-name {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.fault-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--surface-elevated);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.finalize-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--success);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.finalize-btn:active {
+  transform: scale(0.98);
+}
+
+.finalize-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.finalized-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Empty state for chief judge panel */
+.chief-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  gap: 12px;
+  padding: 40px 20px;
+}
+
+.chief-empty-state svg {
+  opacity: 0.5;
+}
+
+.chief-empty-state span {
+  font-size: 0.875rem;
+}
+
+/* Penalty Configuration Row */
+.penalty-config-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--surface-elevated);
+  margin-bottom: 8px;
+}
+
+.penalty-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-elevated);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.penalty-mode-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.penalty-mode-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+.penalty-mode-btn:not(.active):hover {
+  color: var(--text-primary);
+}
+
+.penalty-seconds-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.penalty-adj-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--surface-elevated);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.penalty-adj-btn:active {
+  transform: scale(0.95);
+  background: var(--surface-elevated);
+}
+
+.penalty-seconds-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--warning);
+  min-width: 32px;
+  text-align: center;
+}
+
+.penalty-seconds-unit {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+/* Hide penalty seconds when in DSQ mode */
+.penalty-config-row.dsq-mode .penalty-seconds-selector {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ===== Judges Overview in Chief Panel ===== */
+
+.judges-overview {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.judges-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.judges-overview-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.judges-overview-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.15);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.judges-overview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.judges-overview-empty {
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.judge-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.judge-card.ready {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.judge-ready-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.judge-card.ready .judge-ready-indicator {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.judge-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.judge-gates {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+}
