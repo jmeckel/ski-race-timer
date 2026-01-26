@@ -918,10 +918,9 @@ function initSettingsView(): void {
     simpleModeToggle.addEventListener('change', () => {
       store.updateSettings({ simple: simpleModeToggle.checked });
       applySettings();
-      // Hide admin section in simple mode
       const adminSection = document.getElementById('admin-section');
       if (adminSection) {
-        adminSection.style.display = simpleModeToggle.checked ? 'none' : 'block';
+        adminSection.style.display = 'block';
       }
     });
   }
@@ -1849,7 +1848,7 @@ function updateSettingsInputs(): void {
   // Hide admin section in simple mode
   const adminSection = document.getElementById('admin-section');
   if (adminSection) {
-    adminSection.style.display = settings.simple ? 'none' : 'block';
+    adminSection.style.display = 'block';
   }
 
   if (gpsToggle) gpsToggle.checked = settings.gps;
@@ -1919,23 +1918,15 @@ function updateTranslations(): void {
  * Apply settings (show/hide UI based on simple mode)
  */
 function applySettings(): void {
-  const settings = store.getState().settings;
-
-  // Simple mode UI adjustments
+  // Simple mode deprecated: always show advanced UI and timing points.
   const advancedElements = document.querySelectorAll('[data-advanced]');
   advancedElements.forEach(el => {
-    (el as HTMLElement).style.display = settings.simple ? 'none' : '';
+    (el as HTMLElement).style.display = '';
   });
 
-  // Hide Start timing point in simple mode
   const startBtn = document.querySelector('[data-point="S"]') as HTMLElement;
   if (startBtn) {
-    startBtn.style.display = settings.simple ? 'none' : '';
-  }
-
-  // Force Finish point selected in simple mode
-  if (settings.simple) {
-    store.setSelectedPoint('F');
+    startBtn.style.display = '';
   }
 
   // Apply Liquid Glass UI settings
