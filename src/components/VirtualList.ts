@@ -484,12 +484,23 @@ export class VirtualList {
       </span>
     `;
 
-    // Determine status based on penalty mode
-    const statusLabel = hasMarkedForDeletion ? '⚠' : (state.usePenaltyMode ? t('flt', lang) : 'DSQ');
-    const statusColor = hasMarkedForDeletion ? 'var(--error)' : (state.usePenaltyMode ? 'var(--warning)' : 'var(--error)');
+    // Determine status based on penalty mode and deletion state
+    const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
+    const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
+
+    // Deletion pending badge (shown separately from fault status)
+    const deletionPendingBadge = hasMarkedForDeletion ? `
+      <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white; animation: pulse 1.5s infinite;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 9v4M12 17h.01"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        DEL
+      </span>
+    ` : '';
 
     item.innerHTML = `
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px; ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
       <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
@@ -497,7 +508,7 @@ export class VirtualList {
       </div>
       <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
+        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
         ${displayItem.deviceName ? `
@@ -506,10 +517,13 @@ export class VirtualList {
           </div>
         ` : ''}
       </div>
-      ${faultBadgeHtml}
-      <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
-        ${escapeHtml(statusLabel)}
-      </span>
+      ${deletionPendingBadge}
+      ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
+      ${!hasMarkedForDeletion ? `
+        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
+          ${escapeHtml(statusLabel)}
+        </span>
+      ` : ''}
       <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 8px; cursor: pointer; opacity: 0.7;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
