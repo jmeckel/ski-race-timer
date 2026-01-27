@@ -105,9 +105,9 @@ export class VirtualList {
     this.resizeObserver.observe(this.scrollContainer);
 
     // Subscribe to store updates
-    this.unsubscribe = store.subscribe((state, changedKeys) => {
+    this.unsubscribe = store.subscribe((stateSnapshot, changedKeys) => {
       if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries') || changedKeys.includes('faultEntries')) {
-        this.setEntries(state.entries);
+        this.setEntries(stateSnapshot.entries);
       }
     });
 

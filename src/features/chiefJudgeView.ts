@@ -93,12 +93,13 @@ export function initChiefJudgeToggle(callbacks: {
   updateChiefJudgeToggleVisibility();
 
   // Subscribe to state changes to update visibility and refresh panel
-  store.subscribe((state, keys) => {
+  // Note: stateSnapshot is captured when notification was queued - use store.getState() if you need latest
+  store.subscribe((stateSnapshot, keys) => {
     if (keys.includes('settings') || keys.includes('faultEntries')) {
       updateChiefJudgeToggleVisibility();
     }
     // Refresh fault summary panel when faults or penalty config change and panel is visible
-    if ((keys.includes('faultEntries') || keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) && state.isChiefJudgeView) {
+    if ((keys.includes('faultEntries') || keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) && stateSnapshot.isChiefJudgeView) {
       updateFaultSummaryPanel();
       updatePendingDeletionsPanel();
     }
@@ -107,20 +108,20 @@ export function initChiefJudgeToggle(callbacks: {
       updatePenaltyConfigUI();
     }
     // Update judges overview when entries change (sync polling) and panel is visible
-    if ((keys.includes('entries') || keys.includes('faultEntries') || keys.includes('isJudgeReady')) && state.isChiefJudgeView) {
+    if ((keys.includes('entries') || keys.includes('faultEntries') || keys.includes('isJudgeReady')) && stateSnapshot.isChiefJudgeView) {
       updateJudgesOverview();
     }
     // Update inline fault list when faults change and device is a gate judge
-    if (keys.includes('faultEntries') && state.deviceRole === 'gateJudge') {
+    if (keys.includes('faultEntries') && stateSnapshot.deviceRole === 'gateJudge') {
       updateInlineFaultsListCallback?.();
       updateInlineBibSelectorCallback?.();
     }
     // Update inline bib selector when entries change (new starts/finishes) and device is a gate judge
-    if (keys.includes('entries') && state.deviceRole === 'gateJudge') {
+    if (keys.includes('entries') && stateSnapshot.deviceRole === 'gateJudge') {
       updateInlineBibSelectorCallback?.();
     }
     // Update inline gate selector when gate assignment changes
-    if (keys.includes('gateAssignment') && state.deviceRole === 'gateJudge') {
+    if (keys.includes('gateAssignment') && stateSnapshot.deviceRole === 'gateJudge') {
       updateInlineGateSelectorCallback?.();
     }
   });

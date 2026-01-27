@@ -63,12 +63,13 @@ const MAX_VERSION_HISTORY = 50;
 /**
  * State change listener type
  *
- * IMPORTANT: The state parameter is a snapshot taken when the notification was queued.
- * This ensures all listeners in a batch see consistent state, even if one listener
- * triggers additional state changes. If you need the absolute latest state (e.g., for
- * chained updates), call store.getState() instead of using the passed state parameter.
+ * @param stateSnapshot - A SNAPSHOT of the state when the notification was queued.
+ *   WARNING: This may be stale if another listener modified state before you run.
+ *   For chained updates or when you need the absolute latest state, always use
+ *   store.getState() instead of the stateSnapshot parameter.
+ * @param changedKeys - Array of state keys that changed in this update
  */
-type StateListener = (state: Readonly<AppState>, changedKeys: (keyof AppState)[]) => void;
+type StateListener = (stateSnapshot: Readonly<AppState>, changedKeys: (keyof AppState)[]) => void;
 
 type BooleanSettingKey =
   | 'auto'
