@@ -1,11 +1,13 @@
 # App.ts Module Extraction Plan
 
-This plan outlines the remaining extractions needed to break down `app.ts` (currently ~4,550 lines) into focused feature modules.
+This plan outlines the remaining extractions needed to break down `app.ts` into focused feature modules.
 
 ## Current State
 
 - **Completed**: `timerView.ts` extracted (~470 lines)
-- **Remaining**: ~4,550 lines in app.ts
+- **Completed**: `photoViewer.ts` extracted (~100 lines)
+- **Completed**: `chiefJudgeView.ts` extracted (~630 lines)
+- **Remaining**: ~3,835 lines in app.ts
 
 ## Extraction Order
 
