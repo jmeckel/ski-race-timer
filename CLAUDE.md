@@ -77,13 +77,34 @@ The app has three tab-based views:
 
 ### Feature Modules
 
-Located in `src/features/`, these modules extract reusable functionality:
+Located in `src/features/`, these modules organize UI functionality by domain:
+
+**View modules** (extracted from app.ts):
+- **timerView.ts** (~470 lines) - Clock display, number pad, timing points, run selector
+- **resultsView.ts** (~250 lines) - VirtualList, filtering, search, pull-to-refresh
+- **settingsView.ts** (~550 lines) - Settings toggles, role selection, recent races
+- **gateJudgeView.ts** (~350 lines) - Gate judge UI, gate assignment, ready status
+- **chiefJudgeView.ts** (~630 lines) - Chief judge panel, fault summaries, deletion approvals
+- **faultEntry.ts** (~950 lines) - Fault recording, editing, inline entry, deletion workflow
+- **raceManagement.ts** (~950 lines) - PIN management, race CRUD, auth handling
+
+**Utility modules**:
 - **modals.ts** - Modal open/close utilities with animation support
 - **ripple.ts** - Material Design ripple effect for touch feedback
 - **export.ts** - CSV export in Race Horology format
-- **gateJudge.ts** - Gate Judge UI and inline fault entry (dependency injection)
-- **chiefJudge.ts** - Chief Judge panel, fault summaries, deletion approvals
-- **editModals.ts** - Entry and fault edit modal handling
+- **photoViewer.ts** (~100 lines) - Photo viewing and deletion from IndexedDB
+
+**Callback injection pattern**: Modules use callback injection to avoid circular dependencies:
+```typescript
+// In module: define callback type and setter
+let openConfirmModalCallback: ((action: string) => void) | null = null;
+export function setCallbacks(callbacks: { openConfirmModal: (action: string) => void }) {
+  openConfirmModalCallback = callbacks.openConfirmModal;
+}
+
+// In app.ts: inject callbacks during initialization
+setCallbacks({ openConfirmModal: openConfirmModal });
+```
 
 ### Utility Modules
 

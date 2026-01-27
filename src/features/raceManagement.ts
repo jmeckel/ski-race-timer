@@ -523,11 +523,10 @@ export async function showPhotoSyncWarningModal(): Promise<void> {
   if (downloadCountEl) downloadCountEl.textContent = String(stats.downloadCount);
   if (totalSizeEl) totalSizeEl.textContent = formatBytes(stats.totalSize);
 
-  // Update confirm button based on whether there are photos to sync
+  // Update confirm button text
   const confirmBtn = document.getElementById('photo-sync-confirm-btn');
   if (confirmBtn) {
-    const hasPhotos = stats.uploadCount > 0 || stats.downloadCount > 0;
-    confirmBtn.textContent = hasPhotos ? t('enableSync', lang) : t('enableSync', lang);
+    confirmBtn.textContent = t('enableSync', lang);
   }
 }
 
@@ -820,6 +819,7 @@ async function loadRaceList(): Promise<void> {
 
   } catch (error) {
     logError('Admin', 'loadRaceList', error, 'loadError');
+    showToast(t('loadError', lang), 'error');
     listContainer.setAttribute('aria-busy', 'false');
     if (loadingEl) loadingEl.style.display = 'none';
   }

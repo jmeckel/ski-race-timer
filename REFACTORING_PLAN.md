@@ -12,7 +12,27 @@ This plan outlines the remaining extractions needed to break down `app.ts` into 
 - **Completed**: `resultsView.ts` extracted (~250 lines)
 - **Completed**: `settingsView.ts` extracted (~550 lines)
 - **Completed**: `raceManagement.ts` extracted (~950 lines)
-- **Remaining**: ~826 lines in app.ts (orchestrator + core functions)
+- **Final**: ~810 lines in app.ts (orchestrator + core functions)
+
+## Refactoring Complete ✓
+
+The app.ts file has been reduced from ~5,023 lines to ~810 lines (84% reduction).
+
+**Key patterns used:**
+1. **Callback injection**: Modules receive dependencies via `setCallbacks()` functions
+2. **Cleanup functions**: Each module exports cleanup functions for resource management
+3. **Event listeners**: Custom events for cross-module communication (e.g., `fault-edit-request`)
+
+**What remains in app.ts:**
+- `initApp()` - Main initialization orchestrating all modules
+- `initModals()` - Generic modal overlay handlers
+- `openConfirmModal()` / `handleConfirmAction()` - Confirmation modal logic
+- `closeAllModals()` - Centralized modal cleanup
+- `openEditModal()` / `handleSaveEdit()` - Entry editing
+- `promptDelete()` / `handleConfirmDelete()` - Entry deletion
+- `handleStateChange()` - State subscription and UI updates
+- `updateUI()` / `toKebabCase()` - UI update helpers
+- Event listener setup for sync, storage, and auth events
 
 ## Extraction Order
 

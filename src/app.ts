@@ -1,57 +1,41 @@
 import { store } from './store';
-import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './components';
+import { showToast, destroyToast } from './components';
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
 import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
 import { hasAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
-import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout, escapeHtml } from './utils';
+import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION } from './utils';
 import { isValidRaceId } from './utils/validation';
 import { t } from './i18n/translations';
-import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
-import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
 import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run } from './types';
 
 // Feature modules
-import { closeModal, closeAllModalsAnimated, openModal } from './features/modals';
-import { initRippleEffects, createRipple, cleanupRippleEffects } from './features/ripple';
-import { exportResults, formatTimeForRaceHorology, escapeCSVField, exportChiefSummary, exportFaultSummaryWhatsApp } from './features/export';
+import { closeModal } from './features/modals';
+import { initRippleEffects, cleanupRippleEffects } from './features/ripple';
 import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
-  getPointColor, formatTimeDisplay, updateBibDisplay, updateTimingPointSelection, updateRunSelection
+  updateBibDisplay, updateTimingPointSelection, updateRunSelection
 } from './features/timerView';
 import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 import {
-  getFaultTypeLabel, initChiefJudgeToggle, updatePenaltyConfigUI, updateChiefJudgeToggleVisibility,
-  updateChiefJudgeView, updateJudgesOverview, updateFaultSummaryPanel, updatePendingDeletionsPanel
-} from './features/chiefJudgeView';
-import {
-  openFaultRecordingModal, initFaultRecordingModal, recordFault, showFaultConfirmation,
-  initFaultEditModal, openFaultEditModal, handleSaveFaultEdit, handleRestoreFaultVersion,
-  openMarkDeletionModal, handleConfirmMarkDeletion, updateActiveBibsList,
-  updateInlineFaultsList, updateInlineBibSelector, selectInlineBib,
-  updateInlineGateSelector, selectInlineGate, initInlineFaultEntry,
-  updateInlineSaveButtonState, saveInlineFault, openFaultDeleteConfirmation, refreshInlineFaultUI
+  initFaultEditModal, updateActiveBibsList, updateInlineFaultsList, refreshInlineFaultUI
 } from './features/faultEntry';
 import {
   setUpdateRoleToggleCallback, updateGateJudgeTabVisibility, initGateJudgeView,
-  openGateAssignmentModal, initGateAssignmentModal, updateGateRangeDisplay,
-  updateOtherJudgesCoverage, updateReadyButtonState, updateJudgesReadyIndicator,
-  updateJudgeReadyStatus, updateGateJudgeRunSelection
+  updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection
 } from './features/gateJudgeView';
 import {
-  setResultsViewCallbacks, getVirtualList, initResultsView, initResultsActions,
-  applyFilters, updateStats, updateEntryCountBadge, cleanupSearchTimeout
+  setResultsViewCallbacks, getVirtualList, initResultsView,
+  updateStats, updateEntryCountBadge, cleanupSearchTimeout
 } from './features/resultsView';
 import {
-  setSettingsViewCallbacks, initSettingsView, initRoleToggle, updateRoleToggle,
+  setSettingsViewCallbacks, initSettingsView, updateRoleToggle,
   updateSettingsInputs, updateLangToggle, updateTranslations, applySettings,
-  applyGlassEffectSettings, checkRaceExists, showSettingsRecentRacesDropdown,
-  fetchRacesFromApi, selectSettingsRecentRace, updateRaceExistsIndicator,
-  cleanupSettingsTimeouts
+  applyGlassEffectSettings, cleanupSettingsTimeouts
 } from './features/settingsView';
 import {
   initRaceManagement, verifyPinForRaceJoin, verifyPinForChiefJudge,
