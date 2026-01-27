@@ -120,7 +120,7 @@ test.describe('Timer View', () => {
     });
 
     test('should show run selector', async ({ page }) => {
-      const runSelector = page.locator('.run-selector');
+      const runSelector = page.locator('#run-selector');
       await expect(runSelector).toBeVisible();
     });
   });
@@ -183,35 +183,35 @@ test.describe('Timer View - Full Mode', () => {
 
   test.describe('Run Selection', () => {
     test('should show run selector in full mode', async ({ page }) => {
-      await expect(page.locator('.run-selector')).toBeVisible();
+      await expect(page.locator('#run-selector')).toBeVisible();
     });
 
     test('should show both Run 1 and Run 2 buttons', async ({ page }) => {
-      await expect(page.locator('.run-selector [data-run="1"]')).toBeVisible();
-      await expect(page.locator('.run-selector [data-run="2"]')).toBeVisible();
+      await expect(page.locator('#run-selector [data-run="1"]')).toBeVisible();
+      await expect(page.locator('#run-selector [data-run="2"]')).toBeVisible();
     });
 
     test('should default to Run 1', async ({ page }) => {
-      const run1Button = page.locator('.run-selector [data-run="1"]');
+      const run1Button = page.locator('#run-selector [data-run="1"]');
       await expect(run1Button).toHaveClass(/active/);
     });
 
     test('should select Run 2', async ({ page }) => {
-      await page.click('.run-selector [data-run="2"]');
-      const run2Button = page.locator('.run-selector [data-run="2"]');
+      await page.click('#run-selector [data-run="2"]');
+      const run2Button = page.locator('#run-selector [data-run="2"]');
       await expect(run2Button).toHaveClass(/active/);
     });
 
     test('should switch back to Run 1', async ({ page }) => {
-      await page.click('.run-selector [data-run="2"]');
-      await page.click('.run-selector [data-run="1"]');
-      const run1Button = page.locator('.run-selector [data-run="1"]');
+      await page.click('#run-selector [data-run="2"]');
+      await page.click('#run-selector [data-run="1"]');
+      const run1Button = page.locator('#run-selector [data-run="1"]');
       await expect(run1Button).toHaveClass(/active/);
     });
 
     test('should record entry with selected run', async ({ page }) => {
       // Select Run 2
-      await page.click('.run-selector [data-run="2"]');
+      await page.click('#run-selector [data-run="2"]');
 
       // Enter bib and record
       await enterBib(page, 42);
@@ -233,7 +233,7 @@ test.describe('Timer View - Full Mode', () => {
       await waitForConfirmationToHide(page);
 
       // Switch to Run 2 and record same bib
-      await page.click('.run-selector [data-run="2"]');
+      await page.click('#run-selector [data-run="2"]');
       await page.click('[data-action="clear"]');
       await enterBib(page, 1);
       await page.click('#timestamp-btn');

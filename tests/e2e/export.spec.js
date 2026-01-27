@@ -237,7 +237,7 @@ test.describe('Export - Multiple Runs', () => {
 
   test('should export Run 2 entries correctly', async ({ page }) => {
     // Select Run 2
-    await page.click('.run-selector [data-run="2"]');
+    await page.click('#run-selector [data-run="2"]');
     await page.click('[data-num="2"]');
     await page.click('#timestamp-btn');
     await waitForConfirmationToHide(page);
@@ -260,14 +260,14 @@ test.describe('Export - Multiple Runs', () => {
 
   test('should export both Run 1 and Run 2 entries', async ({ page }) => {
     // Add Run 1 entry
-    await page.click('.run-selector [data-run="1"]');
+    await page.click('#run-selector [data-run="1"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
     await waitForConfirmationToHide(page);
 
     // Add Run 2 entry
     await page.click('[data-action="clear"]');
-    await page.click('.run-selector [data-run="2"]');
+    await page.click('#run-selector [data-run="2"]');
     await page.click('[data-num="1"]');
     await page.click('#timestamp-btn');
     await waitForConfirmationToHide(page);

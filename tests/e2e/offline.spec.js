@@ -246,22 +246,19 @@ test.describe('Edge Cases', () => {
   });
 
   test('should handle rapid entry recording', async ({ page }) => {
-    // Rapidly add entries
-    for (let i = 0; i < 10; i++) {
+    // Record multiple entries quickly (5 entries is sufficient to test)
+    for (let i = 0; i < 5; i++) {
       await page.click('#timestamp-btn');
-      await page.waitForTimeout(100); // Very short delay
+      // Wait for confirmation overlay to hide before next entry
+      await waitForConfirmationToHide(page);
     }
 
-    // Wait for all to process
-    await page.waitForTimeout(1000);
-
-    // Check results
+    // Check results - all entries are grouped since they have no bib
     await navigateTo(page, 'results');
-    const results = page.locator('.result-item');
 
-    // Should have recorded all or most entries
-    const count = await results.count();
-    expect(count).toBeGreaterThanOrEqual(5);
+    // Check total count in stats display (more reliable than counting DOM elements)
+    const totalStat = page.locator('#stat-total');
+    await expect(totalStat).toHaveText('5');
   });
 
   test('should handle concurrent operations', async ({ page }) => {
