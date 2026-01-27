@@ -10,7 +10,9 @@ This plan outlines the remaining extractions needed to break down `app.ts` into 
 - **Completed**: `faultEntry.ts` extracted (~950 lines)
 - **Completed**: `gateJudgeView.ts` extracted (~350 lines)
 - **Completed**: `resultsView.ts` extracted (~250 lines)
-- **Remaining**: ~2,365 lines in app.ts
+- **Completed**: `settingsView.ts` extracted (~550 lines)
+- **Completed**: `raceManagement.ts` extracted (~950 lines)
+- **Remaining**: ~826 lines in app.ts (orchestrator + core functions)
 
 ## Extraction Order
 
