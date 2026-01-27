@@ -524,11 +524,12 @@ export class VirtualList {
 
     header.innerHTML = `
       ${chevronSvg}
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+      <div style="min-width: 52px;"></div>
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
           ${escapeHtml(summaryText)}
         </div>
@@ -599,19 +600,20 @@ export class VirtualList {
     ` : '';
 
     item.innerHTML = `
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px;">
+      <div style="width: 20px; flex-shrink: 0;"></div>
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(pointLabel)}
       </div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}
         </div>
         ${entry.deviceName ? `
-          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary);">
+          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(entry.deviceName)}
           </div>
         ` : ''}
@@ -726,19 +728,20 @@ export class VirtualList {
     ` : '';
 
     item.innerHTML = `
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 50px; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+      <div style="width: 20px; flex-shrink: 0;"></div>
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: var(--warning)20; color: var(--warning);">
         ${t('gate', lang)}
       </div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+        <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
         ${faults[0]?.deviceName ? `
-          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary);">
+          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(faults[0].deviceName)}
           </div>
         ` : ''}
@@ -826,15 +829,16 @@ export class VirtualList {
     const pointLabel = getPointLabel(entry.point, lang);
 
     item.innerHTML = `
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${pointColor}20; color: ${pointColor};">
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 52px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(pointLabel)}
       </div>
-      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+      <div style="min-width: 52px;"></div>
+      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
           ${escapeHtml(timeStr)}
         </div>
         ${entry.deviceName ? `
-          <div class="result-device" style="font-size: 0.65rem; color: var(--text-tertiary);">
+          <div class="result-device" style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(entry.deviceName)}
           </div>
         ` : ''}
@@ -920,16 +924,18 @@ export class VirtualList {
     const gateColorHex = gateColor === 'red' ? '#ef4444' : '#3b82f6';
 
     item.innerHTML = `
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning)20; color: var(--warning);">
+      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 52px; text-align: center; background: var(--warning)20; color: var(--warning);">
         T${fault.gateNumber}
       </div>
-      <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${gateColor}"></div>
-      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+      <div style="min-width: 52px; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex};" title="${gateColor}"></div>
+      </div>
+      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
           ${fault.faultType}
         </span>
         ${fault.deviceName ? `
-          <span style="font-size: 0.65rem; color: var(--text-tertiary);">
+          <span style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(fault.deviceName)}
           </span>
         ` : ''}
