@@ -23,6 +23,7 @@ import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
   getPointColor, formatTimeDisplay, updateBibDisplay, updateTimingPointSelection, updateRunSelection
 } from './features/timerView';
+import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 
 // Initialize Vercel Speed Insights
 injectSpeedInsights();
@@ -2931,96 +2932,6 @@ function closeAllModals(): void {
   document.querySelectorAll('.modal-overlay.show').forEach(modal => {
     closeModal(modal as HTMLElement);
   });
-}
-
-// Track current entry being viewed in photo viewer
-let currentPhotoEntryId: string | null = null;
-
-/**
- * Open photo viewer modal
- * Loads photo from IndexedDB if stored there
- */
-async function openPhotoViewer(entry: Entry): Promise<void> {
-  const modal = document.getElementById('photo-viewer-modal');
-  if (!modal || !entry.photo) return;
-
-  currentPhotoEntryId = entry.id;
-
-  const image = document.getElementById('photo-viewer-image') as HTMLImageElement;
-  const bibEl = document.getElementById('photo-viewer-bib');
-  const pointEl = document.getElementById('photo-viewer-point');
-  const timeEl = document.getElementById('photo-viewer-time');
-
-  const state = store.getState();
-  const lang = state.currentLang;
-
-  // Load photo from IndexedDB or use inline base64
-  if (image) {
-    // Set descriptive alt text
-    const pointLabel = getPointLabel(entry.point, lang);
-    image.alt = `${t('photoForBib', lang)} ${entry.bib || '---'} - ${pointLabel}`;
-
-    if (entry.photo === 'indexeddb') {
-      // Photo stored in IndexedDB - load it
-      image.src = ''; // Clear while loading
-      const photoData = await photoStorage.getPhoto(entry.id);
-      if (photoData) {
-        image.src = `data:image/jpeg;base64,${photoData}`;
-      } else {
-        // Photo not found in IndexedDB
-        console.warn('Photo not found in IndexedDB for entry:', entry.id);
-        return;
-      }
-    } else {
-      // Legacy: photo stored inline (backwards compatibility)
-      image.src = `data:image/jpeg;base64,${entry.photo}`;
-    }
-  }
-
-  if (bibEl) bibEl.textContent = entry.bib || '---';
-  if (pointEl) {
-    pointEl.textContent = getPointLabel(entry.point, lang);
-    const pointColor = getPointColor(entry.point);
-    pointEl.style.background = pointColor;
-    pointEl.style.color = 'var(--background)';
-  }
-  if (timeEl) {
-    const date = new Date(entry.timestamp);
-    timeEl.textContent = formatTimeDisplay(date);
-  }
-
-  modal.classList.add('show');
-}
-
-/**
- * Close photo viewer modal
- */
-function closePhotoViewer(): void {
-  const modal = document.getElementById('photo-viewer-modal');
-  closeModal(modal);
-  currentPhotoEntryId = null;
-}
-
-/**
- * Delete photo from entry
- * Removes from both IndexedDB and entry marker
- */
-async function deletePhoto(): Promise<void> {
-  if (!currentPhotoEntryId) return;
-
-  const state = store.getState();
-  const entryId = currentPhotoEntryId;
-
-  // Delete from IndexedDB
-  await photoStorage.deletePhoto(entryId);
-
-  // Update entry to remove photo marker
-  store.updateEntry(entryId, { photo: undefined });
-
-  // Close modal and show toast
-  closePhotoViewer();
-  showToast(t('photoDeleted', state.currentLang), 'success');
-  feedbackDelete();
 }
 
 /**
