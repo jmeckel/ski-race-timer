@@ -8,7 +8,8 @@ This plan outlines the remaining extractions needed to break down `app.ts` into 
 - **Completed**: `photoViewer.ts` extracted (~100 lines)
 - **Completed**: `chiefJudgeView.ts` extracted (~630 lines)
 - **Completed**: `faultEntry.ts` extracted (~950 lines)
-- **Remaining**: ~2,934 lines in app.ts
+- **Completed**: `gateJudgeView.ts` extracted (~350 lines)
+- **Remaining**: ~2,585 lines in app.ts
 
 ## Extraction Order
 
