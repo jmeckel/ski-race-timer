@@ -16,7 +16,7 @@ import type {
   GateColor
 } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
-import { isValidEntry, migrateSchema } from '../utils/validation';
+import { isValidEntry, isValidFaultEntry, sanitizeFaultEntry, migrateSchema } from '../utils/validation';
 import { SCHEMA_VERSION } from '../types';
 import { logger } from '../utils/logger';
 
@@ -1110,8 +1110,9 @@ class Store {
   /**
    * Merge faults from cloud sync
    * Returns number of faults added
+   * Validates and sanitizes all incoming faults to prevent injection attacks
    */
-  mergeFaultsFromCloud(cloudFaults: FaultEntry[], deletedIds: string[] = []): number {
+  mergeFaultsFromCloud(cloudFaults: unknown[], deletedIds: string[] = []): number {
     let addedCount = 0;
     let updatedCount = 0;
     const existingFaultsMap = new Map(
@@ -1121,7 +1122,14 @@ class Store {
     const newFaults: FaultEntry[] = [];
     const updatedFaults: FaultEntry[] = [];
 
-    for (const fault of cloudFaults) {
+    for (const rawFault of cloudFaults) {
+      // Validate and sanitize each fault from untrusted cloud data
+      const fault = sanitizeFaultEntry(rawFault);
+      if (!fault) {
+        console.warn('Skipping invalid fault from cloud:', rawFault);
+        continue;
+      }
+
       // Skip faults from this device (we already have them)
       if (fault.deviceId === this.state.deviceId) continue;
 

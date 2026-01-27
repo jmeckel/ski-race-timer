@@ -1,9 +1,12 @@
-import type { Entry, Settings, TimingPoint, EntryStatus, DataSchema, SyncQueueItem } from '../types';
+import type { Entry, Settings, TimingPoint, EntryStatus, DataSchema, SyncQueueItem, FaultEntry, FaultVersion, FaultType, Run } from '../types';
 import { SCHEMA_VERSION } from '../types';
 import { generateDeviceName } from './id';
 
 const VALID_POINTS: TimingPoint[] = ['S', 'F'];
 const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq', 'flt'];
+const VALID_FAULT_TYPES: FaultType[] = ['MG', 'STR', 'BR'];
+const VALID_RUNS: Run[] = [1, 2];
+const VALID_CHANGE_TYPES = ['create', 'edit', 'restore'] as const;
 
 /**
  * Validate a single entry
@@ -65,6 +68,147 @@ export function isValidEntry(entry: unknown): entry is Entry {
   }
 
   return true;
+}
+
+/**
+ * Validate a FaultVersion object (used in version history)
+ * Deep validation to prevent injection of malicious data
+ */
+export function isValidFaultVersion(version: unknown): version is FaultVersion {
+  if (!version || typeof version !== 'object') return false;
+
+  const v = version as Record<string, unknown>;
+
+  // Version number must be positive integer
+  if (typeof v.version !== 'number' || !Number.isInteger(v.version) || v.version < 1) return false;
+
+  // Timestamp must be valid ISO date
+  if (typeof v.timestamp !== 'string' || isNaN(Date.parse(v.timestamp))) return false;
+
+  // EditedBy must be string
+  if (typeof v.editedBy !== 'string' || v.editedBy.length > 100) return false;
+
+  // EditedByDeviceId must be string
+  if (typeof v.editedByDeviceId !== 'string' || v.editedByDeviceId.length > 100) return false;
+
+  // ChangeType must be valid
+  if (!VALID_CHANGE_TYPES.includes(v.changeType as typeof VALID_CHANGE_TYPES[number])) return false;
+
+  // Data must be object with required fields
+  if (!v.data || typeof v.data !== 'object') return false;
+  const data = v.data as Record<string, unknown>;
+
+  // Validate core fault data fields
+  if (typeof data.id !== 'string') return false;
+  if (typeof data.bib !== 'string' || data.bib.length > 10) return false;
+  if (!VALID_RUNS.includes(data.run as Run)) return false;
+  if (typeof data.gateNumber !== 'number' || !Number.isInteger(data.gateNumber) || data.gateNumber < 0) return false;
+  if (!VALID_FAULT_TYPES.includes(data.faultType as FaultType)) return false;
+  if (typeof data.timestamp !== 'string' || isNaN(Date.parse(data.timestamp))) return false;
+  if (typeof data.deviceId !== 'string') return false;
+  if (typeof data.deviceName !== 'string' || data.deviceName.length > 100) return false;
+
+  // GateRange must be valid tuple
+  if (!Array.isArray(data.gateRange) || data.gateRange.length !== 2) return false;
+  if (typeof data.gateRange[0] !== 'number' || typeof data.gateRange[1] !== 'number') return false;
+  if (!Number.isInteger(data.gateRange[0]) || !Number.isInteger(data.gateRange[1])) return false;
+
+  // ChangeDescription is optional but must be string if present
+  if (v.changeDescription !== undefined && typeof v.changeDescription !== 'string') return false;
+  if (typeof v.changeDescription === 'string' && v.changeDescription.length > 500) return false;
+
+  return true;
+}
+
+/**
+ * Validate a FaultEntry object
+ * Includes deep validation of versionHistory to prevent injection attacks
+ */
+export function isValidFaultEntry(fault: unknown): fault is FaultEntry {
+  if (!fault || typeof fault !== 'object') return false;
+
+  const f = fault as Record<string, unknown>;
+
+  // Required string fields
+  if (typeof f.id !== 'string' || f.id.length === 0) return false;
+  if (typeof f.bib !== 'string' || f.bib.length > 10) return false;
+  if (typeof f.deviceId !== 'string') return false;
+  if (typeof f.deviceName !== 'string' || f.deviceName.length > 100) return false;
+  if (typeof f.timestamp !== 'string' || isNaN(Date.parse(f.timestamp))) return false;
+
+  // Run must be valid
+  if (!VALID_RUNS.includes(f.run as Run)) return false;
+
+  // Gate number must be valid
+  if (typeof f.gateNumber !== 'number' || !Number.isInteger(f.gateNumber) || f.gateNumber < 0) return false;
+
+  // Fault type must be valid
+  if (!VALID_FAULT_TYPES.includes(f.faultType as FaultType)) return false;
+
+  // GateRange must be valid tuple
+  if (!Array.isArray(f.gateRange) || f.gateRange.length !== 2) return false;
+  if (typeof f.gateRange[0] !== 'number' || typeof f.gateRange[1] !== 'number') return false;
+  if (!Number.isInteger(f.gateRange[0]) || !Number.isInteger(f.gateRange[1])) return false;
+
+  // CurrentVersion must be positive integer
+  if (typeof f.currentVersion !== 'number' || !Number.isInteger(f.currentVersion) || f.currentVersion < 1) return false;
+
+  // VersionHistory must be array with valid entries (deep validation)
+  if (!Array.isArray(f.versionHistory)) return false;
+  for (const version of f.versionHistory) {
+    if (!isValidFaultVersion(version)) return false;
+  }
+
+  // MarkedForDeletion must be boolean
+  if (typeof f.markedForDeletion !== 'boolean') return false;
+
+  // Optional timestamp fields must be valid ISO dates if present
+  if (f.markedForDeletionAt !== undefined && (typeof f.markedForDeletionAt !== 'string' || isNaN(Date.parse(f.markedForDeletionAt)))) return false;
+  if (f.deletionApprovedAt !== undefined && (typeof f.deletionApprovedAt !== 'string' || isNaN(Date.parse(f.deletionApprovedAt)))) return false;
+
+  // Optional string fields must be strings if present
+  if (f.markedForDeletionBy !== undefined && typeof f.markedForDeletionBy !== 'string') return false;
+  if (f.markedForDeletionByDeviceId !== undefined && typeof f.markedForDeletionByDeviceId !== 'string') return false;
+  if (f.deletionApprovedBy !== undefined && typeof f.deletionApprovedBy !== 'string') return false;
+
+  // SyncedAt is optional but must be valid number if present
+  if (f.syncedAt !== undefined && (typeof f.syncedAt !== 'number' || !Number.isFinite(f.syncedAt))) return false;
+
+  return true;
+}
+
+/**
+ * Sanitize a FaultEntry by cleaning all string fields
+ */
+export function sanitizeFaultEntry(fault: unknown): FaultEntry | null {
+  if (!isValidFaultEntry(fault)) return null;
+
+  const f = fault as FaultEntry;
+
+  // Sanitize version history
+  const sanitizedVersionHistory = f.versionHistory.map(v => ({
+    ...v,
+    editedBy: sanitizeString(v.editedBy, 100),
+    editedByDeviceId: sanitizeString(v.editedByDeviceId, 100),
+    changeDescription: v.changeDescription ? sanitizeString(v.changeDescription, 500) : undefined,
+    data: {
+      ...v.data,
+      bib: sanitizeString(v.data.bib, 10),
+      deviceId: sanitizeString(v.data.deviceId, 100),
+      deviceName: sanitizeString(v.data.deviceName, 100)
+    }
+  }));
+
+  return {
+    ...f,
+    bib: sanitizeString(f.bib, 10),
+    deviceId: sanitizeString(f.deviceId, 100),
+    deviceName: sanitizeString(f.deviceName, 100),
+    markedForDeletionBy: f.markedForDeletionBy ? sanitizeString(f.markedForDeletionBy, 100) : undefined,
+    markedForDeletionByDeviceId: f.markedForDeletionByDeviceId ? sanitizeString(f.markedForDeletionByDeviceId, 100) : undefined,
+    deletionApprovedBy: f.deletionApprovedBy ? sanitizeString(f.deletionApprovedBy, 100) : undefined,
+    versionHistory: sanitizedVersionHistory
+  };
 }
 
 /**
