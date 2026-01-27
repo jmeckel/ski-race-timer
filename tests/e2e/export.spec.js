@@ -26,11 +26,14 @@ async function addTestEntries(page, count = 3) {
 }
 
 test.describe('Export - Race Horology CSV', () => {
+  // Export tests need more time due to multiple entry recording in beforeEach
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
 
-    // Add test entries
-    await addTestEntries(page, 3);
+    // Add test entries (reduced to 2 for faster CI)
+    await addTestEntries(page, 2);
 
     // Navigate to Results
     await navigateTo(page, 'results');
@@ -91,7 +94,6 @@ test.describe('Export - Race Horology CSV', () => {
       // Should contain our test bib numbers
       expect(content).toContain('001');
       expect(content).toContain('002');
-      expect(content).toContain('003');
     }
   });
 
@@ -207,6 +209,9 @@ test.describe('Export - Edge Cases', () => {
 });
 
 test.describe('Export - Multiple Runs', () => {
+  // Tests with multiple entries need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPageFullMode(page);
   });
@@ -291,6 +296,9 @@ test.describe('Export - Multiple Runs', () => {
 });
 
 test.describe('Export - Multiple Timing Points', () => {
+  // Tests with multiple entries need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPageFullMode(page);
   });

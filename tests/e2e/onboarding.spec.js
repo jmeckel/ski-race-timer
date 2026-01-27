@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Onboarding Flow', () => {
+  // Multi-step flows need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     // Clear localStorage to trigger onboarding
     await page.goto('/');

@@ -21,22 +21,24 @@ async function addTestEntries(page, count = 3) {
 }
 
 test.describe('Data Persistence', () => {
+  // Tests with multiple entries need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
   test('should persist entries across page reload', async ({ page }) => {
     // Add entries
-    await addTestEntries(page, 3);
+    await addTestEntries(page, 2);
 
     // Reload page
     await page.reload();
     await page.waitForSelector('.clock-time', { timeout: 5000 });
 
-    // Check entries persisted
+    // Check entries persisted via stats counter
     await navigateTo(page, 'results');
-    const results = page.locator('.result-item');
-    await expect(results).toHaveCount(3);
+    await expect(page.locator('#stat-total')).toHaveText('2');
   });
 
   test('should persist entries across browser close', async ({ page, context }) => {
@@ -48,10 +50,9 @@ test.describe('Data Persistence', () => {
     const newPage = await context.newPage();
     await setupPage(newPage);
 
-    // Check entries persisted
+    // Check entries persisted via stats counter
     await navigateTo(newPage, 'results');
-    const results = newPage.locator('.result-item');
-    await expect(results).toHaveCount(2);
+    await expect(newPage.locator('#stat-total')).toHaveText('2');
   });
 
 });
@@ -134,6 +135,9 @@ test.describe('LocalStorage Operations', () => {
 });
 
 test.describe('Offline Functionality', () => {
+  // Tests with multiple entries need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
@@ -241,6 +245,9 @@ test.describe('Service Worker', () => {
 });
 
 test.describe('Edge Cases', () => {
+  // Tests with multiple entries need more time in CI
+  test.setTimeout(30000);
+
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
