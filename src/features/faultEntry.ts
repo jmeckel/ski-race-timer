@@ -1,0 +1,922 @@
+/**
+ * Fault Entry Module
+ * Handles fault recording, editing, inline entry, and deletion workflows
+ */
+
+import { store } from '../store';
+import { syncFault, deleteFaultFromCloud } from '../services/sync';
+import { showToast } from '../components';
+import { feedbackTap, feedbackWarning, feedbackSuccess } from '../services';
+import { t } from '../i18n/translations';
+import { escapeHtml } from '../utils';
+import { openModal, closeModal } from './modals';
+import { getFaultTypeLabel } from './chiefJudgeView';
+import { formatTimeDisplay } from './timerView';
+import type { FaultEntry, FaultType, Run } from '../types';
+
+// Module state
+let editingFaultId: string | null = null;
+let inlineSelectedBib = '';
+let inlineSelectedGate = 0;
+let inlineSelectedFaultType: FaultType | null = null;
+
+/**
+ * Open fault recording modal
+ */
+export function openFaultRecordingModal(preselectedBib?: string): void {
+  const state = store.getState();
+  const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  // Populate bib selector
+  const bibSelector = document.getElementById('fault-bib-selector');
+  if (bibSelector) {
+    bibSelector.innerHTML = activeBibs.map(bib => `
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${bib}">${bib}</button>
+    `).join('');
+
+    // Add click handlers
+    bibSelector.querySelectorAll('.fault-bib-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bibSelector.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+        if (bibInput) bibInput.value = '';
+        store.setSelectedFaultBib(btn.getAttribute('data-bib') || '');
+      });
+    });
+  }
+
+  // Clear manual bib input
+  const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+  if (bibInput) {
+    bibInput.value = preselectedBib || '';
+    bibInput.addEventListener('input', () => {
+      // Deselect any bib buttons when typing manually
+      bibSelector?.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
+      store.setSelectedFaultBib(bibInput.value.padStart(3, '0'));
+    });
+  }
+
+  // Set preselected bib
+  if (preselectedBib) {
+    store.setSelectedFaultBib(preselectedBib);
+  } else {
+    store.setSelectedFaultBib('');
+  }
+
+  // Populate gate selector based on assignment with gate colors
+  const gateSelector = document.getElementById('fault-gate-selector');
+  if (gateSelector && state.gateAssignment) {
+    const [start, end] = state.gateAssignment;
+    let gatesHtml = '';
+    for (let i = start; i <= end; i++) {
+      const gateColor = store.getGateColor(i);
+      const colorClass = gateColor === 'red' ? 'gate-red' : 'gate-blue';
+      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}">${i}</button>`;
+    }
+    gateSelector.innerHTML = gatesHtml;
+
+    // Add click handlers
+    gateSelector.querySelectorAll('.fault-gate-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        gateSelector.querySelectorAll('.fault-gate-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  // Clear fault type selection
+  const faultTypeButtons = document.getElementById('fault-type-buttons');
+  if (faultTypeButtons) {
+    faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+  }
+
+  openModal(document.getElementById('fault-modal'));
+}
+
+/**
+ * Initialize fault recording modal handlers
+ */
+export function initFaultRecordingModal(): void {
+  // Fault type buttons - click selects the type (no auto-save)
+  const faultTypeButtons = document.getElementById('fault-type-buttons');
+  if (faultTypeButtons) {
+    faultTypeButtons.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.fault-type-btn');
+      if (!btn) return;
+
+      const faultType = btn.getAttribute('data-fault') as FaultType;
+      if (faultType) {
+        // Mark selected (just selection, no recording)
+        faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        feedbackTap();
+      }
+    });
+  }
+
+  // Save Fault button - records the fault
+  const saveFaultBtn = document.getElementById('save-fault-btn');
+  if (saveFaultBtn) {
+    saveFaultBtn.addEventListener('click', () => {
+      // Get selected fault type
+      const selectedTypeBtn = document.querySelector('#fault-type-buttons .fault-type-btn.selected');
+      if (!selectedTypeBtn) {
+        const lang = store.getState().currentLang;
+        showToast(t('selectFaultType', lang), 'warning');
+        return;
+      }
+
+      const faultType = selectedTypeBtn.getAttribute('data-fault') as FaultType;
+      if (faultType) {
+        recordFault(faultType);
+      }
+    });
+  }
+}
+
+/**
+ * Record a fault entry
+ */
+export function recordFault(faultType: FaultType): void {
+  const state = store.getState();
+
+  // Get selected bib
+  let bib = state.selectedFaultBib;
+  if (!bib) {
+    const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+    bib = bibInput?.value.padStart(3, '0') || '';
+  }
+
+  if (!bib) {
+    const lang = state.currentLang;
+    showToast(t('selectBib', lang), 'warning');
+    return;
+  }
+
+  // Get selected gate
+  const selectedGateBtn = document.querySelector('#fault-gate-selector .fault-gate-btn.selected');
+  const gateNumber = selectedGateBtn ? parseInt(selectedGateBtn.getAttribute('data-gate') || '0', 10) : 0;
+
+  if (!gateNumber) {
+    const lang = state.currentLang;
+    showToast(t('selectGate', lang), 'warning');
+    return;
+  }
+
+  // Create fault entry (without version fields - added by store)
+  const fault = {
+    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    bib,
+    run: state.selectedRun,
+    gateNumber,
+    faultType,
+    timestamp: new Date().toISOString(),
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gateRange: state.gateAssignment || [1, 1]
+  };
+
+  store.addFaultEntry(fault);
+  feedbackWarning(); // Use warning feedback for fault (attention-getting)
+
+  // Get the fault with version fields from store and sync to cloud
+  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
+  if (storedFault) {
+    syncFault(storedFault);
+    showFaultConfirmation(storedFault);
+  }
+
+  // Close modal
+  closeModal(document.getElementById('fault-modal'));
+
+  // Refresh active bibs list
+  updateActiveBibsList();
+
+  const lang = state.currentLang;
+  showToast(t('faultRecorded', lang), 'success');
+}
+
+/**
+ * Show fault confirmation overlay
+ */
+export function showFaultConfirmation(fault: FaultEntry): void {
+  const overlay = document.getElementById('fault-confirmation-overlay');
+  if (!overlay) return;
+
+  const bibEl = overlay.querySelector('.fault-confirmation-bib');
+  const gateEl = overlay.querySelector('.fault-confirmation-gate');
+  const typeEl = overlay.querySelector('.fault-confirmation-type');
+
+  const state = store.getState();
+
+  if (bibEl) bibEl.textContent = fault.bib;
+  if (gateEl) gateEl.textContent = `${t('gate', state.currentLang)} ${fault.gateNumber}`;
+  if (typeEl) typeEl.textContent = getFaultTypeLabel(fault.faultType, state.currentLang);
+
+  overlay.classList.add('show');
+
+  setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 1500);
+}
+
+/**
+ * Initialize fault edit modal handlers
+ */
+export function initFaultEditModal(): void {
+  // Save fault edit button
+  const saveFaultEditBtn = document.getElementById('save-fault-edit-btn');
+  if (saveFaultEditBtn) {
+    saveFaultEditBtn.addEventListener('click', handleSaveFaultEdit);
+  }
+
+  // Restore version button
+  const restoreVersionBtn = document.getElementById('restore-version-btn');
+  if (restoreVersionBtn) {
+    restoreVersionBtn.addEventListener('click', handleRestoreFaultVersion);
+  }
+
+  // Fault edit bib input - numeric only validation
+  const faultEditBibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  if (faultEditBibInput) {
+    faultEditBibInput.addEventListener('input', () => {
+      faultEditBibInput.value = faultEditBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
+    });
+  }
+
+  // Fault edit run selector
+  const faultEditRunSelector = document.getElementById('fault-edit-run-selector');
+  if (faultEditRunSelector) {
+    faultEditRunSelector.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.edit-run-btn');
+      if (!btn) return;
+
+      faultEditRunSelector.querySelectorAll('.edit-run-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+    });
+  }
+
+  // Confirm mark deletion button
+  const confirmMarkDeletionBtn = document.getElementById('confirm-mark-deletion-btn');
+  if (confirmMarkDeletionBtn) {
+    confirmMarkDeletionBtn.addEventListener('click', handleConfirmMarkDeletion);
+  }
+}
+
+/**
+ * Open fault edit modal
+ */
+export function openFaultEditModal(fault: FaultEntry): void {
+  // Don't allow editing faults marked for deletion
+  if (fault.markedForDeletion) {
+    const lang = store.getState().currentLang;
+    showToast(t('cannotEditPendingDeletion', lang), 'warning');
+    return;
+  }
+
+  const modal = document.getElementById('fault-edit-modal');
+  if (!modal) return;
+
+  editingFaultId = fault.id;
+  const state = store.getState();
+  const lang = state.currentLang;
+
+  // Populate fields
+  const bibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
+  const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
+  const gateRangeSpan = document.getElementById('fault-edit-gate-range');
+  const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+
+  if (bibInput) bibInput.value = fault.bib || '';
+  if (gateInput) gateInput.value = String(fault.gateNumber);
+  if (typeSelect) typeSelect.value = fault.faultType;
+
+  // Show gate range info
+  if (gateRangeSpan && fault.gateRange) {
+    gateRangeSpan.textContent = `(${t('gates', lang)} ${fault.gateRange[0]}-${fault.gateRange[1]})`;
+  }
+
+  // Update run selector buttons
+  const runSelector = document.getElementById('fault-edit-run-selector');
+  if (runSelector) {
+    runSelector.querySelectorAll('.edit-run-btn').forEach(btn => {
+      const btnRun = btn.getAttribute('data-run');
+      btn.classList.toggle('active', btnRun === String(fault.run));
+    });
+  }
+
+  // Populate version history dropdown
+  if (versionSelect) {
+    versionSelect.innerHTML = '';
+
+    // Add current version
+    const currentOption = document.createElement('option');
+    currentOption.value = String(fault.currentVersion || 1);
+    currentOption.textContent = `v${fault.currentVersion || 1} - ${t('currentVersion', lang)}`;
+    versionSelect.appendChild(currentOption);
+
+    // Add history versions (newest first, excluding current)
+    const history = fault.versionHistory || [];
+    const sortedHistory = [...history]
+      .sort((a, b) => b.version - a.version)
+      .filter(v => v.version !== fault.currentVersion);
+
+    for (const version of sortedHistory) {
+      const option = document.createElement('option');
+      option.value = String(version.version);
+      const date = new Date(version.timestamp);
+      const timeStr = date.toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const changeLabel = version.changeType === 'create' ? t('originalVersion', lang) :
+                          version.changeType === 'restore' ? t('restored', lang) :
+                          version.editedBy;
+      option.textContent = `v${version.version} - ${changeLabel} (${timeStr})`;
+      versionSelect.appendChild(option);
+    }
+  }
+
+  openModal(modal);
+}
+
+/**
+ * Handle saving fault edit
+ */
+export function handleSaveFaultEdit(): void {
+  if (!editingFaultId) return;
+
+  const state = store.getState();
+  const fault = state.faultEntries.find(f => f.id === editingFaultId);
+  if (!fault) return;
+
+  const bibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+  const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
+  const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
+  const runSelector = document.getElementById('fault-edit-run-selector');
+
+  const newBib = bibInput?.value.padStart(3, '0') || fault.bib;
+  const newGate = parseInt(gateInput?.value || String(fault.gateNumber), 10);
+  const newType = (typeSelect?.value || fault.faultType) as FaultType;
+
+  // Gate range validation warning
+  const lang = state.currentLang;
+  if (fault.gateRange && (newGate < fault.gateRange[0] || newGate > fault.gateRange[1])) {
+    // Show warning but allow save (gate might have been reassigned)
+    showToast(t('gateOutOfRange', lang), 'warning');
+  }
+
+  // Get selected run
+  const selectedRunBtn = runSelector?.querySelector('.edit-run-btn.active');
+  const newRun = selectedRunBtn ? parseInt(selectedRunBtn.getAttribute('data-run') || '1', 10) as Run : fault.run;
+
+  // Build changes description
+  const changes: string[] = [];
+  if (newBib !== fault.bib) changes.push(`bib: ${fault.bib} → ${newBib}`);
+  if (newGate !== fault.gateNumber) changes.push(`gate: ${fault.gateNumber} → ${newGate}`);
+  if (newType !== fault.faultType) changes.push(`type: ${fault.faultType} → ${newType}`);
+  if (newRun !== fault.run) changes.push(`run: ${fault.run} → ${newRun}`);
+
+  const changeDescription = changes.length > 0 ? changes.join(', ') : undefined;
+
+  // Update with version history
+  const success = store.updateFaultEntryWithHistory(editingFaultId, {
+    bib: newBib,
+    gateNumber: newGate,
+    faultType: newType,
+    run: newRun
+  }, changeDescription);
+
+  if (success) {
+    // Sync updated fault to cloud
+    const updatedFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (updatedFault) {
+      syncFault(updatedFault);
+    }
+
+    showToast(t('saved', lang), 'success');
+    feedbackSuccess();
+  }
+
+  closeModal(document.getElementById('fault-edit-modal'));
+  editingFaultId = null;
+}
+
+/**
+ * Handle restoring a fault version
+ */
+export function handleRestoreFaultVersion(): void {
+  if (!editingFaultId) return;
+
+  const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+  const selectedVersion = parseInt(versionSelect?.value || '0', 10);
+
+  if (!selectedVersion) return;
+
+  const state = store.getState();
+  const fault = state.faultEntries.find(f => f.id === editingFaultId);
+
+  // Don't restore to current version
+  if (fault && selectedVersion === fault.currentVersion) {
+    return;
+  }
+
+  const success = store.restoreFaultVersion(editingFaultId, selectedVersion);
+
+  if (success) {
+    // Sync restored fault to cloud
+    const restoredFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (restoredFault) {
+      syncFault(restoredFault);
+    }
+
+    const lang = state.currentLang;
+    showToast(t('versionRestored', lang), 'success');
+    feedbackSuccess();
+
+    closeModal(document.getElementById('fault-edit-modal'));
+    editingFaultId = null;
+  }
+}
+
+/**
+ * Open mark deletion confirmation modal
+ */
+export function openMarkDeletionModal(fault: FaultEntry): void {
+  const modal = document.getElementById('mark-deletion-modal');
+  if (!modal) return;
+
+  editingFaultId = fault.id;
+  const state = store.getState();
+  const lang = state.currentLang;
+
+  // Populate details
+  const detailsEl = document.getElementById('mark-deletion-details');
+  if (detailsEl) {
+    detailsEl.innerHTML = `
+      <div>#${fault.bib.padStart(3, '0')} T${fault.gateNumber} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}</div>
+    `;
+  }
+
+  openModal(modal);
+}
+
+/**
+ * Handle confirming mark for deletion
+ */
+export function handleConfirmMarkDeletion(): void {
+  if (!editingFaultId) return;
+
+  const success = store.markFaultForDeletion(editingFaultId);
+
+  if (success) {
+    // Sync the updated fault to cloud
+    const markedFault = store.getState().faultEntries.find(f => f.id === editingFaultId);
+    if (markedFault) {
+      syncFault(markedFault);
+    }
+
+    const lang = store.getState().currentLang;
+    showToast(t('markedForDeletion', lang), 'info');
+    feedbackTap();
+  }
+
+  closeModal(document.getElementById('mark-deletion-modal'));
+  editingFaultId = null;
+}
+
+/**
+ * Update active bibs list in Gate Judge view
+ */
+export function updateActiveBibsList(): void {
+  const list = document.getElementById('active-bibs-list');
+  const emptyState = document.getElementById('no-active-bibs');
+  if (!list) return;
+
+  const state = store.getState();
+  const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  // Clear existing bib cards (keep empty state)
+  list.querySelectorAll('.active-bib-card').forEach(card => card.remove());
+
+  if (activeBibs.length === 0) {
+    if (emptyState) emptyState.style.display = '';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  // Get start times for each bib
+  const startTimes = new Map<string, Date>();
+  state.entries.forEach(entry => {
+    if (entry.point === 'S' && entry.run === state.selectedRun) {
+      startTimes.set(entry.bib, new Date(entry.timestamp));
+    }
+  });
+
+  // Sort by start time (most recent first)
+  const sortedBibs = [...activeBibs].sort((a, b) => {
+    const timeA = startTimes.get(a)?.getTime() || 0;
+    const timeB = startTimes.get(b)?.getTime() || 0;
+    return timeB - timeA;
+  });
+
+  // Build bib cards
+  sortedBibs.forEach(bib => {
+    const startTime = startTimes.get(bib);
+    const faults = store.getFaultsForBib(bib, state.selectedRun);
+    const hasFault = faults.length > 0;
+
+    const card = document.createElement('div');
+    card.className = `active-bib-card${hasFault ? ' has-fault' : ''}`;
+    card.setAttribute('data-bib', bib);
+    card.setAttribute('role', 'listitem');
+
+    const timeStr = startTime ? formatTimeDisplay(startTime) : '--:--:--';
+
+    card.innerHTML = `
+      <div class="bib-card-info">
+        <span class="bib-card-number">${escapeHtml(bib)}</span>
+        <span class="bib-card-time">${escapeHtml(timeStr)}</span>
+        ${hasFault ? `<span class="bib-fault-indicator">${faults.length} ${t('faultCount', state.currentLang)}</span>` : ''}
+      </div>
+      <div class="bib-card-actions">
+        <button class="bib-action-btn fault" data-action="fault">${t('faultMGShort', state.currentLang)}</button>
+        <button class="bib-action-btn ok" data-action="ok">${t('ok', state.currentLang)}</button>
+      </div>
+    `;
+
+    // Click on card to select bib for fault entry
+    card.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const actionBtn = target.closest('.bib-action-btn');
+
+      if (actionBtn) {
+        const action = actionBtn.getAttribute('data-action');
+        if (action === 'fault') {
+          feedbackTap();
+          openFaultRecordingModal(bib);
+        } else if (action === 'ok') {
+          feedbackTap();
+          // Just tap feedback - bib is OK, no action needed
+          showToast(t('ok', state.currentLang), 'success', 1000);
+        }
+      }
+    });
+
+    list.appendChild(card);
+  });
+}
+
+/**
+ * Update the inline fault list in Gate Judge view
+ */
+export function updateInlineFaultsList(): void {
+  const listContainer = document.getElementById('gate-judge-faults-list');
+  const countBadge = document.getElementById('inline-fault-count');
+  const emptyState = document.getElementById('no-faults-recorded-inline');
+  if (!listContainer) return;
+
+  const state = store.getState();
+  const faults = state.faultEntries.filter(f =>
+    f.run === state.selectedRun &&
+    !f.markedForDeletion
+  );
+
+  // Update count badge
+  if (countBadge) {
+    countBadge.textContent = String(faults.length);
+    countBadge.setAttribute('data-count', String(faults.length));
+  }
+
+  // Clear existing fault items (keep empty state)
+  listContainer.querySelectorAll('.gate-judge-fault-item').forEach(item => item.remove());
+
+  if (faults.length === 0) {
+    if (emptyState) emptyState.style.display = '';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  // Sort by timestamp (most recent first)
+  const sortedFaults = [...faults].sort((a, b) =>
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
+  sortedFaults.forEach(fault => {
+    const gateColor = store.getGateColor(fault.gateNumber);
+    const item = document.createElement('div');
+    item.className = 'gate-judge-fault-item';
+    item.setAttribute('data-fault-id', fault.id);
+
+    item.innerHTML = `
+      <div class="gate-judge-fault-info">
+        <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
+        <div class="gate-judge-fault-details">
+          <span class="gate-judge-fault-gate ${gateColor}">T${fault.gateNumber}</span>
+          <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
+        </div>
+      </div>
+      <button class="gate-judge-fault-delete" aria-label="Delete">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18"/>
+          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
+          <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </button>
+    `;
+
+    // Delete button handler
+    const deleteBtn = item.querySelector('.gate-judge-fault-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        feedbackTap();
+        openFaultDeleteConfirmation(fault);
+      });
+    }
+
+    listContainer.appendChild(item);
+  });
+}
+
+/**
+ * Update inline bib selector buttons
+ */
+export function updateInlineBibSelector(): void {
+  const container = document.getElementById('inline-bib-selector');
+  if (!container) return;
+
+  const state = store.getState();
+  const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  container.innerHTML = '';
+
+  // Show up to 6 most recent active bibs as quick-select buttons
+  const recentBibs = activeBibs.slice(0, 6);
+
+  recentBibs.forEach(bib => {
+    const btn = document.createElement('button');
+    btn.className = 'inline-bib-btn';
+    btn.setAttribute('data-bib', bib);
+    btn.textContent = bib;
+
+    if (bib === inlineSelectedBib) {
+      btn.classList.add('selected');
+    }
+
+    btn.addEventListener('click', () => {
+      feedbackTap();
+      selectInlineBib(bib);
+    });
+
+    container.appendChild(btn);
+  });
+}
+
+/**
+ * Select a bib for inline fault entry
+ */
+export function selectInlineBib(bib: string): void {
+  inlineSelectedBib = bib;
+
+  // Update bib buttons
+  document.querySelectorAll('#inline-bib-selector .inline-bib-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-bib') === bib);
+  });
+
+  // Update manual input
+  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  if (bibInput) {
+    bibInput.value = bib;
+  }
+
+  updateInlineSaveButtonState();
+}
+
+/**
+ * Update inline gate selector buttons
+ */
+export function updateInlineGateSelector(): void {
+  const container = document.getElementById('inline-gate-selector');
+  if (!container) return;
+
+  const state = store.getState();
+  const [start, end] = state.gateAssignment || [1, 10];
+
+  container.innerHTML = '';
+
+  for (let gate = start; gate <= end; gate++) {
+    const color = store.getGateColor(gate);
+    const btn = document.createElement('button');
+    btn.className = `inline-gate-btn ${color}`;
+    btn.setAttribute('data-gate', String(gate));
+    btn.textContent = String(gate);
+
+    if (gate === inlineSelectedGate) {
+      btn.classList.add('selected');
+    }
+
+    btn.addEventListener('click', () => {
+      feedbackTap();
+      selectInlineGate(gate);
+    });
+
+    container.appendChild(btn);
+  }
+}
+
+/**
+ * Select a gate for inline fault entry
+ */
+export function selectInlineGate(gate: number): void {
+  inlineSelectedGate = gate;
+
+  // Update gate buttons
+  document.querySelectorAll('#inline-gate-selector .inline-gate-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-gate') === String(gate));
+  });
+
+  updateInlineSaveButtonState();
+}
+
+/**
+ * Initialize inline fault entry handlers
+ */
+export function initInlineFaultEntry(): void {
+  // Bib manual input
+  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  if (bibInput) {
+    bibInput.addEventListener('input', () => {
+      // Remove non-numeric characters and limit to 3 digits
+      bibInput.value = bibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
+
+      if (bibInput.value) {
+        inlineSelectedBib = bibInput.value.padStart(3, '0');
+        // Deselect any quick-select button
+        document.querySelectorAll('#inline-bib-selector .inline-bib-btn').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        updateInlineSaveButtonState();
+      }
+    });
+  }
+
+  // Fault type buttons
+  const faultTypeContainer = document.getElementById('inline-fault-types');
+  if (faultTypeContainer) {
+    faultTypeContainer.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.inline-fault-type-btn');
+      if (!btn) return;
+
+      feedbackTap();
+      const faultType = btn.getAttribute('data-fault') as FaultType;
+      inlineSelectedFaultType = faultType;
+
+      // Update button states
+      faultTypeContainer.querySelectorAll('.inline-fault-type-btn').forEach(b => {
+        b.classList.toggle('selected', b === btn);
+      });
+
+      updateInlineSaveButtonState();
+    });
+  }
+
+  // Save fault button
+  const saveBtn = document.getElementById('inline-save-fault-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      saveInlineFault();
+    });
+  }
+}
+
+/**
+ * Update the save button enabled/disabled state
+ */
+export function updateInlineSaveButtonState(): void {
+  const saveBtn = document.getElementById('inline-save-fault-btn') as HTMLButtonElement;
+  if (saveBtn) {
+    const isValid = inlineSelectedBib && inlineSelectedGate > 0 && inlineSelectedFaultType;
+    saveBtn.disabled = !isValid;
+  }
+}
+
+/**
+ * Save a fault from the inline entry interface
+ */
+export function saveInlineFault(): void {
+  const state = store.getState();
+
+  if (!inlineSelectedBib) {
+    showToast(t('selectBib', state.currentLang), 'warning');
+    return;
+  }
+
+  if (!inlineSelectedGate) {
+    showToast(t('selectGate', state.currentLang), 'warning');
+    return;
+  }
+
+  if (!inlineSelectedFaultType) {
+    showToast(t('selectFaultType', state.currentLang), 'warning');
+    return;
+  }
+
+  // Create fault entry
+  const fault = {
+    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    bib: inlineSelectedBib,
+    run: state.selectedRun,
+    gateNumber: inlineSelectedGate,
+    faultType: inlineSelectedFaultType,
+    timestamp: new Date().toISOString(),
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gateRange: state.gateAssignment || [1, 1]
+  };
+
+  store.addFaultEntry(fault);
+  feedbackWarning();
+
+  // Sync to cloud
+  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
+  if (storedFault) {
+    syncFault(storedFault);
+    showFaultConfirmation(storedFault);
+  }
+
+  // Reset selection (keep bib for next fault on same racer)
+  inlineSelectedGate = 0;
+  inlineSelectedFaultType = null;
+
+  // Update UI
+  document.querySelectorAll('#inline-gate-selector .inline-gate-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  document.querySelectorAll('#inline-fault-types .inline-fault-type-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+
+  updateInlineFaultsList();
+  updateInlineBibSelector();
+  updateInlineSaveButtonState();
+
+  showToast(t('faultRecorded', state.currentLang), 'success');
+}
+
+/**
+ * Open fault delete confirmation modal for inline faults
+ */
+export function openFaultDeleteConfirmation(fault: FaultEntry): void {
+  const modal = document.getElementById('fault-delete-modal');
+  if (!modal) {
+    // Fallback: use direct delete if modal doesn't exist
+    store.markFaultForDeletion(fault.id);
+    const markedFault = store.getState().faultEntries.find(f => f.id === fault.id);
+    if (markedFault) {
+      deleteFaultFromCloud(markedFault);
+    }
+    updateInlineFaultsList();
+    showToast(t('faultDeleted', store.getState().currentLang), 'success');
+    return;
+  }
+
+  // Store fault ID for confirmation
+  modal.setAttribute('data-fault-id', fault.id);
+
+  const state = store.getState();
+  const gateColor = store.getGateColor(fault.gateNumber);
+
+  // Update modal content
+  const infoEl = modal.querySelector('.delete-fault-info');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <strong>#${escapeHtml(fault.bib)}</strong> -
+      <span class="fault-gate ${gateColor}">T${fault.gateNumber}</span>
+      (${escapeHtml(fault.faultType)}) -
+      ${t('run1', state.currentLang).replace('1', String(fault.run))}
+    `;
+  }
+
+  openModal(modal);
+}
+
+/**
+ * Initialize all inline fault entry components
+ */
+export function refreshInlineFaultUI(): void {
+  updateInlineFaultsList();
+  updateInlineBibSelector();
+  updateInlineGateSelector();
+  updateInlineSaveButtonState();
+}
