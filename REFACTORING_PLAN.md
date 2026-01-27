@@ -9,7 +9,8 @@ This plan outlines the remaining extractions needed to break down `app.ts` into 
 - **Completed**: `chiefJudgeView.ts` extracted (~630 lines)
 - **Completed**: `faultEntry.ts` extracted (~950 lines)
 - **Completed**: `gateJudgeView.ts` extracted (~350 lines)
-- **Remaining**: ~2,585 lines in app.ts
+- **Completed**: `resultsView.ts` extracted (~250 lines)
+- **Remaining**: ~2,365 lines in app.ts
 
 ## Extraction Order
 
