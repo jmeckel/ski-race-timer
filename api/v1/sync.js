@@ -1,5 +1,5 @@
 import { validateAuth } from '../lib/jwt.js';
-import { getRedis, hasRedisError } from '../lib/redis.js';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -31,9 +31,6 @@ const RATE_LIMIT_MAX_POSTS = 30; // Max POST requests per window per IP
 // Photo upload rate limiting (per device per race)
 const PHOTO_RATE_LIMIT_WINDOW = 300; // 5 minute window
 const PHOTO_RATE_LIMIT_MAX = 20; // Max photos per device per window
-
-// Redis key for client PIN (same as admin/pin.js)
-const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Rate limiting using Redis
 async function checkRateLimit(client, ip, method) {

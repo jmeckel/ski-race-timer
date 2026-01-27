@@ -88,3 +88,44 @@ export function dispatchAuthExpired(message: string = 'Session expired. Please r
     detail: { message }
   }));
 }
+
+/**
+ * Exchange Chief Judge PIN for JWT token
+ * Chief Judge uses a separate PIN from regular users
+ */
+export async function exchangeChiefJudgePin(pin: string): Promise<{
+  success: boolean;
+  token?: string;
+  error?: string;
+  isNewPin?: boolean;
+}> {
+  return exchangePinForToken(pin, 'chiefJudge');
+}
+
+/**
+ * Get the role from the current JWT token (if present)
+ * Returns null if no token or can't parse
+ */
+export function getTokenRole(): string | null {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    // JWT format: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    // Decode base64 payload
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.role || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if current token has chief judge role
+ */
+export function hasChiefJudgeRole(): boolean {
+  return getTokenRole() === 'chiefJudge';
+}

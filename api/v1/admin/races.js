@@ -1,5 +1,5 @@
 import { validateAuth } from '../../lib/jwt.js';
-import { getRedis, hasRedisError } from '../../lib/redis.js';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -12,9 +12,6 @@ import {
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
-
-// Redis key for client PIN (same as other APIs)
-const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Device stale threshold (same as sync.js)
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds

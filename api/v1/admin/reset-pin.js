@@ -1,32 +1,11 @@
-import Redis from 'ioredis';
 import crypto from 'crypto';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
-  handlePreflight,
   sendSuccess,
   sendError,
   sendMethodNotAllowed,
   sendServiceUnavailable
 } from '../../lib/response.js';
-
-// Redis client
-let redis = null;
-
-function getRedis() {
-  if (!redis) {
-    if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not configured');
-    }
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      connectTimeout: 10000
-    });
-  }
-  return redis;
-}
-
-// Redis key for client PIN hash
-const CLIENT_PIN_KEY = 'admin:clientPin';
 
 /**
  * Reset PIN endpoint
@@ -94,15 +73,21 @@ export default async function handler(req, res) {
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
-  try {
-    // Delete the stored PIN hash
-    await client.del(CLIENT_PIN_KEY);
+  // Check for recent Redis errors
+  if (hasRedisError()) {
+    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+  }
 
-    console.log('Client PIN has been reset');
+  try {
+    // Delete both PIN hashes (regular and chief judge)
+    await client.del(CLIENT_PIN_KEY);
+    await client.del(CHIEF_JUDGE_PIN_KEY);
+
+    console.log('Client PIN and Chief Judge PIN have been reset');
 
     return sendSuccess(res, {
       success: true,
-      message: 'PIN has been reset. The next PIN entered will become the new PIN.'
+      message: 'PINs have been reset. The next PINs entered will become the new PINs.'
     });
   } catch (error) {
     console.error('Reset PIN error:', error.message);

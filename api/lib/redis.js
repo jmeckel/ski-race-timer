@@ -5,6 +5,10 @@ import Redis from 'ioredis';
  * Used by all API endpoints for reliable database access
  */
 
+// Redis key constants
+export const CLIENT_PIN_KEY = 'admin:clientPin';
+export const CHIEF_JUDGE_PIN_KEY = 'admin:chiefJudgePin';
+
 // Singleton Redis client
 let redis = null;
 let redisError = null;

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { generateToken, hashPin } from '../../lib/jwt.js';
-import { getRedis, hasRedisError } from '../../lib/redis.js';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -12,9 +12,6 @@ import {
   setRateLimitHeaders,
   getClientIP
 } from '../../lib/response.js';
-
-// Redis key for client PIN hash
-const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Rate limiting configuration (per IP)
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
@@ -98,7 +95,58 @@ export default async function handler(req, res) {
     const validRoles = ['timer', 'gateJudge', 'chiefJudge'];
     const userRole = role && validRoles.includes(role) ? role : 'timer';
 
-    // Get stored PIN hash from Redis
+    // For chiefJudge role, use separate PIN validation
+    if (userRole === 'chiefJudge') {
+      const chiefPinHash = await client.get(CHIEF_JUDGE_PIN_KEY);
+
+      if (!chiefPinHash) {
+        // No chief judge PIN set yet - this is the first time setup
+        // First chief judge sets the PIN
+        const newPinHash = hashPin(pin);
+        await client.set(CHIEF_JUDGE_PIN_KEY, newPinHash);
+
+        const token = generateToken({
+          createdAt: Date.now(),
+          role: 'chiefJudge'
+        });
+
+        return sendSuccess(res, {
+          success: true,
+          token,
+          isNewPin: true,
+          role: 'chiefJudge',
+          message: 'Chief Judge PIN set successfully'
+        });
+      }
+
+      // Verify provided PIN against stored chief judge PIN hash
+      const providedPinHash = hashPin(pin);
+      let pinValid = false;
+
+      try {
+        pinValid = crypto.timingSafeEqual(Buffer.from(providedPinHash), Buffer.from(chiefPinHash));
+      } catch (e) {
+        pinValid = false;
+      }
+
+      if (!pinValid) {
+        return sendError(res, 'Invalid Chief Judge PIN', 401);
+      }
+
+      // Chief Judge PIN is valid, generate JWT token
+      const token = generateToken({
+        authenticatedAt: Date.now(),
+        role: 'chiefJudge'
+      });
+
+      return sendSuccess(res, {
+        success: true,
+        token,
+        role: 'chiefJudge'
+      });
+    }
+
+    // For timer and gateJudge roles, use regular PIN
     const storedPinHash = await client.get(CLIENT_PIN_KEY);
 
     if (!storedPinHash) {

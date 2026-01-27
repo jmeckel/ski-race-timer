@@ -670,7 +670,7 @@ export function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
 
 /**
  * Verify PIN for entering Chief Judge mode
- * Uses same PIN as race management
+ * Uses SEPARATE Chief Judge PIN (not the regular race PIN)
  * Always requires re-authentication to get a token with chiefJudge role
  */
 export function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
@@ -686,9 +686,9 @@ export function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
       return;
     }
 
-    // Update modal text for Chief Judge context
-    if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
-    if (textEl) textEl.textContent = t('enterPinForChiefJudge', lang);
+    // Update modal text for Chief Judge context - use separate PIN
+    if (titleEl) titleEl.textContent = t('enterChiefJudgePin', lang);
+    if (textEl) textEl.textContent = t('enterPinForChiefJudgeInfo', lang);
     if (errorEl) errorEl.style.display = 'none';
     pinInput.value = '';
 

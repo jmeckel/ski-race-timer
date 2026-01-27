@@ -1,5 +1,5 @@
 import { validateAuth } from '../lib/jwt.js';
-import { getRedis, hasRedisError } from '../lib/redis.js';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -26,9 +26,6 @@ const MAX_ATOMIC_RETRIES = 5;
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 100;
 const RATE_LIMIT_MAX_POSTS = 50;
-
-// Redis key for client PIN
-const CLIENT_PIN_KEY = 'admin:clientPin';
 
 // Rate limiting using Redis
 async function checkRateLimit(client, ip, method) {
