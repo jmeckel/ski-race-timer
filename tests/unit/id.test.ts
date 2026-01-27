@@ -77,8 +77,9 @@ describe('ID Utilities', () => {
         ids.add(generateDeviceId());
       }
 
-      // With 24*24*100 = 57600 combinations, 50 samples should be unique
-      expect(ids.size).toBe(50);
+      // With 24*24*100 = 57600 combinations, 50 samples should be mostly unique
+      // Allow for rare birthday-problem collisions (~2% chance of 1+ collision)
+      expect(ids.size).toBeGreaterThanOrEqual(48);
     });
 
     it('should generate IDs of reasonable length', () => {
@@ -123,7 +124,8 @@ describe('ID Utilities', () => {
       for (let i = 0; i < 50; i++) {
         names.add(generateDeviceName());
       }
-      expect(names.size).toBe(50);
+      // Allow for rare birthday-problem collisions
+      expect(names.size).toBeGreaterThanOrEqual(48);
     });
 
     it('should have capitalized adjective and noun', () => {
