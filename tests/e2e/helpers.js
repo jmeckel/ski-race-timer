@@ -145,9 +145,17 @@ export async function recordTimestamp(page, bib = null) {
 
 /**
  * Wait for confirmation overlay to disappear
+ * Increased timeout for slower CI environments (especially mobile-safari)
  */
 export async function waitForConfirmationToHide(page) {
-  await page.waitForSelector('.confirmation-overlay', { state: 'hidden', timeout: 3000 });
+  // First wait for it to appear (if not already visible)
+  try {
+    await page.waitForSelector('.confirmation-overlay.show', { timeout: 2000 });
+  } catch {
+    // Overlay might have already hidden or never appeared - continue
+  }
+  // Then wait for it to hide
+  await page.waitForSelector('.confirmation-overlay.show', { state: 'hidden', timeout: 5000 });
 }
 
 /**
