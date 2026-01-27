@@ -3169,11 +3169,20 @@ body {
   line-height: 1.2;
 }
 
+/* Gate Judge Footer - Action buttons row */
+.gate-judge-footer {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
 /* Save Fault Button */
 .inline-save-fault-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
   padding: 12px 16px;
   background: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
   border: none;
@@ -3184,7 +3193,6 @@ body {
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-  margin-top: 4px;
 }
 
 .inline-save-fault-btn:active {
@@ -3196,12 +3204,6 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-}
-
-/* Gate Judge Footer */
-.gate-judge-footer {
-  flex-shrink: 0;
-  padding-top: 8px;
 }
 
 /* Active Bibs Section */
@@ -3335,13 +3337,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: 6px;
+  padding: 12px 20px;
   border: 2px solid var(--surface-elevated);
-  border-radius: 9999px;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
