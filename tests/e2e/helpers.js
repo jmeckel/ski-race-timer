@@ -162,6 +162,8 @@ export async function waitForConfirmationToHide(page) {
  * Enter bib number via number pad
  */
 export async function enterBib(page, bib) {
+  // Wait for clear button to be ready (not covered by overlay)
+  await page.waitForSelector('[data-action="clear"]', { state: 'visible' });
   await page.click('[data-action="clear"]');
   for (const digit of bib.toString().padStart(3, '0')) {
     await page.click(`[data-num="${digit}"]`);

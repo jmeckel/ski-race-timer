@@ -16,7 +16,8 @@ test.describe('Timer View', () => {
       const clock = page.locator('.clock-time');
       const initialTime = await clock.textContent();
 
-      await page.waitForTimeout(150);
+      // Wait longer to ensure clock updates (WebKit in CI can be slow)
+      await page.waitForTimeout(500);
       const newTime = await clock.textContent();
 
       expect(newTime).not.toBe(initialTime);
