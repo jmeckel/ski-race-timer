@@ -166,11 +166,16 @@ export function safeJsonParse(str, defaultValue) {
 
 /**
  * Sanitize a string by truncating and removing dangerous characters
+ * Removes: < > " ' & and control characters (matching client-side validation)
  * @param {string} str - String to sanitize
  * @param {number} maxLength - Maximum length
  * @returns {string} Sanitized string
  */
 export function sanitizeString(str, maxLength) {
   if (!str || typeof str !== 'string') return '';
-  return str.slice(0, maxLength).replace(/[<>]/g, '');
+  return str
+    .slice(0, maxLength)
+    .replace(/[<>"'&]/g, '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x1f\x7f]/g, '');
 }

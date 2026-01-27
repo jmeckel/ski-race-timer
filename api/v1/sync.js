@@ -83,12 +83,18 @@ async function checkPhotoRateLimit(client, raceId, deviceId) {
     };
   } catch (error) {
     console.error('Photo rate limit check error:', error.message);
-    // Fail closed for photos to prevent memory exhaustion
-    return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX };
+    // Fail open on Redis errors (same as general rate limiting)
+    // Set redisError flag so caller can distinguish from actual rate limit
+    return { allowed: true, count: 0, limit: PHOTO_RATE_LIMIT_MAX, redisError: true };
   }
 }
 
 // Input validation helpers
+/**
+ * Validate race ID format.
+ * Race IDs are CASE-INSENSITIVE - they are normalized to lowercase internally.
+ * Example: "RACE2024", "Race2024", and "race2024" all refer to the same race.
+ */
 function isValidRaceId(raceId) {
   if (!raceId || typeof raceId !== 'string') return false;
   if (raceId.length > MAX_RACE_ID_LENGTH) return false;
@@ -108,7 +114,11 @@ function isValidEntry(entry) {
   if (entry.bib && entry.bib.length > 10) return false;
   if (!['S', 'F'].includes(entry.point)) return false;
   if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
-  if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status)) return false;
+  if (entry.status && !['ok', 'dns', 'dnf', 'dsq', 'flt'].includes(entry.status)) return false;
+
+  // Run validation (optional field, but must be 1 or 2 if present)
+  if (entry.run !== undefined && entry.run !== 1 && entry.run !== 2) return false;
+
   return true;
 }
 

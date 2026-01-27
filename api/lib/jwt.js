@@ -18,6 +18,20 @@ function getJwtSecret() {
 }
 
 /**
+ * Validate JWT configuration at startup
+ * Call this early to fail fast if JWT_SECRET is not configured
+ * @returns {{ valid: boolean, error?: string }}
+ */
+export function validateJwtConfig() {
+  try {
+    getJwtSecret();
+    return { valid: true };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+}
+
+/**
  * Generate a JWT token for authenticated users
  * @param {Object} payload - Data to include in token
  * @returns {string} Signed JWT token
