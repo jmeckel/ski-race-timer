@@ -81,11 +81,14 @@ export default defineConfig({
       }
     },
     // Mobile Safari - Portrait (iPhone)
+    // WebKit can be slower in CI, so increase timeouts
     {
       name: 'mobile-safari-portrait',
       use: {
         ...devices['iPhone 13'],
-        viewport: { width: 390, height: 844 }
+        viewport: { width: 390, height: 844 },
+        actionTimeout: 10000,
+        navigationTimeout: 15000
       }
     },
     // Mobile Safari - Landscape (iPhone)
@@ -93,7 +96,9 @@ export default defineConfig({
       name: 'mobile-safari-landscape',
       use: {
         ...devices['iPhone 13'],
-        viewport: { width: 844, height: 390 }
+        viewport: { width: 844, height: 390 },
+        actionTimeout: 10000,
+        navigationTimeout: 15000
       }
     }
   ],

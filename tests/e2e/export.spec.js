@@ -11,6 +11,8 @@ import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, wait
 // Helper to add test entries
 async function addTestEntries(page, count = 3) {
   for (let i = 1; i <= count; i++) {
+    // Wait for clear button to be ready (not covered by overlay)
+    await page.waitForSelector('[data-action="clear"]', { state: 'visible' });
     await page.click('[data-action="clear"]');
     const bib = String(i).padStart(3, '0');
     for (const digit of bib) {
@@ -18,6 +20,8 @@ async function addTestEntries(page, count = 3) {
     }
     await page.click('#timestamp-btn');
     await waitForConfirmationToHide(page);
+    // Small buffer after confirmation to ensure app is ready
+    await page.waitForTimeout(100);
   }
 }
 
