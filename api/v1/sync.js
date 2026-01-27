@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
 import { validateAuth } from '../lib/jwt.js';
+import { getRedis, hasRedisError } from '../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -28,73 +28,9 @@ const RATE_LIMIT_WINDOW = 60; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 100; // Max requests per window per IP
 const RATE_LIMIT_MAX_POSTS = 30; // Max POST requests per window per IP
 
-// Create Redis client - reuse connection across invocations
-let redis = null;
-let redisError = null;
-let lastErrorTime = 0;
-const RECONNECT_DELAY = 5000; // 5 seconds before attempting reconnection after error
-
-function getRedis() {
-  // If we have an error and enough time has passed, reset connection to retry
-  if (redisError && redis) {
-    const timeSinceError = Date.now() - lastErrorTime;
-    if (timeSinceError > RECONNECT_DELAY) {
-      console.log('Attempting Redis reconnection after error...');
-      try {
-        redis.disconnect();
-      } catch (e) {
-        // Ignore disconnect errors
-      }
-      redis = null;
-      redisError = null;
-    }
-  }
-
-  if (!redis) {
-    if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not configured');
-    }
-
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      connectTimeout: 10000,
-      retryStrategy(times) {
-        if (times > 3) {
-          lastErrorTime = Date.now();
-          return null; // Stop retrying after 3 attempts
-        }
-        return Math.min(times * 200, 2000);
-      },
-      reconnectOnError(err) {
-        // Reconnect on specific errors
-        const targetErrors = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
-        return targetErrors.some(e => err.message.includes(e));
-      }
-    });
-
-    // Handle Redis connection errors
-    redis.on('error', (err) => {
-      console.error('Redis connection error:', err.message);
-      redisError = err;
-      lastErrorTime = Date.now();
-    });
-
-    redis.on('connect', () => {
-      console.log('Redis connected successfully');
-      redisError = null;
-    });
-
-    redis.on('close', () => {
-      console.log('Redis connection closed');
-    });
-
-    redis.on('reconnecting', () => {
-      console.log('Redis reconnecting...');
-    });
-  }
-  return redis;
-}
+// Photo upload rate limiting (per device per race)
+const PHOTO_RATE_LIMIT_WINDOW = 300; // 5 minute window
+const PHOTO_RATE_LIMIT_MAX = 20; // Max photos per device per window
 
 // Redis key for client PIN (same as admin/pin.js)
 const CLIENT_PIN_KEY = 'admin:clientPin';
@@ -126,6 +62,32 @@ async function checkRateLimit(client, ip, method) {
     console.error('Rate limit check error:', error.message);
     // Allow request if rate limiting fails (fail open)
     return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW, limit };
+  }
+}
+
+// Photo rate limiting per device per race
+// Prevents memory exhaustion from rapid photo uploads
+async function checkPhotoRateLimit(client, raceId, deviceId) {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - (now % PHOTO_RATE_LIMIT_WINDOW);
+  const key = `ratelimit:photo:${raceId}:${deviceId}:${windowStart}`;
+
+  try {
+    const multi = client.multi();
+    multi.incr(key);
+    multi.expire(key, PHOTO_RATE_LIMIT_WINDOW + 10);
+    const results = await multi.exec();
+
+    const count = results[0][1];
+    return {
+      allowed: count <= PHOTO_RATE_LIMIT_MAX,
+      count,
+      limit: PHOTO_RATE_LIMIT_MAX
+    };
+  } catch (error) {
+    console.error('Photo rate limit check error:', error.message);
+    // Fail closed for photos to prevent memory exhaustion
+    return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX };
   }
 }
 
@@ -415,7 +377,7 @@ export default async function handler(req, res) {
   }
 
   // Check for recent Redis errors
-  if (redisError) {
+  if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
@@ -527,12 +489,20 @@ export default async function handler(req, res) {
         syncedAt: Date.now()
       };
 
-      // Include photo if present (base64, limit size)
+      // Include photo if present (base64, limit size and rate)
       let photoSkipped = false;
+      let photoRateLimited = false;
       if (entry.photo && typeof entry.photo === 'string') {
         // Limit photo size to ~500KB base64 (roughly 375KB image)
         if (entry.photo.length <= 500000) {
-          enrichedEntry.photo = entry.photo;
+          // Check photo rate limit per device to prevent memory exhaustion
+          const photoRateLimit = await checkPhotoRateLimit(client, normalizedRaceId, sanitizedDeviceId);
+          if (photoRateLimit.allowed) {
+            enrichedEntry.photo = entry.photo;
+          } else {
+            photoRateLimited = true;
+            console.log(`Photo rate limited: race=${normalizedRaceId}, device=${sanitizedDeviceId}, count=${photoRateLimit.count}/${photoRateLimit.limit}`);
+          }
         } else {
           photoSkipped = true;
         }
@@ -574,6 +544,7 @@ export default async function handler(req, res) {
         deviceCount,
         highestBib,
         photoSkipped,
+        photoRateLimited,
         crossDeviceDuplicate: addResult.crossDeviceDuplicate
       });
     }

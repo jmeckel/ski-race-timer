@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
 import { validateAuth } from '../lib/jwt.js';
+import { getRedis, hasRedisError } from '../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -26,63 +26,6 @@ const MAX_ATOMIC_RETRIES = 5;
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 100;
 const RATE_LIMIT_MAX_POSTS = 50;
-
-// Create Redis client - reuse connection across invocations
-let redis = null;
-let redisError = null;
-let lastErrorTime = 0;
-const RECONNECT_DELAY = 5000;
-
-function getRedis() {
-  if (redisError && redis) {
-    const timeSinceError = Date.now() - lastErrorTime;
-    if (timeSinceError > RECONNECT_DELAY) {
-      console.log('Attempting Redis reconnection after error...');
-      try {
-        redis.disconnect();
-      } catch (e) {
-        // Ignore disconnect errors
-      }
-      redis = null;
-      redisError = null;
-    }
-  }
-
-  if (!redis) {
-    if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not configured');
-    }
-
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      connectTimeout: 10000,
-      retryStrategy(times) {
-        if (times > 3) {
-          lastErrorTime = Date.now();
-          return null;
-        }
-        return Math.min(times * 200, 2000);
-      },
-      reconnectOnError(err) {
-        const targetErrors = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
-        return targetErrors.some(e => err.message.includes(e));
-      }
-    });
-
-    redis.on('error', (err) => {
-      console.error('Redis connection error:', err.message);
-      redisError = err;
-      lastErrorTime = Date.now();
-    });
-
-    redis.on('connect', () => {
-      console.log('Redis connected successfully');
-      redisError = null;
-    });
-  }
-  return redis;
-}
 
 // Redis key for client PIN
 const CLIENT_PIN_KEY = 'admin:clientPin';
@@ -359,7 +302,8 @@ export default async function handler(req, res) {
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
-  if (redisError) {
+  // Check for recent Redis errors
+  if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
@@ -392,18 +336,24 @@ export default async function handler(req, res) {
       // Get gate assignments
       const gateAssignments = await getGateAssignments(client, normalizedRaceId);
 
-      // Update gate assignment if provided in query
+      // Update gate assignment if provided in query (with validation)
       const { deviceId, deviceName, gateStart, gateEnd, isReady, firstGateColor } = req.query;
       if (deviceId && gateStart && gateEnd) {
-        await updateGateAssignment(
-          client,
-          normalizedRaceId,
-          deviceId,
-          deviceName,
-          [parseInt(gateStart, 10), parseInt(gateEnd, 10)],
-          isReady === 'true',
-          firstGateColor || 'red'
-        );
+        const start = parseInt(gateStart, 10);
+        const end = parseInt(gateEnd, 10);
+        // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
+        if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
+          const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
+          await updateGateAssignment(
+            client,
+            normalizedRaceId,
+            deviceId,
+            deviceName,
+            [start, end],
+            isReady === 'true',
+            validColor
+          );
+        }
       }
 
       return sendSuccess(res, {
@@ -459,9 +409,15 @@ export default async function handler(req, res) {
         return sendError(res, addResult.error, status);
       }
 
-      // Update gate assignment if provided
+      // Update gate assignment if provided (with validation)
       if (gateRange && Array.isArray(gateRange) && gateRange.length === 2) {
-        await updateGateAssignment(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName, gateRange, isReady === true, firstGateColor || 'red');
+        const start = parseInt(gateRange[0], 10);
+        const end = parseInt(gateRange[1], 10);
+        // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
+        if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
+          const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
+          await updateGateAssignment(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName, [start, end], isReady === true, validColor);
+        }
       }
 
       // Get updated gate assignments

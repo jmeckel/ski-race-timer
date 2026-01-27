@@ -356,8 +356,10 @@ class SyncService {
         newInterval = intervals[this.currentIdleLevel];
       }
 
-      if (this.pollInterval) {
-        clearInterval(this.pollInterval);
+      // Snapshot current interval reference to prevent race conditions
+      const currentInterval = this.pollInterval;
+      if (currentInterval) {
+        clearInterval(currentInterval);
         this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
       }
     } finally {
@@ -401,8 +403,10 @@ class SyncService {
         this.consecutiveNoChanges = 0;
         this.currentIdleLevel = 0;
 
-        if (this.pollInterval) {
-          clearInterval(this.pollInterval);
+        // Snapshot current interval reference to prevent race conditions
+        const currentInterval = this.pollInterval;
+        if (currentInterval) {
+          clearInterval(currentInterval);
           this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
         }
       } else {
@@ -421,8 +425,10 @@ class SyncService {
             this.currentIdleLevel = newIdleLevel;
             const newInterval = intervals[this.currentIdleLevel];
 
-            if (this.pollInterval) {
-              clearInterval(this.pollInterval);
+            // Snapshot current interval reference to prevent race conditions
+            const currentInterval = this.pollInterval;
+            if (currentInterval) {
+              clearInterval(currentInterval);
               this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
             }
           }

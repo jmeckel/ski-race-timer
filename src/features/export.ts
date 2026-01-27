@@ -26,15 +26,21 @@ export function formatTimeForRaceHorology(isoTimestamp: string): string {
 
 /**
  * Escape CSV field to prevent formula injection and handle special characters
- * Prefixes formula characters with single quote
+ * Comprehensive protection against various spreadsheet formula injection vectors
  */
 export function escapeCSVField(field: string): string {
   // Check for formula injection characters
-  const formulaChars = ['=', '+', '-', '@', '\t', '\r', '\n'];
+  // Includes: = + - @ (standard), | (pipe in some apps), tab/newlines
+  const formulaChars = ['=', '+', '-', '@', '|', '\t', '\r', '\n'];
   let escaped = field;
 
   // Prefix with single quote if starts with formula character
   if (formulaChars.some(char => escaped.startsWith(char))) {
+    escaped = `'${escaped}`;
+  }
+
+  // Also protect hex-like values that Excel may interpret (0x... or +0x...)
+  if (/^[+]?0x/i.test(escaped)) {
     escaped = `'${escaped}`;
   }
 
@@ -43,8 +49,8 @@ export function escapeCSVField(field: string): string {
     escaped = escaped.replace(/"/g, '""');
   }
 
-  // Wrap in quotes if contains special characters
-  if (escaped.includes(';') || escaped.includes('"') || escaped.includes('\n')) {
+  // Wrap in quotes if contains special characters (semicolon is CSV delimiter)
+  if (escaped.includes(';') || escaped.includes('"') || escaped.includes('\n') || escaped.includes('|')) {
     escaped = `"${escaped}"`;
   }
 

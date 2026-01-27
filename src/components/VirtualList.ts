@@ -594,7 +594,7 @@ export class VirtualList {
 
     const hasFaults = faults.length > 0;
     const faultBadgeHtml = hasFaults ? `
-      <span class="result-fault-badge" title="${faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', ')}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+      <span class="result-fault-badge" title="${escapeHtml(faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
         ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0].gateNumber}`}
       </span>
     ` : '';
@@ -709,7 +709,7 @@ export class VirtualList {
       .join(', ');
 
     const faultBadgeHtml = `
-      <span class="result-fault-badge" title="${faultDetails}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+      <span class="result-fault-badge" title="${escapeHtml(faultDetails)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
         ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     `;
@@ -932,7 +932,7 @@ export class VirtualList {
       </div>
       <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
-          ${fault.faultType}
+          ${escapeHtml(fault.faultType)}
         </span>
         ${fault.deviceName ? `
           <span style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">

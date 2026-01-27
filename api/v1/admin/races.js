@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
 import { validateAuth } from '../../lib/jwt.js';
+import { getRedis, hasRedisError } from '../../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -15,39 +15,6 @@ const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to p
 
 // Redis key for client PIN (same as other APIs)
 const CLIENT_PIN_KEY = 'admin:clientPin';
-
-// Create Redis client - reuse connection across invocations
-let redis = null;
-let redisError = null;
-
-function getRedis() {
-  if (!redis) {
-    if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not configured');
-    }
-
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      connectTimeout: 10000,
-      retryStrategy(times) {
-        if (times > 3) return null;
-        return Math.min(times * 200, 2000);
-      }
-    });
-
-    redis.on('error', (err) => {
-      console.error('Redis connection error:', err.message);
-      redisError = err;
-    });
-
-    redis.on('connect', () => {
-      console.log('Redis connected successfully');
-      redisError = null;
-    });
-  }
-  return redis;
-}
 
 // Device stale threshold (same as sync.js)
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds
@@ -188,7 +155,8 @@ export default async function handler(req, res) {
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
-  if (redisError) {
+  // Check for recent Redis errors
+  if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 

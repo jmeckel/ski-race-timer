@@ -1,6 +1,6 @@
-import Redis from 'ioredis';
 import crypto from 'crypto';
 import { generateToken, hashPin } from '../../lib/jwt.js';
+import { getRedis, hasRedisError } from '../../lib/redis.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -12,23 +12,6 @@ import {
   setRateLimitHeaders,
   getClientIP
 } from '../../lib/response.js';
-
-// Redis client
-let redis = null;
-
-function getRedis() {
-  if (!redis) {
-    if (!process.env.REDIS_URL) {
-      throw new Error('REDIS_URL environment variable is not configured');
-    }
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-      connectTimeout: 10000
-    });
-  }
-  return redis;
-}
 
 // Redis key for client PIN hash
 const CLIENT_PIN_KEY = 'admin:clientPin';
@@ -81,6 +64,11 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Redis initialization error:', error.message);
     return sendServiceUnavailable(res, 'Database service unavailable');
+  }
+
+  // Check for recent Redis errors
+  if (hasRedisError()) {
+    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
   try {
