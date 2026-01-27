@@ -42,6 +42,7 @@ export interface RaceExistsResponse {
 
 export interface PinStatusResponse {
   hasPin: boolean;
+  hasChiefPin: boolean;
 }
 
 export interface TokenResponse {
@@ -207,12 +208,12 @@ export async function getPinStatus(): Promise<ApiResult<PinStatusResponse>> {
 }
 
 /**
- * Set or update PIN
+ * Change PIN (requires current PIN for verification)
  */
-export async function setPin(pin: string): Promise<ApiResult<{ success: boolean }>> {
+export async function changePin(currentPin: string, newPin: string): Promise<ApiResult<{ success: boolean }>> {
   return apiRequest<{ success: boolean }>(PIN_API_BASE, {
     method: 'POST',
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ currentPin, newPin }),
   }, {
     requiresAuth: true,
   });

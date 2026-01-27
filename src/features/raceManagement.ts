@@ -332,23 +332,7 @@ async function handleSavePin(): Promise<void> {
 
   hideAllPinErrors();
 
-  // If already authenticated (PIN exists), verify current PIN first
-  if (authenticated) {
-    const currentPin = currentPinInput?.value || '';
-
-    // Verify current PIN by trying to authenticate with it
-    const verifyResult = await exchangePinForToken(currentPin);
-    if (!verifyResult.success) {
-      if (currentPinError) currentPinError.style.display = 'block';
-      if (currentPinInput) {
-        currentPinInput.value = '';
-        currentPinInput.focus();
-      }
-      feedbackWarning();
-      return;
-    }
-  }
-
+  const currentPin = currentPinInput?.value || '';
   const newPin = newPinInput?.value || '';
   const confirmPin = confirmPinInput?.value || '';
 
@@ -373,24 +357,70 @@ async function handleSavePin(): Promise<void> {
     return;
   }
 
-  // Update PIN in Redis via admin/pin API
-  const newPinHash = await hashPin(newPin);
-  try {
-    const response = await fetch('/api/v1/admin/pin', {
-      method: 'POST',
-      headers: {
-        ...getAdminAuthHeaders(),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ pinHash: newPinHash })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+  // If already authenticated (PIN exists), change PIN via secure endpoint
+  if (authenticated) {
+    // Validate current PIN format
+    if (!isValidPin(currentPin)) {
+      if (currentPinError) currentPinError.style.display = 'block';
+      if (currentPinInput) {
+        currentPinInput.focus();
+      }
+      feedbackWarning();
+      return;
     }
 
-    // Clear old token and get new one with new PIN
-    clearAuthToken();
+    try {
+      // Server verifies current PIN and sets new PIN (no hash exposure)
+      const response = await fetch('/api/v1/admin/pin', {
+        method: 'POST',
+        headers: {
+          ...getAdminAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ currentPin, newPin })
+      });
+
+      if (response.status === 401) {
+        // Current PIN was incorrect
+        if (currentPinError) currentPinError.style.display = 'block';
+        if (currentPinInput) {
+          currentPinInput.value = '';
+          currentPinInput.focus();
+        }
+        feedbackWarning();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Clear old token and get new one with new PIN
+      clearAuthToken();
+      const authResult = await authenticateWithPin(newPin);
+
+      if (!authResult.success) {
+        showToast(t('pinSyncFailed', lang), 'error');
+        feedbackWarning();
+        return;
+      }
+
+      // Close modal and show success
+      const modal = document.getElementById('change-pin-modal');
+      closeModal(modal);
+
+      showToast(t('pinSaved', lang), 'success');
+      feedbackSuccess();
+
+      // Update status display
+      updatePinStatusDisplay();
+    } catch (error) {
+      logWarning('Admin', 'handleSavePin', error, 'pinSyncFailed');
+      showToast(t('pinSyncFailed', lang), 'error');
+      feedbackWarning();
+    }
+  } else {
+    // No PIN set yet - use auth/token to set initial PIN
     const authResult = await authenticateWithPin(newPin);
 
     if (!authResult.success) {
@@ -408,10 +438,6 @@ async function handleSavePin(): Promise<void> {
 
     // Update status display
     updatePinStatusDisplay();
-  } catch (error) {
-    logWarning('Admin', 'handleSavePin', error, 'pinSyncFailed');
-    showToast(t('pinSyncFailed', lang), 'error');
-    feedbackWarning();
   }
 }
 

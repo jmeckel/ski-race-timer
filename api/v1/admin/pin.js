@@ -1,4 +1,5 @@
-import { validateAuth } from '../../lib/jwt.js';
+import crypto from 'crypto';
+import { validateAuth, hashPin } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
   handlePreflight,
@@ -10,6 +11,16 @@ import {
   sendError
 } from '../../lib/response.js';
 
+/**
+ * Admin PIN Status API
+ *
+ * GET: Returns whether PINs are set (boolean flags only, never hashes)
+ * POST: Change PIN - requires current PIN verification
+ *
+ * SECURITY: PIN hashes are never exposed to clients to prevent:
+ * - Offline brute-force attacks (4-digit = only 10,000 possibilities)
+ * - Hash replay attacks via legacy authentication path
+ */
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'OPTIONS'])) {
@@ -29,7 +40,7 @@ export default async function handler(req, res) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
-  // Authenticate request using JWT or PIN hash
+  // Authenticate request using JWT
   const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
   if (!auth.valid) {
     return sendAuthRequired(res, auth.error, auth.expired || false);
@@ -37,36 +48,60 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get the stored PIN hashes
+      // Return only boolean flags - NEVER expose actual hashes
       const pinHash = await client.get(CLIENT_PIN_KEY);
       const chiefPinHash = await client.get(CHIEF_JUDGE_PIN_KEY);
       return sendSuccess(res, {
-        pinHash: pinHash || null,
-        chiefPinHash: chiefPinHash || null,
-        synced: !!pinHash,
-        chiefPinSet: !!chiefPinHash
+        hasPin: !!pinHash,
+        hasChiefPin: !!chiefPinHash
       });
     }
 
     if (req.method === 'POST') {
-      // Save PIN hash(es)
-      const { pinHash, chiefPinHash } = req.body;
+      // Change PIN - requires current PIN verification
+      const { currentPin, newPin } = req.body || {};
 
-      // At least one PIN hash must be provided
-      if (!pinHash && !chiefPinHash) {
-        return sendBadRequest(res, 'pinHash or chiefPinHash is required');
+      // Validate inputs
+      if (!currentPin || !newPin) {
+        return sendBadRequest(res, 'currentPin and newPin are required');
       }
 
-      // Save regular PIN if provided
-      if (pinHash && typeof pinHash === 'string') {
-        await client.set(CLIENT_PIN_KEY, pinHash);
+      if (typeof currentPin !== 'string' || typeof newPin !== 'string') {
+        return sendBadRequest(res, 'PINs must be strings');
       }
 
-      // Save chief judge PIN if provided
-      if (chiefPinHash && typeof chiefPinHash === 'string') {
-        await client.set(CHIEF_JUDGE_PIN_KEY, chiefPinHash);
+      // Validate PIN format (4 digits)
+      if (!/^\d{4}$/.test(currentPin) || !/^\d{4}$/.test(newPin)) {
+        return sendBadRequest(res, 'PINs must be exactly 4 digits');
       }
 
+      // Get stored PIN hash
+      const storedPinHash = await client.get(CLIENT_PIN_KEY);
+      if (!storedPinHash) {
+        return sendBadRequest(res, 'No PIN is set. Use authentication to set initial PIN.');
+      }
+
+      // Verify current PIN using timing-safe comparison
+      const currentPinHash = hashPin(currentPin);
+      let currentPinValid = false;
+      try {
+        currentPinValid = crypto.timingSafeEqual(
+          Buffer.from(currentPinHash, 'utf8'),
+          Buffer.from(storedPinHash, 'utf8')
+        );
+      } catch (e) {
+        currentPinValid = false;
+      }
+
+      if (!currentPinValid) {
+        return sendError(res, 'Current PIN is incorrect', 401);
+      }
+
+      // Hash and store new PIN
+      const newPinHash = hashPin(newPin);
+      await client.set(CLIENT_PIN_KEY, newPinHash);
+
+      console.log('PIN changed successfully via admin/pin API');
       return sendSuccess(res, { success: true });
     }
 
