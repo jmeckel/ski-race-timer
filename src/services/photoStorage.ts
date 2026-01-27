@@ -6,6 +6,8 @@
  * Photos are stored by entry ID for easy retrieval
  */
 
+import { logger } from '../utils/logger';
+
 const DB_NAME = 'ski-timer-photos';
 const DB_VERSION = 1;
 const STORE_NAME = 'photos';
@@ -39,7 +41,7 @@ class PhotoStorageService {
 
     this.initPromise = new Promise((resolve) => {
       if (!window.indexedDB) {
-        console.warn('IndexedDB not supported - photo storage disabled');
+        logger.warn('IndexedDB not supported - photo storage disabled');
         resolve(false);
         return;
       }
@@ -47,7 +49,7 @@ class PhotoStorageService {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('IndexedDB open error:', request.error);
+        logger.error('IndexedDB open error:', request.error);
         resolve(false);
       };
 
@@ -133,11 +135,11 @@ class PhotoStorageService {
         };
 
         request.onerror = () => {
-          console.error('Photo save error:', request.error);
+          logger.error('Photo save error:', request.error);
           resolve(false);
         };
       } catch (error) {
-        console.error('Photo save transaction error:', error);
+        logger.error('Photo save transaction error:', error);
         resolve(false);
       }
     });
@@ -169,11 +171,11 @@ class PhotoStorageService {
         };
 
         request.onerror = () => {
-          console.error('Photo get error:', request.error);
+          logger.error('Photo get error:', request.error);
           resolve(null);
         };
       } catch (error) {
-        console.error('Photo get transaction error:', error);
+        logger.error('Photo get transaction error:', error);
         resolve(null);
       }
     });
@@ -204,11 +206,11 @@ class PhotoStorageService {
         };
 
         request.onerror = () => {
-          console.error('Photo delete error:', request.error);
+          logger.error('Photo delete error:', request.error);
           resolve(false);
         };
       } catch (error) {
-        console.error('Photo delete transaction error:', error);
+        logger.error('Photo delete transaction error:', error);
         resolve(false);
       }
     });
@@ -247,11 +249,11 @@ class PhotoStorageService {
         };
 
         request.onerror = () => {
-          console.error('Photo clear error:', request.error);
+          logger.error('Photo clear error:', request.error);
           resolve(false);
         };
       } catch (error) {
-        console.error('Photo clear transaction error:', error);
+        logger.error('Photo clear transaction error:', error);
         resolve(false);
       }
     });

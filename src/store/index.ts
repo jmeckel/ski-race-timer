@@ -18,6 +18,7 @@ import type {
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { isValidEntry, migrateSchema } from '../utils/validation';
 import { SCHEMA_VERSION } from '../types';
+import { logger } from '../utils/logger';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -126,7 +127,7 @@ class Store {
         }
       }
     } catch (e) {
-      console.error('Failed to parse entries:', e);
+      logger.error('Failed to parse entries:', e);
     }
 
     try {
@@ -135,7 +136,7 @@ class Store {
         settings = { ...DEFAULT_SETTINGS, ...parsed };
       }
     } catch (e) {
-      console.error('Failed to parse settings:', e);
+      logger.error('Failed to parse settings:', e);
     }
 
     try {
@@ -146,7 +147,7 @@ class Store {
         }
       }
     } catch (e) {
-      console.error('Failed to parse sync queue:', e);
+      logger.error('Failed to parse sync queue:', e);
     }
 
     // Load other values
@@ -179,7 +180,7 @@ class Store {
         firstGateColor = storedColor;
       }
     } catch (e) {
-      console.error('Failed to parse gate assignment:', e);
+      logger.error('Failed to parse gate assignment:', e);
     }
 
     try {
@@ -191,7 +192,7 @@ class Store {
         }
       }
     } catch (e) {
-      console.error('Failed to parse fault entries:', e);
+      logger.error('Failed to parse fault entries:', e);
     }
 
     return {
@@ -291,7 +292,7 @@ class Store {
           try {
             listener(stateSnapshot, keys);
           } catch (e) {
-            console.error('State listener error:', e);
+            logger.error('State listener error:', e);
             this.failedListenerCount++;
             // Notify error callback if registered
             if (this.listenerErrorCallback) {
@@ -390,7 +391,7 @@ class Store {
       localStorage.setItem(STORAGE_KEYS.FIRST_GATE_COLOR, this.state.firstGateColor);
       localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
     } catch (e) {
-      console.error('Failed to save to storage:', e);
+      logger.error('Failed to save to storage:', e);
       // Notify user of storage failure - this is critical for a timing app
       this.dispatchStorageError(e as Error);
     }
@@ -412,7 +413,7 @@ class Store {
         }
       } catch (e) {
         // Quota check failed, continue anyway
-        console.warn('Could not check storage quota:', e);
+        logger.warn('Could not check storage quota:', e);
       }
     }
   }

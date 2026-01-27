@@ -7,7 +7,9 @@ import { t } from '../i18n/translations';
 import { getPointLabel } from '../utils/format';
 import { batteryService, type BatteryLevel } from './battery';
 import { addRecentRace } from '../utils/recentRaces';
+import { logger } from '../utils/logger';
 import {
+  AUTH_TOKEN_KEY,
   getAuthHeaders,
   clearAuthToken,
   dispatchAuthExpired,
@@ -18,7 +20,7 @@ import {
 } from './auth';
 
 // Re-export auth functions for backwards compatibility
-export { hasAuthToken, setAuthToken, clearAuthToken, exchangePinForToken };
+export { AUTH_TOKEN_KEY, hasAuthToken, setAuthToken, clearAuthToken, exchangePinForToken };
 
 // API configuration (v1)
 const API_BASE = '/api/v1/sync';
@@ -180,7 +182,7 @@ class SyncService {
         }
       };
     } catch (error) {
-      console.warn('BroadcastChannel not supported:', error);
+      logger.warn('BroadcastChannel not supported:', error);
     }
   }
 
@@ -192,7 +194,7 @@ class SyncService {
       try {
         this.broadcastChannel.postMessage({ type: 'entry', data: entry });
       } catch (error) {
-        console.error('Broadcast error:', error);
+        logger.error('Broadcast error:', error);
       }
     }
   }
@@ -213,7 +215,7 @@ class SyncService {
           }
         });
       } catch (error) {
-        console.error('Presence broadcast error:', error);
+        logger.error('Presence broadcast error:', error);
       }
     }
   }
@@ -465,7 +467,7 @@ class SyncService {
             processedEntries.push({ ...entry, photo: 'indexeddb' });
           } else {
             // Failed to save - keep entry without photo (performance priority, no retry)
-            console.warn('Sync: Photo storage failed for entry:', entry.id);
+            logger.warn('Sync: Photo storage failed for entry:', entry.id);
             processedEntries.push({ ...entry, photo: undefined });
           }
         } else {
@@ -557,7 +559,7 @@ class SyncService {
       const rawEntries = Array.isArray(data.entries) ? data.entries : [];
       const cloudEntries = rawEntries.filter(entry => {
         if (!isValidEntry(entry)) {
-          console.warn('Skipping invalid entry from cloud:', entry);
+          logger.warn('Skipping invalid entry from cloud:', entry);
           return false;
         }
         return true;
@@ -612,7 +614,7 @@ class SyncService {
 
       this.adjustPollingInterval(true, hasChanges);
     } catch (error) {
-      console.error('Cloud sync fetch error:', error);
+      logger.error('Cloud sync fetch error:', error);
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorName = error instanceof Error ? error.name : '';
@@ -659,7 +661,7 @@ class SyncService {
 
       return true;
     } catch (error) {
-      console.error('Cloud sync delete error:', error);
+      logger.error('Cloud sync delete error:', error);
       return false;
     }
   }
@@ -751,7 +753,7 @@ class SyncService {
 
       return true;
     } catch (error) {
-      console.error('Cloud sync send error:', error);
+      logger.error('Cloud sync send error:', error);
       return false;
     }
   }
@@ -802,7 +804,7 @@ class SyncService {
       for (const item of state.syncQueue) {
         // Skip if max retries exceeded
         if (item.retryCount >= MAX_RETRIES) {
-          console.warn('Max retries exceeded for entry:', item.entry.id);
+          logger.warn('Max retries exceeded for entry:', item.entry.id);
           store.removeFromSyncQueue(item.entry.id);
           continue;
         }
@@ -936,7 +938,7 @@ class SyncService {
         entryCount: typeof data.entryCount === 'number' ? data.entryCount : 0
       };
     } catch (error) {
-      console.error('Check race exists error:', error);
+      logger.error('Check race exists error:', error);
       return { exists: false, entryCount: 0 };
     }
   }
@@ -1005,7 +1007,7 @@ class SyncService {
           }
         }
       } catch (error) {
-        console.warn('Failed to fetch cloud entries for photo stats:', error);
+        logger.warn('Failed to fetch cloud entries for photo stats:', error);
       }
     }
 
@@ -1090,7 +1092,7 @@ class SyncService {
         this.updateGateAssignments(data.gateAssignments);
       }
     } catch (error) {
-      console.error('Fault sync fetch error:', error);
+      logger.error('Fault sync fetch error:', error);
       // Don't change sync status for fault errors - main sync handles that
     }
   }
@@ -1132,7 +1134,7 @@ class SyncService {
 
       return true;
     } catch (error) {
-      console.error('Fault sync send error:', error);
+      logger.error('Fault sync send error:', error);
       return false;
     }
   }
@@ -1166,7 +1168,7 @@ class SyncService {
 
       return true;
     } catch (error) {
-      console.error('Fault sync delete error:', error);
+      logger.error('Fault sync delete error:', error);
       return false;
     }
   }

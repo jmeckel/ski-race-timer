@@ -3,7 +3,9 @@
  * Handles JWT token management and PIN authentication
  */
 
-const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
+import { logger } from '../utils/logger';
+
+export const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 
 /**
  * Get auth headers for API requests
@@ -73,7 +75,7 @@ export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJud
 
     return { success: false, error: 'No token received' };
   } catch (error) {
-    console.error('Token exchange error:', error);
+    logger.error('Token exchange error:', error);
     return { success: false, error: 'Network error' };
   }
 }

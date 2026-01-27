@@ -5,10 +5,9 @@
 
 import { fetchWithTimeout, logError } from './errors';
 import type { RaceInfo } from '../types';
+import { AUTH_TOKEN_KEY } from '../services/auth';
 
 // ===== Constants =====
-
-const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 const ADMIN_API_BASE = '/api/v1/admin/races';
 const SYNC_API_BASE = '/api/v1/sync';
 const AUTH_API_BASE = '/api/v1/auth/token';

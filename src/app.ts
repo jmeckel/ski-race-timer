@@ -3,7 +3,7 @@ import { Clock, VirtualList, showToast, destroyToast, PullToRefresh } from './co
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
 import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
-import { hasAuthToken, exchangePinForToken, clearAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
+import { AUTH_TOKEN_KEY, hasAuthToken, exchangePinForToken, clearAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION, fetchWithTimeout, escapeHtml } from './utils';
 import { isValidRaceId } from './utils/validation';
@@ -19,13 +19,16 @@ import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, Dev
 import { closeModal, closeAllModalsAnimated, openModal } from './features/modals';
 import { initRippleEffects, createRipple, cleanupRippleEffects } from './features/ripple';
 import { exportResults, formatTimeForRaceHorology, escapeCSVField, exportChiefSummary, exportFaultSummaryWhatsApp } from './features/export';
+import {
+  initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
+  getPointColor, formatTimeDisplay, updateBibDisplay, updateTimingPointSelection, updateRunSelection
+} from './features/timerView';
 
 // Initialize Vercel Speed Insights
 injectSpeedInsights();
 
 // Admin API configuration
 const ADMIN_API_BASE = '/api/v1/admin/races';
-const AUTH_TOKEN_KEY = 'skiTimerAuthToken'; // localStorage key for JWT auth token
 
 /**
  * Get authorization headers for API requests
@@ -61,7 +64,6 @@ async function authenticateWithPin(pin: string, role?: 'timer' | 'gateJudge' | '
 }
 
 // DOM Elements cache
-let clock: Clock | null = null;
 let virtualList: VirtualList | null = null;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let pullToRefreshInstance: PullToRefresh | null = null;
@@ -178,417 +180,6 @@ export function initApp(): void {
     });
   }
 
-}
-
-/**
- * Initialize clock component
- */
-function initClock(): void {
-  // Clean up existing clock if re-initializing
-  if (clock) {
-    clock.destroy();
-    clock = null;
-  }
-
-  const container = document.getElementById('clock-container');
-  if (container) {
-    clock = new Clock(container);
-    clock.start();
-  }
-}
-
-/**
- * Initialize tab navigation
- */
-function initTabs(): void {
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const view = btn.getAttribute('data-view') as 'timer' | 'results' | 'settings' | 'gateJudge';
-      if (view) {
-        store.setView(view);
-        feedbackTap();
-        // Update ARIA states for accessibility
-        tabBtns.forEach(t => {
-          t.setAttribute('aria-selected', t === btn ? 'true' : 'false');
-        });
-      }
-    });
-  });
-}
-
-/**
- * Initialize number pad
- */
-function initNumberPad(): void {
-  const numPad = document.getElementById('number-pad');
-  if (!numPad) return;
-
-  numPad.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const btn = target.closest('.num-btn');
-    if (!btn) return;
-
-    const num = btn.getAttribute('data-num');
-    const action = btn.getAttribute('data-action');
-
-    if (num) {
-      const state = store.getState();
-      if (state.bibInput.length < 3) {
-        store.setBibInput(state.bibInput + num);
-        feedbackTap();
-      }
-    } else if (action === 'clear') {
-      store.setBibInput('');
-      feedbackTap();
-    } else if (action === 'delete') {
-      const state = store.getState();
-      store.setBibInput(state.bibInput.slice(0, -1));
-      feedbackTap();
-    }
-  });
-}
-
-/**
- * Initialize timing point selection
- */
-function initTimingPoints(): void {
-  const container = document.getElementById('timing-points');
-  if (!container) return;
-
-  container.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const btn = target.closest('.timing-point-btn');
-    if (!btn) return;
-
-    const point = btn.getAttribute('data-point') as TimingPoint;
-    if (point) {
-      store.setSelectedPoint(point);
-      feedbackTap();
-      // Update ARIA states for accessibility
-      container.querySelectorAll('.timing-point-btn').forEach(b => {
-        b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
-      });
-    }
-  });
-}
-
-/**
- * Initialize run selector
- */
-function initRunSelector(): void {
-  const container = document.getElementById('run-selector');
-  if (!container) return;
-
-  container.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const btn = target.closest('.run-btn');
-    if (!btn) return;
-
-    const runStr = btn.getAttribute('data-run');
-    const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
-    store.setSelectedRun(run);
-    feedbackTap();
-    // Update ARIA states for accessibility
-    container.querySelectorAll('.run-btn').forEach(b => {
-      b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
-    });
-  });
-}
-
-// DISABLED: Motion effects disabled to save battery
-// // Track if we've requested motion permission
-// let motionPermissionRequested = false;
-
-/**
- * Initialize timestamp button
- */
-function initTimestampButton(): void {
-  const btn = document.getElementById('timestamp-btn');
-  if (!btn) return;
-
-  btn.addEventListener('click', async () => {
-    // DISABLED: Motion effects disabled to save battery
-    // // Request motion permission on first click (iOS 13+ requires user gesture)
-    // if (!motionPermissionRequested && store.getState().settings.motionEffects) {
-    //   motionPermissionRequested = true;
-    //   if (motionService.requiresPermission()) {
-    //     const granted = await motionService.requestPermission();
-    //     if (granted) {
-    //       await motionService.initialize();
-    //     }
-    //   } else if (motionService.isSupported()) {
-    //     await motionService.initialize();
-    //   }
-    // }
-    await recordTimestamp();
-  });
-
-  // Keyboard shortcut - skip if user is typing in an input field
-  document.addEventListener('keydown', (e) => {
-    const activeTag = document.activeElement?.tagName;
-    if (e.key === 'Enter' &&
-        store.getState().currentView === 'timer' &&
-        activeTag !== 'INPUT' &&
-        activeTag !== 'TEXTAREA') {
-      e.preventDefault();
-      recordTimestamp();
-    }
-  });
-}
-
-/**
- * Record a timestamp entry
- */
-async function recordTimestamp(): Promise<void> {
-  const state = store.getState();
-
-  if (state.isRecording) return;
-
-  // CRITICAL: Capture timestamp IMMEDIATELY before any async operations
-  const preciseTimestamp = new Date().toISOString();
-  const gpsCoords = gpsService.getCoordinates();
-
-  store.setRecording(true);
-
-  try {
-    // Create entry with precise timestamp (captured before photo)
-    const entry: Entry = {
-      id: generateEntryId(state.deviceId),
-      bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
-      point: state.selectedPoint,
-      run: state.selectedRun,
-      timestamp: preciseTimestamp,
-      status: 'ok',
-      deviceId: state.deviceId,
-      deviceName: state.deviceName,
-      gpsCoords
-    };
-
-    // Capture photo asynchronously - don't block timestamp recording
-    // Photos are stored in IndexedDB (separate from localStorage) to avoid quota limits
-    if (state.settings.photoCapture) {
-      // Capture entry ID in local const to prevent race condition
-      // This ensures photo attaches to correct entry even if multiple timestamps recorded rapidly
-      const entryId = entry.id;
-      captureTimingPhoto()
-        .then(async (photo) => {
-          if (photo) {
-            try {
-              // RACE CONDITION FIX: Verify entry still exists before updating
-              // Entry could have been deleted while photo was being captured
-              const currentState = store.getState();
-              const entryStillExists = currentState.entries.some(e => e.id === entryId);
-              if (!entryStillExists) {
-                console.warn('Entry was deleted before photo could be attached:', entryId);
-                return;
-              }
-
-              // Store photo in IndexedDB (not in entry to save localStorage space)
-              // Note: Photo storage is best-effort - failures are logged but don't block timing
-              const saved = await photoStorage.savePhoto(entryId, photo);
-              if (saved) {
-                // Mark entry as having a photo - updateEntry returns false if entry was deleted
-                const updated = store.updateEntry(entryId, { photo: 'indexeddb' });
-                if (!updated) {
-                  // Entry was deleted during save - clean up orphaned photo
-                  console.warn('Entry deleted during photo save, removing orphaned photo:', entryId);
-                  await photoStorage.deletePhoto(entryId);
-                }
-              } else {
-                // Photo save failed - log and notify user, but don't retry (performance priority)
-                console.warn('Photo save failed for entry:', entryId);
-                const lang = store.getState().currentLang;
-                showToast(t('photoSaveFailed', lang), 'warning');
-              }
-            } catch (err) {
-              logWarning('Camera', 'photo save/update', err, 'photoError');
-            }
-          }
-        })
-        .catch(err => {
-          // Show specific toast for photo too large error
-          if (err instanceof Error && err.name === 'PhotoTooLargeError') {
-            const lang = store.getState().currentLang;
-            showToast(t('photoTooLarge', lang), 'warning');
-          } else {
-            logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
-          }
-        });
-    }
-
-    // Check for duplicate (only if bib is entered)
-    // Duplicate = same bib + point + run combination
-    const isDuplicate = entry.bib && state.entries.some(
-      e => e.bib === entry.bib && e.point === entry.point && (e.run ?? 1) === entry.run
-    );
-
-    // Check for zero bib (e.g., "000")
-    const hasZeroBib = isZeroBib(entry.bib);
-
-    // Add entry
-    store.addEntry(entry);
-
-    // Show feedback - prioritize duplicate warning over zero bib warning
-    if (isDuplicate) {
-      feedbackWarning();
-      showDuplicateWarning(entry);
-    } else if (hasZeroBib) {
-      feedbackWarning();
-      showZeroBibWarning(entry);
-    } else {
-      feedbackSuccess();
-      showConfirmation(entry);
-    }
-
-    // Sync to cloud
-    syncService.broadcastEntry(entry);
-
-    // Auto-increment bib after recording (for both Start and Finish)
-    if (state.settings.auto && state.bibInput) {
-      const localNext = parseInt(state.bibInput, 10) + 1;
-      // If sync is enabled, use the max of local next and cloud highest + 1
-      const nextBib = state.settings.sync && state.cloudHighestBib > 0
-        ? Math.max(localNext, state.cloudHighestBib + 1)
-        : localNext;
-      store.setBibInput(String(nextBib));
-    } else if (!state.bibInput) {
-      // Keep empty if no bib was entered
-      store.setBibInput('');
-    } else if (!state.settings.auto) {
-      // Clear bib if auto-increment is off
-      store.setBibInput('');
-    }
-
-    // Update last recorded display
-    updateLastRecorded(entry);
-
-  } finally {
-    store.setRecording(false);
-  }
-}
-
-/**
- * Show confirmation overlay
- */
-function showConfirmation(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
-  if (!overlay) return;
-
-  const bibEl = overlay.querySelector('.confirmation-bib') as HTMLElement | null;
-  const pointEl = overlay.querySelector('.confirmation-point') as HTMLElement | null;
-  const runEl = overlay.querySelector('.confirmation-run') as HTMLElement | null;
-  const timeEl = overlay.querySelector('.confirmation-time') as HTMLElement | null;
-
-  const state = store.getState();
-
-  if (bibEl) bibEl.textContent = entry.bib || '---';
-  if (pointEl) {
-    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
-    pointEl.style.color = getPointColor(entry.point);
-  }
-  if (runEl && entry.run) {
-    runEl.textContent = getRunLabel(entry.run, state.currentLang);
-    runEl.style.color = getRunColor(entry.run);
-  }
-  if (timeEl) {
-    const date = new Date(entry.timestamp);
-    timeEl.textContent = formatTimeDisplay(date);
-  }
-
-  // Set timing point for colored border (green=Start, orange=Finish)
-  overlay.dataset.point = entry.point;
-  overlay.classList.add('show');
-
-  setTimeout(() => {
-    overlay.classList.remove('show');
-  }, 1500);
-}
-
-/**
- * Show duplicate warning
- */
-function showDuplicateWarning(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
-  if (!overlay) return;
-
-  const warningEl = overlay.querySelector('.confirmation-duplicate') as HTMLElement | null;
-  if (warningEl) {
-    warningEl.style.display = 'flex';
-  }
-
-  showConfirmation(entry);
-
-  setTimeout(() => {
-    if (warningEl) warningEl.style.display = 'none';
-  }, 2500);
-}
-
-/**
- * Show zero bib warning (when bib is "000" or all zeros)
- */
-function showZeroBibWarning(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
-  if (!overlay) return;
-
-  const warningEl = overlay.querySelector('.confirmation-zero-bib') as HTMLElement | null;
-  if (warningEl) {
-    warningEl.style.display = 'flex';
-  }
-
-  showConfirmation(entry);
-
-  setTimeout(() => {
-    if (warningEl) warningEl.style.display = 'none';
-  }, 2500);
-}
-
-/**
- * Check if bib is all zeros (e.g., "0", "00", "000")
- */
-function isZeroBib(bib: string): boolean {
-  if (!bib) return false;
-  // Check if bib consists only of zeros
-  return /^0+$/.test(bib);
-}
-
-/**
- * Update last recorded entry display
- */
-function updateLastRecorded(entry: Entry): void {
-  const el = document.getElementById('last-recorded');
-  if (!el) return;
-
-  const bibEl = el.querySelector('.bib') as HTMLElement | null;
-  const pointEl = el.querySelector('.point') as HTMLElement | null;
-  const runEl = el.querySelector('.run') as HTMLElement | null;
-  const timeEl = el.querySelector('.time') as HTMLElement | null;
-
-  const state = store.getState();
-
-  if (bibEl) bibEl.textContent = entry.bib || '---';
-  if (pointEl) {
-    pointEl.textContent = getPointLabel(entry.point, state.currentLang);
-    pointEl.style.background = `${getPointColor(entry.point)}20`;
-    pointEl.style.color = getPointColor(entry.point);
-  }
-  if (runEl && entry.run) {
-    runEl.textContent = getRunLabel(entry.run, state.currentLang);
-    runEl.style.background = `${getRunColor(entry.run)}20`;
-    runEl.style.color = getRunColor(entry.run);
-  }
-  if (timeEl) {
-    const date = new Date(entry.timestamp);
-    timeEl.textContent = formatTimeDisplay(date);
-  }
-
-  el.classList.add('visible');
-
-  // Trigger pulse animation
-  el.classList.remove('pulse');
-  // Force reflow to restart animation
-  void el.offsetWidth;
-  el.classList.add('pulse');
 }
 
 /**
@@ -3599,45 +3190,6 @@ function updateViewVisibility(): void {
 }
 
 /**
- * Update bib display
- */
-function updateBibDisplay(): void {
-  const state = store.getState();
-  const bibValue = document.querySelector('.bib-value');
-  if (bibValue) {
-    bibValue.textContent = state.bibInput ? state.bibInput.padStart(3, '0') : '---';
-  }
-
-  // Update timestamp button pulse
-  const timestampBtn = document.getElementById('timestamp-btn');
-  if (timestampBtn) {
-    timestampBtn.classList.toggle('ready', state.bibInput.length > 0);
-  }
-}
-
-/**
- * Update timing point selection
- */
-function updateTimingPointSelection(): void {
-  const state = store.getState();
-  document.querySelectorAll('.timing-point-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-point') === state.selectedPoint);
-  });
-}
-
-/**
- * Update run selection
- */
-function updateRunSelection(): void {
-  const state = store.getState();
-  document.querySelectorAll('.run-btn').forEach(btn => {
-    const isActive = btn.getAttribute('data-run') === String(state.selectedRun);
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-checked', String(isActive));
-  });
-}
-
-/**
  * Update Gate Judge run selector
  */
 function updateGateJudgeRunSelection(): void {
@@ -3924,28 +3476,6 @@ function applyGlassEffectSettings(): void {
   } else {
     root.classList.remove('outdoor-mode');
   }
-}
-
-/**
- * Helper: Get point color
- */
-function getPointColor(point: TimingPoint): string {
-  const colors: Record<TimingPoint, string> = {
-    'S': 'var(--success)',
-    'F': 'var(--secondary)'
-  };
-  return colors[point];
-}
-
-/**
- * Helper: Format time for display
- */
-function formatTimeDisplay(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  const ms = String(date.getMilliseconds()).padStart(3, '0');
-  return `${hours}:${minutes}:${seconds}.${ms}`;
 }
 
 // Track race exists state for language updates
@@ -4612,13 +4142,10 @@ function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number;
  */
 function handleBeforeUnload(): void {
   // Cleanup clock component
-  if (clock) {
-    try {
-      clock.destroy();
-    } catch (e) {
-      console.warn('Clock cleanup error:', e);
-    }
-    clock = null;
+  try {
+    destroyClock();
+  } catch (e) {
+    console.warn('Clock cleanup error:', e);
   }
 
   // Cleanup sync service

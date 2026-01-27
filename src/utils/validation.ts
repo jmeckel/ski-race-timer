@@ -3,7 +3,7 @@ import { SCHEMA_VERSION } from '../types';
 import { generateDeviceName } from './id';
 
 const VALID_POINTS: TimingPoint[] = ['S', 'F'];
-const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq'];
+const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq', 'flt'];
 
 /**
  * Validate a single entry
