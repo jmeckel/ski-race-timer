@@ -37,7 +37,7 @@ export class Toast {
     container.setAttribute('aria-live', 'polite');
     container.style.cssText = `
       position: fixed;
-      bottom: 80px;
+      bottom: calc(80px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       z-index: 10000;

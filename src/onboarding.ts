@@ -358,6 +358,12 @@ export class OnboardingController {
           this.goToStep(this.currentStep + 1);
         }
         break;
+      case 'back':
+        // Go to previous step without validation
+        if (this.currentStep > 1) {
+          this.goToStep(this.currentStep - 1);
+        }
+        break;
       case 'skip':
         // Skip current step but ensure previous data is persisted
         // Force save to persist any data entered in prior steps
@@ -626,7 +632,8 @@ export class OnboardingController {
     const lang = store.getState().currentLang;
 
     if (result.exists) {
-      statusEl.textContent = `✓ ${t('raceFound', lang)} (${result.entryCount} ${t('entries', lang)})`;
+      const entryWord = result.entryCount === 1 ? t('entry', lang) : t('entries', lang);
+      statusEl.textContent = `✓ ${t('raceFound', lang)} (${result.entryCount} ${entryWord})`;
       statusEl.className = 'race-status found';
     } else {
       statusEl.textContent = `+ ${t('raceNew', lang)}`;

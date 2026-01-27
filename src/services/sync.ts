@@ -81,6 +81,8 @@ class SyncService {
   // Network-aware polling state
   private isMeteredConnection = false;
   private networkChangeHandler: (() => void) | null = null;
+  private onlineHandler: (() => void) | null = null;
+  private offlineHandler: (() => void) | null = null;
 
   /**
    * Initialize sync service
@@ -157,7 +159,31 @@ class SyncService {
     // Subscribe to network status changes for data-aware polling
     this.initNetworkMonitoring();
 
-    store.setSyncStatus('connecting');
+    // Subscribe to browser online/offline events for proactive offline detection
+    if (!this.onlineHandler) {
+      this.onlineHandler = () => {
+        // Browser came back online - try to reconnect
+        if (store.getState().syncStatus === 'offline') {
+          store.setSyncStatus('connecting');
+          this.startPolling();
+        }
+      };
+      window.addEventListener('online', this.onlineHandler);
+    }
+    if (!this.offlineHandler) {
+      this.offlineHandler = () => {
+        // Browser went offline - update status immediately
+        store.setSyncStatus('offline');
+      };
+      window.addEventListener('offline', this.offlineHandler);
+    }
+
+    // Check initial online status
+    if (!navigator.onLine) {
+      store.setSyncStatus('offline');
+    } else {
+      store.setSyncStatus('connecting');
+    }
   }
 
   /**
@@ -886,6 +912,16 @@ class SyncService {
         connection.removeEventListener('change', this.networkChangeHandler);
       }
       this.networkChangeHandler = null;
+    }
+
+    // Remove online/offline handlers
+    if (this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+      this.onlineHandler = null;
+    }
+    if (this.offlineHandler) {
+      window.removeEventListener('offline', this.offlineHandler);
+      this.offlineHandler = null;
     }
 
     // Reset adaptive polling state

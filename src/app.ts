@@ -57,6 +57,37 @@ export function initApp(): void {
   const versionEl = document.getElementById('app-version');
   if (versionEl) versionEl.textContent = __APP_VERSION__;
 
+  // Version info button - copy debug info to clipboard
+  const versionInfoBtn = document.getElementById('version-info-btn');
+  if (versionInfoBtn) {
+    versionInfoBtn.addEventListener('click', async () => {
+      const state = store.getState();
+      const debugInfo = [
+        `Ski Race Timer v${__APP_VERSION__}`,
+        `Device: ${state.deviceName || 'Unknown'}`,
+        `Role: ${state.deviceRole}`,
+        `Race ID: ${state.raceId || 'None'}`,
+        `Entries: ${state.entries.length}`,
+        `Sync: ${state.settings.sync ? 'On' : 'Off'}`,
+        `Language: ${state.currentLang.toUpperCase()}`,
+        `User Agent: ${navigator.userAgent}`,
+        `Screen: ${window.screen.width}x${window.screen.height}`,
+        `Viewport: ${window.innerWidth}x${window.innerHeight}`,
+        `Online: ${navigator.onLine}`,
+        `Timestamp: ${new Date().toISOString()}`
+      ].join('\n');
+
+      try {
+        await navigator.clipboard.writeText(debugInfo);
+        showToast(t('debugInfoCopied', state.currentLang), 'success');
+      } catch {
+        // Fallback: show in alert
+        showToast(t('debugInfoCopyFailed', state.currentLang), 'warning');
+      }
+      feedbackTap();
+    });
+  }
+
   // Initialize components
   initClock();
   initTabs();
@@ -314,8 +345,9 @@ function openConfirmModal(action: 'delete' | 'deleteSelected' | 'clearAll' | 'un
     if (textEl) textEl.textContent = t('clearAllText', lang);
   } else if (action === 'deleteSelected') {
     const count = store.getState().selectedEntries.size;
+    const entryWord = count === 1 ? t('entry', lang) : t('entries', lang);
     if (titleEl) titleEl.textContent = t('confirmDelete', lang);
-    if (textEl) textEl.textContent = `${count} ${t('entries', lang)} ${t('selected', lang)}`;
+    if (textEl) textEl.textContent = `${count} ${entryWord} ${t('selected', lang)}`;
   } else if (action === 'undoAdd') {
     if (titleEl) titleEl.textContent = t('confirmUndoAdd', lang);
     if (textEl) textEl.textContent = t('confirmUndoAddText', lang);

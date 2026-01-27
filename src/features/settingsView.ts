@@ -641,9 +641,12 @@ export function updateRaceExistsIndicator(exists: boolean | null, entryCount: nu
 
   if (exists) {
     indicator.classList.add('found');
-    textEl.textContent = entryCount > 0
-      ? `${entryCount} ${t('entriesInCloud', lang)}`
-      : t('raceFound', lang);
+    if (entryCount > 0) {
+      const cloudText = entryCount === 1 ? t('entryInCloud', lang) : t('entriesInCloud', lang);
+      textEl.textContent = `${entryCount} ${cloudText}`;
+    } else {
+      textEl.textContent = t('raceFound', lang);
+    }
   } else {
     indicator.classList.add('new');
     textEl.textContent = t('raceNew', lang);

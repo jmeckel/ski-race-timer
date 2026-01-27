@@ -182,15 +182,87 @@ export function initTimestampButton(): void {
     await recordTimestamp();
   });
 
-  // Keyboard shortcut - skip if user is typing in an input field
+  // Comprehensive keyboard navigation for timer view
   document.addEventListener('keydown', (e) => {
     const activeTag = document.activeElement?.tagName;
-    if (e.key === 'Enter' &&
-        store.getState().currentView === 'timer' &&
-        activeTag !== 'INPUT' &&
-        activeTag !== 'TEXTAREA') {
+    const state = store.getState();
+
+    // Skip if user is typing in an input field or not on timer view
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+      return;
+    }
+    if (state.currentView !== 'timer') {
+      return;
+    }
+
+    // Number keys 0-9 for bib input
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      if (state.bibInput.length < 3) {
+        store.setBibInput(state.bibInput + e.key);
+        feedbackTap();
+      }
+      return;
+    }
+
+    // Backspace/Delete for clearing bib input
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      store.setBibInput(state.bibInput.slice(0, -1));
+      feedbackTap();
+      return;
+    }
+
+    if (e.key === 'Delete' || e.key === 'Escape') {
+      e.preventDefault();
+      store.setBibInput('');
+      feedbackTap();
+      return;
+    }
+
+    // S/F keys for timing point selection
+    if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      store.setSelectedPoint('S');
+      feedbackTap();
+      // Update ARIA states
+      document.querySelectorAll('.timing-point-btn').forEach(btn => {
+        btn.setAttribute('aria-checked', btn.getAttribute('data-point') === 'S' ? 'true' : 'false');
+      });
+      return;
+    }
+
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      store.setSelectedPoint('F');
+      feedbackTap();
+      // Update ARIA states
+      document.querySelectorAll('.timing-point-btn').forEach(btn => {
+        btn.setAttribute('aria-checked', btn.getAttribute('data-point') === 'F' ? 'true' : 'false');
+      });
+      return;
+    }
+
+    // 1/2 keys for run selection
+    if (e.key === '1' && e.altKey) {
+      e.preventDefault();
+      store.setSelectedRun(1);
+      feedbackTap();
+      return;
+    }
+
+    if (e.key === '2' && e.altKey) {
+      e.preventDefault();
+      store.setSelectedRun(2);
+      feedbackTap();
+      return;
+    }
+
+    // Space or Enter for timestamp
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       recordTimestamp();
+      return;
     }
   });
 }
@@ -443,7 +515,9 @@ export function updateBibDisplay(): void {
 export function updateTimingPointSelection(): void {
   const state = store.getState();
   document.querySelectorAll('.timing-point-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-point') === state.selectedPoint);
+    const isActive = btn.getAttribute('data-point') === state.selectedPoint;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
   });
 }
 

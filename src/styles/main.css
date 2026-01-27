@@ -335,10 +335,11 @@ body {
 
 /* Portrait mode element ordering */
 .timer-view .clock-container { order: 1; }
-.timer-view .last-recorded { order: 2; }
-.timer-view .timestamp-btn { order: 3; }
-.timer-view .bib-display { order: 4; }
-.timer-view .number-pad { order: 5; }
+.timer-view .timing-controls { order: 2; }
+.timer-view .last-recorded { order: 3; }
+.timer-view .timestamp-btn { order: 4; }
+.timer-view .bib-display { order: 5; }
+.timer-view .number-pad { order: 6; }
 
 .clock-container {
   text-align: center;
@@ -824,6 +825,26 @@ body {
 
 .settings-section {
   margin-bottom: 24px;
+}
+
+/* Version info button */
+.version-info-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.version-info-btn:hover,
+.version-info-btn:active {
+  color: var(--text-secondary);
 }
 
 .settings-section-title {
@@ -1624,18 +1645,19 @@ body {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
-  /* Timer View - CSS Grid two-column layout (2x2 matrix) */
-  /* Left: bib (large) + numpad | Right: clock/controls + last + timestamp */
+  /* Timer View - CSS Grid two-column layout */
+  /* Left: bib (large) + numpad | Right: clock + controls + last + timestamp */
   .timer-view.active {
     display: grid !important;
     grid-template-columns: 40% 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto auto auto 1fr;
     grid-template-areas:
       "bib        clock"
+      "bib        controls"
       "numpad     last"
       "numpad     timestamp";
     padding: 8px 20px 24px;
-    gap: 10px 20px;
+    gap: 8px 20px;
     align-items: stretch;
   }
 
@@ -1698,9 +1720,11 @@ body {
   }
 
   .timer-view .timing-controls {
+    grid-area: controls;
     display: flex !important;
     flex-direction: row !important;
     justify-content: center;
+    align-items: center;
     gap: 8px;
   }
 
@@ -2187,6 +2211,39 @@ body {
 
 .onboarding-btn.secondary:hover {
   color: var(--text-primary);
+}
+
+.onboarding-btn.text {
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+.onboarding-btn.text:hover {
+  color: var(--text-secondary);
+}
+
+.onboarding-btn-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.onboarding-btn-row .onboarding-btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+.onboarding-btn-row .onboarding-btn.secondary {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 16px 24px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
 }
 
 .onboarding-summary {

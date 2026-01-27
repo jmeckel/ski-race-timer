@@ -80,7 +80,7 @@
           <!-- Timing Points and Run Selector -->
           <div class="timing-controls">
             <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
-            <button class="timing-point-btn glass-surface-3 active" data-point="S" role="radio" aria-checked="false" data-advanced>
+            <button class="timing-point-btn glass-surface-3" data-point="S" role="radio" aria-checked="false" data-advanced>
               <span data-i18n="start">Start</span>
             </button>
             <button class="timing-point-btn glass-surface-3 active" data-point="F" role="radio" aria-checked="true">
@@ -639,9 +639,9 @@
 
         <!-- Version -->
         <div class="settings-section">
-          <div class="setting-row" style="justify-content: center; color: var(--text-tertiary); font-size: 0.75rem;">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
-          </div>
+          </button>
         </div>
       </div>
     </main>
@@ -1171,7 +1171,10 @@
               <div class="role-card-check">✓</div>
             </button>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 3: Device Name -->
@@ -1187,7 +1190,10 @@
               </svg>
             </button>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 4a: Photo Capture (Timer path only) -->
@@ -1202,7 +1208,10 @@
               <span class="toggle-slider"></span>
             </label>
           </label>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 4b: Gate Assignment (Gate Judge path only) -->
@@ -1221,7 +1230,10 @@
               <input type="number" class="text-input gate-input" id="onboarding-gate-end" min="1" max="99" value="10">
             </div>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 5: Race Setup -->
@@ -1247,8 +1259,11 @@
               <span class="toggle-slider"></span>
             </label>
           </label>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
-          <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
+          <button class="onboarding-btn text" data-action="skip" data-i18n="skipForNow">Skip for now</button>
         </div>
 
         <!-- Card 6: Ready -->

@@ -67,11 +67,13 @@ export function playBeep(frequency: number = 880, duration: number = 100): void 
 
 // Predefined feedback patterns
 
+// Haptic patterns optimized for outdoor use with gloves (30ms minimum)
+
 /**
  * Success feedback (timestamp recorded)
  */
 export function feedbackSuccess(): void {
-  vibrate(20);
+  vibrate(40);
   playBeep(880, 100);
 }
 
@@ -79,7 +81,7 @@ export function feedbackSuccess(): void {
  * Warning feedback (duplicate entry)
  */
 export function feedbackWarning(): void {
-  vibrate([50, 50, 50]);
+  vibrate([60, 40, 60]);
   playBeep(440, 200);
 }
 
@@ -95,21 +97,21 @@ export function feedbackError(): void {
  * Light tap feedback (button press)
  */
 export function feedbackTap(): void {
-  vibrate(10);
+  vibrate(30);
 }
 
 /**
  * Medium tap feedback (selection)
  */
 export function feedbackSelect(): void {
-  vibrate(15);
+  vibrate(35);
 }
 
 /**
  * Delete feedback
  */
 export function feedbackDelete(): void {
-  vibrate([30, 30, 30]);
+  vibrate([40, 30, 40]);
   playBeep(330, 150);
 }
 
@@ -117,7 +119,7 @@ export function feedbackDelete(): void {
  * Undo feedback
  */
 export function feedbackUndo(): void {
-  vibrate([20, 20]);
+  vibrate([35, 35]);
   playBeep(660, 100);
 }
 
@@ -125,7 +127,7 @@ export function feedbackUndo(): void {
  * Export feedback
  */
 export function feedbackExport(): void {
-  vibrate(30);
+  vibrate(45);
   playBeep(660, 150);
 }
 
@@ -133,7 +135,7 @@ export function feedbackExport(): void {
  * Sync feedback
  */
 export function feedbackSync(): void {
-  vibrate(15);
+  vibrate(30);
   playBeep(550, 80);
 }
 
