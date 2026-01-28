@@ -10,7 +10,7 @@ import { feedbackDelete } from '../services';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
 import { getPointLabel, getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
-import { closeModal } from './modals';
+import { openModal, closeModal } from './modals';
 import type { Entry } from '../types';
 
 // Module state
@@ -69,7 +69,7 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
     timeEl.textContent = formatTimeDisplay(date);
   }
 
-  modal.classList.add('show');
+  openModal(modal);
 }
 
 /**

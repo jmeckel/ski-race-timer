@@ -11,7 +11,7 @@ import { feedbackSuccess, feedbackWarning, feedbackDelete } from '../services';
 import { logError, logWarning, fetchWithTimeout, escapeHtml, makeNumericInput } from '../utils';
 import { formatFileSize } from '../utils/format';
 import { t } from '../i18n/translations';
-import { closeModal } from './modals';
+import { openModal, closeModal } from './modals';
 import type { Language, RaceInfo } from '../types';
 
 // Admin API configuration
@@ -21,10 +21,12 @@ const ADMIN_API_BASE = '/api/v1/admin/races';
 const DEFAULT_ADMIN_PIN = '1111'; // Default client PIN (synced across devices)
 let pendingRaceDelete: string | null = null;
 
-// Resolver for PIN verification promise (used by closeAllModals cleanup)
-let pinVerifyResolver: ((verified: boolean) => void) | null = null;
-// Flag to indicate Chief Judge verification (requires chiefJudge role token)
-let pinVerifyForChiefJudge = false;
+// PIN verification context - consolidates resolver and type into single object
+interface PinVerificationContext {
+  type: 'raceJoin' | 'chiefJudge';
+  resolve: (verified: boolean) => void;
+}
+let pinVerification: PinVerificationContext | null = null;
 
 /**
  * Check if user is authenticated (has valid token)
@@ -95,7 +97,7 @@ export function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language
     keepBtn?.addEventListener('click', handleKeep);
     cancelBtn?.addEventListener('click', handleCancel);
 
-    modal.classList.add('show');
+    openModal(modal);
   });
 }
 
@@ -187,7 +189,7 @@ export function initRaceManagement(): void {
   const adminPinVerifyBtn = document.getElementById('admin-pin-verify-btn');
   if (adminPinVerifyBtn) {
     adminPinVerifyBtn.addEventListener('click', () => {
-      if (pinVerifyResolver) {
+      if (pinVerification) {
         handleRaceJoinPinVerify();
       } else {
         handleAdminPinVerify();
@@ -200,7 +202,7 @@ export function initRaceManagement(): void {
   if (adminPinVerifyInput) {
     adminPinVerifyInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        if (pinVerifyResolver) {
+        if (pinVerification) {
           handleRaceJoinPinVerify();
         } else {
           handleAdminPinVerify();
@@ -213,7 +215,7 @@ export function initRaceManagement(): void {
   const adminPinModal = document.getElementById('admin-pin-modal');
   if (adminPinModal) {
     adminPinModal.addEventListener('click', (e) => {
-      if (e.target === adminPinModal && pinVerifyResolver) {
+      if (e.target === adminPinModal && pinVerification) {
         cancelRaceJoinPinVerify();
       }
     });
@@ -276,7 +278,7 @@ function handleChangePinClick(): void {
     if (modalTitle) modalTitle.textContent = t('setPin', lang);
   }
 
-  modal.classList.add('show');
+  openModal(modal);
 
   // Focus appropriate input
   if (authenticated && currentPinInput) {
@@ -448,7 +450,7 @@ export function handleRaceDeleted(event: CustomEvent<{ raceId: string; deletedAt
   // Show modal
   const modal = document.getElementById('race-deleted-modal');
   if (modal) {
-    modal.classList.add('show');
+    openModal(modal);
   }
 
   // Disable sync and clear race ID
@@ -508,7 +510,7 @@ export async function showPhotoSyncWarningModal(): Promise<void> {
   if (downloadCountEl) downloadCountEl.textContent = t('loading', lang);
   if (totalSizeEl) totalSizeEl.textContent = t('loading', lang);
 
-  modal.classList.add('show');
+  openModal(modal);
 
   // Get photo sync statistics
   const stats = await syncService.getPhotoSyncStats();
@@ -589,7 +591,7 @@ function handleManageRacesClick(): void {
     errorEl.style.display = 'none';
     if (titleEl) titleEl.textContent = t('enterAdminPin', lang);
     if (textEl) textEl.textContent = t('enterPinText', lang);
-    modal.classList.add('show');
+    openModal(modal);
     pinInput.focus();
   }
 }
@@ -655,10 +657,10 @@ export function verifyPinForRaceJoin(lang: Language): Promise<boolean> {
     if (errorEl) errorEl.style.display = 'none';
     pinInput.value = '';
 
-    // Store resolver for the verify button handler
-    pinVerifyResolver = resolve;
+    // Store verification context
+    pinVerification = { type: 'raceJoin', resolve };
 
-    modal.classList.add('show');
+    openModal(modal);
     setTimeout(() => pinInput.focus(), 100);
   });
 }
@@ -687,12 +689,10 @@ export function verifyPinForChiefJudge(lang: Language): Promise<boolean> {
     if (errorEl) errorEl.style.display = 'none';
     pinInput.value = '';
 
-    // Store resolver for the verify button handler
-    // Mark this as a Chief Judge verification so the handler uses the right role
-    pinVerifyResolver = resolve;
-    pinVerifyForChiefJudge = true;
+    // Store verification context with chiefJudge type
+    pinVerification = { type: 'chiefJudge', resolve };
 
-    modal.classList.add('show');
+    openModal(modal);
     setTimeout(() => pinInput.focus(), 100);
   });
 }
@@ -705,13 +705,13 @@ async function handleRaceJoinPinVerify(): Promise<void> {
   const errorEl = document.getElementById('admin-pin-error');
   const modal = document.getElementById('admin-pin-modal');
 
-  if (!pinInput || !modal || !pinVerifyResolver) return;
+  if (!pinInput || !modal || !pinVerification) return;
 
   const enteredPin = pinInput.value.trim();
 
   // Authenticate via JWT token exchange
   // Use chiefJudge role if this is for Chief Judge mode verification
-  const role = pinVerifyForChiefJudge ? 'chiefJudge' : undefined;
+  const role = pinVerification.type === 'chiefJudge' ? 'chiefJudge' : undefined;
   const result = await authenticateWithPin(enteredPin, role);
 
   if (result.success) {
@@ -719,9 +719,8 @@ async function handleRaceJoinPinVerify(): Promise<void> {
     closeModal(modal);
     pinInput.value = '';
     if (errorEl) errorEl.style.display = 'none';
-    pinVerifyResolver(true);
-    pinVerifyResolver = null;
-    pinVerifyForChiefJudge = false; // Reset flag
+    pinVerification.resolve(true);
+    pinVerification = null;
   } else {
     // PIN incorrect
     if (errorEl) errorEl.style.display = 'block';
@@ -741,11 +740,10 @@ function cancelRaceJoinPinVerify(): void {
   closeModal(modal);
   if (pinInput) pinInput.value = '';
 
-  if (pinVerifyResolver) {
-    pinVerifyResolver(false);
-    pinVerifyResolver = null;
+  if (pinVerification) {
+    pinVerification.resolve(false);
+    pinVerification = null;
   }
-  pinVerifyForChiefJudge = false; // Reset flag
 }
 
 /**
@@ -754,7 +752,7 @@ function cancelRaceJoinPinVerify(): void {
 function openRaceManagementModal(): void {
   const modal = document.getElementById('race-management-modal');
   if (modal) {
-    modal.classList.add('show');
+    openModal(modal);
     loadRaceList();
   }
 }
@@ -870,7 +868,7 @@ function promptDeleteRace(raceId: string): void {
   }
 
   if (modal) {
-    modal.classList.add('show');
+    openModal(modal);
   }
 }
 
@@ -926,10 +924,9 @@ async function handleConfirmDeleteRace(): Promise<void> {
  * Used by closeAllModals cleanup
  */
 export function cleanupPinVerification(): boolean {
-  if (pinVerifyResolver) {
-    pinVerifyResolver(false);
-    pinVerifyResolver = null;
-    pinVerifyForChiefJudge = false;
+  if (pinVerification) {
+    pinVerification.resolve(false);
+    pinVerification = null;
     return true; // Indicates cleanup was needed
   }
   return false;
@@ -939,5 +936,5 @@ export function cleanupPinVerification(): boolean {
  * Check if there's an active PIN verification modal
  */
 export function hasPendingPinVerification(): boolean {
-  return pinVerifyResolver !== null;
+  return pinVerification !== null;
 }

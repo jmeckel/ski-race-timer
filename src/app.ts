@@ -15,7 +15,7 @@ import { OnboardingController } from './onboarding';
 import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run } from './types';
 
 // Feature modules
-import { closeModal } from './features/modals';
+import { openModal, closeModal } from './features/modals';
 import { initRippleEffects, cleanupRippleEffects } from './features/ripple';
 import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
@@ -322,7 +322,7 @@ function openEditModal(entry: Entry): void {
   });
   modal.setAttribute('data-entry-run', String(entryRun));
 
-  modal.classList.add('show');
+  openModal(modal);
 }
 
 /**
@@ -354,7 +354,7 @@ function openConfirmModal(action: 'delete' | 'deleteSelected' | 'clearAll' | 'un
     if (textEl) textEl.textContent = t('confirmDeleteText', lang);
   }
 
-  modal.classList.add('show');
+  openModal(modal);
 }
 
 /**
