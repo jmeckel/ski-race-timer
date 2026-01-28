@@ -80,26 +80,22 @@ function getStatusLabel(status: string, lang: Language): string {
 }
 
 /**
- * Get fault type code for export (German format)
+ * Get fault type code for export
+ * Uses standard international codes (MG, STR, BR) regardless of app language
  */
-function getFaultTypeCode(faultType: FaultType, lang: Language): string {
-  const codes: Record<FaultType, Record<Language, string>> = {
-    'MG': { en: 'MG', de: 'TF' },   // Missed Gate / Torfehler
-    'STR': { en: 'STR', de: 'EF' }, // Straddling / Einfädler
-    'BR': { en: 'BR', de: 'BO' },   // Binding Release / Bindung offen
-  };
-  return codes[faultType]?.[lang] || faultType;
+function getFaultTypeCode(faultType: FaultType): string {
+  return faultType; // MG, STR, BR are the standard codes
 }
 
 /**
  * Format faults for CSV export
  * Returns string like "T4(MG),T8(EF)"
  */
-function formatFaultsForCSV(faults: FaultEntry[], lang: Language): string {
+function formatFaultsForCSV(faults: FaultEntry[]): string {
   if (faults.length === 0) return '';
   return faults
     .sort((a, b) => a.gateNumber - b.gateNumber)
-    .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType, lang)})`)
+    .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
     .join(',');
 }
 
@@ -158,7 +154,7 @@ export function exportResults(): void {
       const penaltySeconds = entryFaults.length > 0 && state.usePenaltyMode
         ? entryFaults.length * state.penaltySeconds
         : 0;
-      const faultStr = formatFaultsForCSV(entryFaults, lang);
+      const faultStr = formatFaultsForCSV(entryFaults);
 
       return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr}`;
     } else {
@@ -241,7 +237,7 @@ export function exportJudgeReport(): void {
   const formatFaultRow = (f: FaultEntry): string => {
     const bib = f.bib.padStart(5);
     const gate = String(f.gateNumber).padStart(4);
-    const type = getFaultTypeCode(f.faultType, lang).padEnd(10);
+    const type = getFaultTypeCode(f.faultType).padEnd(10);
     const time = new Date(f.timestamp).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US');
     return `  ${bib}   │  ${gate}  │ ${type} │ ${time}`;
   };
@@ -274,7 +270,7 @@ export function exportJudgeReport(): void {
   lines.push(thinDivider);
   lines.push(`${t('signature', lang)}: ________________________`);
   lines.push('');
-  lines.push(`${t('legend', lang)}: MG=${t('missedGateLegend', lang)}, ${getFaultTypeCode('STR', lang)}=${t('straddlingLegend', lang)}, ${getFaultTypeCode('BR', lang)}=${t('bindingLegend', lang)}`);
+  lines.push(`${t('legend', lang)}: MG=${t('missedGateLegend', lang)}, STR=${t('straddlingLegend', lang)}, BR=${t('bindingLegend', lang)}`);
   lines.push(divider);
 
   const content = lines.join('\n');
@@ -341,7 +337,7 @@ export function exportFaultSummaryWhatsApp(): void {
       .map(f => `T${f.gateNumber}`)
       .join('+');
     const faultTypes = racerFaults
-      .map(f => getFaultTypeCode(f.faultType, lang))
+      .map(f => getFaultTypeCode(f.faultType))
       .join(', ');
 
     if (state.usePenaltyMode) {
@@ -451,7 +447,7 @@ export function exportChiefSummary(): void {
         const paddedBib = bib.padStart(5);
         const faultStr = racerFaults
           .sort((a, b) => a.gateNumber - b.gateNumber)
-          .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType, lang)})`)
+          .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
           .join(', ')
           .padEnd(16);
 
