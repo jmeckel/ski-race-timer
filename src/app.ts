@@ -790,8 +790,7 @@ function updatePhotoCaptureIndicator(): void {
 
 /**
  * Initialize voice mode service
- * Note: Voice mode requires LLM API configuration
- * Currently uses environment variables for API key
+ * Uses server-side proxy at /api/v1/voice for LLM processing
  */
 function initVoiceMode(): void {
   // Check if voice mode is supported
@@ -800,24 +799,23 @@ function initVoiceMode(): void {
     return;
   }
 
-  // Get LLM configuration from environment or config
-  // In production, this would come from Vercel environment variables
-  // For now, we check for a global config object that can be set by the user
-  const llmConfig = (window as unknown as Record<string, unknown>).VOICE_LLM_CONFIG as {
+  // Use server-side proxy endpoint - API key is stored on server
+  // This keeps the Anthropic API key secure and handles all LLM calls server-side
+  const proxyEndpoint = '/api/v1/voice';
+
+  // Check for custom config override (for development/testing)
+  const customConfig = (window as unknown as Record<string, unknown>).VOICE_LLM_CONFIG as {
     endpoint?: string;
     apiKey?: string;
   } | undefined;
 
-  if (!llmConfig?.endpoint || !llmConfig?.apiKey) {
-    logger.debug('[VoiceMode] LLM configuration not available');
-    return;
-  }
+  const llmConfig = {
+    endpoint: customConfig?.endpoint || proxyEndpoint,
+    apiKey: customConfig?.apiKey || 'proxy' // Proxy handles auth server-side
+  };
 
   // Initialize voice mode with LLM configuration
-  const initialized = voiceModeService.initialize({
-    endpoint: llmConfig.endpoint,
-    apiKey: llmConfig.apiKey
-  });
+  const initialized = voiceModeService.initialize(llmConfig);
 
   if (!initialized) {
     logger.warn('[VoiceMode] Failed to initialize');

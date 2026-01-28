@@ -59,7 +59,14 @@ const DEFAULT_CONFIG: Partial<LLMConfig> = {
 };
 
 /**
- * Process voice command using LLM
+ * Check if using our proxy endpoint (returns pre-parsed intent)
+ */
+function isProxyEndpoint(endpoint: string): boolean {
+  return endpoint.includes('/api/v1/voice');
+}
+
+/**
+ * Process voice command using LLM (via proxy or direct API)
  */
 export async function processVoiceCommand(
   transcript: string,
@@ -68,10 +75,76 @@ export async function processVoiceCommand(
 ): Promise<VoiceIntent> {
   const { endpoint, apiKey, model, maxTokens } = { ...DEFAULT_CONFIG, ...config };
 
-  if (!endpoint || !apiKey) {
-    throw new Error('LLM endpoint and API key are required');
+  if (!endpoint) {
+    throw new Error('LLM endpoint is required');
   }
 
+  // Using our server-side proxy - simpler request format
+  if (isProxyEndpoint(endpoint)) {
+    return processViaProxy(transcript, context, endpoint);
+  }
+
+  // Direct API call (requires API key)
+  if (!apiKey) {
+    throw new Error('API key is required for direct LLM calls');
+  }
+
+  return processDirectAPI(transcript, context, endpoint, apiKey, model, maxTokens);
+}
+
+/**
+ * Process via our server-side proxy
+ */
+async function processViaProxy(
+  transcript: string,
+  context: VoiceContext,
+  endpoint: string
+): Promise<VoiceIntent> {
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ transcript, context })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      logger.error('[LLMProvider] Proxy error:', response.status, error);
+      throw new Error(`Proxy error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.intent) {
+      logger.debug('[LLMProvider] Proxy intent:', result.intent);
+      return result.intent;
+    }
+
+    throw new Error('Invalid proxy response');
+
+  } catch (error) {
+    logger.error('[LLMProvider] Proxy processing error:', error);
+    return {
+      action: 'unknown',
+      confidence: 0,
+      confirmationNeeded: false
+    };
+  }
+}
+
+/**
+ * Process via direct Anthropic API call
+ */
+async function processDirectAPI(
+  transcript: string,
+  context: VoiceContext,
+  endpoint: string,
+  apiKey: string,
+  model?: string,
+  maxTokens?: number
+): Promise<VoiceIntent> {
   const contextJson = JSON.stringify({
     role: context.role,
     language: context.language,
