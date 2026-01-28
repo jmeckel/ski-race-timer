@@ -99,10 +99,6 @@ export const translations: Record<Language, Translations> = {
     hapticFeedback: 'Haptic Feedback',
     soundFeedback: 'Sound Feedback',
     language: 'Language',
-    backup: 'Backup',
-    restore: 'Restore',
-    importData: 'Import Data',
-    exportData: 'Export Data',
 
     // Settings descriptions
     simpleModeDesc: 'Simplified interface for basic timing',
@@ -492,10 +488,6 @@ export const translations: Record<Language, Translations> = {
     hapticFeedback: 'Haptisches Feedback',
     soundFeedback: 'Ton-Feedback',
     language: 'Sprache',
-    backup: 'Sichern',
-    restore: 'Wiederherstellen',
-    importData: 'Daten importieren',
-    exportData: 'Daten exportieren',
 
     // Settings descriptions
     simpleModeDesc: 'Vereinfachte Oberfläche für einfache Zeitmessung',
