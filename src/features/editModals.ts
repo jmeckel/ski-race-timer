@@ -61,9 +61,9 @@ export function setEditingFaultId(id: string | null): void {
  */
 export function getFaultTypeLabel(faultType: FaultType, lang: Language): string {
   const labels: Record<FaultType, Record<Language, string>> = {
-    MG: { de: 'Verfehlt', en: 'Missed' },
-    STR: { de: 'Überfahren', en: 'Straddled' },
-    BR: { de: 'Blockiert', en: 'Blocked' }
+    MG: { de: 'Ausgelassen', en: 'Missed' },
+    STR: { de: 'Einfädler', en: 'Straddling' },
+    BR: { de: 'Bindung', en: 'Binding' }
   };
   return labels[faultType]?.[lang] || faultType;
 }

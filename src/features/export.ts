@@ -84,9 +84,9 @@ function getStatusLabel(status: string, lang: Language): string {
  */
 function getFaultTypeCode(faultType: FaultType, lang: Language): string {
   const codes: Record<FaultType, Record<Language, string>> = {
-    'MG': { en: 'MG', de: 'MG' },   // Missed Gate / Tor verfehlt
+    'MG': { en: 'MG', de: 'TF' },   // Missed Gate / Torfehler
     'STR': { en: 'STR', de: 'EF' }, // Straddling / Einfädler
-    'BR': { en: 'BR', de: 'AB' },   // Binding Release / Ausfall Bindung
+    'BR': { en: 'BR', de: 'BO' },   // Binding Release / Bindung offen
   };
   return codes[faultType]?.[lang] || faultType;
 }
