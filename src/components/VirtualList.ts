@@ -1012,7 +1012,7 @@ export class VirtualList {
 
     const state = store.getState();
     this.contentContainer.innerHTML = `
-      <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);">
+      <div class="empty-state">
         <span class="empty-icon">⏱️</span>
         <span>${t('noEntries', state.currentLang)}</span>
         <span class="empty-subtitle">${t('noEntriesHint', state.currentLang)}</span>

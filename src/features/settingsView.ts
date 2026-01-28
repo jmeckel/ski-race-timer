@@ -327,8 +327,11 @@ function initAdvancedSettingsToggle(): void {
   const section = getElement('advanced-settings-section');
   if (!toggle || !section) return;
 
+  toggle.setAttribute('role', 'button');
+  toggle.setAttribute('aria-expanded', 'false');
   toggle.addEventListener('click', () => {
-    section.classList.toggle('expanded');
+    const isExpanded = section.classList.toggle('expanded');
+    toggle.setAttribute('aria-expanded', String(isExpanded));
     feedbackTap();
   });
 }

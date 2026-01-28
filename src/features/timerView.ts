@@ -80,9 +80,11 @@ export function initNumberPad(): void {
 
   // Bib display click toggles numpad collapsed/expanded
   if (bibDisplay && numPad) {
+    bibDisplay.setAttribute('aria-expanded', 'true');
     bibDisplay.addEventListener('click', () => {
       const isCollapsed = numPad.classList.toggle('collapsed');
       bibDisplay.classList.toggle('expanded', !isCollapsed);
+      bibDisplay.setAttribute('aria-expanded', String(!isCollapsed));
       feedbackTap();
     });
   }
@@ -447,6 +449,7 @@ function triggerSnowflakeBurst(point: 'S' | 'F'): void {
       text-shadow: 0 0 6px ${color};
     `;
 
+    flake.addEventListener('animationend', () => flake.remove(), { once: true });
     burst.appendChild(flake);
   }
 }
