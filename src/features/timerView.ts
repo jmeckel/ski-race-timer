@@ -5,7 +5,7 @@
 
 import { store } from '../store';
 import { Clock, showToast } from '../components';
-import { syncService, gpsService, captureTimingPhoto, photoStorage } from '../services';
+import { syncService, gpsService, captureTimingPhoto, photoStorage, ambientModeService } from '../services';
 import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logWarning, getElement } from '../utils';
 import { getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
@@ -171,6 +171,12 @@ export function initTimestampButton(): void {
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
+    // First tap in ambient mode exits without recording
+    if (ambientModeService.isActive()) {
+      ambientModeService.exitAmbientMode();
+      feedbackTap();
+      return;
+    }
     await recordTimestamp();
   });
 
@@ -253,6 +259,12 @@ export function initTimestampButton(): void {
     // Space or Enter for timestamp
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
+      // First keypress in ambient mode exits without recording
+      if (ambientModeService.isActive()) {
+        ambientModeService.exitAmbientMode();
+        feedbackTap();
+        return;
+      }
       recordTimestamp();
       return;
     }

@@ -160,6 +160,14 @@ export function initSettingsView(): void {
     });
   }
 
+  // Ambient mode toggle
+  const ambientModeToggle = getElement<HTMLInputElement>('ambient-mode-toggle');
+  if (ambientModeToggle) {
+    ambientModeToggle.addEventListener('change', () => {
+      store.updateSettings({ ambientMode: ambientModeToggle.checked });
+    });
+  }
+
   // Photo capture toggle
   const photoToggle = getElement<HTMLInputElement>('photo-toggle');
   if (photoToggle) {
@@ -416,6 +424,10 @@ export function updateSettingsInputs(): void {
   if (hapticToggle) hapticToggle.checked = settings.haptic;
   if (soundToggle) soundToggle.checked = settings.sound;
   if (photoToggle) photoToggle.checked = settings.photoCapture;
+
+  // Update ambient mode toggle
+  const ambientModeToggle = getElement<HTMLInputElement>('ambient-mode-toggle');
+  if (ambientModeToggle) ambientModeToggle.checked = settings.ambientMode;
 
   // Update sync photos toggle (enabled only when sync is enabled)
   const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');

@@ -108,6 +108,7 @@ export interface Settings {
   motionEffects: boolean;  // Enable accelerometer-reactive effects
   glassEffects: boolean;   // Enable glass/blur effects
   outdoorMode: boolean;    // High contrast mode for outdoor readability
+  ambientMode: boolean;    // Auto-dim after inactivity on timer view
 }
 
 // Device info for multi-device sync

@@ -331,7 +331,8 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
     // Liquid Glass UI settings
     motionEffects: true,
     glassEffects: true,
-    outdoorMode: false
+    outdoorMode: false,
+    ambientMode: true   // Auto-dim after inactivity - saves battery
   };
 
   // Handle completely invalid data
@@ -373,7 +374,8 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
       // Liquid Glass UI settings
       motionEffects: typeof s.motionEffects === 'boolean' ? s.motionEffects : defaultSettings.motionEffects,
       glassEffects: typeof s.glassEffects === 'boolean' ? s.glassEffects : defaultSettings.glassEffects,
-      outdoorMode: typeof s.outdoorMode === 'boolean' ? s.outdoorMode : defaultSettings.outdoorMode
+      outdoorMode: typeof s.outdoorMode === 'boolean' ? s.outdoorMode : defaultSettings.outdoorMode,
+      ambientMode: typeof s.ambientMode === 'boolean' ? s.ambientMode : defaultSettings.ambientMode
     };
   }
 

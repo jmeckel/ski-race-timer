@@ -108,6 +108,8 @@ export const translations: Record<Language, Translations> = {
     photoCaptureDesc: 'Capture photo on timestamp',
     hapticFeedbackDesc: 'Vibration on actions',
     soundFeedbackDesc: 'Audio confirmation',
+    ambientMode: 'Ambient Mode',
+    ambientModeDesc: 'Auto-dim after 30s inactivity',
 
     // Photo
     photoCapture: 'Photo Capture',
@@ -495,6 +497,8 @@ export const translations: Record<Language, Translations> = {
     photoCaptureDesc: 'Foto bei Zeiterfassung aufnehmen',
     hapticFeedbackDesc: 'Vibration bei Aktionen',
     soundFeedbackDesc: 'Akustische Bestätigung',
+    ambientMode: 'Ruhemodus',
+    ambientModeDesc: 'Nach 30s Inaktivität abdunkeln',
 
     // Photo
     photoCapture: 'Foto aufnehmen',

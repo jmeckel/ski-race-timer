@@ -2,7 +2,7 @@ import { store } from './store';
 import { showToast, destroyToast } from './components';
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, ambientModeService } from './services';
 import { hasAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION } from './utils';
@@ -170,6 +170,25 @@ export function initApp(): void {
   if (initialState.currentView === 'timer') {
     wakeLockService.enable();
   }
+
+  // Initialize ambient mode if enabled
+  if (initialState.settings.ambientMode) {
+    ambientModeService.initialize();
+    // Enable on timer view
+    if (initialState.currentView === 'timer') {
+      ambientModeService.enable();
+    }
+  }
+
+  // Subscribe to ambient mode state changes - toggle body class
+  ambientModeService.subscribe((state) => {
+    document.body.classList.toggle('ambient-mode', state.isActive);
+    if (state.triggeredBy) {
+      document.body.dataset.ambientTrigger = state.triggeredBy;
+    } else {
+      delete document.body.dataset.ambientTrigger;
+    }
+  });
 
   // Initialize onboarding for first-time users
   onboardingController = new OnboardingController();
@@ -545,7 +564,7 @@ const STATE_HANDLERS: Record<string, StateHandler[]> = {
 };
 
 /**
- * Handle view changes (wake lock, virtual list pause/resume)
+ * Handle view changes (wake lock, virtual list pause/resume, ambient mode)
  */
 function handleViewChange(state: ReturnType<typeof store.getState>): void {
   updateViewVisibility();
@@ -555,6 +574,13 @@ function handleViewChange(state: ReturnType<typeof store.getState>): void {
     wakeLockService.enable();
   } else {
     wakeLockService.disable();
+  }
+
+  // Ambient Mode: enable only on timer view when setting is enabled
+  if (state.currentView === 'timer' && state.settings.ambientMode) {
+    ambientModeService.enable();
+  } else {
+    ambientModeService.disable();
   }
 
   // VirtualList: pause when not on results view to save resources
@@ -577,6 +603,17 @@ function handleSettingsChange(): void {
   updateJudgeReadyStatus();
   updatePhotoCaptureIndicator();
   applyGlassEffectSettings();
+
+  // Handle ambient mode setting changes
+  const state = store.getState();
+  if (state.settings.ambientMode) {
+    ambientModeService.initialize();
+    if (state.currentView === 'timer') {
+      ambientModeService.enable();
+    }
+  } else {
+    ambientModeService.disable();
+  }
 }
 
 /**
@@ -820,6 +857,9 @@ function handleBeforeUnload(): void {
   // DISABLED: Motion effects disabled to save battery
   // // Cleanup motion service
   // motionService.cleanup();
+
+  // Cleanup ambient mode service
+  ambientModeService.cleanup();
 
   // Cleanup toast singleton and its event listener
   destroyToast();

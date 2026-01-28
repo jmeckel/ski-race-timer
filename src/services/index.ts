@@ -5,6 +5,7 @@ export { gpsService } from './gps';
 export { photoStorage } from './photoStorage';
 export { wakeLockService } from './wakeLock';
 export { batteryService, type BatteryLevel } from './battery';
+export { ambientModeService, type AmbientTrigger } from './ambient';
 // DISABLED: Motion effects disabled to save battery
 // export { motionService } from './motion';
 export * from './feedback';

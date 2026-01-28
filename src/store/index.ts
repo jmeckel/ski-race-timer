@@ -51,7 +51,8 @@ const DEFAULT_SETTINGS: Settings = {
   // Liquid Glass UI settings - enabled by default for modern look
   motionEffects: true,
   glassEffects: true,
-  outdoorMode: false
+  outdoorMode: false,
+  ambientMode: true   // Auto-dim after inactivity - saves battery
 };
 
 // Maximum undo stack size
@@ -138,7 +139,8 @@ type BooleanSettingKey =
   | 'photoCapture'
   | 'motionEffects'
   | 'glassEffects'
-  | 'outdoorMode';
+  | 'outdoorMode'
+  | 'ambientMode';
 
 // Error callback for listener exceptions
 type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
