@@ -343,17 +343,15 @@ class SyncService {
     };
   }
 
-  // Convenience getters that use the consolidated config
-  private getPollingIntervals(): number[] {
-    return this.getPollingConfig().intervals;
-  }
-
-  private getIdleThreshold(): number {
-    return this.getPollingConfig().threshold;
-  }
-
-  private getBasePollingInterval(): number {
-    return this.getPollingConfig().baseInterval;
+  /**
+   * Centralized method to set the polling interval
+   * Prevents race conditions by using a single point of interval management
+   */
+  private setPollingInterval(intervalMs: number): void {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+    this.pollInterval = setInterval(() => this.fetchCloudEntries(), intervalMs);
   }
 
   /**
@@ -369,27 +367,18 @@ class SyncService {
     this.isAdjustingInterval = true;
 
     try {
-      const intervals = this.getPollingIntervals();
+      // Get config once, use cached values
+      const config = this.getPollingConfig();
 
       // Clamp idle level to new interval array bounds
-      this.currentIdleLevel = Math.min(this.currentIdleLevel, intervals.length - 1);
+      this.currentIdleLevel = Math.min(this.currentIdleLevel, config.intervals.length - 1);
 
       // Get appropriate interval
-      let newInterval: number;
-      if (this.consecutiveNoChanges < this.getIdleThreshold()) {
-        // Active mode - use base interval for battery level
-        newInterval = this.getBasePollingInterval();
-      } else {
-        // Idle mode - use throttled interval
-        newInterval = intervals[this.currentIdleLevel];
-      }
+      const newInterval = this.consecutiveNoChanges < config.threshold
+        ? config.baseInterval  // Active mode
+        : config.intervals[this.currentIdleLevel];  // Idle mode
 
-      // Snapshot current interval reference to prevent race conditions
-      const currentInterval = this.pollInterval;
-      if (currentInterval) {
-        clearInterval(currentInterval);
-        this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
-      }
+      this.setPollingInterval(newInterval);
     } finally {
       this.isAdjustingInterval = false;
     }
@@ -413,8 +402,7 @@ class SyncService {
         // Error case - use error interval
         this.consecutiveErrors++;
         if (this.consecutiveErrors > 2 && this.pollInterval) {
-          clearInterval(this.pollInterval);
-          this.pollInterval = setInterval(() => this.fetchCloudEntries(), POLL_INTERVAL_ERROR);
+          this.setPollingInterval(POLL_INTERVAL_ERROR);
         }
         return;
       }
@@ -422,42 +410,34 @@ class SyncService {
       // Success case - reset error counter
       this.consecutiveErrors = 0;
 
-      const intervals = this.getPollingIntervals();
-      const idleThreshold = this.getIdleThreshold();
-      const baseInterval = this.getBasePollingInterval();
+      // Get polling config once
+      const config = this.getPollingConfig();
 
       if (hasChanges) {
         // Changes detected - reset to fast polling (battery-aware)
         this.consecutiveNoChanges = 0;
         this.currentIdleLevel = 0;
 
-        // Snapshot current interval reference to prevent race conditions
-        const currentInterval = this.pollInterval;
-        if (currentInterval) {
-          clearInterval(currentInterval);
-          this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
+        if (this.pollInterval) {
+          this.setPollingInterval(config.baseInterval);
         }
       } else {
         // No changes - consider throttling
         this.consecutiveNoChanges++;
 
-        if (this.consecutiveNoChanges >= idleThreshold) {
+        if (this.consecutiveNoChanges >= config.threshold) {
           // Start or continue throttling
           const newIdleLevel = Math.min(
             this.currentIdleLevel + 1,
-            intervals.length - 1
+            config.intervals.length - 1
           );
 
           // Only adjust if level changed
           if (newIdleLevel !== this.currentIdleLevel) {
             this.currentIdleLevel = newIdleLevel;
-            const newInterval = intervals[this.currentIdleLevel];
 
-            // Snapshot current interval reference to prevent race conditions
-            const currentInterval = this.pollInterval;
-            if (currentInterval) {
-              clearInterval(currentInterval);
-              this.pollInterval = setInterval(() => this.fetchCloudEntries(), newInterval);
+            if (this.pollInterval) {
+              this.setPollingInterval(config.intervals[this.currentIdleLevel]);
             }
           }
         }
@@ -475,10 +455,9 @@ class SyncService {
     this.consecutiveNoChanges = 0;
     this.currentIdleLevel = 0;
 
-    const baseInterval = this.getBasePollingInterval();
     if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = setInterval(() => this.fetchCloudEntries(), baseInterval);
+      const config = this.getPollingConfig();
+      this.setPollingInterval(config.baseInterval);
     }
   }
 

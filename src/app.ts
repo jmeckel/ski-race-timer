@@ -15,7 +15,7 @@ import { OnboardingController } from './onboarding';
 import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run } from './types';
 
 // Feature modules
-import { openModal, closeModal } from './features/modals';
+import { openModal, closeModal, closeAllModalsAnimated } from './features/modals';
 import { initRippleEffects, cleanupRippleEffects } from './features/ripple';
 import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
@@ -490,9 +490,8 @@ function closeAllModals(): void {
     if (pinInput) pinInput.value = '';
   }
 
-  document.querySelectorAll('.modal-overlay.show').forEach(modal => {
-    closeModal(modal as HTMLElement);
-  });
+  // Use shared modal closing logic
+  closeAllModalsAnimated();
 }
 
 /**

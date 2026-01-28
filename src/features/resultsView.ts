@@ -19,7 +19,10 @@ import type { Entry, FaultEntry, Language } from '../types';
 let virtualList: VirtualList | null = null;
 let pullToRefreshInstance: PullToRefresh | null = null;
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-let searchInputListener: ((e: Event) => void) | null = null;
+
+// Event listener references for cleanup
+type EventListenerRef = { element: HTMLElement | null; event: string; handler: EventListener };
+let eventListeners: EventListenerRef[] = [];
 
 // Callback types
 type ConfirmModalAction = 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd';
@@ -44,6 +47,29 @@ export function setResultsViewCallbacks(callbacks: {
 }
 
 /**
+ * Register an event listener and track it for cleanup
+ */
+function addListener<T extends HTMLElement>(
+  element: T | null,
+  event: string,
+  handler: EventListener
+): void {
+  if (!element) return;
+  element.addEventListener(event, handler);
+  eventListeners.push({ element, event, handler });
+}
+
+/**
+ * Remove all registered event listeners
+ */
+function removeAllListeners(): void {
+  for (const { element, event, handler } of eventListeners) {
+    element?.removeEventListener(event, handler);
+  }
+  eventListeners = [];
+}
+
+/**
  * Get the VirtualList instance for external access
  */
 export function getVirtualList(): VirtualList | null {
@@ -54,6 +80,13 @@ export function getVirtualList(): VirtualList | null {
  * Initialize results view
  */
 export function initResultsView(): void {
+  // Cleanup previous initialization
+  removeAllListeners();
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+
   const container = getElement('results-list');
   if (!container) return;
 
@@ -72,7 +105,7 @@ export function initResultsView(): void {
   });
 
   // Listen for fault edit requests from VirtualList
-  container.addEventListener('fault-edit-request', ((e: CustomEvent) => {
+  addListener(container, 'fault-edit-request', ((e: CustomEvent) => {
     const fault = e.detail?.fault as FaultEntry;
     if (fault) {
       openFaultEditModal(fault);
@@ -80,7 +113,7 @@ export function initResultsView(): void {
   }) as EventListener);
 
   // Listen for fault delete requests from VirtualList
-  container.addEventListener('fault-delete-request', ((e: CustomEvent) => {
+  addListener(container, 'fault-delete-request', ((e: CustomEvent) => {
     const fault = e.detail?.fault as FaultEntry;
     if (fault) {
       openMarkDeletionModal(fault);
@@ -107,37 +140,21 @@ export function initResultsView(): void {
   // Search input with debounce
   const searchInput = getElement<HTMLInputElement>('search-input');
   if (searchInput) {
-    // Clear any pending search timeout from previous initialization
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-      searchTimeout = null;
-    }
-
-    // Remove old listener if re-initializing to prevent duplicates
-    if (searchInputListener) {
-      searchInput.removeEventListener('input', searchInputListener);
-    }
-
-    // Create and store new listener
-    searchInputListener = () => {
+    const searchHandler = () => {
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         applyFilters();
       }, 300);
     };
-    searchInput.addEventListener('input', searchInputListener);
+    addListener(searchInput, 'input', searchHandler);
   }
 
   // Filter selects
   const pointFilter = getElement<HTMLSelectElement>('filter-point');
   const statusFilter = getElement<HTMLSelectElement>('filter-status');
 
-  if (pointFilter) {
-    pointFilter.addEventListener('change', applyFilters);
-  }
-  if (statusFilter) {
-    statusFilter.addEventListener('change', applyFilters);
-  }
+  addListener(pointFilter, 'change', applyFilters);
+  addListener(statusFilter, 'change', applyFilters);
 
   // Action buttons
   initResultsActions();
@@ -152,63 +169,51 @@ export function initResultsView(): void {
 /**
  * Initialize results action buttons
  */
-export function initResultsActions(): void {
+function initResultsActions(): void {
   // Clear All button
-  const clearAllBtn = getElement('clear-all-btn');
-  if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', () => {
-      const state = store.getState();
-      if (state.entries.length === 0) {
-        showToast(t('noEntries', state.currentLang), 'info');
-        return;
-      }
-      openConfirmModalCallback?.('clearAll');
-    });
-  }
+  addListener(getElement('clear-all-btn'), 'click', () => {
+    const state = store.getState();
+    if (state.entries.length === 0) {
+      showToast(t('noEntries', state.currentLang), 'info');
+      return;
+    }
+    openConfirmModalCallback?.('clearAll');
+  });
 
   // Undo button
-  const undoBtn = getElement('undo-btn');
-  if (undoBtn) {
-    undoBtn.addEventListener('click', () => {
-      if (store.canUndo()) {
-        // Check if this is a destructive undo (undoing ADD_ENTRY deletes an entry)
-        const nextAction = store.peekUndo();
-        if (nextAction && nextAction.type === 'ADD_ENTRY') {
-          // Show confirmation modal for destructive undo
-          openConfirmModalCallback?.('undoAdd');
-        } else {
-          // Non-destructive undo - proceed immediately
-          const result = store.undo();
-          feedbackUndo();
-          showToast(t('undone', store.getState().currentLang), 'success');
+  addListener(getElement('undo-btn'), 'click', () => {
+    if (store.canUndo()) {
+      // Check if this is a destructive undo (undoing ADD_ENTRY deletes an entry)
+      const nextAction = store.peekUndo();
+      if (nextAction && nextAction.type === 'ADD_ENTRY') {
+        // Show confirmation modal for destructive undo
+        openConfirmModalCallback?.('undoAdd');
+      } else {
+        // Non-destructive undo - proceed immediately
+        const result = store.undo();
+        feedbackUndo();
+        showToast(t('undone', store.getState().currentLang), 'success');
 
-          // Sync undo to cloud if needed
-          const state = store.getState();
-          if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
-            const entry = result.data as Entry;
-            syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
-          }
+        // Sync undo to cloud if needed
+        const state = store.getState();
+        if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
+          const entry = result.data as Entry;
+          syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
         }
       }
-    });
-  }
+    }
+  });
 
   // Export button
-  const exportBtn = getElement('export-btn');
-  if (exportBtn) {
-    exportBtn.addEventListener('click', exportResults);
-  }
+  addListener(getElement('export-btn'), 'click', exportResults);
 
   // Delete selected button
-  const deleteSelectedBtn = getElement('delete-selected-btn');
-  if (deleteSelectedBtn) {
-    deleteSelectedBtn.addEventListener('click', () => {
-      const state = store.getState();
-      if (state.selectedEntries.size > 0) {
-        openConfirmModalCallback?.('deleteSelected');
-      }
-    });
-  }
+  addListener(getElement('delete-selected-btn'), 'click', () => {
+    const state = store.getState();
+    if (state.selectedEntries.size > 0) {
+      openConfirmModalCallback?.('deleteSelected');
+    }
+  });
 
   // Chief Judge toggle
   initChiefJudgeToggle({
@@ -273,11 +278,12 @@ export function updateEntryCountBadge(): void {
 }
 
 /**
- * Cleanup search timeout (for page unload)
+ * Cleanup results view resources (for page unload or re-initialization)
  */
 export function cleanupSearchTimeout(): void {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
     searchTimeout = null;
   }
+  removeAllListeners();
 }
