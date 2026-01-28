@@ -102,22 +102,22 @@
           <span data-i18n="time">TIME</span>
         </button>
 
-        <!-- Last Recorded -->
-        <div class="last-recorded" id="last-recorded">
-          <span data-i18n="lastRecorded">Last recorded:</span>
-          <span class="bib">---</span>
-          <span class="point">-</span>
-          <span class="run" data-advanced>-</span>
-          <span class="time">--:--:--.---</span>
+        <!-- Bib Entry Section (combines bib display and last recorded) -->
+        <div class="bib-entry-section">
+          <div class="bib-display glass-surface-2 glass-enable-target expanded" id="bib-display">
+            <span class="bib-label" data-i18n="bib">Bib</span>
+            <span class="bib-value">---</span>
+          </div>
+          <div class="last-recorded-inline" id="last-recorded-inline">
+            <span class="label" data-i18n="lastRecordedShort">Last:</span>
+            <span class="bib">---</span>
+            <span class="point">-</span>
+            <span class="run" data-advanced>-</span>
+            <span class="time">--:--:--.---</span>
+          </div>
         </div>
 
-        <!-- Bib Display -->
-        <div class="bib-display glass-surface-2 glass-enable-target">
-          <span class="bib-label" data-i18n="bib">Bib</span>
-          <span class="bib-value">---</span>
-        </div>
-
-        <!-- Number Pad -->
+        <!-- Number Pad (collapsible) -->
         <div class="number-pad glass-enable-target" id="number-pad" role="group" aria-label="Number pad">
           <button class="num-btn glass-surface-3" data-num="1" aria-label="1">1</button>
           <button class="num-btn glass-surface-3" data-num="2" aria-label="2">2</button>
@@ -247,13 +247,10 @@
           </div>
           <div class="fault-summary-list" id="fault-summary-list">
             <!-- Fault cards will be populated dynamically -->
-            <div class="chief-empty-state" id="chief-empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-              </svg>
+            <div class="chief-empty-state empty-state" id="chief-empty-state">
+              <span class="empty-icon">🏔️</span>
               <span data-i18n="noFaultsRecorded">No faults recorded</span>
+              <span class="empty-subtitle" data-i18n="cleanRunHint">Clean run so far</span>
             </div>
           </div>
 
@@ -352,10 +349,9 @@
             </div>
             <div class="gate-judge-faults-list" id="gate-judge-faults-list">
               <div class="empty-state" id="no-faults-recorded-inline">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
+                <span class="empty-icon">🚩</span>
                 <span data-i18n="noFaultsRecorded">No faults recorded</span>
+                <span class="empty-subtitle" data-i18n="cleanRunHint">Clean run so far</span>
               </div>
             </div>
           </div>
@@ -520,58 +516,54 @@
           </div>
         </div>
 
-        <!-- GPS Settings -->
-        <div class="settings-section" data-advanced id="gps-section">
-          <div class="settings-section-title" data-i18n="gps">GPS</div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="gps">GPS Sync</span>
-              <span class="setting-description" data-i18n="gpsDesc">Use GPS for accurate timestamps</span>
+        <!-- Advanced Settings (Collapsible) -->
+        <div class="settings-section collapsible" id="advanced-settings-section">
+          <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings">Advanced Settings</div>
+          <div class="settings-section-content">
+            <!-- GPS -->
+            <div class="setting-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="gps">GPS Sync</span>
+                <span class="setting-description" data-i18n="gpsDesc">Use GPS for accurate timestamps</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="gps-toggle">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="gps-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Timing Settings -->
-        <div class="settings-section" id="timing-section">
-          <div class="settings-section-title">Timing</div>
-          <div class="setting-row" data-advanced>
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="autoIncrement">Auto-increment Bib</span>
-              <span class="setting-description" data-i18n="autoIncrementDesc">Increase bib number after recording</span>
+            <!-- Auto-increment -->
+            <div class="setting-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="autoIncrement">Auto-increment Bib</span>
+                <span class="setting-description" data-i18n="autoIncrementDesc">Increase bib number after recording</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="auto-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="auto-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Feedback Settings -->
-        <div class="settings-section" data-advanced>
-          <div class="settings-section-title">Feedback</div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="hapticFeedback">Haptic Feedback</span>
-              <span class="setting-description" data-i18n="hapticFeedbackDesc">Vibration on actions</span>
+            <!-- Haptic Feedback -->
+            <div class="setting-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="hapticFeedback">Haptic Feedback</span>
+                <span class="setting-description" data-i18n="hapticFeedbackDesc">Vibration on actions</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="haptic-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="haptic-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="soundFeedback">Sound Feedback</span>
-              <span class="setting-description" data-i18n="soundFeedbackDesc">Audio confirmation</span>
+            <!-- Sound Feedback -->
+            <div class="setting-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="soundFeedback">Sound Feedback</span>
+                <span class="setting-description" data-i18n="soundFeedbackDesc">Audio confirmation</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="sound-toggle">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="sound-toggle">
-              <span class="toggle-slider"></span>
-            </label>
           </div>
         </div>
 
@@ -686,6 +678,7 @@
   <!-- Confirmation Overlay (outside app, same level as modals) -->
   <div class="confirmation-overlay" id="confirmation-overlay">
     <div class="confirmation-content">
+      <div class="snowflake-burst" id="snowflake-burst"></div>
       <div class="confirmation-bib">---</div>
       <div class="confirmation-point">-</div>
       <div class="confirmation-run" data-advanced>-</div>
@@ -872,11 +865,18 @@
       </div>
       <div class="modal-body">
         <div class="race-list" id="race-list" role="region" aria-live="polite">
-          <div class="race-list-loading" id="race-list-loading" aria-busy="true">
-            <span data-i18n="loading">Loading...</span>
+          <div class="race-list-loading snowflake-loading" id="race-list-loading" aria-busy="true">
+            <div class="snowflake-spinner">
+              <span class="flake">❄</span>
+              <span class="flake">❄</span>
+              <span class="flake">❄</span>
+            </div>
+            <span class="loading-text" data-i18n="loading">Loading...</span>
           </div>
-          <div class="race-list-empty" id="race-list-empty" style="display: none;">
+          <div class="race-list-empty empty-state" id="race-list-empty" style="display: none;">
+            <span class="empty-icon">⛷️</span>
             <span data-i18n="noRaces">No active races</span>
+            <span class="empty-subtitle" data-i18n="noRacesHint">Create one in Settings</span>
           </div>
         </div>
       </div>

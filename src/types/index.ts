@@ -274,6 +274,7 @@ export interface Translations {
   time: string;
   status: string;
   noEntries: string;
+  noEntriesHint: string;
   confirmDelete: string;
   confirmClearAll: string;
   clearAllText: string;

@@ -314,6 +314,23 @@ export function initSettingsView(): void {
 
   // Device Role toggle
   initRoleToggle();
+
+  // Advanced settings collapsible toggle
+  initAdvancedSettingsToggle();
+}
+
+/**
+ * Initialize advanced settings collapsible toggle
+ */
+function initAdvancedSettingsToggle(): void {
+  const toggle = getElement('advanced-settings-toggle');
+  const section = getElement('advanced-settings-section');
+  if (!toggle || !section) return;
+
+  toggle.addEventListener('click', () => {
+    section.classList.toggle('expanded');
+    feedbackTap();
+  });
 }
 
 /**

@@ -1013,11 +1013,9 @@ export class VirtualList {
     const state = store.getState();
     this.contentContainer.innerHTML = `
       <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
+        <span class="empty-icon">⏱️</span>
         <span>${t('noEntries', state.currentLang)}</span>
+        <span class="empty-subtitle">${t('noEntriesHint', state.currentLang)}</span>
       </div>
     `;
   }

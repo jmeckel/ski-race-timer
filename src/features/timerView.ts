@@ -72,10 +72,21 @@ export function initTabs(): void {
 }
 
 /**
- * Initialize number pad
+ * Initialize number pad and bib display toggle
  */
 export function initNumberPad(): void {
   const numPad = getElement('number-pad');
+  const bibDisplay = getElement('bib-display');
+
+  // Bib display click toggles numpad collapsed/expanded
+  if (bibDisplay && numPad) {
+    bibDisplay.addEventListener('click', () => {
+      const isCollapsed = numPad.classList.toggle('collapsed');
+      bibDisplay.classList.toggle('expanded', !isCollapsed);
+      feedbackTap();
+    });
+  }
+
   if (!numPad) return;
 
   numPad.addEventListener('click', (e) => {
@@ -363,7 +374,7 @@ export async function recordTimestamp(): Promise<void> {
 }
 
 /**
- * Show confirmation overlay
+ * Show confirmation overlay with snowflake burst animation
  */
 function showConfirmation(entry: Entry): void {
   const overlay = getElement('confirmation-overlay');
@@ -393,9 +404,51 @@ function showConfirmation(entry: Entry): void {
   overlay.dataset.point = entry.point;
   overlay.classList.add('show');
 
+  // Trigger snowflake burst
+  triggerSnowflakeBurst(entry.point);
+
   setTimeout(() => {
     overlay.classList.remove('show');
   }, 1500);
+}
+
+/**
+ * Create snowflake burst particles on confirmation
+ */
+function triggerSnowflakeBurst(point: 'S' | 'F'): void {
+  const burst = document.getElementById('snowflake-burst');
+  if (!burst) return;
+
+  // Clear previous burst
+  burst.innerHTML = '';
+
+  const color = point === 'S' ? 'var(--start-color)' : 'var(--finish-color)';
+  const flakeCount = 8;
+
+  for (let i = 0; i < flakeCount; i++) {
+    const flake = document.createElement('span');
+    flake.className = 'flake';
+    flake.textContent = '❄';
+
+    // Distribute radially
+    const angle = (i / flakeCount) * 2 * Math.PI;
+    const distance = 60 + Math.random() * 40;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+    const rot = Math.random() * 360;
+
+    flake.style.cssText = `
+      --burst-x: ${x}px;
+      --burst-y: ${y}px;
+      --burst-rot: ${rot}deg;
+      color: ${color};
+      font-size: ${0.6 + Math.random() * 0.6}rem;
+      animation-duration: ${0.6 + Math.random() * 0.4}s;
+      text-shadow: 0 0 6px ${color};
+    `;
+
+    burst.appendChild(flake);
+  }
 }
 
 /**
@@ -437,10 +490,10 @@ function showZeroBibWarning(entry: Entry): void {
 }
 
 /**
- * Update last recorded entry display
+ * Update last recorded entry display (inline version)
  */
 function updateLastRecorded(entry: Entry): void {
-  const el = getElement('last-recorded');
+  const el = getElement('last-recorded-inline');
   if (!el) return;
 
   const bibEl = el.querySelector('.bib') as HTMLElement | null;
@@ -453,12 +506,10 @@ function updateLastRecorded(entry: Entry): void {
   if (bibEl) bibEl.textContent = entry.bib || '---';
   if (pointEl) {
     pointEl.textContent = getPointLabel(entry.point, state.currentLang);
-    pointEl.style.background = `${getPointColor(entry.point)}20`;
     pointEl.style.color = getPointColor(entry.point);
   }
   if (runEl && entry.run) {
     runEl.textContent = getRunLabel(entry.run, state.currentLang);
-    runEl.style.background = `${getRunColor(entry.run)}20`;
     runEl.style.color = getRunColor(entry.run);
   }
   if (timeEl) {
