@@ -1,16 +1,21 @@
 /**
  * Voice Command Processing API
- * Proxies voice commands to Anthropic Claude API for natural language understanding
+ * Proxies voice commands to LLM API for natural language understanding
+ * Supports OpenAI (default) and Anthropic providers
  *
  * POST /api/v1/voice
  * Body: { transcript: string, context: VoiceContext }
  * Returns: VoiceIntent
+ *
+ * Environment Variables:
+ * - VOICE_LLM_PROVIDER: 'openai' (default) or 'anthropic'
+ * - OPENAI_API_KEY: Required if using OpenAI
+ * - ANTHROPIC_API_KEY: Required if using Anthropic
  */
 
 import {
   handlePreflight,
   sendSuccess,
-  sendError,
   sendBadRequest,
   sendMethodNotAllowed,
   sendServiceUnavailable,
@@ -18,11 +23,23 @@ import {
 } from '../lib/response.js';
 
 // Configuration
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-3-haiku-20240307'; // Fast and cheap for command parsing
 const MAX_TOKENS = 256;
 const MAX_TRANSCRIPT_LENGTH = 500;
 const REQUEST_TIMEOUT_MS = 10000;
+
+// Provider configurations
+const PROVIDERS = {
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4o-mini',
+    envKey: 'OPENAI_API_KEY'
+  },
+  anthropic: {
+    url: 'https://api.anthropic.com/v1/messages',
+    model: 'claude-3-haiku-20240307',
+    envKey: 'ANTHROPIC_API_KEY'
+  }
+};
 
 // System prompt for voice command parsing
 const SYSTEM_PROMPT = `You are a voice command processor for a ski race timing app.
@@ -103,9 +120,9 @@ function validateRequest(body) {
 }
 
 /**
- * Call Anthropic API with timeout
+ * Build user message from transcript and context
  */
-async function callAnthropicAPI(transcript, context, apiKey) {
+function buildUserMessage(transcript, context) {
   const contextJson = JSON.stringify({
     role: context.role,
     language: context.language,
@@ -118,13 +135,97 @@ async function callAnthropicAPI(transcript, context, apiKey) {
     } : null
   });
 
-  const userMessage = `Context: ${contextJson}\n\nTranscript: "${sanitizeString(transcript, MAX_TRANSCRIPT_LENGTH)}"`;
+  return `Context: ${contextJson}\n\nTranscript: "${sanitizeString(transcript, MAX_TRANSCRIPT_LENGTH)}"`;
+}
+
+/**
+ * Parse LLM response content to extract intent
+ */
+function parseIntentFromContent(content) {
+  if (!content) {
+    throw new Error('Empty response from LLM');
+  }
+
+  // Handle potential markdown code blocks
+  let jsonContent = content.trim();
+  if (jsonContent.startsWith('```')) {
+    jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+  }
+
+  const intent = JSON.parse(jsonContent);
+
+  // Validate required fields
+  if (!intent.action || typeof intent.confidence !== 'number') {
+    throw new Error('Invalid intent structure');
+  }
+
+  return intent;
+}
+
+/**
+ * Call OpenAI API
+ */
+async function callOpenAI(transcript, context, apiKey) {
+  const userMessage = buildUserMessage(transcript, context);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(ANTHROPIC_API_URL, {
+    const response = await fetch(PROVIDERS.openai.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: PROVIDERS.openai.model,
+        max_tokens: MAX_TOKENS,
+        temperature: 0.1, // Low temperature for consistent parsing
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage }
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // Extract content from OpenAI response format
+    const content = result.choices?.[0]?.message?.content || '';
+    return parseIntentFromContent(content);
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Call Anthropic API
+ */
+async function callAnthropic(transcript, context, apiKey) {
+  const userMessage = buildUserMessage(transcript, context);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(PROVIDERS.anthropic.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -132,7 +233,7 @@ async function callAnthropicAPI(transcript, context, apiKey) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: PROVIDERS.anthropic.model,
         max_tokens: MAX_TOKENS,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMessage }]
@@ -150,7 +251,7 @@ async function callAnthropicAPI(transcript, context, apiKey) {
 
     const result = await response.json();
 
-    // Extract text content from response
+    // Extract content from Anthropic response format
     let content = '';
     if (result.content && Array.isArray(result.content)) {
       content = result.content[0]?.text || '';
@@ -158,24 +259,7 @@ async function callAnthropicAPI(transcript, context, apiKey) {
       content = result.content;
     }
 
-    if (!content) {
-      throw new Error('Empty response from Anthropic');
-    }
-
-    // Parse JSON response - handle potential markdown code blocks
-    let jsonContent = content.trim();
-    if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
-    }
-
-    const intent = JSON.parse(jsonContent);
-
-    // Validate required fields
-    if (!intent.action || typeof intent.confidence !== 'number') {
-      throw new Error('Invalid intent structure');
-    }
-
-    return intent;
+    return parseIntentFromContent(content);
 
   } catch (error) {
     clearTimeout(timeoutId);
@@ -202,10 +286,18 @@ export default async function handler(req, res) {
     return sendMethodNotAllowed(res);
   }
 
-  // Check for API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  // Determine provider (default to OpenAI)
+  const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
+
+  if (!PROVIDERS[provider]) {
+    console.error('Invalid VOICE_LLM_PROVIDER:', provider);
+    return sendServiceUnavailable(res, 'Invalid voice provider configuration');
+  }
+
+  // Get API key for selected provider
+  const apiKey = process.env[PROVIDERS[provider].envKey];
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY not configured');
+    console.error(`${PROVIDERS[provider].envKey} not configured`);
     return sendServiceUnavailable(res, 'Voice service not configured');
   }
 
@@ -225,11 +317,15 @@ export default async function handler(req, res) {
   const { transcript, context } = body;
 
   try {
-    const intent = await callAnthropicAPI(transcript, context, apiKey);
+    // Call appropriate provider
+    const intent = provider === 'openai'
+      ? await callOpenAI(transcript, context, apiKey)
+      : await callAnthropic(transcript, context, apiKey);
 
     return sendSuccess(res, {
       success: true,
-      intent
+      intent,
+      provider // Include provider in response for debugging
     });
 
   } catch (error) {
@@ -243,7 +339,8 @@ export default async function handler(req, res) {
         confidence: 0,
         confirmationNeeded: false,
         error: error.message
-      }
+      },
+      provider
     });
   }
 }
