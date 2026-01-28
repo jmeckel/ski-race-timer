@@ -2,6 +2,8 @@
  * Pull-to-refresh component for mobile
  */
 
+import { logger } from '../utils/logger';
+
 const PULL_THRESHOLD = 80; // Pixels to pull before triggering refresh
 const RESISTANCE = 2.5; // Pull resistance factor
 
@@ -140,7 +142,7 @@ export class PullToRefresh {
         this.updateIndicator(pullDistance);
       }
     } catch (error) {
-      console.error('PullToRefresh move error:', error);
+      logger.error('PullToRefresh move error:', error);
       this.isPulling = false;
       this.resetIndicator();
     }
@@ -201,7 +203,7 @@ export class PullToRefresh {
     try {
       await this.onRefresh();
     } catch (error) {
-      console.error('PullToRefresh callback error:', error);
+      logger.error('PullToRefresh callback error:', error);
       // Continue to reset state even if refresh fails
     } finally {
       this.isRefreshing = false;

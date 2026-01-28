@@ -1,4 +1,5 @@
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 // Audio context for sound feedback
 let audioContext: AudioContext | null = null;
@@ -11,7 +12,7 @@ function getAudioContext(): AudioContext | null {
     try {
       audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     } catch (error) {
-      console.warn('AudioContext not available:', error);
+      logger.warn('AudioContext not available:', error);
       return null;
     }
   }
@@ -29,7 +30,7 @@ export function vibrate(pattern: number | number[]): void {
     try {
       navigator.vibrate(pattern);
     } catch (error) {
-      console.warn('Vibration failed:', error);
+      logger.warn('Vibration failed:', error);
     }
   }
 }
@@ -61,7 +62,7 @@ export function playBeep(frequency: number = 880, duration: number = 100): void 
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration / 1000);
   } catch (error) {
-    console.warn('Sound playback failed:', error);
+    logger.warn('Sound playback failed:', error);
   }
 }
 
@@ -148,7 +149,7 @@ export async function resumeAudio(): Promise<void> {
     try {
       await ctx.resume();
     } catch (error) {
-      console.warn('Failed to resume audio:', error);
+      logger.warn('Failed to resume audio:', error);
     }
   }
 }

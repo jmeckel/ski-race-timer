@@ -9,6 +9,7 @@ import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { isValidRaceId } from '../utils/validation';
 import { fetchWithTimeout, getElement } from '../utils';
+import { logger } from '../utils/logger';
 import { AUTH_TOKEN_KEY, hasAuthToken } from '../services/sync';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from '../utils/recentRaces';
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from '../utils/recentRacesUi';
@@ -558,7 +559,7 @@ export async function showSettingsRecentRacesDropdown(dropdown: HTMLElement): Pr
     try {
       races = await fetchRacesFromApi();
     } catch (error) {
-      console.warn('Failed to fetch races from API:', error);
+      logger.warn('Failed to fetch races from API:', error);
       // Fall back to localStorage
       races = getTodaysRecentRaces();
     }

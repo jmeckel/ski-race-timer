@@ -1141,7 +1141,7 @@ class Store {
       // Validate and sanitize each fault from untrusted cloud data
       const fault = sanitizeFaultEntry(rawFault);
       if (!fault) {
-        console.warn('Skipping invalid fault from cloud:', rawFault);
+        logger.warn('Skipping invalid fault from cloud:', rawFault);
         continue;
       }
 

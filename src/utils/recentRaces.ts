@@ -3,6 +3,8 @@
  * Tracks recently synced races for quick-select functionality
  */
 
+import { logger } from './logger';
+
 const STORAGE_KEY = 'skiTimerRecentRaces';
 const MAX_RACES = 10;
 
@@ -58,7 +60,7 @@ export function addRecentRace(raceId: string, lastUpdated: number, entryCount?: 
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch (error) {
-    console.error('Failed to save recent race:', error);
+    logger.error('Failed to save recent race:', error);
   }
 }
 

@@ -8,6 +8,7 @@ import { getToast, showToast } from './components/Toast';
 import { initGlobalErrorHandlers } from './utils/errorBoundary';
 import { store } from './store';
 import { t } from './i18n/translations';
+import { logger } from './utils/logger';
 
 // Initialize global error handlers first (catches errors during init)
 initGlobalErrorHandlers();
@@ -50,7 +51,7 @@ if ('serviceWorker' in navigator) {
       });
 
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      logger.error('Service Worker registration failed:', error);
     }
   });
 }

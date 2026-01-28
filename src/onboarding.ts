@@ -9,6 +9,7 @@ import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/re
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
 import { fetchWithTimeout } from './utils/errors';
 import { openModal, closeModal } from './features/modals';
+import { logger } from './utils/logger';
 import type { Language, RaceInfo, DeviceRole } from './types';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
@@ -253,7 +254,7 @@ export class OnboardingController {
       try {
         races = await this.fetchRacesFromApi();
       } catch (error) {
-        console.warn('Failed to fetch races from API:', error);
+        logger.warn('Failed to fetch races from API:', error);
         // Fall back to localStorage
         races = getTodaysRecentRaces();
       }

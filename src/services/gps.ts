@@ -1,4 +1,5 @@
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 // GPS configuration
 const GPS_OPTIONS: PositionOptions = {
@@ -26,7 +27,7 @@ class GpsService {
     }
 
     if (!navigator.geolocation) {
-      console.error('Geolocation not supported');
+      logger.error('Geolocation not supported');
       store.setGpsStatus('inactive');
       return false;
     }
@@ -69,7 +70,7 @@ class GpsService {
 
       return true;
     } catch (error) {
-      console.error('Failed to start GPS:', error);
+      logger.error('Failed to start GPS:', error);
       store.setGpsStatus('inactive');
       return false;
     }
@@ -122,7 +123,7 @@ class GpsService {
    * Handle GPS error
    */
   private handleError(error: GeolocationPositionError): void {
-    console.error('GPS error:', error.message);
+    logger.error('GPS error:', error.message);
 
     switch (error.code) {
       case error.PERMISSION_DENIED:

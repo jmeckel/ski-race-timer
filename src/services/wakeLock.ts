@@ -4,6 +4,8 @@
  * Uses the Screen Wake Lock API when available
  */
 
+import { logger } from '../utils/logger';
+
 class WakeLockService {
   private wakeLock: WakeLockSentinel | null = null;
   private isEnabled = false;
@@ -83,7 +85,7 @@ class WakeLockService {
       // - Permission denied
       // - Page not visible
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.warn('Wake Lock request failed:', errorMessage);
+      logger.warn('Wake Lock request failed:', errorMessage);
       this.wakeLock = null;
       return false;
     }
@@ -98,7 +100,7 @@ class WakeLockService {
         await this.wakeLock.release();
       } catch (err) {
         // Ignore errors during release (may already be released)
-        console.warn('Wake Lock release error:', err);
+        logger.warn('Wake Lock release error:', err);
       }
       this.wakeLock = null;
     }

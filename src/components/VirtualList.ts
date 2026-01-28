@@ -2,6 +2,7 @@ import type { Entry, FaultEntry, Run } from '../types';
 import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
+import { logger } from '../utils/logger';
 
 // Group of items for the same bib+run
 interface DisplayGroup {
@@ -81,7 +82,7 @@ export class VirtualList {
         try {
           this.onScroll();
         } catch (error) {
-          console.error('VirtualList scroll error:', error);
+          logger.error('VirtualList scroll error:', error);
         }
       }, SCROLL_DEBOUNCE);
     };
@@ -98,7 +99,7 @@ export class VirtualList {
           this.containerHeight = this.scrollContainer.clientHeight;
           this.render();
         } catch (error) {
-          console.error('VirtualList resize error:', error);
+          logger.error('VirtualList resize error:', error);
         }
       }, RESIZE_DEBOUNCE);
     });

@@ -4,6 +4,8 @@
  * Uses the Battery Status API when available
  */
 
+import { logger } from '../utils/logger';
+
 // Battery thresholds
 const BATTERY_LOW = 0.20; // 20%
 const BATTERY_CRITICAL = 0.10; // 10%
@@ -65,7 +67,7 @@ class BatteryService {
 
       return true;
     } catch (error) {
-      console.warn('Failed to initialize battery service:', error);
+      logger.warn('Failed to initialize battery service:', error);
       return false;
     }
   }
@@ -116,7 +118,7 @@ class BatteryService {
       try {
         callback(this.currentStatus);
       } catch (error) {
-        console.error('Battery callback error:', error);
+        logger.error('Battery callback error:', error);
       }
     }
   }

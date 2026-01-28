@@ -1,6 +1,7 @@
 import { formatTime, formatDate } from '../utils';
 import { store } from '../store';
 import { gpsService, batteryService, type BatteryLevel } from '../services';
+import { logger } from '../utils/logger';
 
 // Frame throttling for battery optimization
 // Normal: 60fps, Low battery: 30fps, Critical: 15fps
@@ -231,12 +232,12 @@ export class Clock {
       // Schedule next frame inside try block
       this.animationId = requestAnimationFrame(this.tick);
     } catch (error) {
-      console.error('Clock tick error:', error);
+      logger.error('Clock tick error:', error);
       // Try to recover by scheduling next frame even after error
       try {
         this.animationId = requestAnimationFrame(this.tick);
       } catch (rafError) {
-        console.error('Clock RAF scheduling failed:', rafError);
+        logger.error('Clock RAF scheduling failed:', rafError);
         // If RAF fails completely, fall back to setTimeout
         setTimeout(() => {
           if (this.isRunning) {

@@ -6,6 +6,7 @@ import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorag
 import { hasAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION } from './utils';
+import { logger } from './utils/logger';
 import { isValidRaceId, makeNumericInput } from './utils/validation';
 import { getElement } from './utils/domCache';
 import { t } from './i18n/translations';
@@ -775,7 +776,7 @@ function handleStorageError(event: CustomEvent<{ message: string; isQuotaError: 
   // Also trigger haptic feedback to ensure user notices
   feedbackWarning();
 
-  console.error('[Storage] saveEntries:', event.detail.message, { entryCount, isQuotaError });
+  logger.error('[Storage] saveEntries:', event.detail.message, { entryCount, isQuotaError });
 }
 
 /**
@@ -801,7 +802,7 @@ function handleBeforeUnload(): void {
   try {
     destroyClock();
   } catch (e) {
-    console.warn('Clock cleanup error:', e);
+    logger.warn('Clock cleanup error:', e);
   }
 
   // Cleanup sync service

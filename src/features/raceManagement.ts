@@ -9,6 +9,7 @@ import { syncService } from '../services';
 import { AUTH_TOKEN_KEY, hasAuthToken, exchangePinForToken, clearAuthToken, getAuthHeaders } from '../services/auth';
 import { feedbackSuccess, feedbackWarning, feedbackDelete } from '../services';
 import { logError, logWarning, fetchWithTimeout, escapeHtml, makeNumericInput } from '../utils';
+import { logger } from '../utils/logger';
 import { formatFileSize } from '../utils/format';
 import { t } from '../i18n/translations';
 import { openModal, closeModal } from './modals';
@@ -786,7 +787,7 @@ async function loadRaceList(): Promise<void> {
         const modal = document.getElementById('race-management-modal');
         closeModal(modal);
         showToast(t('authError', lang), 'error');
-        console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
+        logger.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
       throw new Error(`HTTP ${response.status}`);
@@ -897,7 +898,7 @@ async function handleConfirmDeleteRace(): Promise<void> {
         const modal = document.getElementById('race-management-modal');
         closeModal(modal);
         showToast(t('authError', lang), 'error');
-        console.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
+        logger.error('API auth failed - check ADMIN_PIN env variable matches SERVER_API_PIN');
         return;
       }
       throw new Error(`HTTP ${response.status}`);

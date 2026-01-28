@@ -1,4 +1,5 @@
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 // Camera configuration
 const CAMERA_CONFIG: MediaStreamConstraints = {
@@ -102,7 +103,7 @@ class CameraService {
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Camera initialization failed';
-      console.error('Camera initialization error:', errorMessage);
+      logger.error('Camera initialization error:', errorMessage);
       this.cameraState = 'stopped';
       store.setCameraReady(false, errorMessage);
       return false;
@@ -203,7 +204,7 @@ class CameraService {
       this.cameraState = 'ready';
       store.setCameraReady(true);
     } catch (error) {
-      console.error('Failed to reinitialize camera:', error);
+      logger.error('Failed to reinitialize camera:', error);
       this.cameraState = 'stopped';
     }
   }
@@ -214,7 +215,7 @@ class CameraService {
    */
   async capturePhoto(): Promise<string | null> {
     if (this.cameraState !== 'ready' || !this.videoElement || !this.canvasElement) {
-      console.warn('Camera not ready for capture');
+      logger.warn('Camera not ready for capture');
       return null;
     }
 
@@ -273,7 +274,7 @@ class CameraService {
 
       return base64;
     } catch (error) {
-      console.error('Photo capture error:', error);
+      logger.error('Photo capture error:', error);
       return null;
     }
   }
