@@ -1,0 +1,177 @@
+/**
+ * LLM Provider Service
+ * Provider-agnostic interface for processing voice commands via LLM
+ */
+
+import { logger } from '../utils/logger';
+import type { VoiceIntent, VoiceContext, LLMConfig } from '../types';
+
+const SYSTEM_PROMPT = `You are a voice command processor for a ski race timing app.
+Parse the user's spoken command and return a structured JSON response.
+
+Context provided:
+- role: "timer" (records timestamps) or "gateJudge" (records faults)
+- language: User's language (de/en)
+- activeBibs: Racers currently on course (gate judge only)
+- gateRange: Gates this judge is watching [start, end]
+- pendingConfirmation: If set, user is responding to a confirmation prompt
+
+For TIMER role, recognize:
+- Recording time: "Zeit", "Jetzt", "Time", "Now", "Mark", "Go", "Los"
+- Bib numbers: spoken digits or number words (e.g., "forty-five" = 45, "fünfundvierzig" = 45)
+- Timing point: "Start" / "Ziel" / "Finish"
+- Run selection: "Lauf 1/2", "Run 1/2", "erster Lauf", "zweiter Lauf"
+
+For GATE JUDGE role, recognize:
+- Fault recording with bib + gate + type
+- Fault types: MG (missed gate/ausgelassen), STR (straddling/eingefädelt), BD (binding released)
+- Ready status: "Bereit", "Ready", "Fertig"
+- Confirmation: "Ja", "Yes", "Correct", "Richtig", "Stimmt"
+- Cancellation: "Nein", "No", "Cancel", "Abbrechen", "Falsch"
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "action": "record_time" | "record_fault" | "set_bib" | "set_gate" | "set_point" | "set_run" | "toggle_ready" | "confirm" | "cancel" | "unknown",
+  "confidence": 0.0-1.0,
+  "params": {
+    "bib": "string (3 digits, zero-padded)",
+    "gate": number,
+    "faultType": "MG" | "STR" | "BD",
+    "point": "S" | "F",
+    "run": 1 | 2
+  },
+  "confirmationNeeded": boolean,
+  "confirmationPrompt": "string (spoken confirmation request in user's language)"
+}
+
+IMPORTANT:
+- For timer role "record_time", set confirmationNeeded=false (fast path)
+- For gate judge faults, set confirmationNeeded=true with a clear prompt
+- Confirmation prompts should be in the user's language
+- If unsure, set action="unknown" with low confidence`;
+
+/**
+ * Default LLM configuration using Anthropic Claude
+ */
+const DEFAULT_CONFIG: Partial<LLMConfig> = {
+  model: 'claude-3-haiku-20240307',
+  maxTokens: 256,
+};
+
+/**
+ * Process voice command using LLM
+ */
+export async function processVoiceCommand(
+  transcript: string,
+  context: VoiceContext,
+  config: LLMConfig
+): Promise<VoiceIntent> {
+  const { endpoint, apiKey, model, maxTokens } = { ...DEFAULT_CONFIG, ...config };
+
+  if (!endpoint || !apiKey) {
+    throw new Error('LLM endpoint and API key are required');
+  }
+
+  const contextJson = JSON.stringify({
+    role: context.role,
+    language: context.language,
+    currentRun: context.currentRun,
+    activeBibs: context.activeBibs,
+    gateRange: context.gateRange,
+    pendingConfirmation: context.pendingConfirmation ? {
+      action: context.pendingConfirmation.action,
+      params: context.pendingConfirmation.params
+    } : null
+  });
+
+  const userMessage = `Context: ${contextJson}\n\nTranscript: "${transcript}"`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      logger.error('[LLMProvider] API error:', response.status, error);
+      throw new Error(`LLM API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // Extract text content from response
+    let content = '';
+    if (result.content && Array.isArray(result.content)) {
+      content = result.content[0]?.text || '';
+    } else if (typeof result.content === 'string') {
+      content = result.content;
+    }
+
+    if (!content) {
+      throw new Error('Empty response from LLM');
+    }
+
+    // Parse JSON response - handle potential markdown code blocks
+    let jsonContent = content.trim();
+    if (jsonContent.startsWith('```')) {
+      jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+    }
+
+    const intent = JSON.parse(jsonContent) as VoiceIntent;
+
+    // Validate required fields
+    if (!intent.action || typeof intent.confidence !== 'number') {
+      throw new Error('Invalid intent structure');
+    }
+
+    logger.debug('[LLMProvider] Parsed intent:', intent);
+    return intent;
+
+  } catch (error) {
+    logger.error('[LLMProvider] Processing error:', error);
+
+    // Return unknown intent on error
+    return {
+      action: 'unknown',
+      confidence: 0,
+      confirmationNeeded: false
+    };
+  }
+}
+
+/**
+ * Create a timeout-wrapped version of processVoiceCommand
+ */
+export async function processVoiceCommandWithTimeout(
+  transcript: string,
+  context: VoiceContext,
+  config: LLMConfig,
+  timeoutMs: number = 5000
+): Promise<VoiceIntent> {
+  const timeoutPromise = new Promise<VoiceIntent>((_, reject) => {
+    setTimeout(() => reject(new Error('LLM request timeout')), timeoutMs);
+  });
+
+  return Promise.race([
+    processVoiceCommand(transcript, context, config),
+    timeoutPromise
+  ]).catch((error) => {
+    logger.warn('[LLMProvider] Timeout or error:', error);
+    return {
+      action: 'unknown' as const,
+      confidence: 0,
+      confirmationNeeded: false
+    };
+  });
+}

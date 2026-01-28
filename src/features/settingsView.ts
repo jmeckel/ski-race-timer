@@ -4,7 +4,7 @@
  */
 
 import { store } from '../store';
-import { syncService, photoStorage, feedbackTap, feedbackWarning } from '../services';
+import { syncService, photoStorage, feedbackTap, feedbackWarning, voiceModeService } from '../services';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { isValidRaceId } from '../utils/validation';
@@ -167,6 +167,9 @@ export function initSettingsView(): void {
       store.updateSettings({ ambientMode: ambientModeToggle.checked });
     });
   }
+
+  // Voice mode toggle
+  initVoiceModeToggle();
 
   // Photo capture toggle
   const photoToggle = getElement<HTMLInputElement>('photo-toggle');
@@ -457,6 +460,49 @@ export function updateLangToggle(): void {
       opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
     });
   }
+}
+
+/**
+ * Initialize voice mode toggle
+ */
+function initVoiceModeToggle(): void {
+  const voiceModeToggle = getElement<HTMLInputElement>('voice-mode-toggle');
+  const voiceModeRow = getElement('voice-mode-row');
+
+  if (!voiceModeToggle || !voiceModeRow) return;
+
+  // Hide voice mode if not supported
+  if (!voiceModeService.isSupported()) {
+    voiceModeRow.style.display = 'none';
+    return;
+  }
+
+  // Set initial state from voice service
+  voiceModeToggle.checked = voiceModeService.isActive();
+
+  voiceModeToggle.addEventListener('change', async () => {
+    const lang = store.getState().currentLang;
+
+    if (voiceModeToggle.checked) {
+      // Check if online
+      if (!navigator.onLine) {
+        showToast(t('voiceOffline', lang), 'warning');
+        voiceModeToggle.checked = false;
+        return;
+      }
+
+      // Enable voice mode - this will initialize the service if needed
+      // Note: Voice mode requires LLM API configuration which would be set up
+      // in app.ts during initialization
+      const success = voiceModeService.enable();
+      if (!success) {
+        showToast(t('voiceError', lang), 'error');
+        voiceModeToggle.checked = false;
+      }
+    } else {
+      voiceModeService.disable();
+    }
+  });
 }
 
 /**

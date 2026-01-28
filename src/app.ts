@@ -2,7 +2,7 @@ import { store } from './store';
 import { showToast, destroyToast } from './components';
 // DISABLED: Motion effects disabled to save battery
 // import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, motionService } from './services';
-import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, ambientModeService } from './services';
+import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorage, wakeLockService, ambientModeService, voiceModeService } from './services';
 import { hasAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION } from './utils';
@@ -13,14 +13,14 @@ import { t } from './i18n/translations';
 import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
-import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run } from './types';
+import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run, VoiceStatus } from './types';
 
 // Feature modules
 import { openModal, closeModal, closeAllModalsAnimated } from './features/modals';
 import { initRippleEffects, cleanupRippleEffects } from './features/ripple';
 import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
-  updateBibDisplay, updateTimingPointSelection, updateRunSelection
+  updateBibDisplay, updateTimingPointSelection, updateRunSelection, handleTimerVoiceIntent
 } from './features/timerView';
 import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 import {
@@ -28,7 +28,7 @@ import {
 } from './features/faultEntry';
 import {
   setUpdateRoleToggleCallback, updateGateJudgeTabVisibility, initGateJudgeView,
-  updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection
+  updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection, handleGateJudgeVoiceIntent
 } from './features/gateJudgeView';
 import {
   setResultsViewCallbacks, getVirtualList, initResultsView,
@@ -189,6 +189,9 @@ export function initApp(): void {
       delete document.body.dataset.ambientTrigger;
     }
   });
+
+  // Initialize voice mode service (requires LLM API configuration)
+  initVoiceMode();
 
   // Initialize onboarding for first-time users
   onboardingController = new OnboardingController();
@@ -786,6 +789,108 @@ function updatePhotoCaptureIndicator(): void {
 }
 
 /**
+ * Initialize voice mode service
+ * Note: Voice mode requires LLM API configuration
+ * Currently uses environment variables for API key
+ */
+function initVoiceMode(): void {
+  // Check if voice mode is supported
+  if (!voiceModeService.isSupported()) {
+    logger.debug('[VoiceMode] Not supported in this browser');
+    return;
+  }
+
+  // Get LLM configuration from environment or config
+  // In production, this would come from Vercel environment variables
+  // For now, we check for a global config object that can be set by the user
+  const llmConfig = (window as unknown as Record<string, unknown>).VOICE_LLM_CONFIG as {
+    endpoint?: string;
+    apiKey?: string;
+  } | undefined;
+
+  if (!llmConfig?.endpoint || !llmConfig?.apiKey) {
+    logger.debug('[VoiceMode] LLM configuration not available');
+    return;
+  }
+
+  // Initialize voice mode with LLM configuration
+  const initialized = voiceModeService.initialize({
+    endpoint: llmConfig.endpoint,
+    apiKey: llmConfig.apiKey
+  });
+
+  if (!initialized) {
+    logger.warn('[VoiceMode] Failed to initialize');
+    return;
+  }
+
+  // Subscribe to voice status changes
+  voiceModeService.onStatusChange((status: VoiceStatus) => {
+    updateVoiceIndicator(status);
+  });
+
+  // Subscribe to voice intents
+  voiceModeService.onAction((intent) => {
+    const state = store.getState();
+
+    // Route intent to appropriate handler based on role
+    if (state.deviceRole === 'gateJudge') {
+      handleGateJudgeVoiceIntent(intent);
+    } else {
+      handleTimerVoiceIntent(intent);
+    }
+  });
+
+  logger.debug('[VoiceMode] Initialized successfully');
+}
+
+/**
+ * Update voice indicator in header
+ */
+function updateVoiceIndicator(status: VoiceStatus): void {
+  const indicator = getElement('voice-indicator');
+  const statusText = getElement('voice-status-text');
+
+  if (!indicator) return;
+
+  // Show/hide indicator based on status
+  if (status === 'inactive') {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  indicator.style.display = 'flex';
+
+  // Remove all status classes
+  indicator.classList.remove('listening', 'processing', 'confirming', 'offline', 'error');
+
+  // Add current status class
+  indicator.classList.add(status);
+
+  // Update status text
+  if (statusText) {
+    const lang = store.getState().currentLang;
+    switch (status) {
+      case 'listening':
+        statusText.textContent = t('voiceListening', lang);
+        break;
+      case 'processing':
+        statusText.textContent = t('voiceProcessing', lang);
+        break;
+      case 'confirming':
+        statusText.textContent = t('voiceConfirming', lang);
+        break;
+      case 'offline':
+        statusText.textContent = t('voiceOffline', lang);
+        break;
+      case 'error':
+        statusText.textContent = t('voiceError', lang);
+        break;
+    }
+  }
+}
+
+/**
  * Update undo button state
  */
 function updateUndoButton(): void {
@@ -860,6 +965,9 @@ function handleBeforeUnload(): void {
 
   // Cleanup ambient mode service
   ambientModeService.cleanup();
+
+  // Cleanup voice mode service
+  voiceModeService.cleanup();
 
   // Cleanup toast singleton and its event listener
   destroyToast();

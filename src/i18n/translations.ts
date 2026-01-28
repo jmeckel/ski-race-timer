@@ -387,7 +387,23 @@ export const translations: Record<Language, Translations> = {
     deletionMarkedBy: 'Marked by',
     deletionApproved: 'Deletion approved',
     deletionRejected: 'Deletion rejected',
-    cannotEditPendingDeletion: 'Cannot edit fault pending deletion'
+    cannotEditPendingDeletion: 'Cannot edit fault pending deletion',
+
+    // Voice Mode
+    voiceMode: 'Voice Mode',
+    voiceModeDesc: 'Hands-free voice commands (requires internet)',
+    voiceListening: 'Listening...',
+    voiceProcessing: 'Processing...',
+    voiceConfirming: 'Confirm?',
+    voiceOffline: 'Voice unavailable offline',
+    voiceNotSupported: 'Voice not supported in this browser',
+    voicePermissionDenied: 'Microphone access denied',
+    voiceOK: 'OK',
+    voiceRecorded: 'Recorded',
+    voiceNotUnderstood: 'Not understood',
+    voiceCancelled: 'Cancelled',
+    voiceError: 'Voice error',
+    voiceApiKeyRequired: 'API key required for voice mode'
   },
 
   de: {
@@ -776,7 +792,23 @@ export const translations: Record<Language, Translations> = {
     deletionMarkedBy: 'Markiert von',
     deletionApproved: 'Löschung genehmigt',
     deletionRejected: 'Löschung abgelehnt',
-    cannotEditPendingDeletion: 'Fehler mit ausstehender Löschung kann nicht bearbeitet werden'
+    cannotEditPendingDeletion: 'Fehler mit ausstehender Löschung kann nicht bearbeitet werden',
+
+    // Voice Mode
+    voiceMode: 'Sprachsteuerung',
+    voiceModeDesc: 'Freihändige Sprachbefehle (Internet erforderlich)',
+    voiceListening: 'Höre zu...',
+    voiceProcessing: 'Verarbeite...',
+    voiceConfirming: 'Bestätigen?',
+    voiceOffline: 'Sprache offline nicht verfügbar',
+    voiceNotSupported: 'Spracheingabe in diesem Browser nicht unterstützt',
+    voicePermissionDenied: 'Mikrofonzugriff verweigert',
+    voiceOK: 'OK',
+    voiceRecorded: 'Erfasst',
+    voiceNotUnderstood: 'Nicht verstanden',
+    voiceCancelled: 'Abgebrochen',
+    voiceError: 'Sprachfehler',
+    voiceApiKeyRequired: 'API-Schlüssel für Sprachsteuerung erforderlich'
   }
 };
 

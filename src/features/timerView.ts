@@ -11,7 +11,7 @@ import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logWarning, g
 import { getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
-import type { Entry, TimingPoint } from '../types';
+import type { Entry, TimingPoint, VoiceIntent } from '../types';
 
 // Module state
 let clock: Clock | null = null;
@@ -577,4 +577,49 @@ export function updateRunSelection(): void {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
   });
+}
+
+/**
+ * Handle voice intent for timer role
+ * Called from the voice mode service when a command is recognized
+ */
+export function handleTimerVoiceIntent(intent: VoiceIntent): void {
+  logger.debug('[TimerView] Voice intent:', intent.action, intent.params);
+
+  switch (intent.action) {
+    case 'record_time':
+      // Exit ambient mode if active
+      if (ambientModeService.isActive()) {
+        ambientModeService.exitAmbientMode();
+      }
+      recordTimestamp();
+      break;
+
+    case 'set_bib':
+      if (intent.params?.bib) {
+        store.setBibInput(intent.params.bib);
+        updateBibDisplay();
+        feedbackTap();
+      }
+      break;
+
+    case 'set_point':
+      if (intent.params?.point) {
+        store.setSelectedPoint(intent.params.point);
+        updateTimingPointSelection();
+        feedbackTap();
+      }
+      break;
+
+    case 'set_run':
+      if (intent.params?.run) {
+        store.setSelectedRun(intent.params.run);
+        updateRunSelection();
+        feedbackTap();
+      }
+      break;
+
+    default:
+      logger.debug('[TimerView] Unhandled voice intent:', intent.action);
+  }
 }

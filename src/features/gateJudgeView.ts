@@ -12,9 +12,11 @@ import { escapeHtml, getElement } from '../utils';
 import { openModal, closeModal } from './modals';
 import {
   openFaultRecordingModal, initFaultRecordingModal,
-  initInlineFaultEntry, refreshInlineFaultUI, updateActiveBibsList
+  initInlineFaultEntry, refreshInlineFaultUI, updateActiveBibsList,
+  recordFaultFromVoice
 } from './faultEntry';
-import type { GateAssignment, GateColor } from '../types';
+import { logger } from '../utils/logger';
+import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 
 // Callback for role toggle update (injected from app.ts)
 let updateRoleToggleCallback: (() => void) | null = null;
@@ -384,5 +386,50 @@ export function updateGateJudgeRunSelection(): void {
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-checked', String(isActive));
     });
+  }
+}
+
+/**
+ * Handle voice intent for gate judge role
+ * Called from the voice mode service when a command is recognized
+ */
+export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
+  logger.debug('[GateJudgeView] Voice intent:', intent.action, intent.params);
+
+  switch (intent.action) {
+    case 'record_fault':
+      if (intent.params?.bib && intent.params?.gate !== undefined && intent.params?.faultType) {
+        recordFaultFromVoice(
+          intent.params.bib,
+          intent.params.gate,
+          intent.params.faultType
+        );
+      }
+      break;
+
+    case 'toggle_ready': {
+      const state = store.getState();
+      const newReadyState = !state.isJudgeReady;
+      store.setJudgeReady(newReadyState);
+      feedbackSuccess();
+      updateReadyButtonState();
+      // Show confirmation
+      const lang = state.currentLang;
+      showToast(newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang), 'success');
+      break;
+    }
+
+    case 'set_run':
+      if (intent.params?.run) {
+        store.setSelectedRun(intent.params.run);
+        updateGateJudgeRunSelection();
+        updateActiveBibsList();
+        refreshInlineFaultUI();
+        feedbackTap();
+      }
+      break;
+
+    default:
+      logger.debug('[GateJudgeView] Unhandled voice intent:', intent.action);
   }
 }

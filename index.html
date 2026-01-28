@@ -66,6 +66,10 @@
             <circle cx="12" cy="13" r="4"/>
           </svg>
         </div>
+        <div class="voice-indicator" id="voice-indicator" style="display: none;">
+          <span class="voice-dot"></span>
+          <span class="voice-status-text" id="voice-status-text"></span>
+        </div>
         <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
       </div>
     </header>
@@ -572,6 +576,17 @@
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="ambient-mode-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <!-- Voice Mode -->
+            <div class="setting-row" id="voice-mode-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="voiceMode">Voice Mode</span>
+                <span class="setting-description" data-i18n="voiceModeDesc">Hands-free voice commands (requires internet)</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="voice-mode-toggle">
                 <span class="toggle-slider"></span>
               </label>
             </div>

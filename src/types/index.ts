@@ -318,3 +318,54 @@ export interface DataSchema {
   syncQueue: SyncQueueItem[];
   lastExport?: number;
 }
+
+// ===== Voice Mode Types =====
+
+// Voice mode status indicators
+export type VoiceStatus = 'inactive' | 'listening' | 'processing' | 'confirming' | 'offline' | 'error';
+
+// Voice intent actions
+export type VoiceAction =
+  | 'record_time'
+  | 'record_fault'
+  | 'set_bib'
+  | 'set_gate'
+  | 'set_point'
+  | 'set_run'
+  | 'toggle_ready'
+  | 'confirm'
+  | 'cancel'
+  | 'unknown';
+
+// Parsed intent from LLM
+export interface VoiceIntent {
+  action: VoiceAction;
+  confidence: number;
+  params?: {
+    bib?: string;
+    gate?: number;
+    faultType?: FaultType;
+    point?: TimingPoint;
+    run?: Run;
+  };
+  confirmationNeeded: boolean;
+  confirmationPrompt?: string;
+}
+
+// Context passed to LLM for command interpretation
+export interface VoiceContext {
+  role: DeviceRole;
+  language: Language;
+  currentRun: Run;
+  activeBibs?: string[];        // For gate judge - racers on course
+  gateRange?: [number, number]; // For gate judge - assigned gates
+  pendingConfirmation?: VoiceIntent; // Awaiting yes/no response
+}
+
+// LLM provider configuration
+export interface LLMConfig {
+  endpoint: string;
+  apiKey: string;
+  model?: string;
+  maxTokens?: number;
+}

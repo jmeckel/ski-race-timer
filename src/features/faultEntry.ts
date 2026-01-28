@@ -201,6 +201,56 @@ export function recordFault(faultType: FaultType): void {
 }
 
 /**
+ * Record a fault entry from voice command
+ * Called by the gate judge voice handler after confirmation
+ */
+export function recordFaultFromVoice(bib: string, gateNumber: number, faultType: FaultType): void {
+  const state = store.getState();
+
+  // Validate gate is within assignment
+  if (state.gateAssignment) {
+    const [start, end] = state.gateAssignment;
+    if (gateNumber < start || gateNumber > end) {
+      const lang = state.currentLang;
+      showToast(t('gateOutOfRange', lang), 'warning');
+      return;
+    }
+  }
+
+  // Normalize bib to 3 digits
+  const normalizedBib = bib.padStart(3, '0');
+
+  // Create fault entry (without version fields - added by store)
+  const fault = {
+    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    bib: normalizedBib,
+    run: state.selectedRun,
+    gateNumber,
+    faultType,
+    timestamp: new Date().toISOString(),
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gateRange: state.gateAssignment || [1, 1]
+  };
+
+  store.addFaultEntry(fault);
+  feedbackWarning(); // Use warning feedback for fault (attention-getting)
+
+  // Get the fault with version fields from store and sync to cloud
+  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
+  if (storedFault) {
+    syncFault(storedFault);
+    showFaultConfirmation(storedFault);
+  }
+
+  // Refresh active bibs list
+  updateActiveBibsList();
+
+  const lang = state.currentLang;
+  showToast(t('faultRecorded', lang), 'success');
+}
+
+/**
  * Show fault confirmation overlay
  */
 export function showFaultConfirmation(fault: FaultEntry): void {
