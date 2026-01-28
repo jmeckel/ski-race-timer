@@ -5,7 +5,17 @@
 
 import { fetchWithTimeout, logError } from './errors';
 import type { RaceInfo } from '../types';
-import { AUTH_TOKEN_KEY } from '../services/auth';
+import {
+  AUTH_TOKEN_KEY,
+  getAuthToken,
+  hasAuthToken,
+  getAuthHeaders,
+  setAuthToken,
+  clearAuthToken as authClearToken
+} from '../services/auth';
+
+// Re-export for backwards compatibility
+export { getAuthToken, hasAuthToken };
 
 // ===== Constants =====
 const ADMIN_API_BASE = '/api/v1/admin/races';
@@ -50,33 +60,6 @@ export interface TokenResponse {
   token?: string;
   isNewPin?: boolean;
   error?: string;
-}
-
-// ===== Auth Helpers =====
-
-/**
- * Get the stored auth token
- */
-export function getAuthToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
-/**
- * Check if user has an auth token
- */
-export function hasAuthToken(): boolean {
-  return !!getAuthToken();
-}
-
-/**
- * Get authorization headers if token exists
- */
-function getAuthHeaders(): HeadersInit {
-  const token = getAuthToken();
-  if (token) {
-    return { 'Authorization': `Bearer ${token}` };
-  }
-  return {};
 }
 
 // ===== Core API Function =====
@@ -244,7 +227,7 @@ export async function exchangeToken(pin: string): Promise<ApiResult<TokenRespons
 
     // Store token if successful
     if (data.success && data.token) {
-      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      setAuthToken(data.token);
     }
 
     return {
@@ -262,11 +245,9 @@ export async function exchangeToken(pin: string): Promise<ApiResult<TokenRespons
 }
 
 /**
- * Clear stored auth token
+ * Clear stored auth token (re-exported from auth.ts)
  */
-export function clearAuthToken(): void {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-}
+export const clearAuthToken = authClearToken;
 
 // ===== Recent Races Helper =====
 

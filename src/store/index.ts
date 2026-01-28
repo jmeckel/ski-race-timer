@@ -60,6 +60,9 @@ const MAX_UNDO_STACK = 50;
 // Maximum version history entries to keep per fault (for performance)
 const MAX_VERSION_HISTORY = 50;
 
+// Maximum pending notification queue size (prevents runaway memory during bulk ops)
+const MAX_NOTIFICATION_QUEUE = 100;
+
 /**
  * Extract version data fields from a fault entry
  */
@@ -325,10 +328,30 @@ class Store {
   // Notify all listeners of state changes
   // RE-ENTRANCY FIX: Queue notifications to prevent mutations during notification
   // STATE SNAPSHOT FIX: Capture state at notification time so all listeners see consistent state
+  // COALESCING: Merge notifications for same keys within a batch to prevent queue explosion
   private notify(changedKeys: (keyof AppState)[]) {
-    // Queue the notification with a snapshot of current state
-    // This ensures all listeners in a batch see the same state, even if one listener triggers more changes
-    this.pendingNotifications.push({ keys: changedKeys, stateSnapshot: this.state });
+    // Coalesce: if we're already notifying and the last pending notification has overlapping keys,
+    // merge them instead of adding a new notification
+    if (this.pendingNotifications.length > 0) {
+      const lastNotification = this.pendingNotifications[this.pendingNotifications.length - 1];
+      // Merge keys into the last notification (they'll all use the same state snapshot)
+      const mergedKeys = new Set([...lastNotification.keys, ...changedKeys]);
+      lastNotification.keys = Array.from(mergedKeys) as (keyof AppState)[];
+      lastNotification.stateSnapshot = this.state; // Update to latest state
+
+      // If already notifying, let the current notification loop handle it
+      if (this.isNotifying) {
+        return;
+      }
+    } else {
+      // Queue the notification with a snapshot of current state
+      this.pendingNotifications.push({ keys: changedKeys, stateSnapshot: this.state });
+    }
+
+    // Safety limit: if queue is too large, something is wrong - log warning and drain
+    if (this.pendingNotifications.length > MAX_NOTIFICATION_QUEUE) {
+      logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - possible infinite loop`);
+    }
 
     // If already notifying, let the current notification loop handle it
     if (this.isNotifying) {

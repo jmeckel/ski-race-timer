@@ -24,11 +24,15 @@ interface QueuedSave {
   resolve: (success: boolean) => void;
 }
 
+// Concurrency limit for parallel saves
+const MAX_CONCURRENT_SAVES = 3;
+const SAVE_TIMEOUT = 5000; // 5 second timeout per save
+
 class PhotoStorageService {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<boolean> | null = null;
   private saveQueue: QueuedSave[] = [];
-  private isProcessingQueue = false;
+  private activeSaves = 0; // Current number of concurrent saves
 
   /**
    * Initialize IndexedDB connection
@@ -86,21 +90,41 @@ class PhotoStorageService {
   }
 
   /**
-   * Process the save queue serially
+   * Process the save queue with concurrent saves (up to MAX_CONCURRENT_SAVES)
+   * Uses semaphore pattern to limit concurrency and prevent head-of-line blocking
    */
-  private async processQueue(): Promise<void> {
-    if (this.isProcessingQueue) return;
-    this.isProcessingQueue = true;
+  private processQueue(): void {
+    // Process items up to concurrency limit
+    while (this.saveQueue.length > 0 && this.activeSaves < MAX_CONCURRENT_SAVES) {
+      const item = this.saveQueue.shift()!;
+      this.activeSaves++;
 
-    try {
-      while (this.saveQueue.length > 0) {
-        const item = this.saveQueue.shift()!;
-        const success = await this.doSavePhoto(item.entryId, item.photoBase64);
-        item.resolve(success);
-      }
-    } finally {
-      this.isProcessingQueue = false;
+      // Process with timeout
+      this.doSavePhotoWithTimeout(item.entryId, item.photoBase64)
+        .then(success => {
+          item.resolve(success);
+        })
+        .catch(() => {
+          item.resolve(false);
+        })
+        .finally(() => {
+          this.activeSaves--;
+          // Continue processing queue
+          this.processQueue();
+        });
     }
+  }
+
+  /**
+   * Save photo with timeout to prevent blocking
+   */
+  private async doSavePhotoWithTimeout(entryId: string, photoBase64: string): Promise<boolean> {
+    return Promise.race([
+      this.doSavePhoto(entryId, photoBase64),
+      new Promise<boolean>((_, reject) =>
+        setTimeout(() => reject(new Error('Photo save timeout')), SAVE_TIMEOUT)
+      )
+    ]);
   }
 
   /**
