@@ -68,11 +68,12 @@ export class Clock {
       font-size: clamp(32px, 10vw, 48px);
       font-weight: 700;
       letter-spacing: -0.02em;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       text-align: center;
+      text-shadow: 0 0 40px rgba(56, 189, 248, 0.3);
     `;
 
     // Create individual spans for each character position

@@ -1,27 +1,46 @@
 /* ===== CSS Variables ===== */
-/* Skiteam Oberhaching color scheme with blue primary for actions */
+/* Alpine-inspired color scheme for ski racing */
 /* Optimized for outdoor visibility with high contrast */
 :root {
-  --primary: #3B82F6;           /* Blue - primary actions */
-  --primary-dark: #2563EB;      /* Darker blue for depth */
-  --secondary: #E31837;         /* Red - brand accent, Finish point */
+  /* Primary Alpine Blues */
+  --primary: #0EA5E9;           /* Alpine blue - mountain lake */
+  --primary-dark: #0284C7;      /* Deeper alpine blue */
+  --primary-light: #38BDF8;     /* Ice blue - glacier */
+  --secondary: #E31837;         /* Red - brand accent */
   --secondary-light: #60A5FA;   /* Light blue for gradients */
   --accent: #FFFFFF;
-  --background: #000000;        /* Pure black for max contrast */
+
+  /* Timing Point Colors */
+  --start-color: #F97316;       /* Sunset orange for Start */
+  --start-color-dark: #EA580C;  /* Darker orange */
+  --finish-color: #10B981;      /* Forest green for Finish */
+  --finish-color-dark: #059669; /* Darker green */
+
+  /* Surfaces */
+  --background: #0A0A0A;        /* Near-black for depth */
   --surface: #141414;           /* Slightly lighter for surfaces */
-  --surface-elevated: #242424;  /* Elevated surfaces */
+  --surface-elevated: #1E1E1E;  /* Elevated surfaces */
+
+  /* Text */
   --text-primary: #FFFFFF;      /* Pure white for max contrast */
   --text-secondary: #D0D0D0;    /* Brighter secondary text for outdoor */
   --text-tertiary: #909090;     /* Brighter tertiary text for outdoor */
-  --success: #4ADE80;
+
+  /* Status Colors */
+  --success: #10B981;           /* Matches finish color */
   --warning: #FBBF24;
   --error: #EF4444;
-  --gps-active: #4ADE80;
+
+  /* GPS Status */
+  --gps-active: #10B981;
   --gps-searching: #FBBF24;
   --gps-inactive: #EF4444;
+
+  /* Layout */
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
-  --radius: 8px;                /* Consistent corner radius for all elements */
+  --radius: 12px;               /* Slightly larger radius for modern feel */
+  --radius-sm: 8px;             /* Smaller radius for compact elements */
 }
 
 /* ===== Reset & Base ===== */
@@ -447,50 +466,71 @@ body {
   flex-shrink: 0;
 }
 
-/* Timing Points */
+/* Timing Points - Large color-coded cards */
 .timing-points {
-  display: inline-flex;
+  display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
-  align-items: center;
+  align-items: stretch;
 }
 
 .timing-point-btn {
   flex: 1;
-  max-width: 90px;
-  padding: 12px 10px;
+  min-width: 100px;
+  padding: 14px 16px;
   border: 2px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-secondary);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .timing-point-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .timing-point-btn.active {
-  border-color: currentColor;
   color: var(--text-primary);
+  transform: scale(1.02);
 }
 
+/* Start button - Orange theme */
 .timing-point-btn[data-point="S"] {
-  --point-color: var(--success);
+  --point-color: var(--start-color);
+  --point-color-dark: var(--start-color-dark);
 }
 
+/* Finish button - Green theme */
 .timing-point-btn[data-point="F"] {
-  --point-color: var(--secondary);
+  --point-color: var(--finish-color);
+  --point-color-dark: var(--finish-color-dark);
 }
 
+/* Active state with gradient and glow */
 .timing-point-btn.active {
   border-color: var(--point-color);
-  color: var(--point-color);
-  background: color-mix(in srgb, var(--point-color) 10%, var(--surface));
+  background: linear-gradient(135deg, var(--point-color) 0%, var(--point-color-dark) 100%);
+  color: white;
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--point-color) 40%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Inactive state hint color */
+.timing-point-btn:not(.active) {
+  border-color: color-mix(in srgb, var(--point-color) 30%, var(--surface-elevated));
+}
+
+.timing-point-btn:not(.active):hover {
+  border-color: color-mix(in srgb, var(--point-color) 50%, var(--surface-elevated));
+  background: color-mix(in srgb, var(--point-color) 8%, var(--surface));
 }
 
 /* Run Selector */
@@ -602,52 +642,88 @@ body {
   background: var(--surface);
 }
 
-/* Timestamp Button */
+/* Timestamp Button - Primary action with dramatic glow */
 .timestamp-btn {
   width: 100%;
-  padding: 32px 24px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 28px 24px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease-out, background 0.2s ease;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease-out, background 0.2s ease;
+  box-shadow:
+    0 0 30px rgba(14, 165, 233, 0.4),
+    0 0 60px rgba(14, 165, 233, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
   position: relative;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+/* Inner glow highlight */
+.timestamp-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+  border-radius: 9999px 9999px 0 0;
+  pointer-events: none;
 }
 
 .timestamp-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transform: scale(0.96);
+  box-shadow:
+    0 0 15px rgba(14, 165, 233, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* Pulse animation when ready to record */
-.timestamp-btn.ready {
-  animation: pulse 1.5s ease-in-out infinite;
+/* Breathing glow animation */
+.timestamp-btn.breathe-glow {
+  animation: breatheGlow 3s ease-in-out infinite;
 }
 
-@keyframes pulse {
+@keyframes breatheGlow {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow:
+      0 0 30px rgba(14, 165, 233, 0.4),
+      0 0 60px rgba(14, 165, 233, 0.2),
+      0 8px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
   50% {
-    box-shadow: 0 4px 24px rgba(59, 130, 246, 0.6);
+    box-shadow:
+      0 0 40px rgba(14, 165, 233, 0.6),
+      0 0 80px rgba(14, 165, 233, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 }
 
 /* Flash animation when time is recorded */
 @keyframes recordFlash {
-  0% { background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(96, 165, 250, 0.8) 100%); }
-  100% { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-light) 100%); }
+  0% {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    box-shadow:
+      0 0 50px rgba(56, 189, 248, 0.8),
+      0 0 100px rgba(56, 189, 248, 0.4),
+      0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  }
 }
 
 .timestamp-btn.flash {
-  animation: recordFlash 0.3s ease-out;
+  animation: recordFlash 0.4s ease-out;
 }
 
 /* ===== Results View ===== */
@@ -2567,14 +2643,15 @@ body {
 .timestamp-btn.glass-surface-1 {
   background: linear-gradient(
     var(--glass-gradient-angle, 135deg),
-    rgba(59, 130, 246, 0.9) 0%,
-    rgba(96, 165, 250, 0.8) 50%,
-    rgba(59, 130, 246, 0.85) 100%
+    var(--primary) 0%,
+    var(--primary-light) 50%,
+    var(--primary-dark) 100%
   );
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 8px 32px rgba(59, 130, 246, 0.5),
-    0 0 60px rgba(59, 130, 246, 0.2),
+    0 0 40px rgba(14, 165, 233, 0.5),
+    0 0 80px rgba(14, 165, 233, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   position: relative;
   overflow: hidden;
@@ -2691,24 +2768,40 @@ body {
 .timing-point-btn.glass-surface-3 {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.06) 0%,
     rgba(255, 255, 255, 0.02) 100%
   );
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Start button - Orange glow */
+.timing-point-btn.glass-surface-3[data-point="S"] {
+  border-color: rgba(249, 115, 22, 0.2);
 }
 
 .timing-point-btn.glass-surface-3.active[data-point="S"] {
-  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
-  border-color: rgba(74, 222, 128, 0.4);
-  box-shadow: 0 0 15px rgba(74, 222, 128, 0.2);
+  background: linear-gradient(135deg, var(--start-color) 0%, var(--start-color-dark) 100%);
+  border-color: var(--start-color);
+  box-shadow:
+    0 0 25px rgba(249, 115, 22, 0.5),
+    0 0 50px rgba(249, 115, 22, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Finish button - Green glow */
+.timing-point-btn.glass-surface-3[data-point="F"] {
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 .timing-point-btn.glass-surface-3.active[data-point="F"] {
-  background: linear-gradient(135deg, rgba(227, 24, 55, 0.15) 0%, rgba(227, 24, 55, 0.08) 100%);
-  border-color: rgba(227, 24, 55, 0.4);
-  box-shadow: 0 0 15px rgba(227, 24, 55, 0.2);
+  background: linear-gradient(135deg, var(--finish-color) 0%, var(--finish-color-dark) 100%);
+  border-color: var(--finish-color);
+  box-shadow:
+    0 0 25px rgba(16, 185, 129, 0.5),
+    0 0 50px rgba(16, 185, 129, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Run Buttons Glass Enhancement */
@@ -2723,11 +2816,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Run buttons - Blue glow for both */
+/* Run buttons - Alpine blue glow */
 .run-btn.glass-surface-3.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.35);
 }
 
 /* Clock Container Subtle Enhancement */
