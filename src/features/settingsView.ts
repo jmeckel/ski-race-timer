@@ -8,7 +8,7 @@ import { syncService, photoStorage, feedbackTap, feedbackWarning } from '../serv
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { isValidRaceId } from '../utils/validation';
-import { fetchWithTimeout } from '../utils';
+import { fetchWithTimeout, getElement } from '../utils';
 import { AUTH_TOKEN_KEY, hasAuthToken } from '../services/sync';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from '../utils/recentRaces';
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from '../utils/recentRacesUi';
@@ -47,12 +47,12 @@ export function setSettingsViewCallbacks(callbacks: {
  */
 export function initSettingsView(): void {
   // Simple mode toggle
-  const simpleModeToggle = document.getElementById('simple-mode-toggle') as HTMLInputElement;
+  const simpleModeToggle = getElement<HTMLInputElement>('simple-mode-toggle');
   if (simpleModeToggle) {
     simpleModeToggle.addEventListener('change', () => {
       store.updateSettings({ simple: simpleModeToggle.checked });
       applySettings();
-      const adminSection = document.getElementById('admin-section');
+      const adminSection = getElement('admin-section');
       if (adminSection) {
         adminSection.style.display = 'block';
       }
@@ -60,7 +60,7 @@ export function initSettingsView(): void {
   }
 
   // GPS toggle
-  const gpsToggle = document.getElementById('gps-toggle') as HTMLInputElement;
+  const gpsToggle = getElement<HTMLInputElement>('gps-toggle');
   if (gpsToggle) {
     gpsToggle.addEventListener('change', () => {
       store.updateSettings({ gps: gpsToggle.checked });
@@ -68,7 +68,7 @@ export function initSettingsView(): void {
   }
 
   // Sync toggle - with guard against concurrent invocations
-  const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+  const syncToggle = getElement<HTMLInputElement>('sync-toggle');
   let syncTogglePending = false;
   if (syncToggle) {
     syncToggle.addEventListener('change', async () => {
@@ -97,7 +97,7 @@ export function initSettingsView(): void {
         store.updateSettings({ sync: syncToggle.checked });
 
         // Update sync photos toggle state
-        const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+        const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');
         if (syncPhotosToggle) {
           syncPhotosToggle.disabled = !syncToggle.checked;
           if (!syncToggle.checked) {
@@ -119,7 +119,7 @@ export function initSettingsView(): void {
   }
 
   // Sync photos toggle
-  const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+  const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');
   if (syncPhotosToggle) {
     syncPhotosToggle.addEventListener('change', async (e) => {
       const target = e.target as HTMLInputElement;
@@ -139,7 +139,7 @@ export function initSettingsView(): void {
   }
 
   // Auto-increment toggle
-  const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
+  const autoToggle = getElement<HTMLInputElement>('auto-toggle');
   if (autoToggle) {
     autoToggle.addEventListener('change', () => {
       store.updateSettings({ auto: autoToggle.checked });
@@ -147,7 +147,7 @@ export function initSettingsView(): void {
   }
 
   // Haptic toggle
-  const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
+  const hapticToggle = getElement<HTMLInputElement>('haptic-toggle');
   if (hapticToggle) {
     hapticToggle.addEventListener('change', () => {
       store.updateSettings({ haptic: hapticToggle.checked });
@@ -155,7 +155,7 @@ export function initSettingsView(): void {
   }
 
   // Sound toggle
-  const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement;
+  const soundToggle = getElement<HTMLInputElement>('sound-toggle');
   if (soundToggle) {
     soundToggle.addEventListener('change', () => {
       store.updateSettings({ sound: soundToggle.checked });
@@ -163,7 +163,7 @@ export function initSettingsView(): void {
   }
 
   // Photo capture toggle
-  const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
+  const photoToggle = getElement<HTMLInputElement>('photo-toggle');
   if (photoToggle) {
     photoToggle.addEventListener('change', () => {
       store.updateSettings({ photoCapture: photoToggle.checked });
@@ -171,7 +171,7 @@ export function initSettingsView(): void {
   }
 
   // Language toggle
-  const langToggle = document.getElementById('lang-toggle');
+  const langToggle = getElement('lang-toggle');
   if (langToggle) {
     langToggle.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
@@ -185,7 +185,7 @@ export function initSettingsView(): void {
   }
 
   // Race ID input
-  const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
+  const raceIdInput = getElement<HTMLInputElement>('race-id-input');
   let raceIdChangePending = false;
   if (raceIdInput) {
     // Debounced race exists check on input
@@ -283,8 +283,8 @@ export function initSettingsView(): void {
   }
 
   // Settings recent races button
-  const settingsRecentRacesBtn = document.getElementById('settings-recent-races-btn');
-  const settingsRecentRacesDropdown = document.getElementById('settings-recent-races-dropdown');
+  const settingsRecentRacesBtn = getElement('settings-recent-races-btn');
+  const settingsRecentRacesDropdown = getElement('settings-recent-races-dropdown');
   if (settingsRecentRacesBtn && settingsRecentRacesDropdown) {
     settingsRecentRacesBtn.addEventListener('click', () => {
       feedbackTap();
@@ -308,7 +308,7 @@ export function initSettingsView(): void {
   }
 
   // Device name input
-  const deviceNameInput = document.getElementById('device-name-input') as HTMLInputElement;
+  const deviceNameInput = getElement<HTMLInputElement>('device-name-input');
   if (deviceNameInput) {
     deviceNameInput.addEventListener('change', () => {
       store.setDeviceName(deviceNameInput.value.trim());
@@ -323,7 +323,7 @@ export function initSettingsView(): void {
  * Initialize role toggle in settings
  */
 export function initRoleToggle(): void {
-  const roleToggle = document.getElementById('role-toggle');
+  const roleToggle = getElement('role-toggle');
   if (!roleToggle) return;
 
   roleToggle.addEventListener('click', (e) => {
@@ -340,7 +340,7 @@ export function initRoleToggle(): void {
 
       // If switching to gateJudge and no gate assignment, show assignment modal
       if (role === 'gateJudge' && !store.getState().gateAssignment) {
-        openModal(document.getElementById('gate-assignment-modal'));
+        openModal(getElement('gate-assignment-modal'));
       }
 
       // Switch to appropriate view
@@ -359,7 +359,7 @@ export function initRoleToggle(): void {
  * Update role toggle UI
  */
 export function updateRoleToggle(): void {
-  const roleToggle = document.getElementById('role-toggle');
+  const roleToggle = getElement('role-toggle');
   if (!roleToggle) return;
 
   const state = store.getState();
@@ -376,18 +376,18 @@ export function updateSettingsInputs(): void {
   const state = store.getState();
   const { settings } = state;
 
-  const simpleModeToggle = document.getElementById('simple-mode-toggle') as HTMLInputElement;
-  const gpsToggle = document.getElementById('gps-toggle') as HTMLInputElement;
-  const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
-  const autoToggle = document.getElementById('auto-toggle') as HTMLInputElement;
-  const hapticToggle = document.getElementById('haptic-toggle') as HTMLInputElement;
-  const soundToggle = document.getElementById('sound-toggle') as HTMLInputElement;
-  const photoToggle = document.getElementById('photo-toggle') as HTMLInputElement;
+  const simpleModeToggle = getElement<HTMLInputElement>('simple-mode-toggle');
+  const gpsToggle = getElement<HTMLInputElement>('gps-toggle');
+  const syncToggle = getElement<HTMLInputElement>('sync-toggle');
+  const autoToggle = getElement<HTMLInputElement>('auto-toggle');
+  const hapticToggle = getElement<HTMLInputElement>('haptic-toggle');
+  const soundToggle = getElement<HTMLInputElement>('sound-toggle');
+  const photoToggle = getElement<HTMLInputElement>('photo-toggle');
 
   if (simpleModeToggle) simpleModeToggle.checked = settings.simple;
 
   // Hide admin section in simple mode
-  const adminSection = document.getElementById('admin-section');
+  const adminSection = getElement('admin-section');
   if (adminSection) {
     adminSection.style.display = 'block';
   }
@@ -400,16 +400,16 @@ export function updateSettingsInputs(): void {
   if (photoToggle) photoToggle.checked = settings.photoCapture;
 
   // Update sync photos toggle (enabled only when sync is enabled)
-  const syncPhotosToggle = document.getElementById('sync-photos-toggle') as HTMLInputElement;
+  const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');
   if (syncPhotosToggle) {
     syncPhotosToggle.checked = settings.syncPhotos;
     syncPhotosToggle.disabled = !settings.sync;
   }
 
-  const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
+  const raceIdInput = getElement<HTMLInputElement>('race-id-input');
   if (raceIdInput) raceIdInput.value = state.raceId;
 
-  const deviceNameInput = document.getElementById('device-name-input') as HTMLInputElement;
+  const deviceNameInput = getElement<HTMLInputElement>('device-name-input');
   if (deviceNameInput) deviceNameInput.value = state.deviceName;
 
   // Update language toggle
@@ -421,7 +421,7 @@ export function updateSettingsInputs(): void {
  */
 export function updateLangToggle(): void {
   const lang = store.getState().currentLang;
-  const langToggle = document.getElementById('lang-toggle');
+  const langToggle = getElement('lang-toggle');
   if (langToggle) {
     langToggle.querySelectorAll('.lang-option').forEach(opt => {
       opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
@@ -608,7 +608,7 @@ export async function fetchRacesFromApi(): Promise<RecentRace[]> {
  * Select a recent race and fill the settings race ID input
  */
 export function selectSettingsRecentRace(race: RecentRace, dropdown: HTMLElement): void {
-  const input = document.getElementById('race-id-input') as HTMLInputElement;
+  const input = getElement<HTMLInputElement>('race-id-input');
   if (input) {
     input.value = race.raceId;
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -625,8 +625,8 @@ export function updateRaceExistsIndicator(exists: boolean | null, entryCount: nu
   // Store state for language updates
   lastRaceExistsState = { exists, entryCount };
 
-  const indicator = document.getElementById('race-exists-indicator');
-  const textEl = document.getElementById('race-exists-text');
+  const indicator = getElement('race-exists-indicator');
+  const textEl = getElement('race-exists-text');
   const lang = store.getState().currentLang;
 
   if (!indicator || !textEl) return;

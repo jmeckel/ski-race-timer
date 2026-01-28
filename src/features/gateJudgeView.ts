@@ -8,7 +8,7 @@ import { syncService } from '../services';
 import { feedbackTap, feedbackSuccess } from '../services';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
-import { escapeHtml } from '../utils';
+import { escapeHtml, getElement } from '../utils';
 import { openModal, closeModal } from './modals';
 import {
   openFaultRecordingModal, initFaultRecordingModal,
@@ -34,8 +34,8 @@ export function setUpdateRoleToggleCallback(callback: () => void): void {
  * Also reorders tabs so Gate tab appears first (like Timer in timer mode)
  */
 export function updateGateJudgeTabVisibility(): void {
-  const timerTab = document.getElementById('timer-tab');
-  const gateJudgeTab = document.getElementById('gate-judge-tab');
+  const timerTab = getElement('timer-tab');
+  const gateJudgeTab = getElement('gate-judge-tab');
   const tabBar = document.querySelector('.tab-bar');
 
   const state = store.getState();
@@ -62,7 +62,7 @@ export function initGateJudgeView(): void {
   updateGateJudgeTabVisibility();
 
   // Gate assignment change button
-  const gateChangeBtn = document.getElementById('gate-change-btn');
+  const gateChangeBtn = getElement('gate-change-btn');
   if (gateChangeBtn) {
     gateChangeBtn.addEventListener('click', () => {
       feedbackTap();
@@ -71,7 +71,7 @@ export function initGateJudgeView(): void {
   }
 
   // Gate Judge run selector
-  const gateJudgeRunSelector = document.getElementById('gate-judge-run-selector');
+  const gateJudgeRunSelector = getElement('gate-judge-run-selector');
   if (gateJudgeRunSelector) {
     gateJudgeRunSelector.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
@@ -96,7 +96,7 @@ export function initGateJudgeView(): void {
   }
 
   // Record fault button
-  const recordFaultBtn = document.getElementById('record-fault-btn');
+  const recordFaultBtn = getElement('record-fault-btn');
   if (recordFaultBtn) {
     recordFaultBtn.addEventListener('click', () => {
       feedbackTap();
@@ -105,7 +105,7 @@ export function initGateJudgeView(): void {
   }
 
   // Ready toggle button
-  const readyToggleBtn = document.getElementById('ready-toggle-btn');
+  const readyToggleBtn = getElement('ready-toggle-btn');
   if (readyToggleBtn) {
     readyToggleBtn.addEventListener('click', () => {
       const state = store.getState();
@@ -140,8 +140,8 @@ export function initGateJudgeView(): void {
  */
 export function openGateAssignmentModal(): void {
   const state = store.getState();
-  const startInput = document.getElementById('gate-start-input') as HTMLInputElement;
-  const endInput = document.getElementById('gate-end-input') as HTMLInputElement;
+  const startInput = getElement<HTMLInputElement>('gate-start-input');
+  const endInput = getElement<HTMLInputElement>('gate-end-input');
 
   if (startInput && endInput) {
     if (state.gateAssignment) {
@@ -154,7 +154,7 @@ export function openGateAssignmentModal(): void {
   }
 
   // Set gate color selector to current value
-  const colorSelector = document.getElementById('gate-color-selector');
+  const colorSelector = getElement('gate-color-selector');
   if (colorSelector) {
     colorSelector.querySelectorAll('.gate-color-btn').forEach(btn => {
       const color = btn.getAttribute('data-color');
@@ -162,7 +162,7 @@ export function openGateAssignmentModal(): void {
     });
   }
 
-  openModal(document.getElementById('gate-assignment-modal'));
+  openModal(getElement('gate-assignment-modal'));
 }
 
 /**
@@ -170,7 +170,7 @@ export function openGateAssignmentModal(): void {
  */
 export function initGateAssignmentModal(): void {
   // Gate color selector toggle
-  const colorSelector = document.getElementById('gate-color-selector');
+  const colorSelector = getElement('gate-color-selector');
   if (colorSelector) {
     colorSelector.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('.gate-color-btn');
@@ -182,11 +182,12 @@ export function initGateAssignmentModal(): void {
     });
   }
 
-  const saveBtn = document.getElementById('save-gate-assignment-btn');
+  const saveBtn = getElement('save-gate-assignment-btn');
   if (saveBtn) {
     saveBtn.addEventListener('click', () => {
-      const startInput = document.getElementById('gate-start-input') as HTMLInputElement;
-      const endInput = document.getElementById('gate-end-input') as HTMLInputElement;
+      const startInput = getElement<HTMLInputElement>('gate-start-input');
+      const endInput = getElement<HTMLInputElement>('gate-end-input');
+      if (!startInput || !endInput) return;
 
       const start = parseInt(startInput.value, 10) || 1;
       const end = parseInt(endInput.value, 10) || 10;
@@ -202,7 +203,7 @@ export function initGateAssignmentModal(): void {
       store.setGateAssignment([validStart, validEnd]);
       store.setFirstGateColor(selectedColor);
       updateGateRangeDisplay();
-      closeModal(document.getElementById('gate-assignment-modal'));
+      closeModal(getElement('gate-assignment-modal'));
       feedbackSuccess();
 
       const lang = store.getState().currentLang;
@@ -215,7 +216,7 @@ export function initGateAssignmentModal(): void {
  * Update gate range display in header
  */
 export function updateGateRangeDisplay(): void {
-  const display = document.getElementById('gate-range-display');
+  const display = getElement('gate-range-display');
   if (!display) return;
 
   const state = store.getState();
@@ -233,8 +234,8 @@ export function updateGateRangeDisplay(): void {
  * Update display of other gate judges' coverage
  */
 export function updateOtherJudgesCoverage(): void {
-  const coverageContainer = document.getElementById('other-judges-coverage');
-  const coverageList = document.getElementById('other-judges-list');
+  const coverageContainer = getElement('other-judges-coverage');
+  const coverageList = getElement('other-judges-list');
   if (!coverageContainer || !coverageList) return;
 
   const state = store.getState();
@@ -270,7 +271,7 @@ export function updateOtherJudgesCoverage(): void {
  * Update ready button visual state
  */
 export function updateReadyButtonState(): void {
-  const btn = document.getElementById('ready-toggle-btn');
+  const btn = getElement('ready-toggle-btn');
   if (!btn) return;
 
   const state = store.getState();
@@ -281,8 +282,8 @@ export function updateReadyButtonState(): void {
  * Update judges ready indicator in header (visible to all devices)
  */
 export function updateJudgesReadyIndicator(assignments?: GateAssignment[]): void {
-  const indicator = document.getElementById('judges-ready-indicator');
-  const countEl = document.getElementById('judges-ready-count');
+  const indicator = getElement('judges-ready-indicator');
+  const countEl = getElement('judges-ready-count');
   if (!indicator || !countEl) return;
 
   const state = store.getState();
@@ -324,8 +325,8 @@ export function updateJudgesReadyIndicator(assignments?: GateAssignment[]): void
  * - Green: All judges ready
  */
 export function updateJudgeReadyStatus(): void {
-  const gpsIndicator = document.getElementById('gps-indicator');
-  const judgeReadyIndicator = document.getElementById('judge-ready-indicator');
+  const gpsIndicator = getElement('gps-indicator');
+  const judgeReadyIndicator = getElement('judge-ready-indicator');
   if (!judgeReadyIndicator) return;
 
   const state = store.getState();
@@ -376,7 +377,7 @@ export function updateJudgeReadyStatus(): void {
  */
 export function updateGateJudgeRunSelection(): void {
   const state = store.getState();
-  const gateJudgeRunSelector = document.getElementById('gate-judge-run-selector');
+  const gateJudgeRunSelector = getElement('gate-judge-run-selector');
   if (gateJudgeRunSelector) {
     gateJudgeRunSelector.querySelectorAll('.run-btn').forEach(btn => {
       const isActive = btn.getAttribute('data-run') === String(state.selectedRun);

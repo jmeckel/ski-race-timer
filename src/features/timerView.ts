@@ -7,35 +7,14 @@ import { store } from '../store';
 import { Clock, showToast } from '../components';
 import { syncService, gpsService, captureTimingPhoto, photoStorage } from '../services';
 import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
-import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logWarning } from '../utils';
+import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logWarning, getElement } from '../utils';
+import { getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
 import type { Entry, TimingPoint } from '../types';
 
 // Module state
 let clock: Clock | null = null;
-
-/**
- * Helper: Get point color
- */
-export function getPointColor(point: TimingPoint): string {
-  const colors: Record<TimingPoint, string> = {
-    'S': 'var(--success)',
-    'F': 'var(--secondary)'
-  };
-  return colors[point];
-}
-
-/**
- * Helper: Format time for display
- */
-export function formatTimeDisplay(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  const ms = String(date.getMilliseconds()).padStart(3, '0');
-  return `${hours}:${minutes}:${seconds}.${ms}`;
-}
 
 /**
  * Check if bib is all zeros (e.g., "0", "00", "000")
@@ -55,7 +34,7 @@ export function initClock(): void {
     clock = null;
   }
 
-  const container = document.getElementById('clock-container');
+  const container = getElement('clock-container');
   if (container) {
     clock = new Clock(container);
     clock.start();
@@ -96,7 +75,7 @@ export function initTabs(): void {
  * Initialize number pad
  */
 export function initNumberPad(): void {
-  const numPad = document.getElementById('number-pad');
+  const numPad = getElement('number-pad');
   if (!numPad) return;
 
   numPad.addEventListener('click', (e) => {
@@ -128,7 +107,7 @@ export function initNumberPad(): void {
  * Initialize timing point selection
  */
 export function initTimingPoints(): void {
-  const container = document.getElementById('timing-points');
+  const container = getElement('timing-points');
   if (!container) return;
 
   container.addEventListener('click', (e) => {
@@ -152,7 +131,7 @@ export function initTimingPoints(): void {
  * Initialize run selector
  */
 export function initRunSelector(): void {
-  const container = document.getElementById('run-selector');
+  const container = getElement('run-selector');
   if (!container) return;
 
   container.addEventListener('click', (e) => {
@@ -175,7 +154,7 @@ export function initRunSelector(): void {
  * Initialize timestamp button
  */
 export function initTimestampButton(): void {
-  const btn = document.getElementById('timestamp-btn');
+  const btn = getElement('timestamp-btn');
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
@@ -387,7 +366,7 @@ export async function recordTimestamp(): Promise<void> {
  * Show confirmation overlay
  */
 function showConfirmation(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
+  const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
   const bibEl = overlay.querySelector('.confirmation-bib') as HTMLElement | null;
@@ -423,7 +402,7 @@ function showConfirmation(entry: Entry): void {
  * Show duplicate warning
  */
 function showDuplicateWarning(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
+  const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
   const warningEl = overlay.querySelector('.confirmation-duplicate') as HTMLElement | null;
@@ -442,7 +421,7 @@ function showDuplicateWarning(entry: Entry): void {
  * Show zero bib warning
  */
 function showZeroBibWarning(entry: Entry): void {
-  const overlay = document.getElementById('confirmation-overlay');
+  const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
   const warningEl = overlay.querySelector('.confirmation-zero-bib') as HTMLElement | null;
@@ -461,7 +440,7 @@ function showZeroBibWarning(entry: Entry): void {
  * Update last recorded entry display
  */
 function updateLastRecorded(entry: Entry): void {
-  const el = document.getElementById('last-recorded');
+  const el = getElement('last-recorded');
   if (!el) return;
 
   const bibEl = el.querySelector('.bib') as HTMLElement | null;
@@ -498,12 +477,13 @@ function updateLastRecorded(entry: Entry): void {
  */
 export function updateBibDisplay(): void {
   const state = store.getState();
-  const bibValue = document.querySelector('.bib-value');
+  const bibDisplay = getElement('bib-display');
+  const bibValue = bibDisplay?.querySelector('.bib-value');
   if (bibValue) {
     bibValue.textContent = state.bibInput ? state.bibInput.padStart(3, '0') : '---';
   }
 
-  const timestampBtn = document.getElementById('timestamp-btn');
+  const timestampBtn = getElement('timestamp-btn');
   if (timestampBtn) {
     timestampBtn.classList.toggle('ready', state.bibInput.length > 0);
   }

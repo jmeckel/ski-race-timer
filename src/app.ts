@@ -6,7 +6,8 @@ import { syncService, gpsService, cameraService, captureTimingPhoto, photoStorag
 import { hasAuthToken, syncFault, deleteFaultFromCloud } from './services/sync';
 import { feedbackSuccess, feedbackWarning, feedbackTap, feedbackDelete, feedbackUndo, resumeAudio } from './services';
 import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logError, logWarning, TOAST_DURATION } from './utils';
-import { isValidRaceId } from './utils/validation';
+import { isValidRaceId, makeNumericInput } from './utils/validation';
+import { getElement } from './utils/domCache';
 import { t } from './i18n/translations';
 import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
@@ -244,10 +245,7 @@ function initModals(): void {
   // Edit bib input - numeric only validation
   const editBibInput = document.getElementById('edit-bib-input') as HTMLInputElement;
   if (editBibInput) {
-    editBibInput.addEventListener('input', () => {
-      // Remove non-numeric characters and limit to 3 digits
-      editBibInput.value = editBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
-    });
+    makeNumericInput(editBibInput, 3);
   }
 
   // Edit run selector
@@ -670,10 +668,10 @@ function updateViewVisibility(): void {
  */
 function updateSyncStatusIndicator(): void {
   const state = store.getState();
-  const indicator = document.getElementById('sync-indicator');
-  const dot = document.querySelector('.sync-dot');
-  const text = document.querySelector('.sync-status-text');
-  const deviceCountEl = document.getElementById('sync-device-count');
+  const indicator = getElement('sync-indicator');
+  const dot = getElement('sync-indicator')?.querySelector('.sync-dot');
+  const text = getElement('sync-indicator')?.querySelector('.sync-status-text');
+  const deviceCountEl = getElement('sync-device-count');
 
   // Show indicator when sync is enabled
   if (indicator) {
@@ -713,9 +711,9 @@ function updateSyncStatusIndicator(): void {
  */
 function updateGpsIndicator(): void {
   const state = store.getState();
-  const indicator = document.getElementById('gps-indicator');
-  const dot = document.querySelector('.gps-dot');
-  const text = document.querySelector('.gps-status-text');
+  const indicator = getElement('gps-indicator');
+  const dot = indicator?.querySelector('.gps-dot');
+  const text = indicator?.querySelector('.gps-status-text');
 
   // Show indicator when GPS is enabled
   if (indicator) {
@@ -741,7 +739,7 @@ function updateGpsIndicator(): void {
  */
 function updatePhotoCaptureIndicator(): void {
   const state = store.getState();
-  const cameraIndicator = document.getElementById('camera-indicator');
+  const cameraIndicator = getElement('camera-indicator');
   if (cameraIndicator) {
     cameraIndicator.style.display = state.settings.photoCapture ? 'flex' : 'none';
   }
@@ -751,7 +749,7 @@ function updatePhotoCaptureIndicator(): void {
  * Update undo button state
  */
 function updateUndoButton(): void {
-  const undoBtn = document.getElementById('undo-btn');
+  const undoBtn = getElement('undo-btn');
   if (undoBtn) {
     undoBtn.toggleAttribute('disabled', !store.canUndo());
   }

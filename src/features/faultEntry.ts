@@ -8,10 +8,10 @@ import { syncFault, deleteFaultFromCloud } from '../services/sync';
 import { showToast } from '../components';
 import { feedbackTap, feedbackWarning, feedbackSuccess } from '../services';
 import { t } from '../i18n/translations';
-import { escapeHtml } from '../utils';
+import { escapeHtml, makeNumericInput } from '../utils';
+import { formatTime as formatTimeDisplay } from '../utils/format';
 import { openModal, closeModal } from './modals';
 import { getFaultTypeLabel } from './chiefJudgeView';
-import { formatTimeDisplay } from './timerView';
 import type { FaultEntry, FaultType, Run } from '../types';
 
 // Module state
@@ -243,9 +243,7 @@ export function initFaultEditModal(): void {
   // Fault edit bib input - numeric only validation
   const faultEditBibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
   if (faultEditBibInput) {
-    faultEditBibInput.addEventListener('input', () => {
-      faultEditBibInput.value = faultEditBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
-    });
+    makeNumericInput(faultEditBibInput, 3);
   }
 
   // Fault edit run selector
@@ -755,10 +753,8 @@ export function initInlineFaultEntry(): void {
   // Bib manual input
   const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
   if (bibInput) {
+    makeNumericInput(bibInput, 3);
     bibInput.addEventListener('input', () => {
-      // Remove non-numeric characters and limit to 3 digits
-      bibInput.value = bibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
-
       if (bibInput.value) {
         inlineSelectedBib = bibInput.value.padStart(3, '0');
         // Deselect any quick-select button

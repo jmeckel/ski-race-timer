@@ -9,8 +9,7 @@ import { showToast } from '../components';
 import { feedbackDelete } from '../services';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
-import { getPointLabel } from '../utils';
-import { getPointColor, formatTimeDisplay } from './timerView';
+import { getPointLabel, getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
 import { closeModal } from './modals';
 import type { Entry } from '../types';
 

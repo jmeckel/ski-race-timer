@@ -6,9 +6,10 @@
 import { store } from '../store';
 import { showToast } from '../components';
 import { syncService } from '../services';
-import { AUTH_TOKEN_KEY, hasAuthToken, exchangePinForToken, clearAuthToken } from '../services/sync';
+import { AUTH_TOKEN_KEY, hasAuthToken, exchangePinForToken, clearAuthToken, getAuthHeaders } from '../services/auth';
 import { feedbackSuccess, feedbackWarning, feedbackDelete } from '../services';
-import { logError, logWarning, fetchWithTimeout, escapeHtml } from '../utils';
+import { logError, logWarning, fetchWithTimeout, escapeHtml, makeNumericInput } from '../utils';
+import { formatFileSize } from '../utils/format';
 import { t } from '../i18n/translations';
 import { closeModal } from './modals';
 import type { Language, RaceInfo } from '../types';
@@ -24,18 +25,6 @@ let pendingRaceDelete: string | null = null;
 let pinVerifyResolver: ((verified: boolean) => void) | null = null;
 // Flag to indicate Chief Judge verification (requires chiefJudge role token)
 let pinVerifyForChiefJudge = false;
-
-/**
- * Get authorization headers for API requests
- * Uses JWT token for authentication
- */
-function getAdminAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
-  if (token) {
-    return { 'Authorization': `Bearer ${token}` };
-  }
-  return {};
-}
 
 /**
  * Check if user is authenticated (has valid token)
@@ -135,15 +124,6 @@ function isValidPin(pin: string): boolean {
 }
 
 /**
- * Filter input to only allow numeric digits
- */
-function filterNumericInput(input: HTMLInputElement): void {
-  input.addEventListener('input', () => {
-    input.value = input.value.replace(/[^0-9]/g, '');
-  });
-}
-
-/**
  * Update PIN status display
  */
 export function updatePinStatusDisplay(): void {
@@ -194,7 +174,7 @@ export function initRaceManagement(): void {
   ];
   pinInputs.forEach(id => {
     const input = document.getElementById(id) as HTMLInputElement;
-    if (input) filterNumericInput(input);
+    if (input) makeNumericInput(input);
   });
 
   // Manage races button
@@ -374,7 +354,7 @@ async function handleSavePin(): Promise<void> {
       const response = await fetch('/api/v1/admin/pin', {
         method: 'POST',
         headers: {
-          ...getAdminAuthHeaders(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ currentPin, newPin })
@@ -511,17 +491,6 @@ export function handleAuthExpired(event: CustomEvent<{ message: string }>): void
 }
 
 /**
- * Format bytes to human readable format
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-/**
  * Show photo sync warning modal with statistics
  */
 export async function showPhotoSyncWarningModal(): Promise<void> {
@@ -547,7 +516,7 @@ export async function showPhotoSyncWarningModal(): Promise<void> {
   // Update modal with stats
   if (uploadCountEl) uploadCountEl.textContent = String(stats.uploadCount);
   if (downloadCountEl) downloadCountEl.textContent = String(stats.downloadCount);
-  if (totalSizeEl) totalSizeEl.textContent = formatBytes(stats.totalSize);
+  if (totalSizeEl) totalSizeEl.textContent = formatFileSize(stats.totalSize);
 
   // Update confirm button text
   const confirmBtn = document.getElementById('photo-sync-confirm-btn');
@@ -811,7 +780,7 @@ async function loadRaceList(): Promise<void> {
 
   try {
     const response = await fetchWithTimeout(ADMIN_API_BASE, {
-      headers: getAdminAuthHeaders()
+      headers: getAuthHeaders()
     }, 10000); // 10 second timeout for race list
     if (!response.ok) {
       if (response.status === 401) {
@@ -921,7 +890,7 @@ async function handleConfirmDeleteRace(): Promise<void> {
   try {
     const response = await fetchWithTimeout(`${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`, {
       method: 'DELETE',
-      headers: getAdminAuthHeaders()
+      headers: getAuthHeaders()
     }, 10000); // 10 second timeout for delete
 
     if (!response.ok) {

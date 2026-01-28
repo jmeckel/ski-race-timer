@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-CvH-TJXA.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-vvY3E6uW.css">
+  <script type="module" crossorigin src="/assets/main-93hDOQ8M.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-Dkl3ojHe.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -82,7 +82,7 @@
           <!-- Timing Points and Run Selector -->
           <div class="timing-controls">
             <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
-            <button class="timing-point-btn glass-surface-3 active" data-point="S" role="radio" aria-checked="false" data-advanced>
+            <button class="timing-point-btn glass-surface-3" data-point="S" role="radio" aria-checked="false" data-advanced>
               <span data-i18n="start">Start</span>
             </button>
             <button class="timing-point-btn glass-surface-3 active" data-point="F" role="radio" aria-checked="true">
@@ -226,6 +226,23 @@
               <button class="penalty-adj-btn" data-adj="+1">+</button>
             </div>
           </div>
+          <!-- Pending Deletions Section (Chief Judge approval needed) -->
+          <div class="pending-deletions-section" id="pending-deletions-section" style="display: none;">
+            <div class="pending-deletions-header">
+              <span class="pending-deletions-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 9v4M12 17h.01"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span data-i18n="pendingDeletions">Pending Deletions</span>
+              </span>
+              <span class="pending-deletions-count" id="pending-deletions-count">0</span>
+            </div>
+            <div class="pending-deletions-list" id="pending-deletions-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
           <div class="fault-summary-header">
             <span class="fault-summary-title" data-i18n="faultSummary">Fault Summary</span>
             <span class="fault-summary-count" id="fault-summary-count">0</span>
@@ -327,39 +344,76 @@
           <div class="coverage-list" id="other-judges-list"></div>
         </div>
 
-        <!-- Active Bibs Section -->
-        <div class="active-bibs-section">
-          <div class="section-title" data-i18n="activeBibs">On Course</div>
-          <div class="active-bibs-list" id="active-bibs-list" role="list">
-            <div class="empty-state" id="no-active-bibs">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8 12h8"/>
-              </svg>
-              <span data-i18n="noBibsOnCourse">No racers on course</span>
+        <!-- Split Layout: Fault List + Inline Entry -->
+        <div class="gate-judge-split">
+          <!-- Recorded Faults List -->
+          <div class="gate-judge-faults-section">
+            <div class="section-header">
+              <span class="section-title" data-i18n="recordedFaults">Recorded Faults</span>
+              <span class="fault-count-badge" id="inline-fault-count">0</span>
             </div>
+            <div class="gate-judge-faults-list" id="gate-judge-faults-list">
+              <div class="empty-state" id="no-faults-recorded-inline">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span data-i18n="noFaultsRecorded">No faults recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inline Fault Entry Interface -->
+          <div class="gate-judge-entry-section">
+            <!-- Bib Selection -->
+            <div class="inline-entry-row">
+              <label class="inline-entry-label" data-i18n="selectBib">Select Bib</label>
+              <div class="inline-bib-selector" id="inline-bib-selector">
+                <!-- Populated dynamically -->
+              </div>
+              <div class="inline-bib-manual-row">
+                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
+                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
+              </div>
+            </div>
+
+            <!-- Gate Selection -->
+            <div class="inline-entry-row">
+              <label class="inline-entry-label" data-i18n="selectGate">Gate</label>
+              <div class="inline-gate-selector" id="inline-gate-selector">
+                <!-- Populated dynamically based on gate assignment -->
+              </div>
+            </div>
+
+            <!-- Fault Type Selection -->
+            <div class="inline-entry-row">
+              <label class="inline-entry-label" data-i18n="faultType">Fault Type</label>
+              <div class="inline-fault-types" id="inline-fault-types">
+                <button class="inline-fault-type-btn" data-fault="MG">
+                  <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
+                  <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
+                </button>
+                <button class="inline-fault-type-btn" data-fault="STR">
+                  <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
+                  <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
+                </button>
+                <button class="inline-fault-type-btn" data-fault="BD">
+                  <span class="fault-type-short" data-i18n="faultBDShort">BD</span>
+                  <span class="fault-type-long" data-i18n="faultBD">Binding Released</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="gate-judge-actions">
-          <!-- Ready Toggle Button -->
+        <!-- Action Buttons Row (Save Fault + Ready) -->
+        <div class="gate-judge-footer">
+          <button class="inline-save-fault-btn" id="inline-save-fault-btn" data-i18n="saveFault">Save Fault</button>
           <button class="ready-toggle-btn" id="ready-toggle-btn">
             <svg class="ready-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
             <span data-i18n="signalReady">Ready</span>
-          </button>
-
-          <!-- Record Fault Button -->
-          <button class="record-fault-btn glass-surface-1" id="record-fault-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-              <line x1="4" y1="22" x2="4" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-            </svg>
-            <span data-i18n="recordFault">Record Fault</span>
           </button>
         </div>
       </div>
@@ -587,9 +641,9 @@
 
         <!-- Version -->
         <div class="settings-section">
-          <div class="setting-row" style="justify-content: center; color: var(--text-tertiary); font-size: 0.75rem;">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
-          </div>
+          </button>
         </div>
       </div>
     </main>
@@ -702,6 +756,23 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
         <button class="modal-btn danger" id="confirm-delete-btn" data-i18n="delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault Delete Confirmation Modal -->
+  <div class="modal-overlay glass-enable-target" id="fault-delete-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="confirmDelete">Delete Fault</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" data-i18n="confirmDeleteFault">Delete this fault?</p>
+        <p class="delete-fault-info"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn danger" id="confirm-fault-delete-btn" data-i18n="delete">Delete</button>
       </div>
     </div>
   </div>
@@ -901,6 +972,20 @@
             <input type="number" class="text-input gate-input" id="gate-end-input" min="1" max="99" value="10">
           </div>
         </div>
+        <!-- First Gate Color Selection -->
+        <div class="first-gate-color-section" style="margin-top: 20px;">
+          <label data-i18n="firstGateColor" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Color of first gate</label>
+          <div class="gate-color-selector" id="gate-color-selector">
+            <button type="button" class="gate-color-btn red active" data-color="red">
+              <span class="gate-color-dot" style="background: #ef4444;"></span>
+              <span data-i18n="colorRed">Red</span>
+            </button>
+            <button type="button" class="gate-color-btn blue" data-color="blue">
+              <span class="gate-color-dot" style="background: #3b82f6;"></span>
+              <span data-i18n="colorBlue">Blue</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
@@ -957,7 +1042,77 @@
       </div>
       <div class="modal-footer">
         <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
-        <button class="modal-btn success" id="mark-ok-btn" data-i18n="markOk">Mark OK</button>
+        <button class="modal-btn primary" id="save-fault-btn" data-i18n="saveFault">Save Fault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault Edit Modal -->
+  <div class="modal-overlay glass-enable-target" id="fault-edit-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="editFault">Edit Fault</h2>
+      </div>
+      <div class="modal-body">
+        <!-- Bib Input -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
+          <input type="text" class="text-input" id="fault-edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <!-- Gate Input -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="gate">Gate</label>
+          <input type="number" class="text-input" id="fault-edit-gate-input" min="1" max="99" style="width: 80px;">
+          <span class="fault-edit-gate-range" id="fault-edit-gate-range" style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 8px;"></span>
+        </div>
+        <!-- Fault Type -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultType">Fault Type</label>
+          <select class="filter-select" id="fault-edit-type-select" style="width: 100%;">
+            <option value="MG" data-i18n="faultMG">Missed Gate</option>
+            <option value="STR" data-i18n="faultSTR">Straddling</option>
+            <option value="BR" data-i18n="faultBR">Binding Release</option>
+          </select>
+        </div>
+        <!-- Run Selector -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
+          <div class="edit-run-selector" id="fault-edit-run-selector">
+            <button class="edit-run-btn active" data-run="1" type="button">1</button>
+            <button class="edit-run-btn" data-run="2" type="button">2</button>
+          </div>
+        </div>
+        <!-- Version History -->
+        <div class="fault-version-history" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--surface-elevated);">
+          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="versionHistory">Version History</label>
+          <select class="filter-select" id="fault-version-select" style="width: 100%;">
+            <!-- Populated dynamically -->
+          </select>
+          <button class="modal-btn secondary" id="restore-version-btn" style="margin-top: 8px; width: 100%;" data-i18n="restoreVersion">Restore Selected Version</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="save-fault-edit-btn" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Fault for Deletion Modal -->
+  <div class="modal-overlay glass-enable-target" id="mark-deletion-modal">
+    <div class="modal-content glass-surface-1">
+      <div class="modal-header">
+        <h2 class="modal-title" data-i18n="markForDeletion">Mark for Deletion</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text" data-i18n="markForDeletionText">This fault will be marked for deletion and requires Chief Judge approval to permanently delete.</p>
+        <div class="mark-deletion-details" id="mark-deletion-details" style="margin-top: 12px; padding: 12px; background: var(--surface-elevated); border-radius: var(--radius); font-family: 'JetBrains Mono', monospace;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" data-action="cancel" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn danger" id="confirm-mark-deletion-btn" data-i18n="markForDeletion">Mark for Deletion</button>
       </div>
     </div>
   </div>
@@ -1018,7 +1173,10 @@
               <div class="role-card-check">✓</div>
             </button>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 3: Device Name -->
@@ -1034,7 +1192,10 @@
               </svg>
             </button>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 4a: Photo Capture (Timer path only) -->
@@ -1049,7 +1210,10 @@
               <span class="toggle-slider"></span>
             </label>
           </label>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 4b: Gate Assignment (Gate Judge path only) -->
@@ -1068,7 +1232,10 @@
               <input type="number" class="text-input gate-input" id="onboarding-gate-end" min="1" max="99" value="10">
             </div>
           </div>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
         </div>
 
         <!-- Card 5: Race Setup -->
@@ -1094,8 +1261,11 @@
               <span class="toggle-slider"></span>
             </label>
           </label>
-          <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
-          <button class="onboarding-btn secondary" data-action="skip" data-i18n="skipForNow">Skip for now</button>
+          <div class="onboarding-btn-row">
+            <button class="onboarding-btn secondary" data-action="back" data-i18n="back">Back</button>
+            <button class="onboarding-btn primary" data-action="next" data-i18n="continue">Continue</button>
+          </div>
+          <button class="onboarding-btn text" data-action="skip" data-i18n="skipForNow">Skip for now</button>
         </div>
 
         <!-- Card 6: Ready -->

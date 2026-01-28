@@ -307,51 +307,53 @@ class SyncService {
   }
 
   /**
-   * Get the appropriate polling intervals based on battery level and network state
-   * Battery critical takes priority, then metered network, then low battery
+   * Get all polling configuration based on battery level and network state
+   * Consolidates interval, threshold, and base interval logic in one place
    */
-  private getPollingIntervals(): number[] {
+  private getPollingConfig(): { intervals: number[]; threshold: number; baseInterval: number } {
     // Battery critical takes highest priority
     if (this.currentBatteryLevel === 'critical') {
-      return POLL_INTERVALS_CRITICAL;
+      return {
+        intervals: POLL_INTERVALS_CRITICAL,
+        threshold: IDLE_THRESHOLD_LOW_BATTERY,
+        baseInterval: POLL_INTERVALS_CRITICAL[0] // 30s even when active
+      };
     }
     // Metered network uses reduced intervals to save data
     if (this.isMeteredConnection) {
-      return POLL_INTERVALS_METERED;
+      return {
+        intervals: POLL_INTERVALS_METERED,
+        threshold: IDLE_THRESHOLD,
+        baseInterval: POLL_INTERVAL_METERED_BASE // 10s when on cellular
+      };
     }
     // Low battery uses slower intervals
     if (this.currentBatteryLevel === 'low') {
-      return POLL_INTERVALS_LOW_BATTERY;
+      return {
+        intervals: POLL_INTERVALS_LOW_BATTERY,
+        threshold: IDLE_THRESHOLD_LOW_BATTERY,
+        baseInterval: POLL_INTERVALS_LOW_BATTERY[0] // 10s when active
+      };
     }
-    return POLL_INTERVALS_IDLE;
+    // Normal mode
+    return {
+      intervals: POLL_INTERVALS_IDLE,
+      threshold: IDLE_THRESHOLD,
+      baseInterval: POLL_INTERVAL_NORMAL // 5s when active
+    };
   }
 
-  /**
-   * Get the idle threshold based on battery level
-   */
+  // Convenience getters that use the consolidated config
+  private getPollingIntervals(): number[] {
+    return this.getPollingConfig().intervals;
+  }
+
   private getIdleThreshold(): number {
-    return this.currentBatteryLevel === 'normal'
-      ? IDLE_THRESHOLD
-      : IDLE_THRESHOLD_LOW_BATTERY;
+    return this.getPollingConfig().threshold;
   }
 
-  /**
-   * Get the base polling interval based on battery level and network state
-   */
   private getBasePollingInterval(): number {
-    // Battery critical takes priority
-    if (this.currentBatteryLevel === 'critical') {
-      return POLL_INTERVALS_CRITICAL[0]; // 30s even when active
-    }
-    // Metered connections use slower base to save data
-    if (this.isMeteredConnection) {
-      return POLL_INTERVAL_METERED_BASE; // 10s when on cellular
-    }
-    // Low battery uses slower intervals
-    if (this.currentBatteryLevel === 'low') {
-      return POLL_INTERVALS_LOW_BATTERY[0]; // 10s when active
-    }
-    return POLL_INTERVAL_NORMAL; // 5s when active
+    return this.getPollingConfig().baseInterval;
   }
 
   /**

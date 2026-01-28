@@ -5,6 +5,7 @@
 
 import type { AppState, Entry, FaultEntry, FaultType, Run, Language } from '../types';
 import { escapeHtml } from '../utils/format';
+import { makeNumericInput } from '../utils/validation';
 import { t } from '../i18n/translations';
 
 // Module state
@@ -174,9 +175,7 @@ function initFaultEditModal(): void {
   // Fault edit bib input - numeric only validation
   const faultEditBibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
   if (faultEditBibInput) {
-    faultEditBibInput.addEventListener('input', () => {
-      faultEditBibInput.value = faultEditBibInput.value.replace(/[^0-9]/g, '').slice(0, 3);
-    });
+    makeNumericInput(faultEditBibInput, 3);
   }
 
   // Fault edit run selector

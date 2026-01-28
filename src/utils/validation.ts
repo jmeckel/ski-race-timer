@@ -396,6 +396,19 @@ export function migrateSchema(data: unknown, deviceId: string): DataSchema {
 }
 
 /**
+ * Make an input accept only numeric characters
+ * Useful for bib numbers, PIN inputs, etc.
+ */
+export function makeNumericInput(input: HTMLInputElement, maxLength?: number): void {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g, '');
+    if (maxLength !== undefined) {
+      input.value = input.value.slice(0, maxLength);
+    }
+  });
+}
+
+/**
  * Calculate checksum for data integrity verification
  */
 export function calculateChecksum(data: string): string {

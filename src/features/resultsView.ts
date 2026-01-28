@@ -7,6 +7,7 @@ import { store } from '../store';
 import { VirtualList, PullToRefresh, showToast } from '../components';
 import { syncService, feedbackUndo } from '../services';
 import { t } from '../i18n/translations';
+import { getElement } from '../utils';
 import { exportResults } from './export';
 import { openPhotoViewer } from './photoViewer';
 import { initChiefJudgeToggle } from './chiefJudgeView';
@@ -54,7 +55,7 @@ export function getVirtualList(): VirtualList | null {
  * Initialize results view
  */
 export function initResultsView(): void {
-  const container = document.getElementById('results-list');
+  const container = getElement('results-list');
   if (!container) return;
 
   virtualList = new VirtualList({
@@ -105,7 +106,7 @@ export function initResultsView(): void {
   }
 
   // Search input with debounce
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const searchInput = getElement<HTMLInputElement>('search-input');
   if (searchInput) {
     // Clear any pending search timeout from previous initialization
     if (searchTimeout) {
@@ -129,8 +130,8 @@ export function initResultsView(): void {
   }
 
   // Filter selects
-  const pointFilter = document.getElementById('filter-point') as HTMLSelectElement;
-  const statusFilter = document.getElementById('filter-status') as HTMLSelectElement;
+  const pointFilter = getElement<HTMLSelectElement>('filter-point');
+  const statusFilter = getElement<HTMLSelectElement>('filter-status');
 
   if (pointFilter) {
     pointFilter.addEventListener('change', applyFilters);
@@ -154,7 +155,7 @@ export function initResultsView(): void {
  */
 export function initResultsActions(): void {
   // Clear All button
-  const clearAllBtn = document.getElementById('clear-all-btn');
+  const clearAllBtn = getElement('clear-all-btn');
   if (clearAllBtn) {
     clearAllBtn.addEventListener('click', () => {
       const state = store.getState();
@@ -167,7 +168,7 @@ export function initResultsActions(): void {
   }
 
   // Undo button
-  const undoBtn = document.getElementById('undo-btn');
+  const undoBtn = getElement('undo-btn');
   if (undoBtn) {
     undoBtn.addEventListener('click', () => {
       if (store.canUndo()) {
@@ -194,13 +195,13 @@ export function initResultsActions(): void {
   }
 
   // Export button
-  const exportBtn = document.getElementById('export-btn');
+  const exportBtn = getElement('export-btn');
   if (exportBtn) {
     exportBtn.addEventListener('click', exportResults);
   }
 
   // Delete selected button
-  const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+  const deleteSelectedBtn = getElement('delete-selected-btn');
   if (deleteSelectedBtn) {
     deleteSelectedBtn.addEventListener('click', () => {
       const state = store.getState();
@@ -229,9 +230,9 @@ export function initResultsActions(): void {
 export function applyFilters(): void {
   if (!virtualList) return;
 
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
-  const pointFilter = document.getElementById('filter-point') as HTMLSelectElement;
-  const statusFilter = document.getElementById('filter-status') as HTMLSelectElement;
+  const searchInput = getElement<HTMLInputElement>('search-input');
+  const pointFilter = getElement<HTMLSelectElement>('filter-point');
+  const statusFilter = getElement<HTMLSelectElement>('filter-status');
 
   virtualList.applyFilters(
     searchInput?.value || '',
@@ -253,9 +254,9 @@ export function updateStats(): void {
   const racers = new Set(entries.map(e => e.bib)).size;
   const finished = entries.filter(e => e.point === 'F' && e.status === 'ok').length;
 
-  const totalEl = document.getElementById('stat-total');
-  const racersEl = document.getElementById('stat-racers');
-  const finishedEl = document.getElementById('stat-finished');
+  const totalEl = getElement('stat-total');
+  const racersEl = getElement('stat-racers');
+  const finishedEl = getElement('stat-finished');
 
   if (totalEl) totalEl.textContent = String(total);
   if (racersEl) racersEl.textContent = String(racers);
@@ -266,7 +267,7 @@ export function updateStats(): void {
  * Update entry count badge
  */
 export function updateEntryCountBadge(): void {
-  const badge = document.getElementById('entry-count-badge');
+  const badge = getElement('entry-count-badge');
   if (badge) {
     const count = store.getState().entries.length;
     badge.textContent = String(count);
