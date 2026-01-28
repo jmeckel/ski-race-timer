@@ -2123,6 +2123,12 @@ body {
   .setting-description {
     font-size: 0.7rem;
   }
+
+  /* Timer View: Ensure number pad shows all 4 rows */
+  .timer-view .number-pad {
+    min-height: 120px; /* Minimum space for 4 rows of buttons */
+    grid-template-rows: repeat(4, minmax(28px, 1fr));
+  }
 }
 
 /* ===== Race Management ===== */
@@ -4063,6 +4069,135 @@ body {
 .status-badge.flt {
   background: var(--warning);
   color: var(--background);
+}
+
+/* ===== Gate Judge Landscape Mode ===== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .gate-judge-view {
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .gate-judge-header {
+    padding: 6px 12px;
+  }
+
+  .gate-range {
+    font-size: 1rem;
+  }
+
+  /* Split layout: faults on left, entry on right */
+  .gate-judge-split {
+    flex-direction: row !important;
+    gap: 10px;
+  }
+
+  .gate-judge-faults-section {
+    flex: 0.8;
+    min-height: 0;
+    max-height: none;
+    min-width: 180px;
+  }
+
+  .gate-judge-faults-section .section-header {
+    padding: 4px 8px;
+  }
+
+  .gate-judge-faults-section .section-title {
+    font-size: 0.6rem;
+  }
+
+  .gate-judge-faults-list .empty-state {
+    padding: 8px;
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+
+  .gate-judge-faults-list .empty-state svg,
+  .gate-judge-faults-list .empty-state .empty-icon {
+    font-size: 1.5rem;
+  }
+
+  .gate-judge-entry-section {
+    flex: 1.5;
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .inline-entry-row {
+    gap: 2px;
+  }
+
+  .inline-entry-label {
+    font-size: 0.6rem;
+    margin-bottom: 1px;
+  }
+
+  /* Bib selector row - more compact */
+  .inline-bib-selector {
+    gap: 4px;
+  }
+
+  .inline-bib-btn,
+  .inline-gate-btn {
+    min-width: 32px;
+    height: 28px;
+    font-size: 0.75rem;
+    padding: 0 6px;
+  }
+
+  .inline-bib-input {
+    width: 55px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .inline-bib-manual-row {
+    margin-top: 2px;
+  }
+
+  /* Gate selector - compact */
+  .inline-gate-selector {
+    gap: 4px;
+  }
+
+  /* Fault type buttons - horizontal and compact */
+  .inline-fault-types {
+    gap: 4px;
+  }
+
+  .inline-fault-type-btn {
+    padding: 4px 6px;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .inline-fault-type-btn .fault-type-short {
+    font-size: 0.85rem;
+  }
+
+  .inline-fault-type-btn .fault-type-long {
+    font-size: 0.5rem;
+    display: none; /* Hide long text in landscape to save space */
+  }
+
+  /* Save fault button inline with entry */
+  .gate-judge-entry-section .inline-save-fault-btn {
+    margin-top: 4px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .gate-judge-footer {
+    gap: 6px;
+    padding-top: 4px;
+  }
+
+  .inline-save-fault-btn,
+  .inline-ready-btn {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
 }
 
 /* ===== Chief Judge View ===== */
