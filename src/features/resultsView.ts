@@ -12,6 +12,7 @@ import { exportResults } from './export';
 import { openPhotoViewer } from './photoViewer';
 import { initChiefJudgeToggle } from './chiefJudgeView';
 import { openFaultEditModal, openMarkDeletionModal, updateInlineFaultsList, updateInlineBibSelector, updateInlineGateSelector } from './faultEntry';
+import { verifyPinForChiefJudge } from './raceManagement';
 import type { Entry, FaultEntry, Language } from '../types';
 
 // Module state
@@ -23,25 +24,23 @@ let searchInputListener: ((e: Event) => void) | null = null;
 // Callback types
 type ConfirmModalAction = 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd';
 
-// Callbacks for external functions (injected from app.ts)
+// Callbacks for functions defined in app.ts (injected to avoid circular imports)
 let openEditModalCallback: ((entry: Entry) => void) | null = null;
 let promptDeleteCallback: ((entry: Entry) => void) | null = null;
 let openConfirmModalCallback: ((action: ConfirmModalAction) => void) | null = null;
-let verifyPinForChiefJudgeCallback: ((lang: Language) => Promise<boolean>) | null = null;
 
 /**
- * Set callbacks for external functions
+ * Set callbacks for functions that would cause circular imports if imported directly
+ * (app.ts imports from resultsView.ts, so resultsView.ts cannot import from app.ts)
  */
 export function setResultsViewCallbacks(callbacks: {
   openEditModal: (entry: Entry) => void;
   promptDelete: (entry: Entry) => void;
   openConfirmModal: (action: ConfirmModalAction) => void;
-  verifyPinForChiefJudge: (lang: Language) => Promise<boolean>;
 }): void {
   openEditModalCallback = callbacks.openEditModal;
   promptDeleteCallback = callbacks.promptDelete;
   openConfirmModalCallback = callbacks.openConfirmModal;
-  verifyPinForChiefJudgeCallback = callbacks.verifyPinForChiefJudge;
 }
 
 /**
@@ -212,16 +211,14 @@ export function initResultsActions(): void {
   }
 
   // Chief Judge toggle
-  if (verifyPinForChiefJudgeCallback) {
-    initChiefJudgeToggle({
-      verifyPinForChiefJudge: verifyPinForChiefJudgeCallback,
-      openFaultEditModal,
-      openMarkDeletionModal,
-      updateInlineFaultsList,
-      updateInlineBibSelector,
-      updateInlineGateSelector
-    });
-  }
+  initChiefJudgeToggle({
+    verifyPinForChiefJudge,
+    openFaultEditModal,
+    openMarkDeletionModal,
+    updateInlineFaultsList,
+    updateInlineBibSelector,
+    updateInlineGateSelector
+  });
 }
 
 /**

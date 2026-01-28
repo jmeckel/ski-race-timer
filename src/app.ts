@@ -97,16 +97,16 @@ export function initApp(): void {
   initRunSelector();
   initTimestampButton();
   // Set callbacks for resultsView before initialization
+  // (callbacks needed to avoid circular imports: app.ts imports from resultsView.ts)
   setResultsViewCallbacks({
     openEditModal,
     promptDelete,
-    openConfirmModal,
-    verifyPinForChiefJudge
+    openConfirmModal
   });
   initResultsView();
   // Set callbacks for settingsView before initialization
+  // (callbacks needed to avoid circular imports: app.ts imports from settingsView.ts)
   setSettingsViewCallbacks({
-    verifyPinForRaceJoin,
     showPhotoSyncWarningModal,
     showRaceChangeDialog
   });
@@ -496,114 +496,117 @@ function closeAllModals(): void {
 }
 
 /**
- * Handle state changes
+ * State change handler map: groups related updates together
+ * Each handler receives the current state and returns void
  */
-function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys: (keyof typeof state)[]): void {
-  // Update view visibility
-  if (changedKeys.includes('currentView')) {
-    updateViewVisibility();
+type StateHandler = (state: ReturnType<typeof store.getState>) => void;
 
-    // Wake Lock: Enable when on timer view, disable otherwise
-    // This keeps the screen on during active timing
-    if (state.currentView === 'timer') {
-      wakeLockService.enable();
-    } else {
-      wakeLockService.disable();
-    }
+const STATE_HANDLERS: Record<string, StateHandler[]> = {
+  // Timer view updates
+  bibInput: [() => updateBibDisplay()],
+  selectedPoint: [() => updateTimingPointSelection()],
 
-    // VirtualList: Pause when not on results view, resume when on results view
-    // This saves resources when the results tab is inactive
-    const virtualList = getVirtualList();
-    if (virtualList) {
-      if (state.currentView === 'results') {
-        virtualList.resume();
-      } else {
-        virtualList.pause();
-      }
-    }
-  }
-
-  if (changedKeys.includes('currentView') || changedKeys.includes('settings')) {
-    applyViewServices(state);
-  }
-
-  // Update bib display
-  if (changedKeys.includes('bibInput')) {
-    updateBibDisplay();
-  }
-
-  // Update timing points
-  if (changedKeys.includes('selectedPoint')) {
-    updateTimingPointSelection();
-  }
-
-  // Update run selection
-  if (changedKeys.includes('selectedRun')) {
+  // Run selection updates both timer and gate judge views
+  selectedRun: [(state) => {
     updateRunSelection();
-    // Also update Gate Judge run selector
     updateGateJudgeRunSelection();
-    // Update active bibs when run changes
-    if (state.currentView === 'gateJudge') {
-      updateActiveBibsList();
-    }
-  }
+    if (state.currentView === 'gateJudge') updateActiveBibsList();
+  }],
 
-  // Update Gate Judge view when entries change (active bibs derived from entries)
-  if (changedKeys.includes('entries') && state.currentView === 'gateJudge') {
-    updateActiveBibsList();
-  }
+  // Entry updates affect results list and gate judge view
+  entries: [(state) => {
+    const vList = getVirtualList();
+    if (vList) vList.setEntries(state.entries);
+    updateStats();
+    updateEntryCountBadge();
+    if (state.currentView === 'gateJudge') updateActiveBibsList();
+  }],
 
-  // Update Gate Judge state
-  if (changedKeys.includes('deviceRole')) {
+  // Gate Judge role/state updates
+  deviceRole: [() => {
     updateRoleToggle();
     updateGateJudgeTabVisibility();
     updateJudgeReadyStatus();
-  }
+  }],
+  isJudgeReady: [() => updateJudgeReadyStatus()],
+  gateAssignment: [() => updateGateRangeDisplay()],
+  faultEntries: [(state) => {
+    if (state.currentView === 'gateJudge') updateActiveBibsList();
+  }],
 
-  // Update judge ready status when ready state changes
-  if (changedKeys.includes('isJudgeReady')) {
-    updateJudgeReadyStatus();
-  }
-
-  if (changedKeys.includes('gateAssignment')) {
-    updateGateRangeDisplay();
-  }
-
-  if (changedKeys.includes('faultEntries') && state.currentView === 'gateJudge') {
-    updateActiveBibsList();
-  }
-
-  // Update results list
-  if (changedKeys.includes('entries')) {
-    const vList = getVirtualList();
-    if (vList) {
-      vList.setEntries(state.entries);
-    }
-    updateStats();
-    updateEntryCountBadge();
-  }
-
-  // Update sync status
-  if (changedKeys.includes('syncStatus') || changedKeys.includes('settings') || changedKeys.includes('cloudDeviceCount')) {
-    updateSyncStatusIndicator();
-  }
-
-  // Update GPS status and judge ready indicator
-  if (changedKeys.includes('gpsStatus') || changedKeys.includes('settings')) {
+  // Status indicators
+  syncStatus: [() => updateSyncStatusIndicator()],
+  cloudDeviceCount: [() => updateSyncStatusIndicator()],
+  gpsStatus: [() => {
     updateGpsIndicator();
     updateJudgeReadyStatus();
+  }],
+  undoStack: [() => updateUndoButton()],
+};
+
+/**
+ * Handle view changes (wake lock, virtual list pause/resume)
+ */
+function handleViewChange(state: ReturnType<typeof store.getState>): void {
+  updateViewVisibility();
+
+  // Wake Lock: keep screen on during active timing
+  if (state.currentView === 'timer') {
+    wakeLockService.enable();
+  } else {
+    wakeLockService.disable();
   }
 
-  // Update photo capture indicator on timestamp button
+  // VirtualList: pause when not on results view to save resources
+  const virtualList = getVirtualList();
+  if (virtualList) {
+    if (state.currentView === 'results') {
+      virtualList.resume();
+    } else {
+      virtualList.pause();
+    }
+  }
+}
+
+/**
+ * Handle settings changes
+ */
+function handleSettingsChange(): void {
+  updateSyncStatusIndicator();
+  updateGpsIndicator();
+  updateJudgeReadyStatus();
+  updatePhotoCaptureIndicator();
+  applyGlassEffectSettings();
+}
+
+/**
+ * Handle state changes - dispatches to appropriate handlers
+ */
+function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys: (keyof typeof state)[]): void {
+  // Handle view changes (complex logic extracted to separate function)
+  if (changedKeys.includes('currentView')) {
+    handleViewChange(state);
+  }
+
+  // Handle settings changes (affects multiple indicators)
   if (changedKeys.includes('settings')) {
-    updatePhotoCaptureIndicator();
-    // Apply glass/motion effect settings when settings change
-    applyGlassEffectSettings();
+    handleSettingsChange();
+    applyViewServices(state);
   }
 
-  // Update undo button
-  if (changedKeys.includes('undoStack')) {
-    updateUndoButton();
+  // Handle currentView + settings combo for services
+  if (changedKeys.includes('currentView') && !changedKeys.includes('settings')) {
+    applyViewServices(state);
+  }
+
+  // Dispatch to mapped handlers
+  for (const key of changedKeys) {
+    const handlers = STATE_HANDLERS[key];
+    if (handlers) {
+      for (const handler of handlers) {
+        handler(state);
+      }
+    }
   }
 }
 

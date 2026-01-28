@@ -61,6 +61,59 @@ const MAX_UNDO_STACK = 50;
 const MAX_VERSION_HISTORY = 50;
 
 /**
+ * Extract version data fields from a fault entry
+ */
+function extractFaultVersionData(fault: FaultEntry | Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>): FaultVersion['data'] {
+  return {
+    id: fault.id,
+    bib: fault.bib,
+    run: fault.run,
+    gateNumber: fault.gateNumber,
+    faultType: fault.faultType,
+    timestamp: fault.timestamp,
+    deviceId: fault.deviceId,
+    deviceName: fault.deviceName,
+    gateRange: fault.gateRange,
+    syncedAt: fault.syncedAt
+  };
+}
+
+/**
+ * Create a new fault version record
+ */
+function createFaultVersion(
+  version: number,
+  changeType: FaultVersion['changeType'],
+  data: FaultVersion['data'],
+  editedBy: string,
+  editedByDeviceId: string,
+  changeDescription?: string
+): FaultVersion {
+  return {
+    version,
+    timestamp: new Date().toISOString(),
+    editedBy,
+    editedByDeviceId,
+    changeType,
+    data,
+    changeDescription
+  };
+}
+
+/**
+ * Append a version to history, trimming if needed
+ */
+function appendToVersionHistory(
+  existingHistory: FaultVersion[] | undefined,
+  newVersion: FaultVersion
+): FaultVersion[] {
+  const history = [...(existingHistory || []), newVersion];
+  return history.length > MAX_VERSION_HISTORY
+    ? history.slice(-MAX_VERSION_HISTORY)
+    : history;
+}
+
+/**
  * State change listener type
  *
  * @param stateSnapshot - A SNAPSHOT of the state when the notification was queued.
@@ -841,17 +894,14 @@ class Store {
    * Add a new fault entry with version tracking
    */
   addFaultEntry(fault: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>) {
-    // Create initial version
-    const initialVersion: FaultVersion = {
-      version: 1,
-      timestamp: new Date().toISOString(),
-      editedBy: fault.deviceName,
-      editedByDeviceId: fault.deviceId,
-      changeType: 'create',
-      data: { ...fault } as FaultVersion['data']
-    };
+    const initialVersion = createFaultVersion(
+      1,
+      'create',
+      extractFaultVersionData(fault),
+      fault.deviceName,
+      fault.deviceId
+    );
 
-    // Add version tracking fields
     const faultWithVersion: FaultEntry = {
       ...fault,
       currentVersion: 1,
@@ -898,47 +948,24 @@ class Store {
     if (index === -1) return false;
 
     const oldFault = this.state.faultEntries[index];
-
-    // Don't allow editing faults marked for deletion
     if (oldFault.markedForDeletion) return false;
 
     const newVersion = oldFault.currentVersion + 1;
-
-    // Create version record of the new state
-    const newVersionRecord: FaultVersion = {
-      version: newVersion,
-      timestamp: new Date().toISOString(),
-      editedBy: this.state.deviceName,
-      editedByDeviceId: this.state.deviceId,
-      changeType: 'edit',
-      data: {
-        id: oldFault.id,
-        bib: updates.bib ?? oldFault.bib,
-        run: updates.run ?? oldFault.run,
-        gateNumber: updates.gateNumber ?? oldFault.gateNumber,
-        faultType: updates.faultType ?? oldFault.faultType,
-        timestamp: oldFault.timestamp,
-        deviceId: oldFault.deviceId,
-        deviceName: oldFault.deviceName,
-        gateRange: oldFault.gateRange,
-        syncedAt: oldFault.syncedAt
-      },
+    const updatedFault = { ...oldFault, ...updates };
+    const newVersionRecord = createFaultVersion(
+      newVersion,
+      'edit',
+      extractFaultVersionData(updatedFault),
+      this.state.deviceName,
+      this.state.deviceId,
       changeDescription
-    };
-
-    // Trim version history if it exceeds limit (keep most recent)
-    const existingHistory = oldFault.versionHistory || [];
-    let newHistory = [...existingHistory, newVersionRecord];
-    if (newHistory.length > MAX_VERSION_HISTORY) {
-      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
-    }
+    );
 
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
-      ...oldFault,
-      ...updates,
+      ...updatedFault,
       currentVersion: newVersion,
-      versionHistory: newHistory
+      versionHistory: appendToVersionHistory(oldFault.versionHistory, newVersionRecord)
     };
     this.setState({ faultEntries });
     return true;
@@ -952,45 +979,30 @@ class Store {
     if (index === -1) return false;
 
     const oldFault = this.state.faultEntries[index];
-
-    // Don't allow restoring faults marked for deletion
     if (oldFault.markedForDeletion) return false;
 
-    // Find the version to restore
     const versionToRestore = oldFault.versionHistory?.find(v => v.version === versionNumber);
     if (!versionToRestore) return false;
 
     const newVersion = oldFault.currentVersion + 1;
-
-    // Create a restore version record
-    const restoreVersionRecord: FaultVersion = {
-      version: newVersion,
-      timestamp: new Date().toISOString(),
-      editedBy: this.state.deviceName,
-      editedByDeviceId: this.state.deviceId,
-      changeType: 'restore',
-      data: { ...versionToRestore.data },
-      changeDescription: `Restored to version ${versionNumber}`
-    };
-
-    // Trim version history if it exceeds limit (keep most recent)
-    const existingHistory = oldFault.versionHistory || [];
-    let newHistory = [...existingHistory, restoreVersionRecord];
-    if (newHistory.length > MAX_VERSION_HISTORY) {
-      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
-    }
+    const restoreVersionRecord = createFaultVersion(
+      newVersion,
+      'restore',
+      { ...versionToRestore.data },
+      this.state.deviceName,
+      this.state.deviceId,
+      `Restored to version ${versionNumber}`
+    );
 
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
       ...oldFault,
-      // Restore the data fields
       bib: versionToRestore.data.bib,
       run: versionToRestore.data.run,
       gateNumber: versionToRestore.data.gateNumber,
       faultType: versionToRestore.data.faultType,
-      // Keep version tracking
       currentVersion: newVersion,
-      versionHistory: newHistory
+      versionHistory: appendToVersionHistory(oldFault.versionHistory, restoreVersionRecord)
     };
     this.setState({ faultEntries });
     return true;
@@ -1046,35 +1058,14 @@ class Store {
 
     const oldFault = this.state.faultEntries[index];
     const newVersion = oldFault.currentVersion + 1;
-
-    // Create version record for rejection
-    const rejectionVersionRecord: FaultVersion = {
-      version: newVersion,
-      timestamp: new Date().toISOString(),
-      editedBy: this.state.deviceName,
-      editedByDeviceId: this.state.deviceId,
-      changeType: 'edit',
-      data: {
-        id: oldFault.id,
-        bib: oldFault.bib,
-        run: oldFault.run,
-        gateNumber: oldFault.gateNumber,
-        faultType: oldFault.faultType,
-        timestamp: oldFault.timestamp,
-        deviceId: oldFault.deviceId,
-        deviceName: oldFault.deviceName,
-        gateRange: oldFault.gateRange,
-        syncedAt: oldFault.syncedAt
-      },
-      changeDescription: 'Deletion rejected by Chief Judge'
-    };
-
-    // Trim version history if it exceeds limit
-    const existingHistory = oldFault.versionHistory || [];
-    let newHistory = [...existingHistory, rejectionVersionRecord];
-    if (newHistory.length > MAX_VERSION_HISTORY) {
-      newHistory = newHistory.slice(-MAX_VERSION_HISTORY);
-    }
+    const rejectionVersionRecord = createFaultVersion(
+      newVersion,
+      'edit',
+      extractFaultVersionData(oldFault),
+      this.state.deviceName,
+      this.state.deviceId,
+      'Deletion rejected by Chief Judge'
+    );
 
     const faultEntries = [...this.state.faultEntries];
     faultEntries[index] = {
@@ -1084,7 +1075,7 @@ class Store {
       markedForDeletionBy: undefined,
       markedForDeletionByDeviceId: undefined,
       currentVersion: newVersion,
-      versionHistory: newHistory
+      versionHistory: appendToVersionHistory(oldFault.versionHistory, rejectionVersionRecord)
     };
     this.setState({ faultEntries });
     return true;

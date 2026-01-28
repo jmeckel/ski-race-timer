@@ -16,6 +16,7 @@ import { openModal } from './modals';
 import { updateGateJudgeTabVisibility } from './gateJudgeView';
 import { refreshInlineFaultUI } from './faultEntry';
 import { exportResults } from './export';
+import { verifyPinForRaceJoin } from './raceManagement';
 import type { Language, DeviceRole, RaceInfo } from '../types';
 
 // Module state
@@ -24,20 +25,18 @@ let raceCheckRequestId = 0;
 let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
 let lastRaceExistsState: { exists: boolean | null; entryCount: number } = { exists: null, entryCount: 0 };
 
-// Callbacks for external functions (injected from app.ts)
-let verifyPinForRaceJoinCallback: ((lang: Language) => Promise<boolean>) | null = null;
+// Callbacks for functions defined in app.ts (injected to avoid circular imports)
 let showPhotoSyncWarningModalCallback: (() => Promise<void>) | null = null;
 let showRaceChangeDialogCallback: ((type: 'synced' | 'unsynced', lang: Language) => Promise<'export' | 'delete' | 'keep' | 'cancel'>) | null = null;
 
 /**
- * Set callbacks for external functions
+ * Set callbacks for functions that would cause circular imports if imported directly
+ * (app.ts imports from settingsView.ts, so settingsView.ts cannot import from app.ts)
  */
 export function setSettingsViewCallbacks(callbacks: {
-  verifyPinForRaceJoin: (lang: Language) => Promise<boolean>;
   showPhotoSyncWarningModal: () => Promise<void>;
   showRaceChangeDialog: (type: 'synced' | 'unsynced', lang: Language) => Promise<'export' | 'delete' | 'keep' | 'cancel'>;
 }): void {
-  verifyPinForRaceJoinCallback = callbacks.verifyPinForRaceJoin;
   showPhotoSyncWarningModalCallback = callbacks.showPhotoSyncWarningModal;
   showRaceChangeDialogCallback = callbacks.showRaceChangeDialog;
 }
@@ -84,9 +83,7 @@ export function initSettingsView(): void {
 
         if (syncToggle.checked && state.raceId) {
           // Require PIN verification when enabling sync with existing race ID
-          const pinVerified = verifyPinForRaceJoinCallback
-            ? await verifyPinForRaceJoinCallback(state.currentLang)
-            : true;
+          const pinVerified = await verifyPinForRaceJoin(state.currentLang);
           if (!pinVerified) {
             // PIN verification cancelled or failed - revert toggle
             syncToggle.checked = false;
@@ -253,8 +250,8 @@ export function initSettingsView(): void {
         }
 
         // Verify PIN before joining race if sync is enabled
-        if (state.settings.sync && newRaceId && verifyPinForRaceJoinCallback) {
-          const pinVerified = await verifyPinForRaceJoinCallback(state.currentLang);
+        if (state.settings.sync && newRaceId) {
+          const pinVerified = await verifyPinForRaceJoin(state.currentLang);
           if (!pinVerified) {
             // PIN verification cancelled or failed - restore old race ID
             raceIdInput.value = state.raceId;
