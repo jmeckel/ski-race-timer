@@ -950,7 +950,7 @@ body {
 .settings-section.collapsible {
   border: 1px solid var(--surface-elevated);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* Note: overflow is NOT hidden here - content handles its own overflow */
 }
 
 .settings-section.collapsible .settings-section-title {
@@ -991,11 +991,6 @@ body {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.settings-section.collapsible.expanded {
-  height: auto;
-  overflow: visible;
 }
 
 .settings-section.collapsible.expanded .settings-section-content {
