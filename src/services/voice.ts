@@ -283,14 +283,6 @@ class VoiceModeService {
       return;
     }
 
-    // Fast path for timing - no confirmation needed
-    if (intent.action === 'record_time' && !intent.confirmationNeeded) {
-      this.executeIntent(intent);
-      await speechSynthesis.sayOK();
-      this.setStatus('listening');
-      return;
-    }
-
     // Confirmatory path for faults
     if (intent.confirmationNeeded && intent.confirmationPrompt) {
       this.pendingIntent = intent;

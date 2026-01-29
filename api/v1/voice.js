@@ -46,17 +46,17 @@ const SYSTEM_PROMPT = `You are a voice command processor for a ski race timing a
 Parse the user's spoken command and return a structured JSON response.
 
 Context provided:
-- role: "timer" (records timestamps) or "gateJudge" (records faults)
+- role: "timer" (sets bib/point/run) or "gateJudge" (records faults)
 - language: User's language (de/en)
 - activeBibs: Racers currently on course (gate judge only)
 - gateRange: Gates this judge is watching [start, end]
 - pendingConfirmation: If set, user is responding to a confirmation prompt
 
 For TIMER role, recognize:
-- Recording time: "Zeit", "Jetzt", "Time", "Now", "Mark", "Go", "Los"
 - Bib numbers: spoken digits or number words (e.g., "forty-five" = 45, "fünfundvierzig" = 45)
 - Timing point: "Start" / "Ziel" / "Finish"
 - Run selection: "Lauf 1/2", "Run 1/2", "erster Lauf", "zweiter Lauf"
+NOTE: Timer role does NOT support recording timestamps via voice (latency too high for timing)
 
 For GATE JUDGE role, recognize:
 - Fault recording with bib + gate + type
@@ -67,7 +67,7 @@ For GATE JUDGE role, recognize:
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
-  "action": "record_time" | "record_fault" | "set_bib" | "set_gate" | "set_point" | "set_run" | "toggle_ready" | "confirm" | "cancel" | "unknown",
+  "action": "record_fault" | "set_bib" | "set_gate" | "set_point" | "set_run" | "toggle_ready" | "confirm" | "cancel" | "unknown",
   "confidence": 0.0-1.0,
   "params": {
     "bib": "string (3 digits, zero-padded)",
@@ -81,9 +81,9 @@ Return ONLY valid JSON (no markdown, no explanation):
 }
 
 IMPORTANT:
-- For timer role "record_time", set confirmationNeeded=false (fast path)
 - For gate judge faults, set confirmationNeeded=true with a clear prompt
 - Confirmation prompts should be in the user's language
+- If user tries to record time via voice, return action="unknown" (voice timing disabled)
 - If unsure, set action="unknown" with low confidence`;
 
 /**

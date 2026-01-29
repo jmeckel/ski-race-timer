@@ -325,8 +325,8 @@ export interface DataSchema {
 export type VoiceStatus = 'inactive' | 'listening' | 'processing' | 'confirming' | 'offline' | 'error';
 
 // Voice intent actions
+// Note: 'record_time' removed - voice latency too high for precise timing
 export type VoiceAction =
-  | 'record_time'
   | 'record_fault'
   | 'set_bib'
   | 'set_gate'

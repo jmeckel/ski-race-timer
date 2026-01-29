@@ -582,19 +582,12 @@ export function updateRunSelection(): void {
 /**
  * Handle voice intent for timer role
  * Called from the voice mode service when a command is recognized
+ * Note: record_time removed - voice latency too high for precise timing
  */
 export function handleTimerVoiceIntent(intent: VoiceIntent): void {
   logger.debug('[TimerView] Voice intent:', intent.action, intent.params);
 
   switch (intent.action) {
-    case 'record_time':
-      // Exit ambient mode if active
-      if (ambientModeService.isActive()) {
-        ambientModeService.exitAmbientMode();
-      }
-      recordTimestamp();
-      break;
-
     case 'set_bib':
       if (intent.params?.bib) {
         store.setBibInput(intent.params.bib);
