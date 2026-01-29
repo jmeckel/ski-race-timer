@@ -962,6 +962,11 @@ body {
   background: var(--surface);
   cursor: pointer;
   transition: background 0.2s ease;
+  /* Override tiny section title styles */
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .settings-section.collapsible .settings-section-title:hover {
