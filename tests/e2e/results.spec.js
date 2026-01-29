@@ -14,7 +14,8 @@ test.describe('Results View', () => {
     });
 
     test('should show empty state when no entries', async ({ page }) => {
-      const emptyState = page.locator('.results-view .empty-state');
+      // Use results-list container to avoid matching chief judge empty state
+      const emptyState = page.locator('#results-list .empty-state');
       await expect(emptyState).toBeVisible();
     });
   });

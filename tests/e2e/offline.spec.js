@@ -302,9 +302,9 @@ test.describe('Data Recovery', () => {
     // Should start fresh with defaults
     await navigateTo(page, 'settings');
 
-    // Normal mode should be default (GPS section visible)
-    const gpsSection = page.locator('#gps-section');
-    await expect(gpsSection).toBeVisible();
+    // Normal mode should be default (GPS toggle visible in Advanced Settings)
+    const gpsToggleLabel = page.locator('label:has(#gps-toggle)');
+    await expect(gpsToggleLabel).toBeVisible();
   });
 });
 

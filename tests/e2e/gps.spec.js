@@ -27,8 +27,9 @@ test.describe('GPS Settings', () => {
   });
 
   test('should show GPS section', async ({ page }) => {
-    const gpsSection = page.locator('#gps-section');
-    await expect(gpsSection).toBeVisible();
+    // GPS toggle is inside Advanced Settings section
+    const gpsToggleLabel = page.locator('label:has(#gps-toggle)');
+    await expect(gpsToggleLabel).toBeVisible();
   });
 
   test('should toggle GPS on', async ({ browser }) => {
