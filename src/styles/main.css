@@ -1705,6 +1705,11 @@ body {
   animation: gpsPulse 1s ease-in-out infinite;
 }
 
+.gps-dot.paused {
+  background: var(--gps-active);
+  /* No animation - indicates GPS is enabled but paused (not on timer view) */
+}
+
 @keyframes gpsPulse {
   0%, 100% {
     opacity: 1;

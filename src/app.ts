@@ -572,6 +572,10 @@ const STATE_HANDLERS: Record<string, StateHandler[]> = {
 function handleViewChange(state: ReturnType<typeof store.getState>): void {
   updateViewVisibility();
 
+  // Refresh status indicators (ensure they reflect current state on all views)
+  updateGpsIndicator();
+  updateSyncStatusIndicator();
+
   // Wake Lock: keep screen on during active timing
   if (state.currentView === 'timer') {
     wakeLockService.enable();
@@ -764,11 +768,14 @@ function updateGpsIndicator(): void {
   }
 
   if (dot) {
-    dot.classList.remove('active', 'searching');
+    dot.classList.remove('active', 'searching', 'paused');
     if (state.gpsStatus === 'active') {
       dot.classList.add('active');
     } else if (state.gpsStatus === 'searching') {
       dot.classList.add('searching');
+    } else if (state.settings.gps && state.currentView !== 'timer') {
+      // GPS is enabled but paused (not on timer view) - show green without animation
+      dot.classList.add('paused');
     }
   }
 
