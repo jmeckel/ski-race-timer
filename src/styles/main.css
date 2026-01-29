@@ -995,6 +995,7 @@ body {
 
 .settings-section.collapsible.expanded {
   height: auto;
+  overflow: visible;
 }
 
 .settings-section.collapsible.expanded .settings-section-content {
