@@ -488,8 +488,8 @@ export class VirtualList {
       height: ${GROUP_HEADER_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      padding: 0 8px 0 4px;
+      gap: 8px;
       background: var(--surface);
       border-bottom: 1px solid var(--surface-elevated);
       cursor: pointer;
@@ -518,18 +518,18 @@ export class VirtualList {
 
     // Chevron icon
     const chevronSvg = `
-      <svg class="group-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
+      <svg class="group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink: 0; transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
         <path d="M9 18l6-6-6-6"/>
       </svg>
     `;
 
     header.innerHTML = `
       ${chevronSvg}
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right;">
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
-      <div style="min-width: 52px;"></div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <div style="min-width: 48px;"></div>
+      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
           ${escapeHtml(summaryText)}
@@ -574,8 +574,8 @@ export class VirtualList {
       height: ${ITEM_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      padding: 0 8px 0 4px;
+      gap: 8px;
       background: var(--surface);
       border-bottom: 1px solid var(--surface-elevated);
       cursor: pointer;
@@ -601,14 +601,14 @@ export class VirtualList {
     ` : '';
 
     item.innerHTML = `
-      <div style="width: 20px; flex-shrink: 0;"></div>
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right;">
+      <div style="width: 16px; flex-shrink: 0;"></div>
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
+      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 48px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(pointLabel)}
       </div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}
@@ -626,21 +626,33 @@ export class VirtualList {
         </span>
       ` : ''}
       ${entry.photo ? `
-        <button class="result-photo-btn" aria-label="View photo" style="background: none; border: none; color: var(--primary); padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <button class="result-photo-btn" aria-label="View photo" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
           </svg>
         </button>
       ` : ''}
-      <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 8px; cursor: pointer; opacity: 0.7;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="result-edit-btn" aria-label="Edit entry" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
       </button>
     `;
 
     // Event listeners
+    const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.options.onItemClick?.(entry, e as MouseEvent);
+    });
+
     const deleteBtn = item.querySelector('.result-delete') as HTMLButtonElement;
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -689,8 +701,8 @@ export class VirtualList {
       height: ${ITEM_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      padding: 0 8px 0 4px;
+      gap: 8px;
       background: var(--surface);
       border-bottom: 1px solid var(--surface-elevated);
       border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
@@ -729,14 +741,14 @@ export class VirtualList {
     ` : '';
 
     item.innerHTML = `
-      <div style="width: 20px; flex-shrink: 0;"></div>
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 48px; text-align: right; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+      <div style="width: 16px; flex-shrink: 0;"></div>
+      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: var(--warning)20; color: var(--warning);">
+      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 48px; text-align: center; background: var(--warning)20; color: var(--warning);">
         ${t('gate', lang)}
       </div>
-      <span class="result-run" data-advanced style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 52px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
@@ -754,26 +766,31 @@ export class VirtualList {
           ${escapeHtml(statusLabel)}
         </span>
       ` : ''}
-      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 8px; cursor: pointer; opacity: 0.7;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="result-edit-btn" aria-label="Edit fault" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
       </button>
     `;
 
-    // Click opens edit modal for first fault
-    item.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.fault-delete-btn')) return;
-
-      if (faults.length > 0) {
+    // Edit button
+    const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
+    if (editBtn && faults.length > 0) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const event = new CustomEvent('fault-edit-request', {
           bubbles: true,
           detail: { fault: faults[0] }
         });
         item.dispatchEvent(event);
-      }
-    });
+      });
+    }
 
     // Delete button
     const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
@@ -787,6 +804,20 @@ export class VirtualList {
         item.dispatchEvent(event);
       });
     }
+
+    // Click opens edit modal for first fault
+    item.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.fault-delete-btn') || target.closest('.result-edit-btn')) return;
+
+      if (faults.length > 0) {
+        const event = new CustomEvent('fault-edit-request', {
+          bubbles: true,
+          detail: { fault: faults[0] }
+        });
+        item.dispatchEvent(event);
+      }
+    });
 
     // Touch feedback
     item.addEventListener('touchstart', () => {
@@ -814,8 +845,8 @@ export class VirtualList {
       height: ${SUB_ITEM_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 16px 0 48px;
-      gap: 12px;
+      padding: 0 8px 0 24px;
+      gap: 8px;
       background: var(--surface-elevated);
       border-bottom: 1px solid var(--background);
       cursor: pointer;
@@ -830,10 +861,12 @@ export class VirtualList {
     const pointLabel = getPointLabel(entry.point, lang);
 
     item.innerHTML = `
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 52px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
+      <div style="width: 16px; flex-shrink: 0;"></div>
+      <div style="min-width: 44px;"></div>
+      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 48px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
         ${escapeHtml(pointLabel)}
       </div>
-      <div style="min-width: 52px;"></div>
+      <div style="min-width: 36px;"></div>
       <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
           ${escapeHtml(timeStr)}
@@ -909,8 +942,8 @@ export class VirtualList {
       height: ${SUB_ITEM_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 16px 0 48px;
-      gap: 12px;
+      padding: 0 8px 0 24px;
+      gap: 8px;
       background: var(--surface-elevated);
       border-bottom: 1px solid var(--background);
       border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
@@ -925,10 +958,12 @@ export class VirtualList {
     const gateColorHex = gateColor === 'red' ? '#ef4444' : '#3b82f6';
 
     item.innerHTML = `
-      <div class="result-point" style="padding: 4px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 52px; text-align: center; background: var(--warning)20; color: var(--warning);">
+      <div style="width: 16px; flex-shrink: 0;"></div>
+      <div style="min-width: 44px;"></div>
+      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 48px; text-align: center; background: var(--warning)20; color: var(--warning);">
         T${fault.gateNumber}
       </div>
-      <div style="min-width: 52px; display: flex; align-items: center; justify-content: center;">
+      <div style="min-width: 36px; display: flex; align-items: center; justify-content: center;">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex};" title="${gateColor}"></div>
       </div>
       <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">

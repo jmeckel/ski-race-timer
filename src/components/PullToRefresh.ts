@@ -10,6 +10,7 @@ const RESISTANCE = 2.5; // Pull resistance factor
 interface PullToRefreshOptions {
   container: HTMLElement;
   onRefresh: () => Promise<void>;
+  scrollElement?: HTMLElement; // Optional: specify the scrollable element if different from container/parent
 }
 
 export class PullToRefresh {
@@ -28,8 +29,10 @@ export class PullToRefresh {
     this.indicator = this.createIndicator();
     this.container.insertBefore(this.indicator, this.container.firstChild);
 
-    // Find scrollable parent
-    this.scrollableParent = this.findScrollableParent(this.container);
+    // Use provided scroll element, or find scrollable parent, or look for scrollable child
+    this.scrollableParent = options.scrollElement ??
+      this.findScrollableParent(this.container) ??
+      this.findScrollableChild(this.container);
 
     this.bindEvents();
   }
@@ -94,6 +97,22 @@ export class PullToRefresh {
         return parent;
       }
       parent = parent.parentElement;
+    }
+    return null;
+  }
+
+  /**
+   * Find scrollable child element (for cases like VirtualList where scroll container is nested)
+   */
+  private findScrollableChild(element: HTMLElement): HTMLElement | null {
+    const children = element.querySelectorAll('*');
+    for (const child of children) {
+      if (child instanceof HTMLElement) {
+        const style = getComputedStyle(child);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          return child;
+        }
+      }
     }
     return null;
   }
