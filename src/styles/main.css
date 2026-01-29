@@ -4886,7 +4886,7 @@ body {
   background: rgba(34, 197, 94, 0.1);
 }
 
-.judge-ready-indicator {
+.judge-card .judge-ready-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;

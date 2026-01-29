@@ -24,7 +24,7 @@ For TIMER role, recognize:
 
 For GATE JUDGE role, recognize:
 - Fault recording with bib + gate + type
-- Fault types: MG (missed gate/ausgelassen), STR (straddling/eingefädelt), BD (binding released)
+- Fault types: MG (missed gate/ausgelassen), STR (straddling/eingefädelt), BR (binding release/Bindung offen)
 - Ready status: "Bereit", "Ready", "Fertig"
 - Confirmation: "Ja", "Yes", "Correct", "Richtig", "Stimmt"
 - Cancellation: "Nein", "No", "Cancel", "Abbrechen", "Falsch"
@@ -36,7 +36,7 @@ Return ONLY valid JSON (no markdown, no explanation):
   "params": {
     "bib": "string (3 digits, zero-padded)",
     "gate": number,
-    "faultType": "MG" | "STR" | "BD",
+    "faultType": "MG" | "STR" | "BR",
     "point": "S" | "F",
     "run": 1 | 2
   },

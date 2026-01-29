@@ -372,12 +372,8 @@ export function initRoleToggle(): void {
         openModal(getElement('gate-assignment-modal'));
       }
 
-      // Switch to appropriate view
-      if (role === 'gateJudge') {
-        store.setView('gateJudge');
-        // Refresh inline fault UI with current active bibs
-        refreshInlineFaultUI();
-      } else if (store.getState().currentView === 'gateJudge') {
+      // If switching away from gateJudge while on gateJudge view, go to timer
+      if (role !== 'gateJudge' && store.getState().currentView === 'gateJudge') {
         store.setView('timer');
       }
     }
