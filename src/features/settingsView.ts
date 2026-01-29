@@ -340,7 +340,8 @@ function initAdvancedSettingsToggle(): void {
   if (!toggle || !section) return;
 
   toggle.setAttribute('role', 'button');
-  toggle.setAttribute('aria-expanded', 'false');
+  // Start expanded by default
+  toggle.setAttribute('aria-expanded', section.classList.contains('expanded') ? 'true' : 'false');
   toggle.addEventListener('click', () => {
     const isExpanded = section.classList.toggle('expanded');
     toggle.setAttribute('aria-expanded', String(isExpanded));
