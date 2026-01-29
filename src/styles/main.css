@@ -993,6 +993,10 @@ body {
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.settings-section.collapsible.expanded {
+  height: auto;
+}
+
 .settings-section.collapsible.expanded .settings-section-content {
   max-height: 1000px;
 }
