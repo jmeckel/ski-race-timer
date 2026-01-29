@@ -254,7 +254,10 @@ export function updateStats(): void {
 
   const total = entries.length;
   const racers = new Set(entries.map(e => e.bib)).size;
-  const finished = entries.filter(e => e.point === 'F' && e.status === 'ok').length;
+  // Count distinct racers who have at least one OK finish (not finish entries)
+  const finished = new Set(
+    entries.filter(e => e.point === 'F' && e.status === 'ok').map(e => e.bib)
+  ).size;
 
   const totalEl = getElement('stat-total');
   const racersEl = getElement('stat-racers');
