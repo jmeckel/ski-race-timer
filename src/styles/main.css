@@ -961,12 +961,19 @@ body {
   margin-bottom: 0;
   background: var(--surface);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-radius 0.2s ease;
   /* Override tiny section title styles */
   font-size: 0.9rem;
   color: var(--text-primary);
   text-transform: none;
   letter-spacing: normal;
+  /* Rounded corners to match parent - all corners when collapsed */
+  border-radius: calc(var(--radius) - 1px);
+}
+
+/* When expanded, only round top corners (content follows below) */
+.settings-section.collapsible.expanded .settings-section-title {
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
 }
 
 .settings-section.collapsible .settings-section-title:hover {
@@ -1009,6 +1016,8 @@ body {
 
 .settings-section.collapsible .settings-section-content .setting-row:last-child {
   border-bottom: none;
+  /* Round bottom corners to match parent */
+  border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
 }
 
 /* Version info button */
