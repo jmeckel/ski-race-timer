@@ -1321,7 +1321,7 @@ class Store {
 
   // ===== GPS State =====
 
-  setGpsStatus(status: 'inactive' | 'searching' | 'active', accuracy?: number) {
+  setGpsStatus(status: 'inactive' | 'searching' | 'active' | 'paused', accuracy?: number) {
     this.setState({
       gpsStatus: status,
       gpsAccuracy: accuracy ?? null

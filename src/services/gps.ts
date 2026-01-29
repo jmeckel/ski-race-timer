@@ -86,7 +86,9 @@ class GpsService {
     }
 
     this.wasActiveBeforeHidden = false;
-    store.setGpsStatus('inactive');
+    // Only show 'paused' (green static) if GPS was actually working (had a fix)
+    // Otherwise show 'inactive' (red) to indicate GPS never worked
+    store.setGpsStatus(this.lastPosition ? 'paused' : 'inactive');
   }
 
   /**

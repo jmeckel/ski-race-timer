@@ -196,7 +196,7 @@ export interface AppState {
   // GPS State
   gpsEnabled: boolean;
   gpsAccuracy: number | null;
-  gpsStatus: 'inactive' | 'searching' | 'active';
+  gpsStatus: 'inactive' | 'searching' | 'active' | 'paused';
 
   // Camera State
   cameraReady: boolean;

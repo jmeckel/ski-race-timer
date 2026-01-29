@@ -773,10 +773,11 @@ function updateGpsIndicator(): void {
       dot.classList.add('active');
     } else if (state.gpsStatus === 'searching') {
       dot.classList.add('searching');
-    } else if (state.settings.gps && state.currentView !== 'timer') {
-      // GPS is enabled but paused (not on timer view) - show green without animation
+    } else if (state.gpsStatus === 'paused') {
+      // GPS was working but is now paused (e.g., not on timer view) - show green without animation
       dot.classList.add('paused');
     }
+    // 'inactive' status = no class = red (GPS not working or permission denied)
   }
 
   if (text) {
