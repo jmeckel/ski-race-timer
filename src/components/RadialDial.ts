@@ -32,6 +32,7 @@ export class RadialDial {
   private snapBackTimeoutId: number | null = null;
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
+  private lastTouchTime = 0; // To prevent synthetic mouse events after touch
 
   // Bib value
   private bibValue = '';
@@ -131,9 +132,20 @@ export class RadialDial {
   }
 
   private handleDragStart = (e: MouseEvent | TouchEvent): void => {
+    const isTouch = 'touches' in e;
+
+    // Ignore synthetic mouse events after touch
+    if (!isTouch && Date.now() - this.lastTouchTime < 500) {
+      return;
+    }
+
+    if (isTouch) {
+      this.lastTouchTime = Date.now();
+    }
+
     const rect = this.container.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const clientX = isTouch ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = isTouch ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
     // Check if in ring area (not center)
     const centerX = rect.left + rect.width / 2;
