@@ -18,10 +18,10 @@ import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, Dev
 // Feature modules
 import { openModal, closeModal, closeAllModalsAnimated } from './features/modals';
 import { initRippleEffects, cleanupRippleEffects } from './features/ripple';
+import { initTabs, updateRunSelection, handleTimerVoiceIntent } from './features/timerView';
 import {
-  initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
-  updateBibDisplay, updateTimingPointSelection, updateRunSelection, handleTimerVoiceIntent
-} from './features/timerView';
+  initRadialTimerView, destroyRadialTimerView, updateRadialBib
+} from './features/radialTimerView';
 import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 import {
   initFaultEditModal, updateActiveBibsList, updateInlineFaultsList, refreshInlineFaultUI
@@ -91,12 +91,8 @@ export function initApp(): void {
   }
 
   // Initialize components
-  initClock();
   initTabs();
-  initNumberPad();
-  initTimingPoints();
-  initRunSelector();
-  initTimestampButton();
+  initRadialTimerView();
   // Set callbacks for resultsView before initialization
   // (callbacks needed to avoid circular imports: app.ts imports from resultsView.ts)
   setResultsViewCallbacks({
@@ -524,9 +520,9 @@ function closeAllModals(): void {
 type StateHandler = (state: ReturnType<typeof store.getState>) => void;
 
 const STATE_HANDLERS: Record<string, StateHandler[]> = {
-  // Timer view updates
-  bibInput: [() => updateBibDisplay()],
-  selectedPoint: [() => updateTimingPointSelection()],
+  // Timer view updates (radial dial)
+  bibInput: [() => updateRadialBib()],
+  // selectedPoint is handled internally by radialTimerView store subscription
 
   // Run selection updates both timer and gate judge views
   selectedRun: [(state) => {
@@ -659,8 +655,7 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
  */
 function updateUI(): void {
   updateViewVisibility();
-  updateBibDisplay();
-  updateTimingPointSelection();
+  updateRadialBib();
   updateRunSelection();
   updateStats();
   updateEntryCountBadge();
@@ -946,11 +941,11 @@ function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number;
  * Handle page unload - cleanup to prevent memory leaks
  */
 function handleBeforeUnload(): void {
-  // Cleanup clock component
+  // Cleanup radial timer view (clock, dial, etc.)
   try {
-    destroyClock();
+    destroyRadialTimerView();
   } catch (e) {
-    logger.warn('Clock cleanup error:', e);
+    logger.warn('Radial timer cleanup error:', e);
   }
 
   // Cleanup sync service
