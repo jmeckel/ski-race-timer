@@ -12,7 +12,7 @@ import { generateEntryId, getPointLabel, logWarning, getElement } from '../utils
 import { formatTime } from '../utils/format';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
-import type { Entry, TimingPoint } from '../types';
+import type { Entry, TimingPoint, Run } from '../types';
 
 // Module state
 let radialDial: RadialDial | null = null;
@@ -41,6 +41,7 @@ export function initRadialTimerView(): void {
   initRadialClock();
   initRadialDial();
   initRadialTimingPoints();
+  initRadialRunSelector();
   initRadialTimeButton();
   initRadialClearButton();
   initRadialKeyboard();
@@ -59,6 +60,9 @@ export function initRadialTimerView(): void {
     }
     if (changedKeys.includes('selectedPoint')) {
       updateRadialTimingPointSelection();
+    }
+    if (changedKeys.includes('selectedRun')) {
+      updateRadialRunSelection();
     }
     if (changedKeys.includes('entries')) {
       updateRadialStatsDisplay();
@@ -181,6 +185,43 @@ function updateRadialTimingPointSelection(): void {
   const state = store.getState();
   document.querySelectorAll('.radial-point-btn').forEach(btn => {
     const isActive = btn.getAttribute('data-point') === state.selectedPoint;
+    btn.classList.toggle('active', isActive);
+  });
+}
+
+/**
+ * Initialize run selector buttons
+ */
+function initRadialRunSelector(): void {
+  const container = getElement('radial-run-selector');
+  if (!container) return;
+
+  container.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('.radial-run-btn');
+    if (!btn) return;
+
+    const runStr = btn.getAttribute('data-run');
+    if (runStr) {
+      const run = parseInt(runStr, 10) as Run;
+      store.setSelectedRun(run);
+      feedbackTap();
+      updateRadialRunSelection();
+    }
+  });
+
+  // Set initial state
+  updateRadialRunSelection();
+}
+
+/**
+ * Update run selection display
+ */
+function updateRadialRunSelection(): void {
+  const state = store.getState();
+  document.querySelectorAll('.radial-run-btn').forEach(btn => {
+    const runStr = btn.getAttribute('data-run');
+    const isActive = runStr === String(state.selectedRun);
     btn.classList.toggle('active', isActive);
   });
 }
