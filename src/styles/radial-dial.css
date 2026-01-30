@@ -1,14 +1,19 @@
 /* ===== Radial Dial Timer ===== */
 /* Alternative timer view with iPod-style dial input */
 
-/* Override base timer-view styles when in radial mode */
-.timer-view.radial-mode {
+/* Override base timer-view styles when in radial mode AND active */
+.timer-view.radial-mode.active {
   display: grid !important;
   grid-template-rows: auto 1fr auto;
   grid-template-columns: 1fr 1fr;
   padding: 0 !important;
   gap: 0 !important;
   overflow: hidden;
+}
+
+/* Ensure radial mode is hidden when not active */
+.timer-view.radial-mode:not(.active) {
+  display: none !important;
 }
 
 /* Hide classic timer elements when in radial mode */
@@ -18,6 +23,11 @@
 .timer-view.radial-mode .number-pad,
 .timer-view.radial-mode .timestamp-btn,
 .timer-view.radial-mode .last-entry-display {
+  display: none !important;
+}
+
+/* Hide ambient mode pulsing bar in radial mode */
+.timer-view.radial-mode::after {
   display: none !important;
 }
 
@@ -130,7 +140,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: visible;
+  overflow: hidden; /* Changed from visible to prevent dial leaking into other views */
   min-height: 380px;
   padding: 0;
 }
