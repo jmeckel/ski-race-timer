@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-M2guRpLS.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-DVwvTd1H.css">
+  <script type="module" crossorigin src="/assets/main-mjFfPmih.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-Dvz-ayoz.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -90,7 +90,7 @@
 
             <!-- Top Right: Clear Button -->
             <div class="radial-clear-corner">
-              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear">✕</button>
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear">C</button>
             </div>
 
             <!-- Status (hidden, using header instead) -->
@@ -120,25 +120,26 @@
               <!-- Gesture area -->
               <div class="dial-gesture-area" id="dial-gesture"></div>
 
-              <!-- Center with time -->
+              <!-- Center with time and selectors -->
               <div class="dial-center">
+                <!-- Timing Point Selector - Left side -->
+                <div class="radial-timing-point" id="radial-timing-point">
+                  <button class="radial-point-btn start" data-point="S" data-advanced>S</button>
+                  <button class="radial-point-btn finish active" data-point="F">F</button>
+                </div>
+
+                <!-- Time Display - Center -->
                 <div class="radial-time-display" id="radial-time-display">
                   <div class="radial-time-hm" id="radial-time-hm">--:--</div>
                   <div class="radial-time-seconds" id="radial-time-seconds">--</div>
                   <div class="radial-time-subseconds" id="radial-time-subseconds">---</div>
                 </div>
-              </div>
 
-              <!-- Timing Point Selector - Left side -->
-              <div class="radial-timing-point" id="radial-timing-point">
-                <button class="radial-point-btn start" data-point="S" data-advanced>S</button>
-                <button class="radial-point-btn finish active" data-point="F">F</button>
-              </div>
-
-              <!-- Run Selector - Right side -->
-              <div class="radial-run-selector" id="radial-run-selector">
-                <button class="radial-run-btn active" data-run="1">L1</button>
-                <button class="radial-run-btn" data-run="2">L2</button>
+                <!-- Run Selector - Right side -->
+                <div class="radial-run-selector" id="radial-run-selector">
+                  <button class="radial-run-btn active" data-run="1">L1</button>
+                  <button class="radial-run-btn" data-run="2">L2</button>
+                </div>
               </div>
             </div>
           </div>
