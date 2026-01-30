@@ -1,7 +1,6 @@
 import './styles/main.css';
 import './styles/glass.css';
 import './styles/animations.css';
-import './styles/radial-dial.css';
 // DISABLED: Motion effects disabled to save battery
 // import './styles/motion.css';
 import { initApp } from './app';
