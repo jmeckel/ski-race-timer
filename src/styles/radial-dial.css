@@ -140,16 +140,16 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden; /* Changed from visible to prevent dial leaking into other views */
-  min-height: 380px;
+  overflow: visible; /* Must be visible for touch targets to work */
+  min-height: 420px;
   padding: 0;
 }
 
-/* Dial Container - Maximized */
+/* Dial Container - Maximized for larger dial */
 .dial-container {
   position: relative;
-  width: min(600px, 98vw);
-  height: min(600px, 98vw);
+  width: min(680px, 100vw);
+  height: min(680px, 100vw);
   flex-shrink: 0;
 }
 
@@ -200,11 +200,11 @@
 .dial-tick {
   position: absolute;
   width: 2px;
-  height: 12px;
+  height: 14px;
   background: var(--text-tertiary);
   left: 50%;
   top: 8px;
-  transform-origin: 0 292px; /* Scaled for 600px dial */
+  transform-origin: 0 332px; /* Scaled for 680px dial */
   opacity: 0.5;
 }
 
@@ -228,13 +228,13 @@
 
 .dial-number {
   position: absolute;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
@@ -292,8 +292,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 220px;
-  height: 220px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
   background: var(--background);
   display: flex;
@@ -329,7 +329,7 @@
 
 .radial-time-hm {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 400;
   color: var(--text-secondary);
   letter-spacing: 0.05em;
@@ -337,7 +337,7 @@
 
 .radial-time-seconds {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 72px;
+  font-size: 96px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
@@ -346,7 +346,7 @@
 
 .radial-time-subseconds {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 36px;
+  font-size: 48px;
   font-weight: 500;
   color: var(--text-secondary);
   letter-spacing: 0.02em;
@@ -361,16 +361,17 @@
 }
 
 .radial-point-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface);
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  pointer-events: auto; /* Enable touch on these buttons */
 }
 
 .radial-point-btn.active {
