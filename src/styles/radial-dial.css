@@ -1,0 +1,608 @@
+/* ===== Radial Dial Timer ===== */
+/* Alternative timer view with iPod-style dial input */
+
+/* Override base timer-view styles when in radial mode */
+.timer-view.radial-mode {
+  display: grid !important;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr 1fr;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+}
+
+/* Hide classic timer elements when in radial mode */
+.timer-view.radial-mode .clock-container,
+.timer-view.radial-mode .timing-controls,
+.timer-view.radial-mode .bib-entry-section,
+.timer-view.radial-mode .number-pad,
+.timer-view.radial-mode .timestamp-btn,
+.timer-view.radial-mode .last-entry-display {
+  display: none !important;
+}
+
+/* Top Row - Bib and Status */
+.radial-top-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 16px;
+  z-index: 20;
+}
+
+/* Top Left: Bib Corner */
+.radial-bib-corner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.radial-bib-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.radial-bib-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 80px;
+}
+
+.radial-bib-value.active {
+  color: var(--primary);
+}
+
+.radial-bib-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--primary);
+  margin-left: 2px;
+  animation: radialBlink 1s step-end infinite;
+}
+
+@keyframes radialBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.radial-clear-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radial-clear-btn:active {
+  background: var(--surface-hover);
+}
+
+/* Top Right: Status Corner */
+.radial-status-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.radial-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.radial-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.radial-status-dot.warning {
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
+  animation: pulse 2s infinite;
+}
+
+.radial-status-dot.error {
+  background: var(--error);
+  box-shadow: 0 0 8px var(--error);
+}
+
+.radial-status-dot.inactive {
+  background: var(--text-tertiary);
+  box-shadow: none;
+}
+
+/* Center Area - Dial */
+.radial-center-area {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  min-height: 300px;
+}
+
+/* Dial Container */
+.dial-container {
+  position: relative;
+  width: 460px;
+  height: 460px;
+  flex-shrink: 0;
+}
+
+/* Dial Ring */
+.dial-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 46%,
+    var(--surface) 48%,
+    var(--surface-elevated) 51%,
+    var(--surface-elevated) 96%,
+    transparent 98%
+  );
+  border: 2px solid var(--border);
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.dial-ring.flash {
+  animation: dialFlash 0.3s ease-out;
+}
+
+@keyframes dialFlash {
+  0% {
+    box-shadow:
+      inset 0 0 30px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(0, 0, 0, 0.2),
+      0 0 60px var(--primary);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 30px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Dial Ticks */
+.dial-ticks {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.dial-tick {
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: var(--text-tertiary);
+  left: 50%;
+  top: 8px;
+  transform-origin: 0 222px;
+  opacity: 0.5;
+}
+
+.dial-tick.major {
+  height: 12px;
+  width: 3px;
+  background: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* Rotating Numbers */
+.dial-numbers {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.05s linear;
+}
+
+.dial-numbers.momentum {
+  transition: none;
+}
+
+.dial-number {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.dial-number span {
+  transition: transform 0.05s linear;
+}
+
+.dial-number:active,
+.dial-number.pressed {
+  color: var(--primary);
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+.dial-number.flash {
+  color: var(--primary);
+  text-shadow: 0 0 20px var(--primary);
+}
+
+/* Gesture Area */
+.dial-gesture-area {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  cursor: grab;
+  z-index: 5;
+}
+
+.dial-gesture-area:active {
+  cursor: grabbing;
+}
+
+/* Center Cutout */
+.dial-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* Time Display in Center */
+.radial-time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  pointer-events: none;
+}
+
+.radial-time-display.flash {
+  animation: timeFlash 0.3s ease-out;
+}
+
+.radial-time-display.frozen .radial-time-seconds {
+  color: var(--primary);
+  text-shadow: 0 0 30px var(--primary);
+}
+
+@keyframes timeFlash {
+  0% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.radial-time-hm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.radial-time-seconds {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.radial-time-subseconds {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* Timing Point Toggle in Center */
+.radial-timing-point {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  pointer-events: auto;
+}
+
+.radial-point-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radial-point-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.radial-point-btn.start.active {
+  border-color: var(--start-color);
+  color: var(--start-color);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.radial-point-btn.finish.active {
+  border-color: var(--finish-color);
+  color: var(--finish-color);
+  background: rgba(251, 146, 60, 0.1);
+}
+
+/* Bottom Row - Stats and Time Button */
+.radial-bottom-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+/* Bottom Left: Stats Corner */
+.radial-stats-corner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+}
+
+.radial-stats-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+}
+
+.radial-stats-last {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radial-stats-bib {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.radial-stats-point {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.radial-stats-point.start {
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--start-color);
+}
+
+.radial-stats-point.finish {
+  background: rgba(251, 146, 60, 0.2);
+  color: var(--finish-color);
+}
+
+.radial-stats-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.radial-stats-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Bottom Right: Time Button Corner */
+.radial-time-btn-corner {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.radial-time-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 80px;
+}
+
+.radial-time-btn:active {
+  background: var(--primary-hover);
+  transform: scale(0.98);
+}
+
+.radial-time-btn.flash {
+  animation: btnFlash 0.3s ease-out;
+}
+
+@keyframes btnFlash {
+  0% {
+    background: var(--success);
+    box-shadow: 0 0 40px var(--success);
+  }
+  100% {
+    background: var(--primary);
+    box-shadow: none;
+  }
+}
+
+.radial-time-btn-icon {
+  font-size: 32px;
+  opacity: 0.9;
+}
+
+/* Confirmation Overlay */
+.radial-confirmation-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 100;
+}
+
+.radial-confirmation-overlay.show {
+  opacity: 1;
+}
+
+.radial-confirmation-check {
+  font-size: 48px;
+  color: var(--success);
+  margin-bottom: 16px;
+}
+
+.radial-confirmation-bib {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.radial-confirmation-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.radial-confirmation-point {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+}
+
+.radial-confirmation-point.start {
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--start-color);
+}
+
+.radial-confirmation-point.finish {
+  background: rgba(251, 146, 60, 0.2);
+  color: var(--finish-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .dial-container {
+    width: 340px;
+    height: 340px;
+  }
+
+  .dial-tick {
+    transform-origin: 0 162px;
+  }
+
+  .dial-center {
+    width: 160px;
+    height: 160px;
+  }
+
+  .radial-time-seconds {
+    font-size: 56px;
+  }
+
+  .radial-time-subseconds {
+    font-size: 28px;
+  }
+
+  .dial-number {
+    font-size: 22px;
+  }
+}
+
+@media (max-height: 700px) {
+  .radial-center-area {
+    min-height: 250px;
+  }
+
+  .dial-container {
+    width: 320px;
+    height: 320px;
+  }
+
+  .dial-tick {
+    transform-origin: 0 152px;
+  }
+
+  .dial-center {
+    width: 150px;
+    height: 150px;
+  }
+
+  .radial-time-seconds {
+    font-size: 48px;
+  }
+
+  .radial-time-subseconds {
+    font-size: 24px;
+  }
+
+  .radial-time-hm {
+    font-size: 16px;
+  }
+}
+
+/* Pulse animation for status dots */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

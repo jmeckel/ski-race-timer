@@ -76,73 +76,90 @@
 
     <!-- Main Content -->
     <main id="main">
-        <!-- Timer View -->
-        <div class="view timer-view active">
-          <!-- Clock -->
-          <div class="clock-container glass-enable-target" id="clock-container"></div>
+        <!-- Timer View (Radial Dial Mode) -->
+        <div class="view timer-view radial-mode active">
+          <!-- Top Row: Bib + Status -->
+          <div class="radial-top-row">
+            <!-- Top Left: Bib -->
+            <div class="radial-bib-corner">
+              <div class="radial-bib-label" data-i18n="bib">Bib</div>
+              <div class="radial-bib-value" id="radial-bib-value">---<span class="radial-bib-cursor"></span></div>
+              <button class="radial-clear-btn" id="radial-clear-btn" data-i18n="clear">Clear</button>
+            </div>
 
-          <!-- Timing Points and Run Selector -->
-          <div class="timing-controls">
-            <div class="timing-points glass-enable-target" id="timing-points" role="radiogroup" aria-label="Timing Point">
-            <button class="timing-point-btn glass-surface-3" data-point="S" role="radio" aria-checked="false" data-advanced>
-              <span data-i18n="start">Start</span>
-            </button>
-            <button class="timing-point-btn glass-surface-3 active" data-point="F" role="radio" aria-checked="true">
-              <span data-i18n="finish">Finish</span>
-            </button>
+            <!-- Top Right: Status -->
+            <div class="radial-status-corner">
+              <div class="radial-status-row" id="radial-gps-status">
+                <span class="radial-status-dot inactive"></span>
+                <span>GPS</span>
+              </div>
+              <div class="radial-status-row" id="radial-sync-status" style="display: none;">
+                <span class="radial-status-dot"></span>
+                <span class="radial-sync-text">Synced</span>
+              </div>
+            </div>
           </div>
-          <div class="run-selector" id="run-selector" role="radiogroup" aria-label="Run" data-advanced>
-            <button class="run-btn glass-surface-3 active" data-run="1" role="radio" aria-checked="true">
-              <span data-i18n="run1">L1</span>
-            </button>
-            <button class="run-btn glass-surface-3" data-run="2" role="radio" aria-checked="false">
-              <span data-i18n="run2">L2</span>
-            </button>
+
+          <!-- Center: Dial -->
+          <div class="radial-center-area">
+            <div class="dial-container" id="dial-container">
+              <!-- Dial Ring -->
+              <div class="dial-ring" id="dial-ring">
+                <div class="dial-ticks" id="dial-ticks"></div>
+              </div>
+
+              <!-- Rotating numbers -->
+              <div class="dial-numbers" id="dial-numbers"></div>
+
+              <!-- Gesture area -->
+              <div class="dial-gesture-area" id="dial-gesture"></div>
+
+              <!-- Center with time -->
+              <div class="dial-center">
+                <div class="radial-time-display" id="radial-time-display">
+                  <div class="radial-time-hm" id="radial-time-hm">--:--</div>
+                  <div class="radial-time-seconds" id="radial-time-seconds">--</div>
+                  <div class="radial-time-subseconds" id="radial-time-subseconds">.---</div>
+                </div>
+                <!-- Timing Point Toggle in center -->
+                <div class="radial-timing-point" id="radial-timing-point">
+                  <button class="radial-point-btn start" data-point="S" data-advanced>S</button>
+                  <button class="radial-point-btn finish active" data-point="F">F</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Stats + Time Button -->
+          <div class="radial-bottom-row">
+            <!-- Bottom Left: Stats -->
+            <div class="radial-stats-corner">
+              <div class="radial-stats-label" data-i18n="lastRecordedShort">Last</div>
+              <div class="radial-stats-last">
+                <span class="radial-stats-bib" id="radial-last-bib">---</span>
+                <span class="radial-stats-point finish" id="radial-last-point">F</span>
+              </div>
+              <div class="radial-stats-time" id="radial-last-time">--:--:--.---</div>
+              <div class="radial-stats-count" id="radial-stats-count">0 entries</div>
+            </div>
+
+            <!-- Bottom Right: Time Button -->
+            <div class="radial-time-btn-corner">
+              <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
+                <span class="radial-time-btn-icon">⏱</span>
+                <span data-i18n="time">TIME</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirmation Overlay -->
+          <div class="radial-confirmation-overlay" id="radial-confirmation-overlay">
+            <div class="radial-confirmation-check">✓</div>
+            <div class="radial-confirmation-bib" id="radial-confirm-bib">---</div>
+            <div class="radial-confirmation-time" id="radial-confirm-time">--:--:--.---</div>
+            <div class="radial-confirmation-point finish" id="radial-confirm-point">Finish</div>
           </div>
         </div>
-
-        <!-- Timestamp Button -->
-        <button class="timestamp-btn glass-surface-1 glass-enable-target breathe-glow" id="timestamp-btn" aria-label="Record timestamp">
-          <span data-i18n="time">TIME</span>
-        </button>
-
-        <!-- Bib Entry Section (combines bib display and last recorded) -->
-        <div class="bib-entry-section">
-          <div class="bib-display glass-surface-2 glass-enable-target expanded" id="bib-display">
-            <span class="bib-label" data-i18n="bib">Bib</span>
-            <span class="bib-value">---</span>
-          </div>
-          <div class="last-recorded-inline" id="last-recorded-inline">
-            <span class="label" data-i18n="lastRecordedShort">Last:</span>
-            <span class="bib">---</span>
-            <span class="point">-</span>
-            <span class="run" data-advanced>-</span>
-            <span class="time">--:--:--.---</span>
-          </div>
-        </div>
-
-        <!-- Number Pad (collapsible) -->
-        <div class="number-pad glass-enable-target" id="number-pad" role="group" aria-label="Number pad">
-          <button class="num-btn glass-surface-3" data-num="1" aria-label="1">1</button>
-          <button class="num-btn glass-surface-3" data-num="2" aria-label="2">2</button>
-          <button class="num-btn glass-surface-3" data-num="3" aria-label="3">3</button>
-          <button class="num-btn glass-surface-3" data-num="4" aria-label="4">4</button>
-          <button class="num-btn glass-surface-3" data-num="5" aria-label="5">5</button>
-          <button class="num-btn glass-surface-3" data-num="6" aria-label="6">6</button>
-          <button class="num-btn glass-surface-3" data-num="7" aria-label="7">7</button>
-          <button class="num-btn glass-surface-3" data-num="8" aria-label="8">8</button>
-          <button class="num-btn glass-surface-3" data-num="9" aria-label="9">9</button>
-          <button class="num-btn glass-surface-3 action" data-action="clear" aria-label="Clear">C</button>
-          <button class="num-btn glass-surface-3" data-num="0" aria-label="0">0</button>
-          <button class="num-btn glass-surface-3 action" data-action="delete" aria-label="Delete">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/>
-              <line x1="18" y1="9" x2="12" y2="15"/>
-              <line x1="12" y1="9" x2="18" y2="15"/>
-            </svg>
-          </button>
-        </div>
-      </div>
 
       <!-- Results View -->
       <div class="view results-view">
