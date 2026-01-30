@@ -4,7 +4,7 @@
 .timer-view.radial-mode {
   padding: 0;
   gap: 0;
-  display: grid;
+  display: grid !important;
   grid-template-rows: auto 1fr auto;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
