@@ -50,7 +50,7 @@ export class RadialDial {
     this.dialRing = this.container.querySelector('.dial-ring');
     this.gestureArea = this.container.querySelector('.dial-gesture-area');
 
-    if (!this.dialNumbers || !this.gestureArea) {
+    if (!this.dialNumbers) {
       console.warn('[RadialDial] Required elements not found');
       return;
     }
@@ -126,24 +126,20 @@ export class RadialDial {
   }
 
   private bindEvents(): void {
-    if (!this.gestureArea) return;
-
-    // Mouse events
-    this.gestureArea.addEventListener('mousedown', this.handleDragStart);
+    // Bind drag events to the container itself (not gesture area)
+    // This ensures we catch drags even when touching the numbers
+    this.container.addEventListener('mousedown', this.handleDragStart);
     window.addEventListener('mousemove', this.handleDragMove);
     window.addEventListener('mouseup', this.handleDragEnd);
 
     // Touch events
-    this.gestureArea.addEventListener('touchstart', this.handleDragStart, { passive: false });
+    this.container.addEventListener('touchstart', this.handleDragStart, { passive: false });
     window.addEventListener('touchmove', this.handleDragMove, { passive: false });
     window.addEventListener('touchend', this.handleDragEnd);
   }
 
   private handleDragStart = (e: MouseEvent | TouchEvent): void => {
-    if (!this.gestureArea) return;
-    e.preventDefault();
-
-    const rect = this.gestureArea.getBoundingClientRect();
+    const rect = this.container.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
@@ -152,7 +148,12 @@ export class RadialDial {
     const centerY = rect.top + rect.height / 2;
     const dist = Math.sqrt(Math.pow(clientX - centerX, 2) + Math.pow(clientY - centerY, 2));
 
-    if (dist < rect.width * 0.2) return; // Too close to center
+    // Don't start drag if in center area (allow buttons to work)
+    if (dist < rect.width * 0.22) return;
+    // Don't start drag if outside the dial
+    if (dist > rect.width * 0.5) return;
+
+    e.preventDefault();
 
     this.isDragging = true;
     this.velocity = 0;
@@ -169,10 +170,10 @@ export class RadialDial {
   };
 
   private handleDragMove = (e: MouseEvent | TouchEvent): void => {
-    if (!this.isDragging || !this.gestureArea) return;
+    if (!this.isDragging) return;
     e.preventDefault();
 
-    const rect = this.gestureArea.getBoundingClientRect();
+    const rect = this.container.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
