@@ -22,6 +22,9 @@ import {
   initClock, destroyClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton,
   updateBibDisplay, updateTimingPointSelection, updateRunSelection, handleTimerVoiceIntent
 } from './features/timerView';
+import {
+  initRadialTimerView, destroyRadialTimerView, updateRadialBib, isRadialModeActive
+} from './features/radialTimerView';
 import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 import {
   initFaultEditModal, updateActiveBibsList, updateInlineFaultsList, refreshInlineFaultUI
@@ -91,12 +94,20 @@ export function initApp(): void {
   }
 
   // Initialize components
-  initClock();
   initTabs();
-  initNumberPad();
-  initTimingPoints();
-  initRunSelector();
-  initTimestampButton();
+
+  // Check which timer mode to use
+  if (isRadialModeActive()) {
+    // Radial dial timer mode
+    initRadialTimerView();
+  } else {
+    // Classic timer mode
+    initClock();
+    initNumberPad();
+    initTimingPoints();
+    initRunSelector();
+    initTimestampButton();
+  }
   // Set callbacks for resultsView before initialization
   // (callbacks needed to avoid circular imports: app.ts imports from resultsView.ts)
   setResultsViewCallbacks({
@@ -524,9 +535,20 @@ function closeAllModals(): void {
 type StateHandler = (state: ReturnType<typeof store.getState>) => void;
 
 const STATE_HANDLERS: Record<string, StateHandler[]> = {
-  // Timer view updates
-  bibInput: [() => updateBibDisplay()],
-  selectedPoint: [() => updateTimingPointSelection()],
+  // Timer view updates (handles both classic and radial modes)
+  bibInput: [() => {
+    if (isRadialModeActive()) {
+      updateRadialBib();
+    } else {
+      updateBibDisplay();
+    }
+  }],
+  selectedPoint: [() => {
+    if (!isRadialModeActive()) {
+      updateTimingPointSelection();
+    }
+    // Radial mode handles this via its own store subscription
+  }],
 
   // Run selection updates both timer and gate judge views
   selectedRun: [(state) => {
@@ -659,8 +681,15 @@ function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys
  */
 function updateUI(): void {
   updateViewVisibility();
-  updateBibDisplay();
-  updateTimingPointSelection();
+
+  // Update timer display based on mode
+  if (isRadialModeActive()) {
+    updateRadialBib();
+  } else {
+    updateBibDisplay();
+    updateTimingPointSelection();
+  }
+
   updateRunSelection();
   updateStats();
   updateEntryCountBadge();
@@ -946,11 +975,12 @@ function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number;
  * Handle page unload - cleanup to prevent memory leaks
  */
 function handleBeforeUnload(): void {
-  // Cleanup clock component
+  // Cleanup timer components (both modes)
   try {
     destroyClock();
+    destroyRadialTimerView();
   } catch (e) {
-    logger.warn('Clock cleanup error:', e);
+    logger.warn('Timer cleanup error:', e);
   }
 
   // Cleanup sync service
