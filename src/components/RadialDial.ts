@@ -87,18 +87,7 @@ export class RadialDial {
       el.style.top = `${y}px`;
       el.style.transform = 'translate(-50%, -50%)';
 
-      // Tap handler
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.handleNumberTap(num, el);
-      });
-
-      el.addEventListener('touchend', (e) => {
-        if (!this.isDragging && Math.abs(this.velocity) < 0.5) {
-          e.preventDefault();
-          this.handleNumberTap(num, el);
-        }
-      }, { passive: false });
+      // Note: Tap detection is handled in handleDragEnd to avoid duplicate events
 
       this.dialNumbers!.appendChild(el);
     });
@@ -231,15 +220,15 @@ export class RadialDial {
     this.lastDragTime = now;
   };
 
-  private handleDragEnd = (e: MouseEvent | TouchEvent): void => {
+  private handleDragEnd = (): void => {
     if (!this.isDragging) return;
     this.isDragging = false;
 
     // If we didn't drag significantly, treat as a tap
     if (!this.hasDraggedSignificantly && this.dragStartPos) {
-      // Find which number was tapped
-      const target = e.target as HTMLElement;
-      const numberEl = target.closest('.dial-number') as HTMLElement;
+      // Find which number was tapped using the start position
+      const el = document.elementFromPoint(this.dragStartPos.x, this.dragStartPos.y);
+      const numberEl = el?.closest('.dial-number') as HTMLElement | null;
       if (numberEl && numberEl.dataset.num !== undefined) {
         const num = parseInt(numberEl.dataset.num, 10);
         this.handleNumberTap(num, numberEl);

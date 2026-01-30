@@ -131,15 +131,15 @@
   justify-content: center;
   position: relative;
   overflow: visible;
-  min-height: 350px;
-  padding: 10px 0;
+  min-height: 380px;
+  padding: 0;
 }
 
-/* Dial Container - Made larger */
+/* Dial Container - Maximized */
 .dial-container {
   position: relative;
-  width: min(520px, 95vw);
-  height: min(520px, 95vw);
+  width: min(600px, 98vw);
+  height: min(600px, 98vw);
   flex-shrink: 0;
 }
 
@@ -190,11 +190,11 @@
 .dial-tick {
   position: absolute;
   width: 2px;
-  height: 10px;
+  height: 12px;
   background: var(--text-tertiary);
   left: 50%;
   top: 8px;
-  transform-origin: 0 252px; /* Scaled for 520px dial */
+  transform-origin: 0 292px; /* Scaled for 600px dial */
   opacity: 0.5;
 }
 
@@ -218,19 +218,27 @@
 
 .dial-number {
   position: absolute;
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
   user-select: none;
   z-index: 10;
   pointer-events: auto;
+  /* Visible circle around number */
+  background: var(--surface-elevated);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
 }
 
 .dial-number span {
@@ -240,12 +248,19 @@
 .dial-number:active,
 .dial-number.pressed {
   color: var(--primary);
-  transform: translate(-50%, -50%) scale(1.2);
+  background: rgba(56, 189, 248, 0.15);
+  border-color: var(--primary);
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(56, 189, 248, 0.3);
 }
 
 .dial-number.flash {
   color: var(--primary);
+  border-color: var(--primary);
   text-shadow: 0 0 20px var(--primary);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
 }
 
 /* Gesture Area */
