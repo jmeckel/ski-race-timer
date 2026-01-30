@@ -29,6 +29,9 @@ export class RadialDial {
   private lastDragTime = 0;
   private accumulatedRotation = 0;
   private spinAnimationId: number | null = null;
+  private snapBackTimeoutId: number | null = null;
+  private dragStartPos: { x: number; y: number } | null = null;
+  private hasDraggedSignificantly = false;
 
   // Bib value
   private bibValue = '';
@@ -153,10 +156,18 @@ export class RadialDial {
     // Don't start drag if outside the dial
     if (dist > rect.width * 0.5) return;
 
-    e.preventDefault();
+    // Cancel any pending snap-back
+    if (this.snapBackTimeoutId) {
+      clearTimeout(this.snapBackTimeoutId);
+      this.snapBackTimeoutId = null;
+    }
 
+    // Track start position to detect taps vs drags
+    this.dragStartPos = { x: clientX, y: clientY };
+    this.hasDraggedSignificantly = false;
     this.isDragging = true;
     this.velocity = 0;
+
     if (this.spinAnimationId) {
       cancelAnimationFrame(this.spinAnimationId);
       this.spinAnimationId = null;
@@ -171,12 +182,26 @@ export class RadialDial {
 
   private handleDragMove = (e: MouseEvent | TouchEvent): void => {
     if (!this.isDragging) return;
-    e.preventDefault();
 
-    const rect = this.container.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
+    // Check if we've moved enough to consider this a drag (not a tap)
+    if (this.dragStartPos && !this.hasDraggedSignificantly) {
+      const moveDistance = Math.sqrt(
+        Math.pow(clientX - this.dragStartPos.x, 2) +
+        Math.pow(clientY - this.dragStartPos.y, 2)
+      );
+      if (moveDistance > 10) {
+        this.hasDraggedSignificantly = true;
+      } else {
+        return; // Not enough movement yet, might be a tap
+      }
+    }
+
+    e.preventDefault();
+
+    const rect = this.container.getBoundingClientRect();
     const currentAngle = this.getAngle(clientX, clientY, rect);
     let deltaAngle = currentAngle - this.lastAngle;
 
@@ -206,9 +231,25 @@ export class RadialDial {
     this.lastDragTime = now;
   };
 
-  private handleDragEnd = (): void => {
+  private handleDragEnd = (e: MouseEvent | TouchEvent): void => {
     if (!this.isDragging) return;
     this.isDragging = false;
+
+    // If we didn't drag significantly, treat as a tap
+    if (!this.hasDraggedSignificantly && this.dragStartPos) {
+      // Find which number was tapped
+      const target = e.target as HTMLElement;
+      const numberEl = target.closest('.dial-number') as HTMLElement;
+      if (numberEl && numberEl.dataset.num !== undefined) {
+        const num = parseInt(numberEl.dataset.num, 10);
+        this.handleNumberTap(num, numberEl);
+      }
+      this.dragStartPos = null;
+      this.dialNumbers?.classList.remove('momentum');
+      return;
+    }
+
+    this.dragStartPos = null;
 
     // Continue with momentum
     if (Math.abs(this.velocity) > 0.5) {
@@ -216,6 +257,7 @@ export class RadialDial {
       this.spinWithMomentum();
     } else {
       this.dialNumbers?.classList.remove('momentum');
+      this.scheduleSnapBack();
     }
   };
 
@@ -224,6 +266,7 @@ export class RadialDial {
       this.isSpinning = false;
       this.velocity = 0;
       this.dialNumbers?.classList.remove('momentum');
+      this.scheduleSnapBack();
       return;
     }
 
@@ -243,6 +286,34 @@ export class RadialDial {
     this.velocity *= this.options.friction;
 
     this.spinAnimationId = requestAnimationFrame(this.spinWithMomentum);
+  };
+
+  private scheduleSnapBack(): void {
+    // Clear any existing snap-back timeout
+    if (this.snapBackTimeoutId) {
+      clearTimeout(this.snapBackTimeoutId);
+    }
+
+    // Schedule snap-back after a short delay
+    this.snapBackTimeoutId = window.setTimeout(() => {
+      this.snapBack();
+    }, 800); // 800ms delay before snapping back
+  }
+
+  private snapBack = (): void => {
+    // Animate rotation back to 0
+    const snapSpeed = 0.15; // How fast to snap back (0-1)
+
+    if (Math.abs(this.rotation) < 1) {
+      this.rotation = 0;
+      this.updateDialRotation();
+      return;
+    }
+
+    this.rotation *= (1 - snapSpeed);
+    this.updateDialRotation();
+
+    this.spinAnimationId = requestAnimationFrame(this.snapBack);
   };
 
   private adjustBib(direction: number): void {
@@ -312,6 +383,9 @@ export class RadialDial {
   destroy(): void {
     if (this.spinAnimationId) {
       cancelAnimationFrame(this.spinAnimationId);
+    }
+    if (this.snapBackTimeoutId) {
+      clearTimeout(this.snapBackTimeoutId);
     }
 
     window.removeEventListener('mousemove', this.handleDragMove);
