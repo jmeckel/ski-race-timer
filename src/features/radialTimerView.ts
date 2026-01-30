@@ -91,7 +91,7 @@ function initRadialClock(): void {
 
     if (hmEl) hmEl.textContent = `${h}:${m}`;
     if (secEl) secEl.textContent = s;
-    if (subEl) subEl.textContent = `.${ms}`;
+    if (subEl) subEl.textContent = ms;
   };
 
   // Clear existing interval if re-initializing
@@ -397,7 +397,7 @@ function showRadialConfirmation(entry: Entry): void {
   const subEl = getElement('radial-time-subseconds');
   if (hmEl) hmEl.textContent = `${h}:${m}`;
   if (secEl) secEl.textContent = s;
-  if (subEl) subEl.textContent = `.${ms}`;
+  if (subEl) subEl.textContent = ms;
 
   // Flash effects
   const dialRing = getElement('dial-ring');
