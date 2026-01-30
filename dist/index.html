@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-CGgbTcsC.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-Ceg-pB3-.css">
+  <script type="module" crossorigin src="/assets/main-M2guRpLS.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-DVwvTd1H.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -86,10 +86,14 @@
             <div class="radial-bib-corner">
               <div class="radial-bib-label" data-i18n="bib">Bib</div>
               <div class="radial-bib-value" id="radial-bib-value">---<span class="radial-bib-cursor"></span></div>
-              <button class="radial-clear-btn" id="radial-clear-btn" data-i18n="clear">Clear</button>
             </div>
 
-            <!-- Top Right: Status -->
+            <!-- Top Right: Clear Button -->
+            <div class="radial-clear-corner">
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear">✕</button>
+            </div>
+
+            <!-- Status (hidden, using header instead) -->
             <div class="radial-status-corner">
               <div class="radial-status-row" id="radial-gps-status">
                 <span class="radial-status-dot inactive"></span>
@@ -155,7 +159,10 @@
             <!-- Bottom Right: Time Button -->
             <div class="radial-time-btn-corner">
               <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
-                <span class="radial-time-btn-icon">●</span>
+                <svg class="radial-time-btn-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
                 <span data-i18n="time">TIME</span>
               </button>
             </div>
