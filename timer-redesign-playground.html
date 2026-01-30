@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ski Race Timer - Radical Redesign Explorer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    .playground {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: 1fr auto;
+      min-height: 100vh;
+      gap: 0;
+    }
+
+    /* Controls Panel */
+    .controls {
+      background: #141414;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid #2a2a2a;
+      grid-row: span 2;
+    }
+
+    .controls h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .control-group {
+      margin-bottom: 24px;
+    }
+
+    .control-group h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .control-row {
+      margin-bottom: 16px;
+    }
+
+    .control-row label {
+      display: block;
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .control-row input[type="range"] {
+      width: 100%;
+      accent-color: #0EA5E9;
+    }
+
+    .control-row .value {
+      font-size: 12px;
+      color: #666;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 13px;
+    }
+
+    /* Preset Buttons */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-btn {
+      padding: 8px 12px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #aaa;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-btn:hover {
+      background: #2a2a2a;
+      border-color: #0EA5E9;
+      color: #fff;
+    }
+
+    .preset-btn.active {
+      background: #0EA5E9;
+      border-color: #0EA5E9;
+      color: #fff;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: #333;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle.active {
+      background: #0EA5E9;
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle.active::after {
+      transform: translateX(20px);
+    }
+
+    /* Preview Area */
+    .preview-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: #0a0a0a;
+    }
+
+    /* Phone Frame */
+    .phone-frame {
+      width: 375px;
+      height: 667px;
+      background: #0a0a0a;
+      border-radius: 40px;
+      border: 3px solid #333;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 30px;
+      background: #000;
+      border-radius: 0 0 20px 20px;
+      z-index: 10;
+    }
+
+    .phone-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: 40px;
+      overflow: hidden;
+    }
+
+    /* Timer Screen Layouts */
+    .timer-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+      background: var(--bg-color);
+      transition: all 0.3s ease;
+    }
+
+    /* Layout Variations */
+    .timer-screen[data-layout="classic"] {
+      /* Default top-to-bottom */
+    }
+
+    .timer-screen[data-layout="centered"] {
+      justify-content: center;
+      align-items: center;
+    }
+
+    .timer-screen[data-layout="split"] {
+      display: grid;
+      grid-template-rows: 1fr auto 1fr;
+    }
+
+    .timer-screen[data-layout="minimal"] {
+      justify-content: center;
+    }
+
+    .timer-screen[data-layout="radial"] {
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Clock Styles */
+    .clock {
+      text-align: center;
+      font-family: 'SF Mono', Monaco, 'JetBrains Mono', monospace;
+      transition: all 0.3s ease;
+    }
+
+    .clock-time {
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .clock-ms {
+      opacity: 0.6;
+      font-size: 0.5em;
+    }
+
+    .clock-date {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Clock Style Variations */
+    .clock[data-style="gradient"] .clock-time {
+      background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .clock[data-style="neon"] .clock-time {
+      color: #0EA5E9;
+      text-shadow: 0 0 20px rgba(14, 165, 233, 0.5), 0 0 40px rgba(14, 165, 233, 0.3);
+    }
+
+    .clock[data-style="solid"] .clock-time {
+      color: #fff;
+    }
+
+    .clock[data-style="outline"] .clock-time {
+      color: transparent;
+      -webkit-text-stroke: 2px #0EA5E9;
+    }
+
+    .clock[data-style="retro"] .clock-time {
+      font-family: 'Courier New', monospace;
+      color: #22c55e;
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+      background: #0a0a0a;
+      padding: 8px 16px;
+      border: 2px solid #22c55e;
+      border-radius: 4px;
+    }
+
+    /* Timing Point Styles */
+    .timing-points {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .point-btn {
+      padding: 12px 24px;
+      border-radius: var(--btn-radius);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      min-width: 80px;
+    }
+
+    .point-btn.start {
+      background: var(--start-bg);
+      color: var(--start-color);
+    }
+
+    .point-btn.finish {
+      background: var(--finish-bg);
+      color: var(--finish-color);
+    }
+
+    .point-btn.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    /* Timing Point Style Variations */
+    .timing-points[data-style="pills"] .point-btn {
+      border-radius: 50px;
+    }
+
+    .timing-points[data-style="blocks"] .point-btn {
+      border-radius: 4px;
+      flex: 1;
+    }
+
+    .timing-points[data-style="icons"] .point-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timing-points[data-style="tabs"] .point-btn {
+      border-radius: 0;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: #888;
+    }
+
+    .timing-points[data-style="tabs"] .point-btn.start.active {
+      border-color: var(--start-color);
+      color: var(--start-color);
+    }
+
+    .timing-points[data-style="tabs"] .point-btn.finish.active {
+      border-color: var(--finish-color);
+      color: var(--finish-color);
+    }
+
+    /* Timestamp Button Styles */
+    .timestamp-btn {
+      padding: 24px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 24px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .timestamp-btn[data-style="classic"] {
+      background: linear-gradient(180deg, #E31837 0%, #B91C1C 100%);
+      color: white;
+      border-radius: 12px;
+    }
+
+    .timestamp-btn[data-style="circle"] {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #E31837 0%, #B91C1C 100%);
+      color: white;
+      align-self: center;
+      box-shadow: 0 8px 30px rgba(227, 24, 55, 0.4);
+    }
+
+    .timestamp-btn[data-style="fullwidth"] {
+      background: linear-gradient(180deg, #E31837 0%, #B91C1C 100%);
+      color: white;
+      border-radius: 0;
+      margin: 0 -16px;
+      padding: 32px;
+    }
+
+    .timestamp-btn[data-style="minimal"] {
+      background: transparent;
+      border: 3px solid #E31837;
+      color: #E31837;
+      border-radius: 12px;
+    }
+
+    .timestamp-btn[data-style="floating"] {
+      position: absolute;
+      bottom: 100px;
+      right: 20px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #E31837;
+      color: white;
+      font-size: 14px;
+      box-shadow: 0 8px 30px rgba(227, 24, 55, 0.5);
+    }
+
+    .timestamp-btn[data-style="bottom"] {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, #E31837 0%, #B91C1C 100%);
+      color: white;
+      border-radius: 0;
+      padding: 40px;
+    }
+
+    /* Bib Display */
+    .bib-display {
+      text-align: center;
+      padding: 16px;
+      background: var(--surface-color);
+      border-radius: var(--btn-radius);
+      transition: all 0.3s;
+    }
+
+    .bib-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .bib-value {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 48px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .bib-display[data-style="compact"] {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 20px;
+    }
+
+    .bib-display[data-style="compact"] .bib-value {
+      font-size: 32px;
+    }
+
+    .bib-display[data-style="prominent"] {
+      background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+      border: 2px solid #333;
+    }
+
+    .bib-display[data-style="prominent"] .bib-value {
+      font-size: 64px;
+      background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .bib-display[data-style="inline"] {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid #333;
+    }
+
+    .bib-display[data-style="inline"] .bib-value {
+      font-size: 24px;
+    }
+
+    /* Number Pad */
+    .number-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .num-btn {
+      padding: 16px;
+      background: var(--surface-color);
+      border: none;
+      border-radius: var(--btn-radius);
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .num-btn:active {
+      transform: scale(0.95);
+      background: var(--surface-elevated);
+    }
+
+    .num-btn.action {
+      background: #333;
+      color: #888;
+    }
+
+    .number-pad[data-style="compact"] {
+      gap: 4px;
+    }
+
+    .number-pad[data-style="compact"] .num-btn {
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    .number-pad[data-style="circular"] .num-btn {
+      border-radius: 50%;
+      aspect-ratio: 1;
+      padding: 0;
+    }
+
+    .number-pad[data-style="flat"] .num-btn {
+      background: transparent;
+      border: 1px solid #333;
+    }
+
+    /* Run Selector */
+    .run-selector {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .run-btn {
+      padding: 8px 20px;
+      background: var(--surface-color);
+      border: none;
+      border-radius: var(--btn-radius);
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .run-btn.active {
+      background: #0EA5E9;
+      color: #fff;
+    }
+
+    /* Last Recorded */
+    .last-recorded {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .last-recorded .bib {
+      font-family: monospace;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .last-recorded .point {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .last-recorded .point.finish {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10B981;
+    }
+
+    /* Radial Layout */
+    .timer-screen[data-layout="radial"] .radial-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+    }
+
+    .timer-screen[data-layout="radial"] .clock {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .timer-screen[data-layout="radial"] .timing-points {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .timer-screen[data-layout="radial"] .bib-display {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Progress Ring for Radial */
+    .progress-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 260px;
+      height: 260px;
+    }
+
+    .progress-ring circle {
+      fill: none;
+      stroke-width: 4;
+    }
+
+    .progress-ring .bg {
+      stroke: #222;
+    }
+
+    .progress-ring .progress {
+      stroke: #0EA5E9;
+      stroke-linecap: round;
+      stroke-dasharray: 816;
+      stroke-dashoffset: 204; /* 75% filled */
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex;
+      padding: 8px 16px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      background: #141414;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      color: #0EA5E9;
+    }
+
+    .tab-btn svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Prompt Output */
+    .prompt-area {
+      background: #141414;
+      border-top: 1px solid #2a2a2a;
+      padding: 20px;
+    }
+
+    .prompt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .prompt-header h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+    }
+
+    .copy-btn {
+      padding: 8px 16px;
+      background: #0EA5E9;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #0284C7;
+    }
+
+    .copy-btn.copied {
+      background: #10B981;
+    }
+
+    .prompt-output {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #aaa;
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* Color Pickers */
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .color-row label {
+      flex: 1;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .color-picker {
+      width: 40px;
+      height: 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: none;
+    }
+
+    /* Advanced Section */
+    .advanced-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-top: 1px solid #2a2a2a;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    .advanced-toggle span {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .advanced-content {
+      display: none;
+    }
+
+    .advanced-content.visible {
+      display: block;
+    }
+
+    /* CSS Variables for theming */
+    :root {
+      --bg-color: #0a0a0a;
+      --surface-color: #1e1e1e;
+      --surface-elevated: #2a2a2a;
+      --text-secondary: #888;
+      --start-color: #F97316;
+      --start-bg: rgba(249, 115, 22, 0.15);
+      --finish-color: #10B981;
+      --finish-bg: rgba(16, 185, 129, 0.15);
+      --btn-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="playground">
+    <!-- Controls Panel -->
+    <div class="controls">
+      <h2>Timer Screen Redesign</h2>
+
+      <!-- Presets -->
+      <div class="control-group">
+        <h3>Quick Presets</h3>
+        <div class="presets">
+          <button class="preset-btn active" data-preset="current">Current</button>
+          <button class="preset-btn" data-preset="minimal">Minimal</button>
+          <button class="preset-btn" data-preset="bold">Bold</button>
+          <button class="preset-btn" data-preset="radial">Radial</button>
+          <button class="preset-btn" data-preset="retro">Retro</button>
+        </div>
+      </div>
+
+      <!-- Layout -->
+      <div class="control-group">
+        <h3>Layout</h3>
+        <div class="control-row">
+          <label>Screen Layout</label>
+          <select id="layout">
+            <option value="classic">Classic (Top to Bottom)</option>
+            <option value="centered">Centered Focus</option>
+            <option value="split">Split View</option>
+            <option value="minimal">Minimal</option>
+            <option value="radial">Radial/Circular</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Element Order</label>
+          <select id="elementOrder">
+            <option value="clock-first">Clock First</option>
+            <option value="bib-first">Bib First</option>
+            <option value="button-first">Button First</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Clock -->
+      <div class="control-group">
+        <h3>Clock</h3>
+        <div class="control-row">
+          <label>Style</label>
+          <select id="clockStyle">
+            <option value="gradient">Gradient</option>
+            <option value="neon">Neon Glow</option>
+            <option value="solid">Solid White</option>
+            <option value="outline">Outline</option>
+            <option value="retro">Retro LCD</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Size: <span class="value" id="clockSizeValue">48px</span></label>
+          <input type="range" id="clockSize" min="32" max="72" value="48">
+        </div>
+        <div class="toggle-row">
+          <label>Show Milliseconds</label>
+          <div class="toggle active" id="showMs"></div>
+        </div>
+        <div class="toggle-row">
+          <label>Show Date</label>
+          <div class="toggle active" id="showDate"></div>
+        </div>
+      </div>
+
+      <!-- Timestamp Button -->
+      <div class="control-group">
+        <h3>Timestamp Button</h3>
+        <div class="control-row">
+          <label>Style</label>
+          <select id="btnStyle">
+            <option value="classic">Classic Rectangle</option>
+            <option value="circle">Large Circle</option>
+            <option value="fullwidth">Full Width</option>
+            <option value="minimal">Minimal/Outline</option>
+            <option value="floating">Floating (FAB)</option>
+            <option value="bottom">Bottom Dock</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>Button Text</label>
+          <select id="btnText">
+            <option value="TIME">TIME</option>
+            <option value="RECORD">RECORD</option>
+            <option value="TAP">TAP</option>
+            <option value="icon">Icon Only</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Timing Points -->
+      <div class="control-group">
+        <h3>Timing Points</h3>
+        <div class="control-row">
+          <label>Style</label>
+          <select id="pointStyle">
+            <option value="default">Default</option>
+            <option value="pills">Pills</option>
+            <option value="blocks">Blocks</option>
+            <option value="icons">Icon Circles</option>
+            <option value="tabs">Tab Style</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <label>Show Timing Points</label>
+          <div class="toggle active" id="showPoints"></div>
+        </div>
+      </div>
+
+      <!-- Bib Display -->
+      <div class="control-group">
+        <h3>Bib Display</h3>
+        <div class="control-row">
+          <label>Style</label>
+          <select id="bibStyle">
+            <option value="default">Default Card</option>
+            <option value="compact">Compact</option>
+            <option value="prominent">Prominent</option>
+            <option value="inline">Inline</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <label>Show Number Pad</label>
+          <div class="toggle active" id="showNumpad"></div>
+        </div>
+        <div class="control-row" id="numpadStyleRow">
+          <label>Number Pad Style</label>
+          <select id="numpadStyle">
+            <option value="default">Default</option>
+            <option value="compact">Compact</option>
+            <option value="circular">Circular</option>
+            <option value="flat">Flat/Outline</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Advanced Section -->
+      <div class="advanced-toggle" id="advancedToggle">
+        <span>Advanced Options</span>
+        <span>+</span>
+      </div>
+      <div class="advanced-content" id="advancedContent">
+        <!-- Colors -->
+        <div class="control-group">
+          <h3>Colors</h3>
+          <div class="color-row">
+            <label>Start Point</label>
+            <input type="color" class="color-picker" id="startColor" value="#F97316">
+          </div>
+          <div class="color-row">
+            <label>Finish Point</label>
+            <input type="color" class="color-picker" id="finishColor" value="#10B981">
+          </div>
+          <div class="color-row">
+            <label>Primary Accent</label>
+            <input type="color" class="color-picker" id="accentColor" value="#0EA5E9">
+          </div>
+        </div>
+
+        <!-- Corner Radius -->
+        <div class="control-group">
+          <h3>Corner Radius</h3>
+          <div class="control-row">
+            <label>Button Radius: <span class="value" id="radiusValue">12px</span></label>
+            <input type="range" id="btnRadius" min="0" max="50" value="12">
+          </div>
+        </div>
+
+        <!-- Additional Toggles -->
+        <div class="control-group">
+          <h3>Additional Elements</h3>
+          <div class="toggle-row">
+            <label>Show Run Selector</label>
+            <div class="toggle active" id="showRuns"></div>
+          </div>
+          <div class="toggle-row">
+            <label>Show Last Recorded</label>
+            <div class="toggle active" id="showLast"></div>
+          </div>
+          <div class="toggle-row">
+            <label>Show Progress Ring (Radial)</label>
+            <div class="toggle" id="showRing"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Area -->
+    <div class="preview-area">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-content">
+          <!-- Timer Screen -->
+          <div class="timer-screen" id="timerScreen" data-layout="classic">
+            <!-- Elements will be rendered dynamically -->
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="tab-bar">
+            <button class="tab-btn active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>Timer</span>
+            </button>
+            <button class="tab-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              <span>Results</span>
+            </button>
+            <button class="tab-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/>
+              </svg>
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt Output -->
+    <div class="prompt-area">
+      <div class="prompt-header">
+        <h3>Generated Prompt</h3>
+        <button class="copy-btn" id="copyBtn">Copy Prompt</button>
+      </div>
+      <div class="prompt-output" id="promptOutput">
+        Configure the timer screen using the controls on the left to generate a redesign prompt.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const DEFAULTS = {
+      layout: 'classic',
+      elementOrder: 'clock-first',
+      clockStyle: 'gradient',
+      clockSize: 48,
+      showMs: true,
+      showDate: true,
+      btnStyle: 'classic',
+      btnText: 'TIME',
+      pointStyle: 'default',
+      showPoints: true,
+      bibStyle: 'default',
+      showNumpad: true,
+      numpadStyle: 'default',
+      startColor: '#F97316',
+      finishColor: '#10B981',
+      accentColor: '#0EA5E9',
+      btnRadius: 12,
+      showRuns: true,
+      showLast: true,
+      showRing: false
+    };
+
+    const state = { ...DEFAULTS };
+
+    // Presets
+    const PRESETS = {
+      current: { ...DEFAULTS },
+      minimal: {
+        ...DEFAULTS,
+        layout: 'minimal',
+        clockStyle: 'solid',
+        clockSize: 56,
+        showMs: false,
+        showDate: false,
+        btnStyle: 'minimal',
+        pointStyle: 'tabs',
+        bibStyle: 'inline',
+        showNumpad: false,
+        showRuns: false,
+        showLast: false
+      },
+      bold: {
+        ...DEFAULTS,
+        layout: 'centered',
+        clockStyle: 'neon',
+        clockSize: 64,
+        btnStyle: 'circle',
+        pointStyle: 'icons',
+        bibStyle: 'prominent',
+        showNumpad: false
+      },
+      radial: {
+        ...DEFAULTS,
+        layout: 'radial',
+        clockStyle: 'gradient',
+        clockSize: 40,
+        btnStyle: 'floating',
+        pointStyle: 'pills',
+        bibStyle: 'inline',
+        showNumpad: false,
+        showRing: true
+      },
+      retro: {
+        ...DEFAULTS,
+        layout: 'classic',
+        clockStyle: 'retro',
+        clockSize: 36,
+        btnStyle: 'fullwidth',
+        pointStyle: 'blocks',
+        bibStyle: 'default',
+        numpadStyle: 'flat',
+        startColor: '#22c55e',
+        finishColor: '#eab308',
+        accentColor: '#22c55e',
+        btnRadius: 4
+      }
+    };
+
+    // DOM References
+    const timerScreen = document.getElementById('timerScreen');
+    const promptOutput = document.getElementById('promptOutput');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Initialize controls
+    function initControls() {
+      // Selects
+      ['layout', 'elementOrder', 'clockStyle', 'btnStyle', 'btnText', 'pointStyle', 'bibStyle', 'numpadStyle'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = state[id];
+          el.addEventListener('change', (e) => {
+            state[id] = e.target.value;
+            updateAll();
+          });
+        }
+      });
+
+      // Ranges
+      ['clockSize', 'btnRadius'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = state[id];
+          el.addEventListener('input', (e) => {
+            state[id] = parseInt(e.target.value);
+            document.getElementById(id + 'Value').textContent = state[id] + 'px';
+            updateAll();
+          });
+        }
+      });
+
+      // Toggles
+      ['showMs', 'showDate', 'showPoints', 'showNumpad', 'showRuns', 'showLast', 'showRing'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.toggle('active', state[id]);
+          el.addEventListener('click', () => {
+            state[id] = !state[id];
+            el.classList.toggle('active', state[id]);
+            updateAll();
+          });
+        }
+      });
+
+      // Color pickers
+      ['startColor', 'finishColor', 'accentColor'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = state[id];
+          el.addEventListener('input', (e) => {
+            state[id] = e.target.value;
+            updateAll();
+          });
+        }
+      });
+
+      // Presets
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const preset = btn.dataset.preset;
+          if (PRESETS[preset]) {
+            Object.assign(state, PRESETS[preset]);
+            syncControlsToState();
+            updateAll();
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          }
+        });
+      });
+
+      // Advanced toggle
+      const advToggle = document.getElementById('advancedToggle');
+      const advContent = document.getElementById('advancedContent');
+      advToggle.addEventListener('click', () => {
+        advContent.classList.toggle('visible');
+        advToggle.querySelector('span:last-child').textContent = advContent.classList.contains('visible') ? '-' : '+';
+      });
+
+      // Copy button
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(promptOutput.textContent).then(() => {
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Prompt';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+    }
+
+    // Sync controls to state (for preset loading)
+    function syncControlsToState() {
+      ['layout', 'elementOrder', 'clockStyle', 'btnStyle', 'btnText', 'pointStyle', 'bibStyle', 'numpadStyle'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = state[id];
+      });
+
+      ['clockSize', 'btnRadius'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = state[id];
+          document.getElementById(id + 'Value').textContent = state[id] + 'px';
+        }
+      });
+
+      ['showMs', 'showDate', 'showPoints', 'showNumpad', 'showRuns', 'showLast', 'showRing'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', state[id]);
+      });
+
+      ['startColor', 'finishColor', 'accentColor'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = state[id];
+      });
+    }
+
+    // Render preview
+    function renderPreview() {
+      // Update CSS variables
+      document.documentElement.style.setProperty('--start-color', state.startColor);
+      document.documentElement.style.setProperty('--start-bg', hexToRgba(state.startColor, 0.15));
+      document.documentElement.style.setProperty('--finish-color', state.finishColor);
+      document.documentElement.style.setProperty('--finish-bg', hexToRgba(state.finishColor, 0.15));
+      document.documentElement.style.setProperty('--btn-radius', state.btnRadius + 'px');
+
+      timerScreen.dataset.layout = state.layout;
+
+      let html = '';
+
+      // Build elements based on order
+      const elements = getOrderedElements();
+
+      if (state.layout === 'radial') {
+        html = renderRadialLayout();
+      } else {
+        elements.forEach(el => {
+          html += el;
+        });
+      }
+
+      // Add timestamp button (may be positioned absolutely)
+      if (!['floating', 'bottom'].includes(state.btnStyle)) {
+        html += renderTimestampBtn();
+      } else {
+        // Absolute positioned button goes at end
+        timerScreen.innerHTML = html;
+        timerScreen.innerHTML += renderTimestampBtn();
+        return;
+      }
+
+      timerScreen.innerHTML = html;
+    }
+
+    function getOrderedElements() {
+      const clock = renderClock();
+      const bib = renderBibDisplay();
+      const points = state.showPoints ? renderTimingPoints() : '';
+      const runs = state.showRuns ? renderRunSelector() : '';
+      const last = state.showLast ? renderLastRecorded() : '';
+      const numpad = state.showNumpad ? renderNumpad() : '';
+
+      switch (state.elementOrder) {
+        case 'bib-first':
+          return [bib, clock, points, runs, last, numpad];
+        case 'button-first':
+          return [renderTimestampBtn(), clock, bib, points, runs, numpad, last];
+        default: // clock-first
+          return [clock, points, runs, bib, numpad, last];
+      }
+    }
+
+    function renderClock() {
+      const time = state.showMs ? '12:34:56<span class="clock-ms">.789</span>' : '12:34:56';
+      const date = state.showDate ? '<div class="clock-date">Fri, Jan 31, 2025</div>' : '';
+      return `
+        <div class="clock" data-style="${state.clockStyle}">
+          <div class="clock-time" style="font-size: ${state.clockSize}px">${time}</div>
+          ${date}
+        </div>
+      `;
+    }
+
+    function renderTimingPoints() {
+      const startIcon = state.pointStyle === 'icons' ? '&#9654;' : 'Start';
+      const finishIcon = state.pointStyle === 'icons' ? '&#9632;' : 'Finish';
+      return `
+        <div class="timing-points" data-style="${state.pointStyle}">
+          <button class="point-btn start">${startIcon}</button>
+          <button class="point-btn finish active">${finishIcon}</button>
+        </div>
+      `;
+    }
+
+    function renderRunSelector() {
+      return `
+        <div class="run-selector">
+          <button class="run-btn active">Run 1</button>
+          <button class="run-btn">Run 2</button>
+        </div>
+      `;
+    }
+
+    function renderTimestampBtn() {
+      const text = state.btnText === 'icon' ? '&#9201;' : state.btnText;
+      return `<button class="timestamp-btn" data-style="${state.btnStyle}">${text}</button>`;
+    }
+
+    function renderBibDisplay() {
+      return `
+        <div class="bib-display" data-style="${state.bibStyle}">
+          <div class="bib-label">BIB</div>
+          <div class="bib-value">042</div>
+        </div>
+      `;
+    }
+
+    function renderNumpad() {
+      return `
+        <div class="number-pad" data-style="${state.numpadStyle}">
+          ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="num-btn">${n}</button>`).join('')}
+          <button class="num-btn action">C</button>
+          <button class="num-btn">0</button>
+          <button class="num-btn action">&#9003;</button>
+        </div>
+      `;
+    }
+
+    function renderLastRecorded() {
+      return `
+        <div class="last-recorded">
+          <span>Last:</span>
+          <span class="bib">041</span>
+          <span class="point finish">Finish</span>
+          <span>12:33:45.123</span>
+        </div>
+      `;
+    }
+
+    function renderRadialLayout() {
+      const ringHtml = state.showRing ? `
+        <svg class="progress-ring" viewBox="0 0 260 260">
+          <circle class="bg" cx="130" cy="130" r="126"/>
+          <circle class="progress" cx="130" cy="130" r="126"/>
+        </svg>
+      ` : '';
+
+      return `
+        <div class="radial-container">
+          ${ringHtml}
+          ${renderClock()}
+          <div class="bib-display" data-style="inline" style="position:absolute;top:20px;left:50%;transform:translateX(-50%)">
+            <div class="bib-label">BIB</div>
+            <div class="bib-value" style="font-size:24px">042</div>
+          </div>
+          ${state.showPoints ? `<div class="timing-points" data-style="pills" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%)">
+            <button class="point-btn start">S</button>
+            <button class="point-btn finish active">F</button>
+          </div>` : ''}
+        </div>
+        ${state.showLast ? renderLastRecorded() : ''}
+      `;
+    }
+
+    // Update prompt
+    function updatePrompt() {
+      const parts = [];
+      const changes = [];
+
+      // Layout
+      if (state.layout !== DEFAULTS.layout) {
+        const layoutDesc = {
+          'classic': 'traditional top-to-bottom layout',
+          'centered': 'centered focus layout with elements grouped in the middle',
+          'split': 'split view layout',
+          'minimal': 'minimal layout showing only essential elements',
+          'radial': 'radial/circular layout with the clock at center'
+        };
+        parts.push(`Use a ${layoutDesc[state.layout]}`);
+      }
+
+      // Clock
+      const clockChanges = [];
+      if (state.clockStyle !== DEFAULTS.clockStyle) {
+        const styleDesc = {
+          'gradient': 'gradient text effect (blue)',
+          'neon': 'neon glow effect with text shadow',
+          'solid': 'solid white color',
+          'outline': 'outline/stroke style',
+          'retro': 'retro LCD display style with green color and border'
+        };
+        clockChanges.push(styleDesc[state.clockStyle]);
+      }
+      if (state.clockSize !== DEFAULTS.clockSize) {
+        clockChanges.push(`${state.clockSize}px font size`);
+      }
+      if (!state.showMs) clockChanges.push('hide milliseconds');
+      if (!state.showDate) clockChanges.push('hide date');
+      if (clockChanges.length) {
+        parts.push(`Clock: ${clockChanges.join(', ')}`);
+      }
+
+      // Timestamp button
+      const btnChanges = [];
+      if (state.btnStyle !== DEFAULTS.btnStyle) {
+        const btnDesc = {
+          'classic': 'rectangular button',
+          'circle': 'large circular button (140px)',
+          'fullwidth': 'full-width button spanning edge to edge',
+          'minimal': 'outline/minimal style with transparent background',
+          'floating': 'floating action button (FAB) in bottom right',
+          'bottom': 'bottom-docked button filling the bottom of the screen'
+        };
+        btnChanges.push(btnDesc[state.btnStyle]);
+      }
+      if (state.btnText !== DEFAULTS.btnText) {
+        btnChanges.push(`label "${state.btnText === 'icon' ? 'stopwatch icon' : state.btnText}"`);
+      }
+      if (btnChanges.length) {
+        parts.push(`Timestamp button: ${btnChanges.join(', ')}`);
+      }
+
+      // Timing points
+      if (!state.showPoints) {
+        parts.push('Hide timing point buttons (Start/Finish)');
+      } else if (state.pointStyle !== DEFAULTS.pointStyle) {
+        const pointDesc = {
+          'pills': 'pill-shaped buttons',
+          'blocks': 'block/rectangular buttons that fill available width',
+          'icons': 'circular icon buttons',
+          'tabs': 'tab-style with underline indicator'
+        };
+        parts.push(`Timing points: ${pointDesc[state.pointStyle]}`);
+      }
+
+      // Bib display
+      if (state.bibStyle !== DEFAULTS.bibStyle) {
+        const bibDesc = {
+          'compact': 'compact horizontal layout',
+          'prominent': 'prominent style with gradient background and larger text',
+          'inline': 'minimal inline style with border'
+        };
+        parts.push(`Bib display: ${bibDesc[state.bibStyle]}`);
+      }
+
+      // Number pad
+      if (!state.showNumpad) {
+        parts.push('Hide number pad');
+      } else if (state.numpadStyle !== DEFAULTS.numpadStyle) {
+        const padDesc = {
+          'compact': 'compact with smaller buttons',
+          'circular': 'circular buttons',
+          'flat': 'flat/outline style'
+        };
+        parts.push(`Number pad: ${padDesc[state.numpadStyle]}`);
+      }
+
+      // Additional elements
+      if (!state.showRuns) parts.push('Hide run selector');
+      if (!state.showLast) parts.push('Hide last recorded display');
+      if (state.showRing) parts.push('Add circular progress ring around clock');
+
+      // Colors
+      if (state.startColor !== DEFAULTS.startColor) {
+        parts.push(`Start point color: ${state.startColor}`);
+      }
+      if (state.finishColor !== DEFAULTS.finishColor) {
+        parts.push(`Finish point color: ${state.finishColor}`);
+      }
+      if (state.accentColor !== DEFAULTS.accentColor) {
+        parts.push(`Primary accent color: ${state.accentColor}`);
+      }
+
+      // Border radius
+      if (state.btnRadius !== DEFAULTS.btnRadius) {
+        parts.push(`Button border-radius: ${state.btnRadius}px`);
+      }
+
+      // Generate prompt
+      if (parts.length === 0) {
+        promptOutput.textContent = 'This is the current timer screen design. Adjust the controls to explore redesigns and generate a prompt.';
+      } else {
+        const intro = 'Redesign the Ski Race Timer screen with the following changes:\n\n';
+        const bullets = parts.map(p => '- ' + p).join('\n');
+        const context = '\n\nThe timer screen is a mobile-first PWA for recording ski race timestamps. It needs to work in outdoor conditions with high contrast, glove-friendly touch targets, and clear visual feedback.';
+        promptOutput.textContent = intro + bullets + context;
+      }
+    }
+
+    // Helper: hex to rgba
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // Update all
+    function updateAll() {
+      renderPreview();
+      updatePrompt();
+    }
+
+    // Initialize
+    initControls();
+    updateAll();
+  </script>
+</body>
+</html>
