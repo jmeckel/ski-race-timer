@@ -279,6 +279,9 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
   - Use `data-i18n` attribute on HTML elements for automatic translation
   - Short keys like `startShort`/`finishShort` for compact UI (S/F in English, S/Z in German)
   - Translations interface uses `[key: string]: string` index signature for flexibility
+- **Onboarding**: First-run wizard in `src/onboarding.ts` guides users through setup
+  - Skip button allows dismissing at any time while saving progress (device name, role)
+  - Completed state stored in localStorage (`skiTimerOnboarding`)
 - **GPS sync**: Uses Geolocation API for real GPS timestamps
 - **Haptic feedback**: Uses Navigator.vibrate() API
 - **Sound feedback**: Uses Web Audio API for beep sounds
@@ -311,3 +314,47 @@ When working on the radial dial component, be aware of these common issues:
 - **Dial size**: Currently 100vw to fill screen width. Dial center at 52% leaves room for numbers at 38% radius.
 - **Overlap prevention**: Use negative margins on `.radial-center-area` and constrained height on record button to prevent overlap.
 - **Z-index layers**: dial-ring (base), dial-numbers (z-index: 10), dial-center (z-index: 15), top-row (z-index: 20)
+
+### Landscape Mode Layout
+
+In landscape orientation, the radial dial uses a completely different two-column layout:
+
+**Structure:**
+- **Left column**: Dial only (full viewport height, no header/tab bar constraints)
+- **Right column**: Header → Bib input → Stats → Record button → Tab bar
+
+**CSS Implementation** (in `src/styles/radial-dial.css`):
+```css
+/* Grid at .app level with display:contents to flatten hierarchy */
+.app:has(.timer-view.radial-mode.active) {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto 1fr auto;
+  column-gap: 16px;
+}
+
+/* Dissolve containers so children participate in parent grid */
+.app:has(...) > #main { display: contents; }
+.timer-view.radial-mode.active { display: contents; }
+.radial-bottom-row { display: contents; }
+
+/* Dial spans all rows in left column */
+.radial-center-area { grid-column: 1; grid-row: 1 / -1; }
+
+/* Right column elements placed in specific rows */
+.header { grid-column: 2; grid-row: 1; }
+.radial-top-row { grid-column: 2; grid-row: 2; }
+.radial-stats-corner { grid-column: 2; grid-row: 3; }
+.radial-time-btn-corner { grid-column: 2; grid-row: 4; }
+.tab-bar { grid-column: 2; grid-row: 5; }
+```
+
+**Key techniques:**
+- `display: contents` flattens DOM hierarchy allowing nested elements to participate in ancestor grid
+- Dial size uses `min(100vh - 8px, 100dvh - 8px, 55vw)` to fit viewport height
+- Header and tab bar only span right column, giving dial maximum vertical space
+- Resize handler in `RadialDial.ts` regenerates number positions on orientation change
+
+**Responsive breakpoints:**
+- `@media (orientation: landscape)` - Base landscape layout
+- `@media (orientation: landscape) and (max-height: 450px)` - Compact layout for short phones
