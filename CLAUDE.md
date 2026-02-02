@@ -698,6 +698,42 @@ These patterns emerged from comprehensive code review and should be followed in 
 
 35. **Import store and t() in components that display text** - Components like `PullToRefresh` or `RadialDial` that render user-visible text need to import both `store` (for `currentLang`) and `t()` from translations, even if they didn't originally need localization.
 
+36. **Remove deprecated auth methods, don't just mark deprecated** - Legacy authentication paths (like accepting PIN hash directly) create security vulnerabilities. If someone obtains the hash, they can authenticate without knowing the PIN. Remove legacy code entirely rather than leaving it with warnings.
+
+37. **Sensitive data in request body, not headers** - Headers can be logged by proxies, CDNs, and load balancers. Server PINs, API keys, and other secrets should be sent in the request body (over HTTPS) rather than headers like `X-Server-Pin`.
+
+38. **Track listeners in Maps for per-item cleanup** - For components that create multiple items with listeners (like VirtualList), use a `Map<itemId, { click, keydown, ... }>` to track listeners per item. This enables proper cleanup when items are removed or re-rendered.
+
+39. **Modal functions must clean up previous listeners** - Functions like `openFaultModal()` that add event listeners must remove old listeners before adding new ones. Store listener references at module level and remove them at the start of the function.
+
+40. **Wrap async init chains in try-catch** - Functions like `pushLocalEntries()` called during initialization should be wrapped in try-catch. One failure shouldn't prevent other initialization steps from completing.
+
+41. **BroadcastChannel handlers need defensive parsing** - Message handlers should use `event.data || {}` and wrap processing in try-catch. Malformed messages from other tabs shouldn't crash the listener.
+
+42. **Promise chains need .catch() even for fire-and-forget** - Even if you don't need the result, add `.catch()` to log errors. Silent promise rejections hide bugs: `initializeAdminPin().then(...).catch(err => logger.error(err))`.
+
+43. **Track visual effect timeouts, clear in destroy()** - Store setTimeout IDs in a Set and clear all in `destroy()`. Prevents callbacks firing after component destruction causing errors or visual glitches.
+
+44. **Use existing data structures over DOM queries** - Instead of `querySelectorAll('[tabindex="0"]')` on every keystroke, use the component's existing Map of visible items. DOM queries are expensive; data structure lookups are O(1).
+
+45. **Queue bounds check before push, not conditionally** - If a notification queue has a max size, check and drain BEFORE every push, not just inside an `if (isProcessing)` block. Ensures bounds are respected regardless of processing state.
+
+46. **Dispatch events for error states** - When sync operations fail, dispatch CustomEvents like `fault-sync-error` so UI components can update status indicators. Don't just log errors silently.
+
+47. **API helpers should return result objects** - Functions like `updateHighestBib()` should return `{ success: true }` or `{ success: false, error: '...' }` rather than returning void or throwing. Callers can then include warnings in responses.
+
+48. **Form labels need explicit `for` attribute** - Labels should have `for="input-id"` pointing to the input's `id`. Implicit association (label wrapping input) works but explicit is clearer. Toggle switches with wrapped checkboxes are an exception.
+
+49. **Dynamic containers need aria-live** - Containers that are populated dynamically (empty states, lists that load async) need `aria-live="polite"` so screen readers announce when content appears.
+
+50. **Test offline transitions thoroughly** - PWA offline testing should verify: (1) recording works offline, (2) data persists in localStorage, (3) app works after going back online, (4) no errors in console during transitions. Use Playwright's `context.setOffline(true/false)`.
+
+51. **Style elements created dynamically must be cleaned up** - If a component appends a `<style>` element to `document.head` (for animations, etc.), store the reference and remove it in `destroy()`. Otherwise styles accumulate on component re-creation.
+
+52. **Validate function parameters defensively** - Functions that receive IDs (like `deleteRace(raceId)`) should validate the parameter exists and is the right type before calling methods on it. `raceId.toLowerCase()` throws if raceId is null.
+
+53. **Array access needs bounds validation** - Before accessing `config.intervals[index]`, verify `config.intervals` exists and has elements. Add fallbacks: `config.intervals?.[index] ?? config.baseInterval`.
+
 ## Animation Patterns
 
 ### Multiple Animation Types
