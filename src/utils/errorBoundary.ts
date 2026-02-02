@@ -183,6 +183,12 @@ function showErrorOverlay(message: string): void {
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 
+  // Focus the dismiss button for keyboard accessibility
+  setTimeout(() => {
+    const dismissBtn = document.getElementById('error-dismiss-btn');
+    dismissBtn?.focus();
+  }, 100);
+
   // Add button handlers
   document.getElementById('error-dismiss-btn')?.addEventListener('click', () => {
     overlay.remove();

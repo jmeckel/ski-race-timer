@@ -8,7 +8,7 @@ import { syncService } from '../services';
 import { feedbackTap, feedbackSuccess } from '../services';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
-import { escapeHtml, getElement } from '../utils';
+import { escapeHtml, escapeAttr, getElement } from '../utils';
 import { openModal, closeModal } from './modals';
 import {
   openFaultRecordingModal, initFaultRecordingModal,
@@ -255,7 +255,7 @@ export function updateOtherJudgesCoverage(): void {
 
   coverageContainer.style.display = 'flex';
   coverageList.innerHTML = otherAssignments.map(a => `
-    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeHtml(a.deviceName)}${a.isReady ? ' - Ready' : ''}">
+    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? ' - Ready' : ''}">
       ${a.isReady ? '<span class="ready-check">✓</span>' : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>

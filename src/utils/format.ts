@@ -55,6 +55,16 @@ export function escapeHtml(str: string): string {
 }
 
 /**
+ * Escape string for use in HTML attributes
+ * Escapes quotes in addition to HTML entities
+ */
+export function escapeAttr(str: string): string {
+  return escapeHtml(str)
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Get color for timing point
  */
 export function getPointColor(point: TimingPoint): string {

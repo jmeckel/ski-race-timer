@@ -145,6 +145,12 @@ export class VirtualList {
    * Apply current filters and group items
    */
   applyFilters(searchTerm?: string, pointFilter?: string, statusFilter?: string): void {
+    // Cancel any pending scroll-triggered render to prevent double-render
+    if (this.scrollDebounceTimeout !== null) {
+      clearTimeout(this.scrollDebounceTimeout);
+      this.scrollDebounceTimeout = null;
+    }
+
     const state = store.getState();
     let filteredEntries = [...this.entries];
 

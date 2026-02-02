@@ -29,6 +29,7 @@ export class RadialDial {
   private lastDragTime = 0;
   private accumulatedRotation = 0;
   private spinAnimationId: number | null = null;
+  private snapBackAnimationId: number | null = null;
   private snapBackTimeoutId: number | null = null;
   private resizeTimeoutId: number | null = null;
   private dragStartPos: { x: number; y: number } | null = null;
@@ -88,6 +89,17 @@ export class RadialDial {
       el.style.left = `${x}px`;
       el.style.top = `${y}px`;
       el.style.transform = 'translate(-50%, -50%)';
+
+      // Keyboard accessibility
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `Number ${num}`);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.handleNumberTap(num, el);
+        }
+      });
 
       // Note: Tap detection is handled in handleDragEnd to avoid duplicate events
 
@@ -173,10 +185,16 @@ export class RadialDial {
     // Don't start drag if outside the dial
     if (dist > rect.width * 0.5) return;
 
-    // Cancel any pending snap-back
+    // Cancel any pending snap-back timeout
     if (this.snapBackTimeoutId) {
       clearTimeout(this.snapBackTimeoutId);
       this.snapBackTimeoutId = null;
+    }
+
+    // Cancel any running snap-back animation
+    if (this.snapBackAnimationId) {
+      cancelAnimationFrame(this.snapBackAnimationId);
+      this.snapBackAnimationId = null;
     }
 
     // Track start position to detect taps vs drags
@@ -368,7 +386,7 @@ export class RadialDial {
       this.rotation = 0;
       this.updateDialRotation();
       // Clean up state when snap-back completes
-      this.spinAnimationId = null;
+      this.snapBackAnimationId = null;
       this.isSpinning = false;
       this.dialNumbers?.classList.remove('momentum');
       return;
@@ -377,7 +395,7 @@ export class RadialDial {
     this.rotation *= (1 - snapSpeed);
     this.updateDialRotation();
 
-    this.spinAnimationId = requestAnimationFrame(this.snapBack);
+    this.snapBackAnimationId = requestAnimationFrame(this.snapBack);
   };
 
   private adjustBib(direction: number): void {
@@ -447,6 +465,9 @@ export class RadialDial {
   destroy(): void {
     if (this.spinAnimationId) {
       cancelAnimationFrame(this.spinAnimationId);
+    }
+    if (this.snapBackAnimationId) {
+      cancelAnimationFrame(this.snapBackAnimationId);
     }
     if (this.snapBackTimeoutId) {
       clearTimeout(this.snapBackTimeoutId);

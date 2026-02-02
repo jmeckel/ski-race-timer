@@ -137,6 +137,13 @@ export class OnboardingController {
   private setupEventListeners(): void {
     if (!this.modal) return;
 
+    // Escape key dismisses the modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal?.classList.contains('active')) {
+        this.dismiss();
+      }
+    });
+
     // Language selection
     this.modal.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -636,19 +643,21 @@ export class OnboardingController {
       rows.push([t('raceIdLabel', lang), state.raceId || '—']);
       rows.push([t('syncStatusLabel', lang), state.settings.sync ? t('enabled', lang) : t('disabled', lang)]);
 
+      // Use semantic definition list for summary
+      const dl = document.createElement('dl');
+      dl.className = 'onboarding-summary-list';
+
       rows.forEach(([label, value]) => {
-        const row = document.createElement('div');
-        row.className = 'onboarding-summary-item';
+        const dt = document.createElement('dt');
+        dt.textContent = label;
 
-        const labelEl = document.createElement('span');
-        labelEl.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = value;
 
-        const valueEl = document.createElement('strong');
-        valueEl.textContent = value;
-
-        row.append(labelEl, valueEl);
-        summary.appendChild(row);
+        dl.append(dt, dd);
       });
+
+      summary.appendChild(dl);
     }
   }
 
@@ -662,6 +671,7 @@ export class OnboardingController {
     if (!raceIdInput || !statusEl) return;
 
     const raceId = raceIdInput.value.trim();
+    const lang = store.getState().currentLang;
 
     if (!raceId) {
       statusEl.textContent = '';
@@ -669,8 +679,11 @@ export class OnboardingController {
       return;
     }
 
+    // Show loading state
+    statusEl.textContent = `⏳ ${t('loading', lang)}`;
+    statusEl.className = 'race-status loading';
+
     const result = await syncService.checkRaceExists(raceId);
-    const lang = store.getState().currentLang;
 
     if (result.exists) {
       const entryWord = result.entryCount === 1 ? t('entry', lang) : t('entries', lang);
@@ -690,7 +703,9 @@ export class OnboardingController {
       const result = await exchangePinForToken(pin);
       return result.success;
     } catch {
-      // If offline, accept any PIN (will validate when online)
+      // If offline, accept any PIN but warn user it will validate when online
+      const lang = store.getState().currentLang;
+      showToast(t('networkError', lang) + ' - PIN will be verified when online', 'warning', 5000);
       return true;
     }
   }

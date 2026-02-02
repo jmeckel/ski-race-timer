@@ -234,16 +234,19 @@ export class Clock {
     } catch (error) {
       logger.error('Clock tick error:', error);
       // Try to recover by scheduling next frame even after error
-      try {
-        this.animationId = requestAnimationFrame(this.tick);
-      } catch (rafError) {
-        logger.error('Clock RAF scheduling failed:', rafError);
-        // If RAF fails completely, fall back to setTimeout
-        setTimeout(() => {
-          if (this.isRunning) {
-            this.tick();
-          }
-        }, 16); // ~60fps
+      // Only schedule if not already scheduled to prevent duplicate RAF loops
+      if (this.animationId === null) {
+        try {
+          this.animationId = requestAnimationFrame(this.tick);
+        } catch (rafError) {
+          logger.error('Clock RAF scheduling failed:', rafError);
+          // If RAF fails completely, fall back to setTimeout
+          setTimeout(() => {
+            if (this.isRunning && this.animationId === null) {
+              this.tick();
+            }
+          }, 16); // ~60fps
+        }
       }
     }
   };

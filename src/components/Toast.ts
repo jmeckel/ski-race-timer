@@ -35,6 +35,7 @@ export class Toast {
     container.id = 'toast-container';
     container.setAttribute('role', 'status');
     container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-atomic', 'true');
     container.style.cssText = `
       position: fixed;
       bottom: calc(80px + env(safe-area-inset-bottom, 0px));

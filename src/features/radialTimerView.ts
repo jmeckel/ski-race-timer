@@ -248,6 +248,10 @@ function initRadialClearButton(): void {
     store.setBibInput('');
     updateRadialBibDisplay('');
     feedbackTap();
+
+    // Visual confirmation flash
+    btn.classList.add('flash');
+    setTimeout(() => btn.classList.remove('flash'), 150);
   });
 }
 
