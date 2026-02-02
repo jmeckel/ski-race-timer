@@ -126,16 +126,19 @@ Located in `src/features/`, these modules organize UI functionality by domain:
 - **export.ts** - CSV export in Race Horology format
 - **photoViewer.ts** (~100 lines) - Photo viewing and deletion from IndexedDB
 
-**Callback injection pattern**: Modules use callback injection to avoid circular dependencies:
+**CustomEvent pattern**: Modules communicate via CustomEvents for decoupled architecture:
 ```typescript
-// In module: define callback type and setter
-let openConfirmModalCallback: ((action: string) => void) | null = null;
-export function setCallbacks(callbacks: { openConfirmModal: (action: string) => void }) {
-  openConfirmModalCallback = callbacks.openConfirmModal;
-}
+// In feature module: dispatch event
+const event = new CustomEvent('fault-edit-request', {
+  bubbles: true,
+  detail: { fault }
+});
+element.dispatchEvent(event);
 
-// In app.ts: inject callbacks during initialization
-setCallbacks({ openConfirmModal: openConfirmModal });
+// In app.ts: listen for events
+document.addEventListener('fault-edit-request', (e: CustomEvent) => {
+  openFaultEditModal(e.detail.fault);
+});
 ```
 
 ### Utility Modules
@@ -447,6 +450,31 @@ All interactive elements must be accessible to screen readers:
 <button class="dropdown-btn" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
   <svg aria-hidden="true" ...></svg>
 </button>
+
+<!-- Toggle buttons need aria-pressed -->
+<button class="ready-toggle-btn" aria-pressed="false">Ready</button>
+```
+
+### Radio Group Pattern
+For mutually exclusive selections (timing points, runs, roles), use radio group semantics:
+
+```html
+<!-- Container with radiogroup role -->
+<div class="timing-point" role="radiogroup" aria-label="Timing point">
+  <button class="point-btn" role="radio" aria-checked="false" data-point="S">S</button>
+  <button class="point-btn active" role="radio" aria-checked="true" data-point="F">F</button>
+</div>
+```
+
+```typescript
+// Update aria-checked when selection changes
+function updateSelection(): void {
+  container.querySelectorAll('.point-btn').forEach(btn => {
+    const isActive = btn.getAttribute('data-point') === state.selectedPoint;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
+  });
+}
 ```
 
 ### Updating Dynamic ARIA States
@@ -456,10 +484,100 @@ dropdownBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 ```
 
 ### Keyboard Navigation
+
+#### General Principles
 - All clickable elements must be focusable (buttons are by default)
 - Custom controls should support keyboard interaction (Space/Enter to activate)
 - Focus should be trapped in modals when open
 - Modals should dismiss with Escape key
+
+#### Tab Navigation (WCAG 2.1 Compliant)
+For tab-like controls, implement arrow key navigation:
+```typescript
+btn.addEventListener('keydown', (e: KeyboardEvent) => {
+  const tabs = Array.from(container.querySelectorAll('.tab-btn')) as HTMLElement[];
+  const currentIndex = tabs.indexOf(btn);
+  let newIndex = currentIndex;
+
+  switch (e.key) {
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+      break;
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+      break;
+    case 'Home':
+      e.preventDefault();
+      newIndex = 0;
+      break;
+    case 'End':
+      e.preventDefault();
+      newIndex = tabs.length - 1;
+      break;
+  }
+
+  if (newIndex !== currentIndex) {
+    tabs[newIndex].focus();
+    tabs[newIndex].click(); // Activate tab on focus
+  }
+});
+```
+
+#### List Navigation
+For navigable lists (results, dropdowns), implement arrow key navigation:
+```typescript
+item.addEventListener('keydown', (e: KeyboardEvent) => {
+  switch (e.key) {
+    case 'Enter':
+    case ' ':
+      e.preventDefault();
+      selectItem(item);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      focusNextItem(item);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      focusPreviousItem(item);
+      break;
+    case 'Escape':
+      e.preventDefault();
+      closeDropdown();
+      break;
+  }
+});
+```
+
+#### Keyboard Shortcuts
+Provide keyboard shortcuts for common actions:
+```typescript
+// Fault type shortcuts: M/G=MG, T=STR, B/R=BR
+const key = event.key.toUpperCase();
+switch (key) {
+  case 'M':
+  case 'G':
+    selectFaultType('MG');
+    break;
+  case 'T':
+    selectFaultType('STR');
+    break;
+  case 'B':
+  case 'R':
+    selectFaultType('BR');
+    break;
+}
+
+// Run selection: Alt+1, Alt+2
+if (e.altKey && (e.key === '1' || e.key === '2')) {
+  e.preventDefault();
+  store.setSelectedRun(e.key === '1' ? 1 : 2);
+}
+```
 
 ### Custom Interactive Elements
 For non-button elements that respond to click, add full keyboard support:
@@ -473,6 +591,16 @@ el.addEventListener('keydown', (e) => {
     handleClick();
   }
 });
+```
+
+### Focus Indicators
+All interactive elements need visible focus indicators:
+```css
+/* Add to focus-visible selector list in main.css */
+.my-interactive-element:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 ```
 
 ### Focus Management
@@ -539,6 +667,22 @@ These patterns emerged from comprehensive code review and should be followed in 
 21. **Add keyboard support to custom interactive elements** - Elements that respond to click need: `tabindex="0"`, `role="button"`, `aria-label`, and `keydown` handler for Enter/Space.
 
 22. **Security headers provide defense in depth** - Add `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy` headers in vercel.json. These protect even if code-level defenses fail.
+
+23. **Use role="radiogroup" for mutually exclusive choices** - When buttons form a group where only one can be active (timing points, runs, roles), wrap in a container with `role="radiogroup"` and `aria-label`. Each option gets `role="radio"` and `aria-checked`.
+
+24. **Update aria-checked on selection change** - When selection state changes via JavaScript, always update `aria-checked` alongside the visual class toggle. Screen readers rely on this attribute.
+
+25. **Button elements get Enter/Space for free** - Native `<button>` elements automatically respond to Enter and Space keys. Only add explicit keyboard handlers for additional shortcuts (like arrow keys) or for non-button elements.
+
+26. **WCAG tab navigation uses arrow keys** - Tab lists should use arrow keys (not Tab) to move between tabs. Tab key moves to the next component. Implement Home/End for first/last tab.
+
+27. **Decorative icons need aria-hidden** - Emoji icons inside buttons (⏱️, 🚩) should have `aria-hidden="true"` to prevent screen readers from announcing them.
+
+28. **Use CustomEvents instead of callbacks** - For cross-module communication, dispatch CustomEvents with `bubbles: true` instead of callback injection. This prevents circular dependencies and allows multiple listeners.
+
+29. **Focus-visible over focus for keyboard users** - Use `:focus-visible` CSS pseudo-class instead of `:focus` to show focus rings only for keyboard navigation, not mouse clicks.
+
+30. **List items need tabindex for keyboard nav** - Dynamically created list items (results, dropdown options) need `tabindex="0"` to be focusable. Add arrow key handlers for navigation between items.
 
 ## Animation Patterns
 
@@ -644,3 +788,44 @@ In landscape orientation, the radial dial uses a completely different two-column
 **Responsive breakpoints:**
 - `@media (orientation: landscape)` - Base landscape layout
 - `@media (orientation: landscape) and (max-height: 450px)` - Compact layout for short phones
+
+## Keyboard Shortcuts Reference
+
+The app supports full keyboard/USB numpad navigation:
+
+### Timer View (Radial Dial)
+| Key | Action |
+|-----|--------|
+| `0-9` | Enter bib number digit |
+| `S` | Select Start timing point |
+| `F` | Select Finish timing point |
+| `Alt+1` | Select Run 1 |
+| `Alt+2` | Select Run 2 |
+| `Space` / `Enter` | Record timestamp |
+| `Escape` / `Delete` | Clear bib input |
+| `Backspace` | Delete last digit |
+
+### Gate Judge (Fault Entry)
+| Key | Action |
+|-----|--------|
+| `M` or `G` | Select Missed Gate (MG) |
+| `T` | Select Straddled (STR) |
+| `B` or `R` | Select Broken (BR) |
+| `1-9`, `0` | Select gate number (0 = gate 10) |
+| `Arrow keys` | Navigate between buttons |
+| `Space` / `Enter` | Confirm selection |
+
+### Results View
+| Key | Action |
+|-----|--------|
+| `Arrow Up/Down` | Navigate between items |
+| `Enter` / `Space` / `E` | Edit selected item |
+| `Delete` / `D` | Delete selected item |
+
+### Global
+| Key | Action |
+|-----|--------|
+| `Tab` | Move to next component |
+| `Shift+Tab` | Move to previous component |
+| `Escape` | Close modal/dropdown |
+| `Arrow keys` | Navigate within component |
