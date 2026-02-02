@@ -293,6 +293,87 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
 - **Motion effects**: Settings exist but currently disabled to save battery (see `src/main.ts:3-4`). The motion service uses device accelerometer for reactive UI effects.
 - **Environment-aware logging**: Use `src/utils/logger.ts` - strips debug logs in production, keeps errors/warnings
 
+## Security Best Practices
+
+### XSS Prevention
+- **Always use `escapeHtml()`** from `src/utils/format.ts` when inserting dynamic content into `innerHTML`
+- This includes: bib numbers, device names, race IDs, gate numbers, any user-controlled data
+- For `data-*` attributes, also escape values: `data-bib="${escapeHtml(bib)}"`
+- Prefer `textContent` over `innerHTML` when not rendering HTML markup
+
+### Example patterns:
+```typescript
+// GOOD: escaped
+element.innerHTML = `<span>${escapeHtml(userInput)}</span>`;
+el.setAttribute('data-id', escapeHtml(id));
+
+// BAD: vulnerable to XSS
+element.innerHTML = `<span>${userInput}</span>`;
+```
+
+## Memory Management
+
+### Event Listener Cleanup
+Components that add event listeners MUST remove them in `destroy()`:
+```typescript
+// In constructor/init:
+this.container.addEventListener('mousedown', this.handleDragStart);
+window.addEventListener('resize', this.handleResize);
+
+// In destroy():
+this.container.removeEventListener('mousedown', this.handleDragStart);
+window.removeEventListener('resize', this.handleResize);
+```
+
+### Store Subscription Cleanup
+Components subscribing to store updates MUST unsubscribe when destroyed:
+```typescript
+// Subscribe
+this.unsubscribe = store.subscribe((state, keys) => { ... });
+
+// In destroy():
+if (this.unsubscribe) {
+  this.unsubscribe();
+  this.unsubscribe = null;
+}
+```
+
+### DOM Removal Detection
+For components that might be removed from DOM without explicit `destroy()` call, use MutationObserver:
+```typescript
+this.domRemovalObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const removedNode of mutation.removedNodes) {
+      if (removedNode.contains?.(this.container)) {
+        this.destroy();
+        return;
+      }
+    }
+  }
+});
+this.domRemovalObserver.observe(this.container.parentElement, { childList: true, subtree: true });
+```
+
+### Double-Destruction Guard
+Always guard against `destroy()` being called multiple times:
+```typescript
+private isDestroyed = false;
+
+destroy(): void {
+  if (this.isDestroyed) return;
+  this.isDestroyed = true;
+  // ... cleanup code
+}
+```
+
+## State Management Notes
+
+### Notification Queue Race Conditions
+The store uses a notification queue to handle re-entrant state changes. Key rules:
+- Each notification captures its state snapshot at the time of the change
+- Don't merge state snapshots when coalescing - only merge the changed key arrays
+- The queue has a safety limit (`MAX_NOTIFICATION_QUEUE`) that drains oldest notifications when exceeded
+
 ## Radial Dial Development Notes
 
 When working on the radial dial component, be aware of these common issues:
