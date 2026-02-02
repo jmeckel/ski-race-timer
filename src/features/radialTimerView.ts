@@ -543,7 +543,7 @@ function updateRadialStatsDisplay(): void {
   // Entry count
   const countEl = getElement('radial-stats-count');
   if (countEl) {
-    countEl.textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`;
+    countEl.textContent = `${entries.length} ${entries.length === 1 ? t('entry') : t('entries')}`;
   }
 
   // Last recorded
@@ -555,7 +555,7 @@ function updateRadialStatsDisplay(): void {
 
     if (lastBibEl) lastBibEl.textContent = lastEntry.bib || '---';
     if (lastPointEl) {
-      lastPointEl.textContent = lastEntry.point;
+      lastPointEl.textContent = lastEntry.point === 'S' ? t('startShort') : t('finishShort');
       lastPointEl.className = `radial-stats-point ${lastEntry.point === 'S' ? 'start' : 'finish'}`;
     }
     if (lastTimeEl) {

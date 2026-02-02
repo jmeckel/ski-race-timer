@@ -153,7 +153,8 @@ export class RadialDial {
     const dist = Math.sqrt(Math.pow(clientX - centerX, 2) + Math.pow(clientY - centerY, 2));
 
     // Don't start drag if in center area (allow buttons to work)
-    if (dist < rect.width * 0.22) return;
+    // dial-center is 52% of container, so radius is 26%
+    if (dist < rect.width * 0.27) return;
     // Don't start drag if outside the dial
     if (dist > rect.width * 0.5) return;
 
@@ -173,11 +174,14 @@ export class RadialDial {
       cancelAnimationFrame(this.spinAnimationId);
       this.spinAnimationId = null;
     }
+    this.isSpinning = false;
 
     this.lastAngle = this.getAngle(clientX, clientY, rect);
     this.lastDragTime = Date.now();
     this.accumulatedRotation = 0;
 
+    // Reset momentum class and re-add for new interaction
+    this.dialNumbers?.classList.remove('momentum');
     this.dialNumbers?.classList.add('momentum');
   };
 
@@ -238,13 +242,53 @@ export class RadialDial {
 
     // If we didn't drag significantly, treat as a tap
     if (!this.hasDraggedSignificantly && this.dragStartPos) {
-      // Find which number was tapped using the start position
-      const el = document.elementFromPoint(this.dragStartPos.x, this.dragStartPos.y);
-      const numberEl = el?.closest('.dial-number') as HTMLElement | null;
-      if (numberEl && numberEl.dataset.num !== undefined) {
-        const num = parseInt(numberEl.dataset.num, 10);
-        this.handleNumberTap(num, numberEl);
+      // Calculate which number was tapped based on angle
+      const rect = this.container.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      // Get angle of tap relative to center (in degrees, 0 = right, 90 = down)
+      let tapAngle = Math.atan2(
+        this.dragStartPos.y - centerY,
+        this.dragStartPos.x - centerX
+      ) * (180 / Math.PI);
+
+      // Adjust for current rotation of the dial
+      tapAngle -= this.rotation;
+
+      // Normalize to 0-360
+      tapAngle = ((tapAngle % 360) + 360) % 360;
+
+      // Numbers are positioned at angles: 1=(-54°), 2=(-18°), 3=(18°), etc.
+      // Starting from angle -90 (top), each number is 36° apart
+      // Number positions: 1@-54°, 2@-18°, 3@18°, 4@54°, 5@90°, 6@126°, 7@162°, 8@198°, 9@234°, 0@270°
+      // Convert to 0-360: 1@306°, 2@342°, 3@18°, 4@54°, 5@90°, 6@126°, 7@162°, 8@198°, 9@234°, 0@270°
+
+      // Find closest number based on angle
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+      let closestNum = 0;
+      let closestDiff = 360;
+
+      numbers.forEach((num, i) => {
+        // Each number is at angle (i * 36 - 90) degrees from top
+        let numAngle = (i * 36 - 90 + 360) % 360;
+        let diff = Math.abs(tapAngle - numAngle);
+        if (diff > 180) diff = 360 - diff;
+
+        if (diff < closestDiff && diff < 20) { // 20° tolerance (half of 36° spacing)
+          closestDiff = diff;
+          closestNum = num;
+        }
+      });
+
+      if (closestDiff < 20) {
+        // Find the element to flash
+        const numberEl = this.dialNumbers?.querySelector(`[data-num="${closestNum}"]`) as HTMLElement | null;
+        if (numberEl) {
+          this.handleNumberTap(closestNum, numberEl);
+        }
       }
+
       this.dragStartPos = null;
       this.dialNumbers?.classList.remove('momentum');
       return;
@@ -308,6 +352,10 @@ export class RadialDial {
     if (Math.abs(this.rotation) < 1) {
       this.rotation = 0;
       this.updateDialRotation();
+      // Clean up state when snap-back completes
+      this.spinAnimationId = null;
+      this.isSpinning = false;
+      this.dialNumbers?.classList.remove('momentum');
       return;
     }
 

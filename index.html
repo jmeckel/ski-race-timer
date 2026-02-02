@@ -122,8 +122,8 @@
               <div class="dial-center">
                 <!-- Timing Point Selector - Left side -->
                 <div class="radial-timing-point" id="radial-timing-point">
-                  <button class="radial-point-btn start" data-point="S" data-advanced>S</button>
-                  <button class="radial-point-btn finish active" data-point="F">F</button>
+                  <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="startShort">S</button>
+                  <button class="radial-point-btn finish active" data-point="F" data-i18n="finishShort">F</button>
                 </div>
 
                 <!-- Time Display - Center -->
@@ -146,13 +146,13 @@
           <div class="radial-bottom-row">
             <!-- Bottom Left: Stats -->
             <div class="radial-stats-corner">
-              <div class="radial-stats-label" data-i18n="lastRecordedShort">Last</div>
+              <div class="radial-stats-label" data-i18n="lastRecordedShort">Last:</div>
               <div class="radial-stats-last">
                 <span class="radial-stats-bib" id="radial-last-bib">---</span>
-                <span class="radial-stats-point finish" id="radial-last-point">F</span>
+                <span class="radial-stats-point finish" id="radial-last-point" data-i18n="finishShort">F</span>
               </div>
               <div class="radial-stats-time" id="radial-last-time">--:--:--.---</div>
-              <div class="radial-stats-count" id="radial-stats-count">0 entries</div>
+              <div class="radial-stats-count" id="radial-stats-count">---</div>
             </div>
 
             <!-- Bottom Right: Time Button -->

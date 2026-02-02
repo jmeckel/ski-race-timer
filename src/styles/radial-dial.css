@@ -1,6 +1,23 @@
 /* ===== Radial Dial Timer ===== */
 /* Alternative timer view with iPod-style dial input */
 
+/* Ensure header and tab-bar are visible in radial mode (unless ambient mode) */
+body:not(.ambient-mode) .timer-view.radial-mode.active ~ .tab-bar,
+body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
+  display: flex !important;
+}
+
+/* Also ensure via parent context - header when radial mode is showing */
+.app:has(.timer-view.radial-mode.active) > .header {
+  display: flex !important;
+  flex-shrink: 0;
+}
+
+.app:has(.timer-view.radial-mode.active) > .tab-bar {
+  display: flex !important;
+  flex-shrink: 0;
+}
+
 /* Override base timer-view styles when in radial mode AND active */
 .timer-view.radial-mode.active {
   display: grid !important;
@@ -39,6 +56,15 @@
   align-items: flex-start;
   padding: 12px 16px;
   z-index: 20;
+}
+
+/* Align clear button with bib number value vertically */
+.radial-top-row > .radial-bib-corner {
+  flex: 1;
+}
+
+.radial-top-row > .radial-clear-corner {
+  padding-top: 20px; /* Align with bib number value (below label) */
 }
 
 /* Top Left: Bib Corner */
@@ -84,9 +110,8 @@
 /* Top Right: Clear Button Corner */
 .radial-clear-corner {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: flex-end;
-  padding-bottom: 4px;
 }
 
 .radial-clear-btn {
@@ -160,14 +185,14 @@
   overflow: visible; /* Must be visible for touch targets to work */
   min-height: 0;
   padding: 0;
-  margin: -10px 0; /* Negative margin to reduce vertical space */
+  margin: -20px 0 -32px 0;
 }
 
-/* Dial Container - Maximized for larger dial */
+/* Dial Container - Full width */
 .dial-container {
   position: relative;
-  width: min(680px, 100vw);
-  height: min(680px, 100vw);
+  width: 100vw;
+  height: 100vw;
   flex-shrink: 0;
 }
 
@@ -222,7 +247,7 @@
   background: var(--text-tertiary);
   left: 50%;
   top: 8px;
-  transform-origin: 0 332px; /* Scaled for 680px dial */
+  transform-origin: 0 calc(50vw - 8px); /* Center of 100vw dial, accounting for top offset */
   opacity: 0.5;
 }
 
@@ -310,15 +335,16 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 280px;
-  height: 280px;
+  width: 52%;
+  height: 52%;
   border-radius: 50%;
   background: var(--background);
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
   z-index: 15;
   pointer-events: none;
 }
@@ -373,6 +399,10 @@
 
 /* Timing Point Selector - Left side inside dial center */
 .radial-timing-point {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -397,25 +427,29 @@
 .radial-point-btn.active {
   border-color: var(--primary);
   color: var(--primary);
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.15);
 }
 
 .radial-point-btn.start.active {
-  border-color: var(--start-color);
-  color: var(--start-color);
-  background: rgba(74, 222, 128, 0.15);
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.3);
+  border-color: #22c55e;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
 }
 
 .radial-point-btn.finish.active {
-  border-color: var(--finish-color);
-  color: var(--finish-color);
-  background: rgba(251, 146, 60, 0.15);
-  box-shadow: 0 0 12px rgba(251, 146, 60, 0.3);
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
 }
 
 /* Run Selector - Right side inside dial center */
 .radial-run-selector {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -518,21 +552,21 @@
 .radial-time-btn {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   border: none;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
   transition: all 0.15s;
-  min-height: 80px;
+  min-height: 56px;
   /* Glass effect */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -567,8 +601,8 @@
 }
 
 .radial-time-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   stroke: currentColor;
 }
 
@@ -631,18 +665,52 @@
 
 /* Responsive adjustments */
 @media (max-width: 500px) {
+  .dial-tick {
+    transform-origin: 0 calc(50vw - 8px); /* Center of 100vw dial, accounting for top offset */
+  }
+
+  .radial-timing-point {
+    left: 5%;
+  }
+
+  .radial-run-selector {
+    right: 5%;
+  }
+
+  .radial-time-seconds {
+    font-size: 64px;
+  }
+
+  .radial-time-subseconds {
+    font-size: 32px;
+  }
+
+  .dial-number {
+    font-size: 24px;
+  }
+}
+
+@media (max-height: 700px) {
+  .radial-center-area {
+    min-height: 250px;
+  }
+
   .dial-container {
-    width: 340px;
-    height: 340px;
+    width: 100vw;
+    height: 100vw;
+    margin-left: 0;
   }
 
   .dial-tick {
-    transform-origin: 0 162px;
+    transform-origin: 0 calc(50vw - 8px); /* Center of 100vw dial, accounting for top offset */
   }
 
-  .dial-center {
-    width: 160px;
-    height: 160px;
+  .radial-timing-point {
+    left: 5%;
+  }
+
+  .radial-run-selector {
+    right: 5%;
   }
 
   .radial-time-seconds {
@@ -653,40 +721,8 @@
     font-size: 28px;
   }
 
-  .dial-number {
-    font-size: 22px;
-  }
-}
-
-@media (max-height: 700px) {
-  .radial-center-area {
-    min-height: 250px;
-  }
-
-  .dial-container {
-    width: 320px;
-    height: 320px;
-  }
-
-  .dial-tick {
-    transform-origin: 0 152px;
-  }
-
-  .dial-center {
-    width: 150px;
-    height: 150px;
-  }
-
-  .radial-time-seconds {
-    font-size: 48px;
-  }
-
-  .radial-time-subseconds {
-    font-size: 24px;
-  }
-
   .radial-time-hm {
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 

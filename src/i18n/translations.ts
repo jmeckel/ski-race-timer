@@ -10,6 +10,8 @@ export const translations: Record<Language, Translations> = {
     // Timer View
     start: 'Start',
     finish: 'Finish',
+    startShort: 'S',
+    finishShort: 'F',
     bib: 'Bib',
     point: 'Point',
     run: 'Run',
@@ -415,6 +417,8 @@ export const translations: Record<Language, Translations> = {
     // Timer View
     start: 'Start',
     finish: 'Ziel',
+    startShort: 'S',
+    finishShort: 'Z',
     bib: 'Startnummer',
     point: 'Punkt',
     run: 'Lauf',

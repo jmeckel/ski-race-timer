@@ -58,9 +58,40 @@ Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for s
 ### Key Components
 
 The app has three tab-based views:
-1. **Timer** - Real-time clock display (HH:MM:SS.mmm), bib number input, timing point selection (Start/Finish), run selection (Run 1/2), number pad
+1. **Timer** - Radial dial interface (iPod-style) for bib input, real-time clock display, timing point selection (S/Z), run selection (L1/L2)
 2. **Results** - List of recorded times with run indicator, CSV export (Race Horology format), entry editing/deletion, photo thumbnails
 3. **Settings** - GPS sync, cloud sync, auto-increment bib, haptic/sound feedback, language toggle (EN/DE), photo capture, race management
+
+### Radial Dial Timer (iPod-style Interface)
+
+The timer view uses a radial dial interface inspired by the iPod click wheel. Located in:
+- `src/components/RadialDial.ts` - Core dial component with touch/mouse handling
+- `src/features/radialTimerView.ts` - View logic, state management, timestamp recording
+- `src/styles/radial-dial.css` - All styling for the radial interface
+
+**Key Features:**
+- **Tap-to-enter**: Tap a number (0-9) to append it to the bib
+- **Spin-to-increment**: Drag around the dial to increment/decrement the bib number
+- **Momentum physics**: Dial continues spinning with friction after release
+- **Snap-back**: Dial returns to starting position after 800ms of inactivity
+- **Timing point selector**: S (Start) / Z (Ziel/Finish) buttons on left side of dial center
+- **Run selector**: L1/L2 buttons on right side of dial center
+- **Keyboard shortcuts**: Number keys, S/F for points, Space/Enter for timestamp
+
+**Technical Implementation:**
+- Numbers positioned at `radius = containerSize * 0.38` from center
+- Dial center is 52% of container size, uses `pointer-events: none` with nested buttons having `pointer-events: auto`
+- Tap detection uses angle-based calculation (not `document.elementFromPoint`) to work reliably after dial rotation
+- Center exclusion zone (`dist < rect.width * 0.27`) prevents drag initiation when tapping S/Z or L1/L2 buttons
+- Synthetic mouse events after touch are ignored for 500ms to prevent duplicate inputs
+
+**CSS Structure:**
+```css
+.timer-view.radial-mode.active { /* Grid layout for radial view */ }
+.dial-container { width: 100vw; height: 100vw; }
+.dial-center { width: 52%; height: 52%; /* Contains time display, S/Z, L1/L2 */ }
+.dial-number { /* Positioned absolutely around dial ring */ }
+```
 
 ### Data Storage
 
@@ -80,7 +111,8 @@ The app has three tab-based views:
 Located in `src/features/`, these modules organize UI functionality by domain:
 
 **View modules** (extracted from app.ts):
-- **timerView.ts** (~470 lines) - Clock display, number pad, timing points, run selector
+- **radialTimerView.ts** (~600 lines) - Radial dial timer interface, clock display, timestamp recording
+- **timerView.ts** (~470 lines) - Classic timer view (hidden when radial mode active)
 - **resultsView.ts** (~250 lines) - VirtualList, filtering, search, pull-to-refresh
 - **settingsView.ts** (~550 lines) - Settings toggles, role selection, recent races
 - **gateJudgeView.ts** (~350 lines) - Gate judge UI, gate assignment, ready status
@@ -244,6 +276,9 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
 ## Key Implementation Details
 
 - **Translations**: In `src/i18n/translations.ts`, toggled via language setting. Default: German
+  - Use `data-i18n` attribute on HTML elements for automatic translation
+  - Short keys like `startShort`/`finishShort` for compact UI (S/F in English, S/Z in German)
+  - Translations interface uses `[key: string]: string` index signature for flexibility
 - **GPS sync**: Uses Geolocation API for real GPS timestamps
 - **Haptic feedback**: Uses Navigator.vibrate() API
 - **Sound feedback**: Uses Web Audio API for beep sounds
@@ -254,3 +289,25 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
 - **TypeScript**: Strict mode enabled for better type safety
 - **Motion effects**: Settings exist but currently disabled to save battery (see `src/main.ts:3-4`). The motion service uses device accelerometer for reactive UI effects.
 - **Environment-aware logging**: Use `src/utils/logger.ts` - strips debug logs in production, keeps errors/warnings
+
+## Radial Dial Development Notes
+
+When working on the radial dial component, be aware of these common issues:
+
+### Touch Event Handling
+- **Synthetic mouse events**: After a touch event, browsers fire synthetic mouse events. Track `lastTouchTime` and ignore mouse events within 500ms of touch.
+- **Pointer events**: The dial center has `pointer-events: none` to allow touch-through, but nested buttons (S/Z, L1/L2) need `pointer-events: auto`.
+- **Event binding**: Events must be bound to the container (not gesture area) to catch interactions with number buttons.
+
+### Tap Detection
+- **Don't use `document.elementFromPoint`**: After dial rotation, the visual position of elements changes but `elementFromPoint` may not find them reliably.
+- **Use angle-based detection**: Calculate the tap angle relative to dial center, subtract current rotation, then find the closest number within tolerance (20° = half of 36° spacing).
+
+### State Management
+- **Snap-back cleanup**: When snap-back animation completes, clear `spinAnimationId`, `isSpinning`, and remove `momentum` class.
+- **Animation cancellation**: When starting a new drag/tap during animation, cancel the animation and reset `isSpinning`.
+
+### Layout Considerations
+- **Dial size**: Currently 100vw to fill screen width. Dial center at 52% leaves room for numbers at 38% radius.
+- **Overlap prevention**: Use negative margins on `.radial-center-area` and constrained height on record button to prevent overlap.
+- **Z-index layers**: dial-ring (base), dial-numbers (z-index: 10), dial-center (z-index: 15), top-row (z-index: 20)
