@@ -282,6 +282,10 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
   - Use `data-i18n` attribute on HTML elements for automatic translation
   - Short keys like `startShort`/`finishShort` for compact UI (S/F in English, S/Z in German)
   - Translations interface uses `[key: string]: string` index signature for flexibility
+  - `updateTranslations()` in `settingsView.ts` scans all `[data-i18n]` elements and applies translations
+  - For dynamic content in TypeScript, use `t('key', lang)` where `lang = store.getState().currentLang`
+  - Aria-labels in templates need translation: ``aria-label="${t('deleteLabel', lang)}"``
+  - Add new keys to BOTH `en:` and `de:` sections in translations.ts
 - **Onboarding**: First-run wizard in `src/onboarding.ts` guides users through setup
   - Skip button allows dismissing at any time while saving progress (device name, role)
   - Completed state stored in localStorage (`skiTimerOnboarding`)
@@ -683,6 +687,16 @@ These patterns emerged from comprehensive code review and should be followed in 
 29. **Focus-visible over focus for keyboard users** - Use `:focus-visible` CSS pseudo-class instead of `:focus` to show focus rings only for keyboard navigation, not mouse clicks.
 
 30. **List items need tabindex for keyboard nav** - Dynamically created list items (results, dropdown options) need `tabindex="0"` to be focusable. Add arrow key handlers for navigation between items.
+
+31. **All user-visible text must use translations** - Hardcoded strings like "Pull to refresh", "Ready", "Synced" must use `t()` function or `data-i18n` attributes. Check modals, tooltips, aria-labels, and dynamically generated content.
+
+32. **Aria-labels need localization too** - Screen reader labels like `aria-label="Delete"` or `aria-label="Gate 5"` must be translated. Use template literals with `t()`: ``aria-label="${t('gateNumberLabel', lang)} ${gate}"``.
+
+33. **Modal content needs data-i18n attributes** - Content inside modals defined in index.html needs `data-i18n` attributes since `updateTranslations()` scans the entire document. Static HTML defaults to English; JavaScript applies translations on load and language change.
+
+34. **Check all text sources when localizing** - Hardcoded text appears in: innerHTML templates, textContent assignments, aria-label attributes, title/tooltip attributes, placeholder attributes, and status indicators. All must use translation keys.
+
+35. **Import store and t() in components that display text** - Components like `PullToRefresh` or `RadialDial` that render user-visible text need to import both `store` (for `currentLang`) and `t()` from translations, even if they didn't originally need localization.
 
 ## Animation Patterns
 
