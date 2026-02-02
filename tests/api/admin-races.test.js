@@ -592,17 +592,9 @@ describe('Admin API JWT Authentication', () => {
       }
     }
 
-    // Fallback to PIN hash validation
-    const storedPinHash = await redis.get(clientPinKey);
-    if (!storedPinHash) {
-      return { valid: true, method: 'none' };
-    }
-
-    if (token === storedPinHash) {
-      return { valid: true, method: 'pin-hash' };
-    }
-
-    return { valid: false, error: 'Invalid token or PIN' };
+    // Legacy PIN hash authentication removed for security
+    // Only valid JWT tokens are accepted
+    return { valid: false, error: 'Invalid token. Please re-authenticate.' };
   }
 
   // Admin handler with auth
@@ -722,7 +714,9 @@ describe('Admin API JWT Authentication', () => {
       expect(result.body.expired).toBe(true);
     });
 
-    it('should accept PIN hash fallback for admin operations', async () => {
+    it('should reject PIN hash - legacy auth removed for security', async () => {
+      // Previously this would accept the hash directly, which was a security vulnerability
+      // Now only valid JWT tokens are accepted
       const req = {
         method: 'GET',
         query: {},
@@ -730,8 +724,8 @@ describe('Admin API JWT Authentication', () => {
       };
       const result = await adminHandlerWithAuth(req, {}, mockRedis);
 
-      expect(result.status).toBe(200);
-      expect(result.body.authMethod).toBe('pin-hash');
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Invalid token');
     });
   });
 

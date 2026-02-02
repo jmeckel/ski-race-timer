@@ -137,39 +137,14 @@ export async function validateAuth(req, redisClient, clientPinKey = 'admin:clien
     return { valid: true, method: 'jwt', payload: jwtResult.payload };
   }
 
-  // If JWT failed due to expiry, tell the client
+  // If JWT failed due to expiry, tell the client to re-authenticate
   if (jwtResult.expired) {
     return { valid: false, error: 'Token expired. Please re-authenticate.', expired: true };
   }
 
-  // Fall back to PIN hash validation (DEPRECATED - for backwards compatibility only)
-  // This path will be removed in a future version. Clients should use JWT tokens.
-  const storedPinHash = await redisClient.get(clientPinKey);
-
-  if (!storedPinHash) {
-    // No PIN set, allow access
-    return { valid: true, method: 'none' };
-  }
-
-  // Token might be a PIN hash (legacy clients)
-  // SECURITY WARNING: This allows anyone with the hash to authenticate
-  // without knowing the PIN. Plan to remove this in future versions.
-  try {
-    if (crypto.timingSafeEqual(Buffer.from(token), Buffer.from(storedPinHash))) {
-      // Log legacy auth usage for monitoring (helps track migration)
-      console.warn('DEPRECATED: Legacy PIN hash authentication used. Client should upgrade to JWT tokens.');
-      return {
-        valid: true,
-        method: 'pin-hash',
-        deprecated: true,
-        warning: 'PIN hash authentication is deprecated. Please update to use JWT tokens.'
-      };
-    }
-  } catch (e) {
-    // Buffer length mismatch or other error
-  }
-
-  return { valid: false, error: 'Invalid token or PIN' };
+  // JWT verification failed - require valid JWT token
+  // Legacy PIN hash authentication has been removed for security reasons
+  return { valid: false, error: 'Invalid token. Please re-authenticate.' };
 }
 
 /**

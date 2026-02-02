@@ -1272,21 +1272,13 @@ describe('API: /api/sync - JWT Authentication', () => {
           return { valid: false, error: 'Token expired. Please re-authenticate.', expired: true };
         }
       } catch (e) {
-        // Not a valid JWT, try PIN hash fallback
+        // Not a valid JWT
       }
     }
 
-    // Fallback to PIN hash validation
-    const storedPinHash = await redis.get(clientPinKey);
-    if (!storedPinHash) {
-      return { valid: true, method: 'none' };
-    }
-
-    if (token === storedPinHash) {
-      return { valid: true, method: 'pin-hash' };
-    }
-
-    return { valid: false, error: 'Invalid token or PIN' };
+    // Legacy PIN hash authentication removed for security
+    // Only valid JWT tokens are accepted
+    return { valid: false, error: 'Invalid token. Please re-authenticate.' };
   }
 
   describe('No Authentication Required', () => {
@@ -1407,12 +1399,14 @@ describe('API: /api/sync - JWT Authentication', () => {
     });
   });
 
-  describe('PIN Hash Fallback (Backwards Compatibility)', () => {
+  describe('Legacy PIN Hash Auth Removed (Security Fix)', () => {
     beforeEach(() => {
       mockRedisData.set('admin:clientPin', 'stored-pin-hash-12345');
     });
 
-    it('should accept valid PIN hash as Bearer token', async () => {
+    it('should reject PIN hash - legacy auth removed for security', async () => {
+      // Previously this would accept the hash directly, which was a security vulnerability
+      // Now only valid JWT tokens are accepted
       const req = {
         method: 'GET',
         query: { raceId: 'TEST-RACE' },
@@ -1420,11 +1414,11 @@ describe('API: /api/sync - JWT Authentication', () => {
       };
       const result = await authHandler(req, {}, mockRedis);
 
-      expect(result.status).toBe(200);
-      expect(result.body.method).toBe('pin-hash');
+      expect(result.status).toBe(401);
+      expect(result.body.error).toContain('Invalid token');
     });
 
-    it('should reject invalid PIN hash', async () => {
+    it('should reject any non-JWT token', async () => {
       const req = {
         method: 'GET',
         query: { raceId: 'TEST-RACE' },
@@ -1433,7 +1427,7 @@ describe('API: /api/sync - JWT Authentication', () => {
       const result = await authHandler(req, {}, mockRedis);
 
       expect(result.status).toBe(401);
-      expect(result.body.error).toContain('Invalid token or PIN');
+      expect(result.body.error).toContain('Invalid token');
     });
   });
 
