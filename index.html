@@ -88,7 +88,7 @@
 
             <!-- Top Right: Clear Button -->
             <div class="radial-clear-corner">
-              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear">C</button>
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number">C</button>
             </div>
 
             <!-- Status (hidden, using header instead) -->
@@ -158,7 +158,7 @@
             <!-- Bottom Right: Time Button -->
             <div class="radial-time-btn-corner">
               <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
-                <svg class="radial-time-btn-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="radial-time-btn-icon" aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -510,8 +510,8 @@
             </div>
             <div class="race-id-input-row">
               <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;">
-              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -1297,8 +1297,8 @@
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
             <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
-            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <polyline points="12 6 12 12 16 14"/>
               </svg>

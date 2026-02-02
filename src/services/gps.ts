@@ -42,6 +42,7 @@ class GpsService {
       );
 
       // Add visibility change handler to pause/resume GPS for battery optimization
+      // Only add after successful watchPosition to prevent memory leak on error
       if (!this.visibilityHandler) {
         this.visibilityHandler = () => {
           if (document.hidden) {
@@ -71,6 +72,11 @@ class GpsService {
       return true;
     } catch (error) {
       logger.error('Failed to start GPS:', error);
+      // Clean up visibility handler if it was registered before error
+      if (this.visibilityHandler) {
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        this.visibilityHandler = null;
+      }
       store.setGpsStatus('inactive');
       return false;
     }

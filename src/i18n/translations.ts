@@ -228,6 +228,9 @@ export const translations: Record<Language, Translations> = {
     gpsPermissionDenied: 'GPS access denied',
     gpsUnavailable: 'GPS unavailable',
 
+    // Wake Lock errors
+    wakeLockFailed: 'Screen may dim during timing',
+
     // Generic errors
     unknownError: 'Unknown error',
 
@@ -635,6 +638,9 @@ export const translations: Record<Language, Translations> = {
     gpsError: 'GPS-Fehler',
     gpsPermissionDenied: 'GPS-Zugriff verweigert',
     gpsUnavailable: 'GPS nicht verfügbar',
+
+    // Wake Lock errors
+    wakeLockFailed: 'Bildschirm kann während Zeitmessung abdunkeln',
 
     // Generic errors
     unknownError: 'Unbekannter Fehler',

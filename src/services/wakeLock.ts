@@ -5,6 +5,9 @@
  */
 
 import { logger } from '../utils/logger';
+import { showToast } from '../components';
+import { t } from '../i18n/translations';
+import { store } from '../store';
 
 class WakeLockService {
   private wakeLock: WakeLockSentinel | null = null;
@@ -87,6 +90,11 @@ class WakeLockService {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       logger.warn('Wake Lock request failed:', errorMessage);
       this.wakeLock = null;
+
+      // Notify user that screen may dim during timing
+      const lang = store.getState().currentLang;
+      showToast(t('wakeLockFailed', lang), 'warning', 5000);
+
       return false;
     }
   }
