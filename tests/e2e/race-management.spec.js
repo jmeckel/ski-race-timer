@@ -45,9 +45,10 @@ test.describe('Race Management - Admin PIN', () => {
   // Helper to clear PIN and set up fresh state
   async function clearPinAndSetup(page) {
     await setupPage(page);
-    // Clear all related localStorage items
+    // Clear all related localStorage items (PIN hash and auth token)
     await page.evaluate(() => {
       localStorage.removeItem('skiTimerAdminPin');
+      localStorage.removeItem('skiTimerAuthToken');
     });
     // Reload to apply changes
     await page.reload();
@@ -94,17 +95,14 @@ test.describe('Race Management - Admin PIN', () => {
     expect(storedPin).toBeTruthy();
   });
 
-  // Skip: PIN change modal has complex state (requires current PIN when already set)
-  // and is difficult to test reliably across browser/viewport combinations
-  test.skip('should persist admin PIN across page reloads', async ({ page }) => {
-    // Use full mode page setup
-    await setupPageFullMode(page);
-    await navigateTo(page, 'settings');
+  test('should persist admin PIN across page reloads', async ({ page }) => {
+    // This test requires backend API connectivity to save PIN
+    test.skip(skipBackendTests, 'Requires backend server to save PIN');
 
-    // Wait for admin section to be visible
-    await page.waitForSelector('#change-pin-btn', { state: 'visible', timeout: 5000 });
+    // Start with clean state - clear any existing PIN and auth token
+    await clearPinAndSetup(page);
 
-    // Set PIN via modal
+    // Set a custom PIN via modal
     await page.click('#change-pin-btn');
 
     // Wait for modal to open and inputs to be ready
@@ -116,26 +114,32 @@ test.describe('Race Management - Admin PIN', () => {
     await expect(newPinInput).toBeVisible({ timeout: 2000 });
     await expect(confirmPinInput).toBeVisible({ timeout: 2000 });
 
-    // Fill in PINs
-    await newPinInput.fill('5678');
-    await confirmPinInput.fill('5678');
+    // Fill in a custom PIN (different from default)
+    await newPinInput.fill('9876');
+    await confirmPinInput.fill('9876');
 
     // Click save and wait for modal to close
     await page.click('#save-pin-btn');
     await expect(modal).not.toHaveClass(/show/, { timeout: 5000 });
 
-    // Verify PIN is stored in localStorage
-    const storedPin = await page.evaluate(() => localStorage.getItem('skiTimerAdminPin'));
-    expect(storedPin).toBeTruthy();
+    // Wait for auth token to be stored (PIN save triggers authentication)
+    await page.waitForTimeout(500);
+
+    // Verify auth token exists (PIN was set successfully)
+    const authToken = await page.evaluate(() => localStorage.getItem('skiTimerAuthToken'));
+    expect(authToken).toBeTruthy();
 
     // Navigate away and back (instead of reload which triggers addInitScript)
     await navigateTo(page, 'timer');
     await navigateTo(page, 'settings');
 
-    // Verify PIN is still stored
-    const storedPinAfter = await page.evaluate(() => localStorage.getItem('skiTimerAdminPin'));
-    expect(storedPinAfter).toBeTruthy();
-    expect(storedPinAfter).toBe(storedPin);
+    // Verify auth token persists after navigation
+    const authTokenAfter = await page.evaluate(() => localStorage.getItem('skiTimerAuthToken'));
+    expect(authTokenAfter).toBeTruthy();
+
+    // Status should still show PIN is set
+    const statusAfter = await page.locator('#admin-pin-status').textContent();
+    expect(statusAfter?.toLowerCase()).toMatch(/set|gesetzt/);
   });
 
   test('should show error for mismatched PINs', async ({ page }) => {
