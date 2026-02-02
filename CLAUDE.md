@@ -311,6 +311,46 @@ el.setAttribute('data-id', escapeHtml(id));
 element.innerHTML = `<span>${userInput}</span>`;
 ```
 
+## Browser API Error Handling
+
+### User Notification on Silent Failures
+Browser APIs often fail silently. Critical features should notify users:
+
+```typescript
+// Example: Wake Lock failure notification
+try {
+  this.wakeLock = await navigator.wakeLock.request('screen');
+} catch (err) {
+  // API failed - notify user about the impact
+  const lang = store.getState().currentLang;
+  showToast(t('wakeLockFailed', lang), 'warning', 5000);
+}
+```
+
+**APIs that need failure notifications:**
+- **Wake Lock**: Screen may dim during timing
+- **GPS**: Location unavailable, times may be less accurate
+- **Camera**: Photo capture disabled
+- **Microphone**: Voice commands unavailable
+
+### Cleanup on Error Paths
+When registering handlers before an async operation, clean up if it fails:
+
+```typescript
+// Register handler
+this.visibilityHandler = () => { ... };
+document.addEventListener('visibilitychange', this.visibilityHandler);
+
+try {
+  await someAsyncOperation();
+} catch (error) {
+  // Clean up handler registered before the error
+  document.removeEventListener('visibilitychange', this.visibilityHandler);
+  this.visibilityHandler = null;
+  throw error;
+}
+```
+
 ## Memory Management
 
 ### Event Listener Cleanup
@@ -366,6 +406,37 @@ destroy(): void {
 }
 ```
 
+## Accessibility
+
+### ARIA Attributes for Interactive Elements
+All interactive elements must be accessible to screen readers:
+
+```html
+<!-- Icon-only buttons need aria-label -->
+<button class="clear-btn" aria-label="Clear bib number">C</button>
+
+<!-- SVGs inside buttons need aria-hidden -->
+<button class="time-btn" aria-label="Record timestamp">
+  <svg aria-hidden="true" ...></svg>
+</button>
+
+<!-- Dropdowns need expanded state and popup type -->
+<button class="dropdown-btn" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+  <svg aria-hidden="true" ...></svg>
+</button>
+```
+
+### Updating Dynamic ARIA States
+When dropdown/menu state changes, update `aria-expanded`:
+```typescript
+dropdownBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+```
+
+### Keyboard Navigation
+- All clickable elements must be focusable (buttons are by default)
+- Custom controls should support keyboard interaction (Space/Enter to activate)
+- Focus should be trapped in modals when open
+
 ## State Management Notes
 
 ### Notification Queue Race Conditions
@@ -391,6 +462,12 @@ These patterns emerged from comprehensive code review and should be followed in 
 6. **Fail closed for security features** - Rate limiting, authentication, and other security features should deny access when the backing service (Redis, etc.) fails, not allow access.
 
 7. **Escape data attributes too** - `data-*` attributes are often forgotten but can be vectors for attribute injection attacks.
+
+8. **Notify users when browser APIs fail silently** - APIs like Wake Lock can fail without visible feedback (low battery, permission denied, page not visible). Always notify users when critical features fail, e.g., "Screen may dim during timing" toast when wake lock fails.
+
+9. **Clean up event handlers on ALL error paths** - When registering event listeners before an async operation, ensure cleanup happens if the operation fails. Example: GPS visibility handler must be cleaned up if `watchPosition` throws.
+
+10. **Accessible interactive elements need ARIA attributes** - Buttons with icons need `aria-label`, SVGs inside buttons need `aria-hidden="true"`, dropdowns need `aria-expanded` and `aria-haspopup`. Screen readers rely on these for navigation.
 
 ## Radial Dial Development Notes
 
