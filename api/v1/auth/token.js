@@ -14,8 +14,10 @@ import {
 } from '../../lib/response.js';
 
 // Rate limiting configuration (per IP)
+// Stricter limit to prevent brute-force on 4-digit PINs
+// 5 attempts/min = 300/hour = 33+ hours to brute-force 10,000 PINs
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 10; // Max PIN exchanges per minute per IP
+const RATE_LIMIT_MAX_REQUESTS = 5; // Max PIN exchanges per minute per IP
 
 async function checkRateLimit(client, ip) {
   const now = Math.floor(Date.now() / 1000);

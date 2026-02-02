@@ -171,6 +171,13 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      // Race deletion requires chiefJudge role for security
+      const userRole = auth.payload?.role;
+      if (userRole !== 'chiefJudge') {
+        console.log(`[AUDIT] Race deletion DENIED: role=${userRole}, expected=chiefJudge`);
+        return sendError(res, 'Race deletion requires Chief Judge role', 403);
+      }
+
       const { raceId, deleteAll } = req.query;
 
       // Batch delete all races

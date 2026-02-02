@@ -19,11 +19,50 @@ import {
   sendBadRequest,
   sendMethodNotAllowed,
   sendServiceUnavailable,
+  sendRateLimitExceeded,
   sanitizeString
 } from '../lib/response.js';
+import { getRedis, hasRedisError } from '../lib/redis.js';
 
 // Configuration
 const MAX_TOKENS = 256;
+
+// Rate limiting configuration (voice API is expensive)
+const RATE_LIMIT_WINDOW = 60; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 voice requests per minute per IP
+
+/**
+ * Check rate limit for voice API
+ * @returns {Promise<{allowed: boolean, remaining: number}>}
+ */
+async function checkRateLimit(clientIP) {
+  const client = await getRedis();
+  if (!client || hasRedisError()) {
+    // If Redis is down, allow request but log warning
+    console.warn('Rate limiting skipped - Redis unavailable');
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS };
+  }
+
+  const key = `voice:rate:${clientIP}`;
+
+  try {
+    const current = await client.incr(key);
+
+    // Set expiry on first request
+    if (current === 1) {
+      await client.expire(key, RATE_LIMIT_WINDOW);
+    }
+
+    const remaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - current);
+    return {
+      allowed: current <= RATE_LIMIT_MAX_REQUESTS,
+      remaining
+    };
+  } catch (error) {
+    console.error('Rate limit check failed:', error.message);
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS };
+  }
+}
 const MAX_TRANSCRIPT_LENGTH = 500;
 const REQUEST_TIMEOUT_MS = 10000;
 
@@ -286,6 +325,21 @@ export default async function handler(req, res) {
     return sendMethodNotAllowed(res);
   }
 
+  // Rate limiting (voice API is expensive - protect against economic DoS)
+  const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+                   req.headers['x-real-ip'] ||
+                   req.socket?.remoteAddress ||
+                   'unknown';
+
+  const rateLimit = await checkRateLimit(clientIP);
+  if (!rateLimit.allowed) {
+    console.log(`[RATE_LIMIT] Voice API rate limit exceeded: ip=${clientIP}`);
+    return sendRateLimitExceeded(res, RATE_LIMIT_WINDOW);
+  }
+
+  // Set rate limit headers
+  res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+
   // Determine provider (default to OpenAI)
   const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
 
@@ -297,8 +351,9 @@ export default async function handler(req, res) {
   // Get API key for selected provider
   const apiKey = process.env[PROVIDERS[provider].envKey];
   if (!apiKey) {
-    console.error(`${PROVIDERS[provider].envKey} not configured`);
-    return sendServiceUnavailable(res, 'Voice service not configured');
+    // Log internally but don't expose which API key is missing
+    console.error('Voice API key not configured');
+    return sendServiceUnavailable(res, 'Voice service temporarily unavailable');
   }
 
   // Parse and validate request body

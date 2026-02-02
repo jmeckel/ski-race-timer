@@ -24,6 +24,9 @@ if (document.readyState === 'loading') {
   initApp();
 }
 
+// Track SW update interval for cleanup
+let swUpdateIntervalId: ReturnType<typeof setInterval> | null = null;
+
 // Register service worker with update notification
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -31,7 +34,7 @@ if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.register('/sw.js');
 
       // Check for updates periodically (every 60 seconds when visible)
-      setInterval(() => {
+      swUpdateIntervalId = setInterval(() => {
         if (!document.hidden) {
           registration.update();
         }
@@ -70,8 +73,11 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Prevent accidental navigation
+// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-  // Only warn if there are unsaved changes
-  // For now, always allow navigation
+  // Clear SW update interval to prevent memory leak
+  if (swUpdateIntervalId !== null) {
+    clearInterval(swUpdateIntervalId);
+    swUpdateIntervalId = null;
+  }
 });
