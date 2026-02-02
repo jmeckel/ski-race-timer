@@ -18,6 +18,12 @@ class BroadcastManager {
    * Initialize BroadcastChannel for cross-tab communication
    */
   initialize(raceId: string): void {
+    // Check for BroadcastChannel support
+    if (typeof BroadcastChannel === 'undefined') {
+      logger.info('BroadcastChannel not supported - cross-tab sync disabled (graceful degradation)');
+      return;
+    }
+
     try {
       if (this.broadcastChannel) {
         this.broadcastChannel.close();
@@ -26,27 +32,31 @@ class BroadcastManager {
       this.broadcastChannel = new BroadcastChannel(`ski-timer-${raceId}`);
 
       this.broadcastChannel.onmessage = (event) => {
-        const { type, data } = event.data;
+        try {
+          const { type, data } = event.data || {};
 
-        if (type === 'entry' && isValidEntry(data)) {
-          store.mergeCloudEntries([data]);
-        } else if (type === 'presence') {
-          const deviceInfo = data as DeviceInfo;
-          store.addConnectedDevice(deviceInfo);
-        } else if (type === 'fault') {
-          const fault = data as FaultEntry;
-          if (fault && fault.id) {
-            store.mergeFaultsFromCloud([fault]);
+          if (type === 'entry' && isValidEntry(data)) {
+            store.mergeCloudEntries([data]);
+          } else if (type === 'presence') {
+            const deviceInfo = data as DeviceInfo;
+            store.addConnectedDevice(deviceInfo);
+          } else if (type === 'fault') {
+            const fault = data as FaultEntry;
+            if (fault && fault.id) {
+              store.mergeFaultsFromCloud([fault]);
+            }
+          } else if (type === 'fault-deleted') {
+            const faultId = data as string;
+            if (faultId) {
+              store.deleteFaultEntry(faultId);
+            }
           }
-        } else if (type === 'fault-deleted') {
-          const faultId = data as string;
-          if (faultId) {
-            store.deleteFaultEntry(faultId);
-          }
+        } catch (error) {
+          logger.error('Error processing broadcast message:', error);
         }
       };
     } catch (error) {
-      logger.warn('BroadcastChannel not supported:', error);
+      logger.warn('BroadcastChannel initialization failed:', error);
     }
   }
 

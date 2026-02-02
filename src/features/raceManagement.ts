@@ -151,6 +151,8 @@ export function initRaceManagement(): void {
   initializeAdminPin().then(() => {
     // Update PIN status display after sync completes
     updatePinStatusDisplay();
+  }).catch((error) => {
+    logger.error('Failed to initialize admin PIN:', error);
   });
 
   // Update PIN status display immediately (will be updated again after sync)
@@ -309,6 +311,7 @@ async function handleSavePin(): Promise<void> {
   const currentPinInput = document.getElementById('current-pin-input') as HTMLInputElement;
   const newPinInput = document.getElementById('new-pin-input') as HTMLInputElement;
   const confirmPinInput = document.getElementById('confirm-pin-input') as HTMLInputElement;
+  const savePinBtn = document.getElementById('save-pin-btn') as HTMLButtonElement;
   const currentPinError = document.getElementById('current-pin-error');
   const pinMismatchError = document.getElementById('pin-mismatch-error');
   const pinFormatError = document.getElementById('pin-format-error');
@@ -350,6 +353,13 @@ async function handleSavePin(): Promise<void> {
       }
       feedbackWarning();
       return;
+    }
+
+    // Show loading state
+    const originalBtnText = savePinBtn?.textContent || '';
+    if (savePinBtn) {
+      savePinBtn.disabled = true;
+      savePinBtn.textContent = t('saving', lang);
     }
 
     try {
@@ -401,26 +411,47 @@ async function handleSavePin(): Promise<void> {
       logWarning('Admin', 'handleSavePin', error, 'pinSyncFailed');
       showToast(t('pinSyncFailed', lang), 'error');
       feedbackWarning();
+    } finally {
+      // Restore button state
+      if (savePinBtn) {
+        savePinBtn.disabled = false;
+        savePinBtn.textContent = originalBtnText;
+      }
     }
   } else {
     // No PIN set yet - use auth/token to set initial PIN
-    const authResult = await authenticateWithPin(newPin);
-
-    if (!authResult.success) {
-      showToast(t('pinSyncFailed', lang), 'error');
-      feedbackWarning();
-      return;
+    // Show loading state
+    const originalBtnText = savePinBtn?.textContent || '';
+    if (savePinBtn) {
+      savePinBtn.disabled = true;
+      savePinBtn.textContent = t('saving', lang);
     }
 
-    // Close modal and show success
-    const modal = document.getElementById('change-pin-modal');
-    closeModal(modal);
+    try {
+      const authResult = await authenticateWithPin(newPin);
 
-    showToast(t('pinSaved', lang), 'success');
-    feedbackSuccess();
+      if (!authResult.success) {
+        showToast(t('pinSyncFailed', lang), 'error');
+        feedbackWarning();
+        return;
+      }
 
-    // Update status display
-    updatePinStatusDisplay();
+      // Close modal and show success
+      const modal = document.getElementById('change-pin-modal');
+      closeModal(modal);
+
+      showToast(t('pinSaved', lang), 'success');
+      feedbackSuccess();
+
+      // Update status display
+      updatePinStatusDisplay();
+    } finally {
+      // Restore button state
+      if (savePinBtn) {
+        savePinBtn.disabled = false;
+        savePinBtn.textContent = originalBtnText;
+      }
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 import { formatTime, formatDate } from '../utils';
 import { store } from '../store';
+import { t } from '../i18n/translations';
 import { gpsService, batteryService, type BatteryLevel } from '../services';
 import { logger } from '../utils/logger';
 
@@ -63,7 +64,8 @@ export class Clock {
     el.className = 'clock-time';
     el.setAttribute('role', 'timer');
     el.setAttribute('aria-live', 'polite');
-    el.setAttribute('aria-label', 'Current time');
+    const lang = store.getState().currentLang;
+    el.setAttribute('aria-label', t('currentTime', lang));
     el.style.cssText = `
       font-family: 'JetBrains Mono', monospace;
       font-size: clamp(32px, 10vw, 48px);

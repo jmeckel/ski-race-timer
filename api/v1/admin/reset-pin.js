@@ -38,16 +38,16 @@ async function checkRateLimit(client, clientIP) {
 
 /**
  * Reset PIN endpoint
- * Requires SERVER_API_PIN in X-Server-Pin header for authorization
+ * Requires SERVER_API_PIN in request body (serverPin field) for authorization
  * Deletes the stored PIN hash, allowing the next PIN entry to become the new PIN
+ *
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.serverPin - The server API PIN for authorization
  */
 export default async function handler(req, res) {
-  // Handle CORS preflight - note custom header for X-Server-Pin
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    setCorsHeaders(res, ['POST', 'OPTIONS']);
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Server-Pin');
-    setSecurityHeaders(res);
-    return res.status(200).end();
+    return handlePreflight(req, res, ['POST', 'OPTIONS']);
   }
 
   // Set headers for non-preflight requests
@@ -58,9 +58,11 @@ export default async function handler(req, res) {
     return sendMethodNotAllowed(res);
   }
 
+  // Parse request body
+  const { serverPin: providedPin } = req.body || {};
+
   // Verify SERVER_API_PIN with timing-safe comparison
   const serverPin = process.env.SERVER_API_PIN;
-  const providedPin = req.headers['x-server-pin'];
 
   if (!serverPin) {
     // Don't expose internal configuration details

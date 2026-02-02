@@ -1,11 +1,12 @@
 import type { RecentRace } from './recentRaces';
-import { escapeHtml } from './format';
+import { escapeHtml, escapeAttr } from './format';
 
 export function renderRecentRaceItem(race: RecentRace): string {
   const entryText = race.entryCount !== undefined ? `${race.entryCount} entries` : '';
   const safeRaceId = escapeHtml(race.raceId);
+  const attrRaceId = escapeAttr(race.raceId);
   return `
-    <div class="recent-race-item" data-race-id="${safeRaceId}" tabindex="0" role="option" aria-label="Race ${safeRaceId}${entryText ? ', ' + entryText : ''}">
+    <div class="recent-race-item" data-race-id="${attrRaceId}" tabindex="0" role="option" aria-label="Race ${safeRaceId}${entryText ? ', ' + entryText : ''}">
       <span class="recent-race-id">${safeRaceId}</span>
       <span class="recent-race-meta">${entryText}</span>
     </div>

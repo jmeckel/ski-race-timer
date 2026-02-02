@@ -806,7 +806,8 @@ function updateGpsIndicator(): void {
   }
 
   if (text) {
-    text.textContent = 'GPS';
+    const lang = store.getState().currentLang;
+    text.textContent = t('gps', lang);
   }
 }
 

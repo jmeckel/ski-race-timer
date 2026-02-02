@@ -91,6 +91,11 @@ async function listRaces(client) {
 
 // Delete a race and set tombstone
 async function deleteRace(client, raceId) {
+  // Validate raceId before proceeding
+  if (!raceId || typeof raceId !== 'string') {
+    return { success: false, error: 'Invalid race ID' };
+  }
+
   // Try original casing first, then lowercase (for backwards compatibility)
   const originalKey = `race:${raceId}`;
   const normalizedRaceId = raceId.toLowerCase();

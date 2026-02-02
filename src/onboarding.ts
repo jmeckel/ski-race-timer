@@ -713,7 +713,7 @@ export class OnboardingController {
     } catch {
       // If offline, accept any PIN but warn user it will validate when online
       const lang = store.getState().currentLang;
-      showToast(t('networkError', lang) + ' - PIN will be verified when online', 'warning', 5000);
+      showToast(t('networkError', lang) + ' - ' + t('pinVerifyOnline', lang), 'warning', 5000);
       return true;
     }
   }

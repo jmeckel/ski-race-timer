@@ -165,8 +165,17 @@ class PollingManager {
     try {
       const config = this.getPollingConfig();
 
+      // Validate intervals array before accessing
+      if (!config.intervals || config.intervals.length === 0) {
+        this.setPollingInterval(config.baseInterval);
+        return;
+      }
+
       // Clamp idle level to new interval array bounds
-      this.currentIdleLevel = Math.min(this.currentIdleLevel, config.intervals.length - 1);
+      this.currentIdleLevel = Math.min(
+        Math.max(0, this.currentIdleLevel),
+        config.intervals.length - 1
+      );
 
       // Get appropriate interval
       const newInterval = this.consecutiveNoChanges < config.threshold
@@ -204,6 +213,14 @@ class PollingManager {
 
       const config = this.getPollingConfig();
 
+      // Validate intervals array before accessing
+      if (!config.intervals || config.intervals.length === 0) {
+        if (this.pollInterval) {
+          this.setPollingInterval(config.baseInterval);
+        }
+        return;
+      }
+
       if (hasChanges) {
         // Changes detected - reset to fast polling (battery-aware)
         this.consecutiveNoChanges = 0;
@@ -218,7 +235,7 @@ class PollingManager {
 
         if (this.consecutiveNoChanges >= config.threshold) {
           const newIdleLevel = Math.min(
-            this.currentIdleLevel + 1,
+            Math.max(0, this.currentIdleLevel + 1),
             config.intervals.length - 1
           );
 

@@ -233,8 +233,8 @@ PIN hash management. Requires JWT token.
 - **POST**: Set PIN hash
 
 ### `/api/v1/admin/reset-pin` (POST)
-Reset PIN (server-side authentication via X-Server-Pin header).
-- **Header**: `X-Server-Pin: <server-pin>`
+Reset PIN (server-side authentication via request body).
+- **Body**: `{ serverPin: "<server-pin>" }`
 - **Response**: `{ success: true, message: "PIN has been reset..." }`
 
 ## Testing

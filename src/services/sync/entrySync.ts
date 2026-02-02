@@ -336,8 +336,9 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
       if (typeof data.highestBib === 'number') {
         store.setCloudHighestBib(data.highestBib);
       }
-    } catch {
-      // Ignore parse errors for response body
+    } catch (parseError) {
+      // Log parse errors but don't fail the overall send operation
+      logger.warn('Failed to parse send response body:', parseError);
     }
 
     // Remove from sync queue on success

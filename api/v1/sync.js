@@ -171,11 +171,12 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
 }
 
 // Update highest bib if new bib is higher (atomic with WATCH)
+// Returns { success: true } on success, { success: false, error: string } on failure
 async function updateHighestBib(client, normalizedRaceId, bib) {
-  if (!bib) return;
+  if (!bib) return { success: true };
 
   const bibNum = parseInt(bib, 10);
-  if (isNaN(bibNum) || bibNum <= 0) return;
+  if (isNaN(bibNum) || bibNum <= 0) return { success: true };
 
   const highestBibKey = `race:${normalizedRaceId}:highestBib`;
 
@@ -188,7 +189,7 @@ async function updateHighestBib(client, normalizedRaceId, bib) {
 
     if (bibNum <= currentNum) {
       await client.unwatch();
-      return; // No update needed
+      return { success: true }; // No update needed
     }
 
     const multi = client.multi();
@@ -196,11 +197,12 @@ async function updateHighestBib(client, normalizedRaceId, bib) {
     const result = await multi.exec();
 
     if (result !== null) {
-      return; // Success
+      return { success: true }; // Success
     }
     // WATCH detected change, retry
   }
   console.warn('updateHighestBib: max retries exceeded');
+  return { success: false, error: 'Max retries exceeded updating highest bib' };
 }
 
 /**
@@ -535,8 +537,8 @@ export default async function handler(req, res) {
       // Update device heartbeat
       await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
 
-      // Update highest bib (also atomic)
-      await updateHighestBib(client, normalizedRaceId, enrichedEntry.bib);
+      // Update highest bib (also atomic) - non-critical, entry already saved
+      const bibUpdateResult = await updateHighestBib(client, normalizedRaceId, enrichedEntry.bib);
 
       // Get active device count
       const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
@@ -552,7 +554,9 @@ export default async function handler(req, res) {
         highestBib,
         photoSkipped,
         photoRateLimited,
-        crossDeviceDuplicate: addResult.crossDeviceDuplicate
+        crossDeviceDuplicate: addResult.crossDeviceDuplicate,
+        // Flag if highest bib update failed (non-critical warning)
+        highestBibUpdateFailed: !bibUpdateResult.success
       });
     }
 

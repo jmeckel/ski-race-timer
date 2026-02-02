@@ -226,12 +226,14 @@ class Store {
   private notify(changedKeys: (keyof AppState)[]) {
     const stateSnapshot = this.state;
 
+    // Check queue bounds before adding - apply to all additions
+    if (this.pendingNotifications.length >= MAX_NOTIFICATION_QUEUE) {
+      logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`);
+      this.pendingNotifications.splice(0, Math.floor(MAX_NOTIFICATION_QUEUE / 2));
+    }
+
     if (this.pendingNotifications.length > 0 && this.isNotifying) {
       this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
-      if (this.pendingNotifications.length > MAX_NOTIFICATION_QUEUE) {
-        logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`);
-        this.pendingNotifications.splice(0, Math.floor(MAX_NOTIFICATION_QUEUE / 2));
-      }
       return;
     }
 

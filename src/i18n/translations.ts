@@ -54,6 +54,7 @@ export const translations: Record<Language, Translations> = {
     close: 'Close',
     back: 'Back',
     save: 'Save',
+    saving: 'Saving...',
     edit: 'Edit',
     undo: 'Undo',
     export: 'Export',
@@ -434,7 +435,11 @@ export const translations: Record<Language, Translations> = {
     deleteFaultLabel: 'Delete fault',
     deleteLabel: 'Delete',
     gateNumberLabel: 'Gate',
-    numberLabel: 'Number'
+    numberLabel: 'Number',
+    currentTime: 'Current time',
+
+    // Localization - PIN Verification
+    pinVerifyOnline: 'PIN will be verified when online'
   },
 
   de: {
@@ -490,6 +495,7 @@ export const translations: Record<Language, Translations> = {
     close: 'Schließen',
     back: 'Zurück',
     save: 'Speichern',
+    saving: 'Speichern...',
     edit: 'Bearbeiten',
     undo: 'Rückgängig',
     export: 'Exportieren',
@@ -870,7 +876,11 @@ export const translations: Record<Language, Translations> = {
     deleteFaultLabel: 'Fehler löschen',
     deleteLabel: 'Löschen',
     gateNumberLabel: 'Tor',
-    numberLabel: 'Zahl'
+    numberLabel: 'Zahl',
+    currentTime: 'Aktuelle Uhrzeit',
+
+    // Localization - PIN Verification
+    pinVerifyOnline: 'PIN wird online überprüft'
   }
 };
 

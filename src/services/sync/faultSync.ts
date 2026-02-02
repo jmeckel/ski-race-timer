@@ -116,7 +116,10 @@ export async function fetchCloudFaults(): Promise<void> {
     }
   } catch (error) {
     logger.error('Fault sync fetch error:', error);
-    // Don't change sync status for fault errors - main sync handles that
+    // Dispatch event so UI can show fault sync status
+    window.dispatchEvent(new CustomEvent('fault-sync-error', {
+      detail: { error: error instanceof Error ? error.message : 'Unknown error' }
+    }));
   }
 }
 

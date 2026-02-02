@@ -20,12 +20,25 @@ let inlineSelectedBib = '';
 let inlineSelectedGate = 0;
 let inlineSelectedFaultType: FaultType | null = null;
 
+// Track event listeners for cleanup (M6, M7 fixes)
+let faultModalBibListeners: Map<HTMLElement, EventListener> = new Map();
+let faultModalGateListeners: Map<HTMLElement, EventListener> = new Map();
+let faultModalBibInputListener: EventListener | null = null;
+let inlineFaultTypeClickListener: EventListener | null = null;
+let inlineFaultTypeKeydownListener: EventListener | null = null;
+
 /**
  * Open fault recording modal
  */
 export function openFaultRecordingModal(preselectedBib?: string): void {
   const state = store.getState();
   const activeBibs = store.getActiveBibs(state.selectedRun);
+
+  // Clean up old bib button listeners before adding new ones (M6 fix)
+  for (const [element, listener] of faultModalBibListeners) {
+    element.removeEventListener('click', listener);
+  }
+  faultModalBibListeners.clear();
 
   // Populate bib selector
   const bibSelector = document.getElementById('fault-bib-selector');
@@ -36,25 +49,34 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
 
     // Add click handlers
     bibSelector.querySelectorAll('.fault-bib-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      const listener = () => {
         bibSelector.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
         if (bibInput) bibInput.value = '';
         store.setSelectedFaultBib(btn.getAttribute('data-bib') || '');
-      });
+      };
+      btn.addEventListener('click', listener);
+      faultModalBibListeners.set(btn as HTMLElement, listener);
     });
   }
 
-  // Clear manual bib input
+  // Clean up old bib input listener before adding new one (M6 fix)
   const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+  if (bibInput && faultModalBibInputListener) {
+    bibInput.removeEventListener('input', faultModalBibInputListener);
+    faultModalBibInputListener = null;
+  }
+
+  // Clear manual bib input
   if (bibInput) {
     bibInput.value = preselectedBib || '';
-    bibInput.addEventListener('input', () => {
+    faultModalBibInputListener = () => {
       // Deselect any bib buttons when typing manually
       bibSelector?.querySelectorAll('.fault-bib-btn').forEach(b => b.classList.remove('selected'));
       store.setSelectedFaultBib(bibInput.value.padStart(3, '0'));
-    });
+    };
+    bibInput.addEventListener('input', faultModalBibInputListener);
   }
 
   // Set preselected bib
@@ -63,6 +85,12 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
   } else {
     store.setSelectedFaultBib('');
   }
+
+  // Clean up old gate button listeners before adding new ones (M6 fix)
+  for (const [element, listener] of faultModalGateListeners) {
+    element.removeEventListener('click', listener);
+  }
+  faultModalGateListeners.clear();
 
   // Populate gate selector based on assignment with gate colors
   const gateSelector = document.getElementById('fault-gate-selector');
@@ -78,10 +106,12 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
 
     // Add click handlers
     gateSelector.querySelectorAll('.fault-gate-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      const listener = () => {
         gateSelector.querySelectorAll('.fault-gate-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-      });
+      };
+      btn.addEventListener('click', listener);
+      faultModalGateListeners.set(btn as HTMLElement, listener);
     });
   }
 
@@ -932,9 +962,18 @@ export function initInlineFaultEntry(): void {
     });
   }
 
-  // Fault type buttons
+  // Clean up old listeners before adding new ones (M7 fix)
   const faultTypeContainer = document.getElementById('inline-fault-types');
   if (faultTypeContainer) {
+    if (inlineFaultTypeClickListener) {
+      faultTypeContainer.removeEventListener('click', inlineFaultTypeClickListener);
+      inlineFaultTypeClickListener = null;
+    }
+    if (inlineFaultTypeKeydownListener) {
+      faultTypeContainer.removeEventListener('keydown', inlineFaultTypeKeydownListener);
+      inlineFaultTypeKeydownListener = null;
+    }
+
     // Helper to select a fault type button
     const selectFaultTypeBtn = (btn: Element) => {
       feedbackTap();
@@ -950,15 +989,16 @@ export function initInlineFaultEntry(): void {
       updateInlineSaveButtonState();
     };
 
-    faultTypeContainer.addEventListener('click', (e) => {
+    inlineFaultTypeClickListener = (e: Event) => {
       const target = e.target as HTMLElement;
       const btn = target.closest('.inline-fault-type-btn');
       if (!btn) return;
       selectFaultTypeBtn(btn);
-    });
+    };
+    faultTypeContainer.addEventListener('click', inlineFaultTypeClickListener);
 
     // Keyboard support: Space/Enter to select, M/G/T/B shortcuts
-    faultTypeContainer.addEventListener('keydown', (e) => {
+    inlineFaultTypeKeydownListener = (e: Event) => {
       const event = e as KeyboardEvent;
       const target = event.target as HTMLElement;
       const btn = target.closest('.inline-fault-type-btn');
@@ -996,7 +1036,8 @@ export function initInlineFaultEntry(): void {
           (faultBtn as HTMLElement).focus();
         }
       }
-    });
+    };
+    faultTypeContainer.addEventListener('keydown', inlineFaultTypeKeydownListener);
   }
 
   // Save fault button

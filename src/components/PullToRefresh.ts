@@ -18,6 +18,7 @@ interface PullToRefreshOptions {
 export class PullToRefresh {
   private container: HTMLElement;
   private indicator: HTMLElement;
+  private styleElement: HTMLStyleElement | null = null;
   private onRefresh: () => Promise<void>;
   private startY = 0;
   private currentY = 0;
@@ -76,15 +77,15 @@ export class PullToRefresh {
       </div>
     `;
 
-    // Add spinner animation
-    const style = document.createElement('style');
-    style.textContent = `
+    // Add spinner animation (store reference for cleanup)
+    this.styleElement = document.createElement('style');
+    this.styleElement.textContent = `
       @keyframes spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
       }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(this.styleElement);
 
     return indicator;
   }
@@ -257,5 +258,11 @@ export class PullToRefresh {
     this.container.removeEventListener('touchmove', this.onTouchMove);
     this.container.removeEventListener('touchend', this.onTouchEnd);
     this.indicator.remove();
+
+    // Remove style element from document head
+    if (this.styleElement) {
+      this.styleElement.remove();
+      this.styleElement = null;
+    }
   }
 }

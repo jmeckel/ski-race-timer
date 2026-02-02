@@ -114,79 +114,84 @@ export function exportResults(): void {
     return;
   }
 
-  // Sort entries by timestamp
-  const sortedEntries = [...entries].sort((a, b) =>
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+  try {
+    // Sort entries by timestamp
+    const sortedEntries = [...entries].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
-  // Check if there are any faults - if so, include fault columns
-  const hasFaults = faults.length > 0;
+    // Check if there are any faults - if so, include fault columns
+    const hasFaults = faults.length > 0;
 
-  // Build CSV content
-  // Extended header with fault columns when faults exist
-  const header = hasFaults
-    ? 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler'
-    : 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
+    // Build CSV content
+    // Extended header with fault columns when faults exist
+    const header = hasFaults
+      ? 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler'
+      : 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
 
-  const rows = sortedEntries.map(entry => {
-    const bib = escapeCSVField(entry.bib);
-    const run = entry.run ?? 1;
-    const point = getExportPointLabel(entry.point);
-    const time = formatTimeForRaceHorology(entry.timestamp);
-    const device = escapeCSVField(entry.deviceName || entry.deviceId);
+    const rows = sortedEntries.map(entry => {
+      const bib = escapeCSVField(entry.bib);
+      const run = entry.run ?? 1;
+      const point = getExportPointLabel(entry.point);
+      const time = formatTimeForRaceHorology(entry.timestamp);
+      const device = escapeCSVField(entry.deviceName || entry.deviceId);
 
-    // Get faults for this bib/run (only on Finish entries)
-    const entryFaults = entry.point === 'F'
-      ? faults.filter(f => f.bib === entry.bib && f.run === run)
-      : [];
+      // Get faults for this bib/run (only on Finish entries)
+      const entryFaults = entry.point === 'F'
+        ? faults.filter(f => f.bib === entry.bib && f.run === run)
+        : [];
 
-    // Determine status based on faults
-    let status: string;
-    if (entry.point === 'F' && entryFaults.length > 0) {
-      // If using penalty mode, status is FLT; otherwise DSQ
-      status = state.usePenaltyMode ? getStatusLabel('flt', lang) : getStatusLabel('dsq', lang);
-    } else {
-      status = getStatusLabel(entry.status, lang);
-    }
+      // Determine status based on faults
+      let status: string;
+      if (entry.point === 'F' && entryFaults.length > 0) {
+        // If using penalty mode, status is FLT; otherwise DSQ
+        status = state.usePenaltyMode ? getStatusLabel('flt', lang) : getStatusLabel('dsq', lang);
+      } else {
+        status = getStatusLabel(entry.status, lang);
+      }
 
-    if (hasFaults) {
-      // Calculate penalty time
-      const penaltySeconds = entryFaults.length > 0 && state.usePenaltyMode
-        ? entryFaults.length * state.penaltySeconds
-        : 0;
-      const faultStr = formatFaultsForCSV(entryFaults);
+      if (hasFaults) {
+        // Calculate penalty time
+        const penaltySeconds = entryFaults.length > 0 && state.usePenaltyMode
+          ? entryFaults.length * state.penaltySeconds
+          : 0;
+        const faultStr = formatFaultsForCSV(entryFaults);
 
-      return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr}`;
-    } else {
-      return `${bib};${run};${point};${time};${status};${device}`;
-    }
-  });
+        return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr}`;
+      } else {
+        return `${bib};${run};${point};${time};${status};${device}`;
+      }
+    });
 
-  const csvContent = [header, ...rows].join('\n');
+    const csvContent = [header, ...rows].join('\n');
 
-  // Create and download file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
-  link.href = url;
+    const link = document.createElement('a');
+    link.href = url;
 
-  // Filename format: race-id_YYYY-MM-DD.csv
-  const date = new Date().toISOString().split('T')[0];
-  const raceId = state.raceId || 'race';
-  link.download = `${raceId}_${date}.csv`;
+    // Filename format: race-id_YYYY-MM-DD.csv
+    const date = new Date().toISOString().split('T')[0];
+    const raceId = state.raceId || 'race';
+    link.download = `${raceId}_${date}.csv`;
 
-  // Trigger download
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-  // Cleanup
-  URL.revokeObjectURL(url);
+    // Cleanup
+    URL.revokeObjectURL(url);
 
-  // Feedback
-  feedbackSuccess();
-  showToast(t('exported', lang), 'success');
+    // Feedback
+    feedbackSuccess();
+    showToast(t('exported', lang), 'success');
+  } catch (error) {
+    console.error('CSV export failed:', error);
+    showToast(t('operationFailed', lang), 'error');
+  }
 }
 
 /**

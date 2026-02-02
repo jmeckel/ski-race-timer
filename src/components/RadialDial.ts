@@ -34,6 +34,7 @@ export class RadialDial {
   private snapBackAnimationId: number | null = null;
   private snapBackTimeoutId: number | null = null;
   private resizeTimeoutId: number | null = null;
+  private visualTimeoutIds: Set<number> = new Set(); // Track short visual effect timeouts
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
@@ -130,7 +131,11 @@ export class RadialDial {
       feedbackTap();
 
       el.classList.add('pressed');
-      setTimeout(() => el.classList.remove('pressed'), 150);
+      const timeoutId = window.setTimeout(() => {
+        el.classList.remove('pressed');
+        this.visualTimeoutIds.delete(timeoutId);
+      }, 150);
+      this.visualTimeoutIds.add(timeoutId);
     }
   }
 
@@ -415,7 +420,11 @@ export class RadialDial {
     this.dialNumbers?.querySelectorAll('.dial-number').forEach(n => {
       if ((n as HTMLElement).dataset.num === lastDigit) {
         n.classList.add('flash');
-        setTimeout(() => n.classList.remove('flash'), 150);
+        const timeoutId = window.setTimeout(() => {
+          n.classList.remove('flash');
+          this.visualTimeoutIds.delete(timeoutId);
+        }, 150);
+        this.visualTimeoutIds.add(timeoutId);
       }
     });
   }
@@ -454,15 +463,23 @@ export class RadialDial {
 
     // Flash numbers in sequence
     this.dialNumbers?.querySelectorAll('.dial-number').forEach((n, i) => {
-      setTimeout(() => {
+      const outerTimeoutId = window.setTimeout(() => {
+        this.visualTimeoutIds.delete(outerTimeoutId);
         n.classList.add('flash');
-        setTimeout(() => n.classList.remove('flash'), 200);
+        const innerTimeoutId = window.setTimeout(() => {
+          n.classList.remove('flash');
+          this.visualTimeoutIds.delete(innerTimeoutId);
+        }, 200);
+        this.visualTimeoutIds.add(innerTimeoutId);
       }, i * 40);
+      this.visualTimeoutIds.add(outerTimeoutId);
     });
 
-    setTimeout(() => {
+    const ringTimeoutId = window.setTimeout(() => {
       this.dialRing?.classList.remove('flash');
+      this.visualTimeoutIds.delete(ringTimeoutId);
     }, 1200);
+    this.visualTimeoutIds.add(ringTimeoutId);
   }
 
   destroy(): void {
@@ -478,6 +495,12 @@ export class RadialDial {
     if (this.resizeTimeoutId) {
       clearTimeout(this.resizeTimeoutId);
     }
+
+    // Clear all visual effect timeouts
+    for (const timeoutId of this.visualTimeoutIds) {
+      clearTimeout(timeoutId);
+    }
+    this.visualTimeoutIds.clear();
 
     // Remove container event listeners (prevents memory leak)
     this.container.removeEventListener('mousedown', this.handleDragStart);

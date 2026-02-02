@@ -31,6 +31,14 @@ interface VirtualListOptions {
   onViewPhoto?: (entry: Entry) => void;
 }
 
+// Track listeners for cleanup
+interface ItemListeners {
+  click?: EventListener;
+  keydown?: EventListener;
+  touchstart?: EventListener;
+  touchend?: EventListener;
+}
+
 export class VirtualList {
   private container: HTMLElement;
   private scrollContainer: HTMLElement;
@@ -39,6 +47,7 @@ export class VirtualList {
   private groups: DisplayGroup[] = [];
   private expandedGroups: Set<string> = new Set();
   private visibleItems: Map<string, HTMLElement> = new Map();
+  private itemListeners: Map<string, ItemListeners> = new Map(); // Track listeners per item
   private scrollTop = 0;
   private containerHeight = 0;
   private options: VirtualListOptions;
@@ -258,7 +267,8 @@ export class VirtualList {
     });
 
     // Clear visible items cache when data changes
-    for (const item of this.visibleItems.values()) {
+    for (const [id, item] of this.visibleItems) {
+      this.cleanupItemListeners(id, item);
       item.remove();
     }
     this.visibleItems.clear();
@@ -284,7 +294,8 @@ export class VirtualList {
     }
 
     // Clear cache and re-render
-    for (const item of this.visibleItems.values()) {
+    for (const [id, item] of this.visibleItems) {
+      this.cleanupItemListeners(id, item);
       item.remove();
     }
     this.visibleItems.clear();
@@ -413,6 +424,7 @@ export class VirtualList {
     // Remove items no longer visible
     for (const [id, item] of this.visibleItems) {
       if (!visibleIds.has(id)) {
+        this.cleanupItemListeners(id, item);
         item.remove();
         this.visibleItems.delete(id);
       }
@@ -591,13 +603,18 @@ export class VirtualList {
       ` : ''}
     `;
 
+    // Create and track event listeners for cleanup
+    const headerId = `header-${group.id}`;
+    const listeners: ItemListeners = {};
+
     // Click to toggle
-    header.addEventListener('click', () => {
+    listeners.click = () => {
       this.toggleGroup(group.id);
-    });
+    };
+    header.addEventListener('click', listeners.click);
 
     // Keyboard support for accessibility
-    header.addEventListener('keydown', (e: KeyboardEvent) => {
+    listeners.keydown = ((e: KeyboardEvent) => {
       switch (e.key) {
         case 'Enter':
         case ' ':
@@ -613,16 +630,22 @@ export class VirtualList {
           this.focusPreviousItem(header);
           break;
       }
-    });
+    }) as EventListener;
+    header.addEventListener('keydown', listeners.keydown);
 
     // Touch feedback
-    header.addEventListener('touchstart', () => {
+    listeners.touchstart = () => {
       header.style.background = 'var(--surface-elevated)';
-    }, { passive: true });
+    };
+    header.addEventListener('touchstart', listeners.touchstart, { passive: true });
 
-    header.addEventListener('touchend', () => {
+    listeners.touchend = () => {
       header.style.background = 'var(--surface)';
-    }, { passive: true });
+    };
+    header.addEventListener('touchend', listeners.touchend, { passive: true });
+
+    // Store listeners for cleanup
+    this.itemListeners.set(headerId, listeners);
 
     return header;
   }
@@ -1333,22 +1356,30 @@ export class VirtualList {
   }
 
   /**
-   * Focus the next focusable item in the list
+   * Get sorted focusable items from the visible items cache
+   * This avoids expensive DOM queries on every arrow key press
    */
-  private focusNextItem(currentItem: HTMLElement): void {
-    const focusableItems = Array.from(
-      this.contentContainer.querySelectorAll('[tabindex="0"]')
-    ) as HTMLElement[];
+  private getSortedFocusableItems(): HTMLElement[] {
+    // Use visibleItems Map instead of DOM query
+    const items = Array.from(this.visibleItems.values());
 
     // Sort by Y position (transform translateY)
-    focusableItems.sort((a, b) => {
+    items.sort((a, b) => {
       const aY = this.getItemYPosition(a);
       const bY = this.getItemYPosition(b);
       return aY - bY;
     });
 
+    return items;
+  }
+
+  /**
+   * Focus the next focusable item in the list
+   */
+  private focusNextItem(currentItem: HTMLElement): void {
+    const focusableItems = this.getSortedFocusableItems();
     const currentIndex = focusableItems.indexOf(currentItem);
-    if (currentIndex < focusableItems.length - 1) {
+    if (currentIndex >= 0 && currentIndex < focusableItems.length - 1) {
       focusableItems[currentIndex + 1].focus();
     }
   }
@@ -1357,17 +1388,7 @@ export class VirtualList {
    * Focus the previous focusable item in the list
    */
   private focusPreviousItem(currentItem: HTMLElement): void {
-    const focusableItems = Array.from(
-      this.contentContainer.querySelectorAll('[tabindex="0"]')
-    ) as HTMLElement[];
-
-    // Sort by Y position (transform translateY)
-    focusableItems.sort((a, b) => {
-      const aY = this.getItemYPosition(a);
-      const bY = this.getItemYPosition(b);
-      return aY - bY;
-    });
-
+    const focusableItems = this.getSortedFocusableItems();
     const currentIndex = focusableItems.indexOf(currentItem);
     if (currentIndex > 0) {
       focusableItems[currentIndex - 1].focus();
@@ -1381,6 +1402,20 @@ export class VirtualList {
     const transform = item.style.transform;
     const match = transform.match(/translateY\((\d+)px\)/);
     return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
+   * Clean up event listeners for an item
+   */
+  private cleanupItemListeners(itemId: string, item: HTMLElement): void {
+    const listeners = this.itemListeners.get(itemId);
+    if (listeners) {
+      if (listeners.click) item.removeEventListener('click', listeners.click);
+      if (listeners.keydown) item.removeEventListener('keydown', listeners.keydown);
+      if (listeners.touchstart) item.removeEventListener('touchstart', listeners.touchstart);
+      if (listeners.touchend) item.removeEventListener('touchend', listeners.touchend);
+      this.itemListeners.delete(itemId);
+    }
   }
 
   /**
@@ -1426,6 +1461,13 @@ export class VirtualList {
       this.unsubscribe();
       this.unsubscribe = null;
     }
+
+    // Clean up all item listeners before removing DOM
+    for (const [id, item] of this.visibleItems) {
+      this.cleanupItemListeners(id, item);
+    }
+    this.visibleItems.clear();
+    this.itemListeners.clear();
 
     // Clear DOM
     this.scrollContainer.remove();
