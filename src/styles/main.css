@@ -2103,22 +2103,36 @@ body {
     margin: 0 auto;
   }
 
-  /* Header adjustments - add side safe areas */
+  /* Header adjustments - more compact in landscape */
   .header {
-    padding: 4px 16px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding: 2px 12px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
 
-  /* Tab bar adjustments for landscape - add side safe areas */
+  .header h1 {
+    font-size: 1rem;
+  }
+
+  .header-status {
+    font-size: 0.7rem;
+  }
+
+  /* Tab bar adjustments for landscape - more compact */
   .tab-bar {
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(8px, env(safe-area-inset-left, 0px));
+    padding-right: max(8px, env(safe-area-inset-right, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .tab-btn {
-    padding: 6px 12px 4px;
+    padding: 4px 12px 2px;
+    font-size: 0.65rem;
+  }
+
+  .tab-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* Modal adjustments for landscape */
