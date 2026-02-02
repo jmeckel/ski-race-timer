@@ -695,20 +695,20 @@ export class VirtualList {
         </span>
       ` : ''}
       ${entry.photo ? `
-        <button class="result-photo-btn" aria-label="View photo" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <button class="result-photo-btn" aria-label="${t('viewPhotoLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
           </svg>
         </button>
       ` : ''}
-      <button class="result-edit-btn" aria-label="Edit entry" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>
-      <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-delete" aria-label="${t('deleteEntryLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
@@ -866,13 +866,13 @@ export class VirtualList {
           ${escapeHtml(statusLabel)}
         </span>
       ` : ''}
-      <button class="result-edit-btn" aria-label="Edit fault" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>
-      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-delete fault-delete-btn" aria-label="${t('deleteFaultLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
@@ -1023,13 +1023,13 @@ export class VirtualList {
           ${escapeHtml(entry.status.toUpperCase())}
         </span>
       ` : ''}
-      <button class="result-edit-btn" aria-label="Edit entry" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>
-      <button class="result-delete" aria-label="Delete entry" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-delete" aria-label="${t('deleteEntryLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
@@ -1151,13 +1151,13 @@ export class VirtualList {
           DEL
         </span>
       ` : ''}
-      <button class="result-edit-btn" aria-label="Edit fault" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>
-      <button class="result-delete fault-delete-btn" aria-label="Delete fault" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
+      <button class="result-delete fault-delete-btn" aria-label="${t('deleteFaultLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>

@@ -59,6 +59,7 @@ export function updateInlineFaultsList(): void {
   if (!listContainer) return;
 
   const state = deps.getState();
+  const lang = state.currentLang;
   const faults = state.faultEntries.filter(f =>
     f.run === state.selectedRun &&
     !f.markedForDeletion
@@ -99,7 +100,7 @@ export function updateInlineFaultsList(): void {
           <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
         </div>
       </div>
-      <button class="gate-judge-fault-delete" aria-label="Delete">
+      <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18"/>
           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>

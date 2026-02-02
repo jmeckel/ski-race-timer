@@ -409,7 +409,31 @@ export const translations: Record<Language, Translations> = {
     voiceNotUnderstood: 'Not understood',
     voiceCancelled: 'Cancelled',
     voiceError: 'Voice error',
-    voiceApiKeyRequired: 'API key required for voice mode'
+    voiceApiKeyRequired: 'API key required for voice mode',
+
+    // Localization - Pull to Refresh
+    pullToRefresh: 'Pull to refresh',
+    releaseToRefresh: 'Release to refresh',
+
+    // Localization - Sync Status
+    synced: 'Synced',
+    syncingStatus: 'Syncing...',
+
+    // Localization - Gate Assignment Modal
+    gateAssignmentInstructions: 'Enter the gate range you are responsible for:',
+
+    // Localization - Ready Status
+    readySuffix: ' - Ready',
+
+    // Localization - Aria Labels
+    viewPhotoLabel: 'View photo',
+    editEntryLabel: 'Edit entry',
+    deleteEntryLabel: 'Delete entry',
+    editFaultLabel: 'Edit fault',
+    deleteFaultLabel: 'Delete fault',
+    deleteLabel: 'Delete',
+    gateNumberLabel: 'Gate',
+    numberLabel: 'Number'
   },
 
   de: {
@@ -820,7 +844,31 @@ export const translations: Record<Language, Translations> = {
     voiceNotUnderstood: 'Nicht verstanden',
     voiceCancelled: 'Abgebrochen',
     voiceError: 'Sprachfehler',
-    voiceApiKeyRequired: 'API-Schlüssel für Sprachsteuerung erforderlich'
+    voiceApiKeyRequired: 'API-Schlüssel für Sprachsteuerung erforderlich',
+
+    // Localization - Pull to Refresh
+    pullToRefresh: 'Zum Aktualisieren ziehen',
+    releaseToRefresh: 'Loslassen zum Aktualisieren',
+
+    // Localization - Sync Status
+    synced: 'Synchronisiert',
+    syncingStatus: 'Synchronisiere...',
+
+    // Localization - Gate Assignment Modal
+    gateAssignmentInstructions: 'Gib den Torbereich ein, für den du verantwortlich bist:',
+
+    // Localization - Ready Status
+    readySuffix: ' - Bereit',
+
+    // Localization - Aria Labels
+    viewPhotoLabel: 'Foto anzeigen',
+    editEntryLabel: 'Eintrag bearbeiten',
+    deleteEntryLabel: 'Eintrag löschen',
+    editFaultLabel: 'Fehler bearbeiten',
+    deleteFaultLabel: 'Fehler löschen',
+    deleteLabel: 'Löschen',
+    gateNumberLabel: 'Tor',
+    numberLabel: 'Zahl'
   }
 };
 

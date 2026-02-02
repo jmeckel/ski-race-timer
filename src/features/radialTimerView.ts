@@ -545,7 +545,8 @@ function updateRadialSyncStatus(): void {
 
   if (text) {
     const deviceCount = state.cloudDeviceCount || 0;
-    text.textContent = deviceCount > 0 ? `Synced (${deviceCount})` : 'Syncing...';
+    const lang = state.currentLang;
+    text.textContent = deviceCount > 0 ? `${t('synced', lang)} (${deviceCount})` : t('syncingStatus', lang);
   }
 }
 

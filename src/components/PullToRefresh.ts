@@ -3,6 +3,8 @@
  */
 
 import { logger } from '../utils/logger';
+import { t } from '../i18n/translations';
+import { store } from '../store';
 
 const PULL_THRESHOLD = 80; // Pixels to pull before triggering refresh
 const RESISTANCE = 2.5; // Pull resistance factor
@@ -59,12 +61,13 @@ export class PullToRefresh {
       z-index: 100;
     `;
 
+    const lang = store.getState().currentLang;
     indicator.innerHTML = `
       <div class="pull-indicator-content" style="display: flex; align-items: center; gap: 8px;">
         <svg class="pull-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s;">
           <path d="M12 19V5M5 12l7-7 7 7"/>
         </svg>
-        <span class="pull-text">Pull to refresh</span>
+        <span class="pull-text">${t('pullToRefresh', lang)}</span>
       </div>
       <div class="pull-spinner" style="display: none;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
@@ -202,7 +205,8 @@ export class PullToRefresh {
     }
 
     if (text) {
-      text.textContent = progress >= 1 ? 'Release to refresh' : 'Pull to refresh';
+      const lang = store.getState().currentLang;
+      text.textContent = progress >= 1 ? t('releaseToRefresh', lang) : t('pullToRefresh', lang);
     }
   }
 

@@ -5,6 +5,8 @@
  */
 
 import { feedbackTap } from '../services';
+import { t } from '../i18n/translations';
+import { store } from '../store';
 
 export interface RadialDialOptions {
   onChange?: (value: string) => void;
@@ -91,9 +93,10 @@ export class RadialDial {
       el.style.transform = 'translate(-50%, -50%)';
 
       // Keyboard accessibility
+      const lang = store.getState().currentLang;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `Number ${num}`);
+      el.setAttribute('aria-label', `${t('numberLabel', lang)} ${num}`);
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

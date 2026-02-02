@@ -241,8 +241,9 @@ export function updateOtherJudgesCoverage(): void {
   }
 
   coverageContainer.style.display = 'flex';
+  const lang = store.getState().currentLang;
   coverageList.innerHTML = otherAssignments.map(a => `
-    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? ' - Ready' : ''}">
+    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? t('readySuffix', lang) : ''}">
       ${a.isReady ? '<span class="ready-check">✓</span>' : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
