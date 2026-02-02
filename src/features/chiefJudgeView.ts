@@ -260,6 +260,7 @@ export function updatePenaltyConfigUI(): void {
       const isActive = (mode === 'penalty' && state.usePenaltyMode) ||
                        (mode === 'dsq' && !state.usePenaltyMode);
       btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
     });
   }
 }

@@ -192,7 +192,7 @@
           </div>
           <!-- Search & Filter -->
           <div class="search-filter-bar" data-advanced>
-            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search">
+            <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" aria-label="Search results">
             <select class="filter-select" id="filter-point" aria-label="Filter by point">
               <option value="all" data-i18n="all">All</option>
               <option value="S">Start</option>
@@ -245,19 +245,19 @@
 
           <!-- Penalty Configuration -->
           <div class="penalty-config-row" id="penalty-config-row">
-            <div class="penalty-mode-toggle" id="penalty-mode-toggle">
-              <button class="penalty-mode-btn active" data-mode="penalty">
+            <div class="penalty-mode-toggle" id="penalty-mode-toggle" role="group" aria-label="Penalty mode">
+              <button class="penalty-mode-btn active" data-mode="penalty" aria-pressed="true">
                 <span data-i18n="penaltyMode">+Time</span>
               </button>
-              <button class="penalty-mode-btn" data-mode="dsq">
+              <button class="penalty-mode-btn" data-mode="dsq" aria-pressed="false">
                 <span>DSQ</span>
               </button>
             </div>
             <div class="penalty-seconds-selector" id="penalty-seconds-selector">
-              <button class="penalty-adj-btn" data-adj="-1">−</button>
+              <button class="penalty-adj-btn" data-adj="-1" aria-label="Decrease penalty seconds">−</button>
               <span class="penalty-seconds-value" id="penalty-seconds-value">5</span>
               <span class="penalty-seconds-unit">s</span>
-              <button class="penalty-adj-btn" data-adj="+1">+</button>
+              <button class="penalty-adj-btn" data-adj="+1" aria-label="Increase penalty seconds">+</button>
             </div>
           </div>
           <!-- Pending Deletions Section (Chief Judge approval needed) -->
@@ -402,7 +402,7 @@
               </div>
               <div class="inline-bib-manual-row">
                 <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
-                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
+                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" aria-label="Bib number">
               </div>
             </div>
 
@@ -439,7 +439,7 @@
         <!-- Action Buttons Row (Save Fault + Ready) -->
         <div class="gate-judge-footer">
           <button class="inline-save-fault-btn" id="inline-save-fault-btn" data-i18n="saveFault">Save Fault</button>
-          <button class="ready-toggle-btn" id="ready-toggle-btn">
+          <button class="ready-toggle-btn" id="ready-toggle-btn" aria-pressed="false">
             <svg class="ready-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
@@ -509,7 +509,7 @@
               </span>
             </div>
             <div class="race-id-input-row">
-              <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;">
+              <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;" aria-label="Race ID">
               <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -523,7 +523,7 @@
             <div class="setting-label">
               <span class="setting-title" data-i18n="deviceName">Device Name</span>
             </div>
-            <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;">
+            <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;" aria-label="Device name">
           </div>
           <div class="setting-row" id="sync-photos-row">
             <div class="setting-label">
@@ -539,8 +539,8 @@
 
         <!-- Advanced Settings (Collapsible) -->
         <div class="settings-section collapsible expanded" id="advanced-settings-section">
-          <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings">Advanced Settings</div>
-          <div class="settings-section-content">
+          <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings" role="button" tabindex="0" aria-expanded="true" aria-controls="advanced-settings-content">Advanced Settings</div>
+          <div class="settings-section-content" id="advanced-settings-content">
             <!-- GPS -->
             <div class="setting-row">
               <div class="setting-label">
@@ -755,10 +755,10 @@
   </div>
 
   <!-- Edit Modal -->
-  <div class="modal-overlay glass-enable-target" id="edit-modal">
+  <div class="modal-overlay glass-enable-target" id="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="edit">Edit Entry</h2>
+        <h2 class="modal-title" id="edit-modal-title" data-i18n="edit">Edit Entry</h2>
       </div>
       <div class="modal-body">
         <div style="margin-bottom: 16px;">
@@ -790,10 +790,10 @@
   </div>
 
   <!-- Confirm Modal -->
-  <div class="modal-overlay glass-enable-target" id="confirm-modal">
+  <div class="modal-overlay glass-enable-target" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="confirmDelete">Delete Entry</h2>
+        <h2 class="modal-title" id="confirm-modal-title" data-i18n="confirmDelete">Delete Entry</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" data-i18n="confirmDeleteText">Are you sure you want to delete this entry?</p>
@@ -806,10 +806,10 @@
   </div>
 
   <!-- Fault Delete Confirmation Modal -->
-  <div class="modal-overlay glass-enable-target" id="fault-delete-modal">
+  <div class="modal-overlay glass-enable-target" id="fault-delete-modal" role="dialog" aria-modal="true" aria-labelledby="fault-delete-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="confirmDelete">Delete Fault</h2>
+        <h2 class="modal-title" id="fault-delete-modal-title" data-i18n="confirmDelete">Delete Fault</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" data-i18n="confirmDeleteFault">Delete this fault?</p>
@@ -823,10 +823,10 @@
   </div>
 
   <!-- Race Change Modal -->
-  <div class="modal-overlay glass-enable-target" id="race-change-modal">
+  <div class="modal-overlay glass-enable-target" id="race-change-modal" role="dialog" aria-modal="true" aria-labelledby="race-change-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="raceChangeTitle">Change Race</h2>
+        <h2 class="modal-title" id="race-change-modal-title" data-i18n="raceChangeTitle">Change Race</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" id="race-change-text" data-i18n="raceChangeUnsyncedText">You have existing results. Keep them or delete before switching?</p>
@@ -841,10 +841,10 @@
   </div>
 
   <!-- Photo Viewer Modal -->
-  <div class="modal-overlay glass-enable-target" id="photo-viewer-modal">
+  <div class="modal-overlay glass-enable-target" id="photo-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="photo-viewer-modal-title">
     <div class="modal-content glass-surface-1 photo-viewer-content">
       <div class="modal-header photo-viewer-header">
-        <h2 class="modal-title" data-i18n="viewPhoto">View Photo</h2>
+        <h2 class="modal-title" id="photo-viewer-modal-title" data-i18n="viewPhoto">View Photo</h2>
         <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M18 6L6 18M6 6l12 12"/>
@@ -867,10 +867,10 @@
   </div>
 
   <!-- Race Deleted Modal -->
-  <div class="modal-overlay glass-enable-target" id="race-deleted-modal">
+  <div class="modal-overlay glass-enable-target" id="race-deleted-modal" role="alertdialog" aria-modal="true" aria-labelledby="race-deleted-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="raceDeleted">Race Deleted</h2>
+        <h2 class="modal-title" id="race-deleted-modal-title" data-i18n="raceDeleted">Race Deleted</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" id="race-deleted-text" data-i18n="raceDeletedText">This race has been deleted by an administrator.</p>
@@ -882,10 +882,10 @@
   </div>
 
   <!-- Photo Sync Warning Modal -->
-  <div class="modal-overlay glass-enable-target" id="photo-sync-modal">
+  <div class="modal-overlay glass-enable-target" id="photo-sync-modal" role="dialog" aria-modal="true" aria-labelledby="photo-sync-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="syncPhotosWarning">Enable Photo Sync</h2>
+        <h2 class="modal-title" id="photo-sync-modal-title" data-i18n="syncPhotosWarning">Enable Photo Sync</h2>
       </div>
       <div class="modal-body">
         <p data-i18n="syncPhotosWarningText">Enabling photo sync will transfer the following data:</p>
@@ -912,10 +912,10 @@
   </div>
 
   <!-- Race Management Modal -->
-  <div class="modal-overlay glass-enable-target" id="race-management-modal">
+  <div class="modal-overlay glass-enable-target" id="race-management-modal" role="dialog" aria-modal="true" aria-labelledby="race-management-modal-title">
     <div class="modal-content glass-surface-1 race-management-content">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="manageRaces">Manage Races</h2>
+        <h2 class="modal-title" id="race-management-modal-title" data-i18n="manageRaces">Manage Races</h2>
       </div>
       <div class="modal-body">
         <div class="race-list" id="race-list" role="region" aria-live="polite">
@@ -942,7 +942,7 @@
   </div>
 
   <!-- Admin PIN Modal (for verifying PIN to access race management) -->
-  <div class="modal-overlay glass-enable-target" id="admin-pin-modal">
+  <div class="modal-overlay glass-enable-target" id="admin-pin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-pin-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" id="admin-pin-modal-title" data-i18n="enterAdminPin">Enter Admin PIN</h2>
@@ -960,7 +960,7 @@
   </div>
 
   <!-- Set/Change PIN Modal -->
-  <div class="modal-overlay glass-enable-target" id="change-pin-modal">
+  <div class="modal-overlay glass-enable-target" id="change-pin-modal" role="dialog" aria-modal="true" aria-labelledby="change-pin-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
         <h2 class="modal-title" id="change-pin-modal-title" data-i18n="setPin">Set PIN</h2>
@@ -990,10 +990,10 @@
   </div>
 
   <!-- Delete Race Confirmation Modal -->
-  <div class="modal-overlay glass-enable-target" id="delete-race-confirm-modal">
+  <div class="modal-overlay glass-enable-target" id="delete-race-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-race-confirm-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="confirmDeleteRace">Delete Race</h2>
+        <h2 class="modal-title" id="delete-race-confirm-modal-title" data-i18n="confirmDeleteRace">Delete Race</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" id="delete-race-confirm-text">Are you sure you want to delete this race?</p>
@@ -1006,10 +1006,10 @@
   </div>
 
   <!-- Gate Assignment Modal -->
-  <div class="modal-overlay glass-enable-target" id="gate-assignment-modal">
+  <div class="modal-overlay glass-enable-target" id="gate-assignment-modal" role="dialog" aria-modal="true" aria-labelledby="gate-assignment-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="gateAssignment">Gate Assignment</h2>
+        <h2 class="modal-title" id="gate-assignment-modal-title" data-i18n="gateAssignment">Gate Assignment</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" style="margin-bottom: 16px;">Enter the gate range you are responsible for:</p>
@@ -1047,10 +1047,10 @@
   </div>
 
   <!-- Fault Recording Modal -->
-  <div class="modal-overlay glass-enable-target" id="fault-modal">
+  <div class="modal-overlay glass-enable-target" id="fault-modal" role="dialog" aria-modal="true" aria-labelledby="fault-modal-title">
     <div class="modal-content glass-surface-1 fault-modal-content">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="recordFault">Record Fault</h2>
+        <h2 class="modal-title" id="fault-modal-title" data-i18n="recordFault">Record Fault</h2>
       </div>
       <div class="modal-body">
         <!-- Bib Selection -->
@@ -1100,10 +1100,10 @@
   </div>
 
   <!-- Fault Edit Modal -->
-  <div class="modal-overlay glass-enable-target" id="fault-edit-modal">
+  <div class="modal-overlay glass-enable-target" id="fault-edit-modal" role="dialog" aria-modal="true" aria-labelledby="fault-edit-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="editFault">Edit Fault</h2>
+        <h2 class="modal-title" id="fault-edit-modal-title" data-i18n="editFault">Edit Fault</h2>
       </div>
       <div class="modal-body">
         <!-- Bib Input -->
@@ -1151,10 +1151,10 @@
   </div>
 
   <!-- Mark Fault for Deletion Modal -->
-  <div class="modal-overlay glass-enable-target" id="mark-deletion-modal">
+  <div class="modal-overlay glass-enable-target" id="mark-deletion-modal" role="dialog" aria-modal="true" aria-labelledby="mark-deletion-modal-title">
     <div class="modal-content glass-surface-1">
       <div class="modal-header">
-        <h2 class="modal-title" data-i18n="markForDeletion">Mark for Deletion</h2>
+        <h2 class="modal-title" id="mark-deletion-modal-title" data-i18n="markForDeletion">Mark for Deletion</h2>
       </div>
       <div class="modal-body">
         <p class="modal-text" data-i18n="markForDeletionText">This fault will be marked for deletion and requires Chief Judge approval to permanently delete.</p>
@@ -1180,7 +1180,7 @@
   </div>
 
   <!-- Onboarding Modal (Full-screen setup wizard) -->
-  <div class="modal-overlay onboarding-fullscreen" id="onboarding-modal">
+  <div class="modal-overlay onboarding-fullscreen" id="onboarding-modal" role="dialog" aria-modal="true" aria-label="Setup wizard">
     <div class="onboarding-container">
       <button class="onboarding-skip-btn" data-action="dismiss" aria-label="Skip setup" data-i18n="skipSetup">Skip</button>
       <div class="onboarding-progress" id="onboarding-progress">
@@ -1237,7 +1237,7 @@
           <h2 data-i18n="onboardingDeviceName" id="onboarding-device-name-title">Name Your Timer</h2>
           <p data-i18n="onboardingDeviceNameDesc" id="onboarding-device-name-desc">This identifies your device when syncing</p>
           <div class="onboarding-input-row">
-            <input type="text" class="text-input" id="onboarding-device-name" maxlength="30">
+            <input type="text" class="text-input" id="onboarding-device-name" maxlength="30" aria-label="Device name">
             <button class="onboarding-regenerate-btn" id="onboarding-regenerate-name" type="button" aria-label="Generate new name">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M23 4v6h-6M1 20v-6h6"/>
@@ -1296,7 +1296,7 @@
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
-            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
+            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024" aria-label="Race ID">
             <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -1306,7 +1306,7 @@
             <div class="recent-races-dropdown" id="onboarding-recent-races-dropdown" style="display:none"></div>
           </div>
           <div class="race-status" id="onboarding-race-status"></div>
-          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none">
+          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none" aria-label="PIN">
           <label class="onboarding-toggle-row">
             <span data-i18n="enableSync">Enable Cloud Sync</span>
             <label class="toggle-switch">

@@ -265,6 +265,7 @@ export function updateReadyButtonState(): void {
 
   const state = store.getState();
   btn.classList.toggle('ready', state.isJudgeReady);
+  btn.setAttribute('aria-pressed', String(state.isJudgeReady));
 }
 
 /**

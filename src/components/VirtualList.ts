@@ -894,6 +894,7 @@ export class VirtualList {
   private createSubEntryItem(entry: Entry): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-sub-item entry-sub-item';
+    item.setAttribute('role', 'listitem');
     item.setAttribute('data-entry-id', entry.id);
     item.style.cssText = `
       position: absolute;
@@ -991,6 +992,7 @@ export class VirtualList {
     const hasMarkedForDeletion = fault.markedForDeletion;
 
     item.className = `result-sub-item fault-sub-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
+    item.setAttribute('role', 'listitem');
     item.setAttribute('data-fault-id', fault.id);
     item.style.cssText = `
       position: absolute;
