@@ -374,6 +374,46 @@ export class OnboardingController {
       case 'finish':
         this.complete();
         break;
+      case 'dismiss':
+        this.dismiss();
+        break;
+    }
+  }
+
+  /**
+   * Dismiss the onboarding wizard, saving any progress made
+   */
+  private dismiss(): void {
+    // Save any settings that were configured during onboarding
+    // Device name might have been set
+    const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+    if (deviceNameInput?.value.trim()) {
+      store.setDeviceName(deviceNameInput.value.trim());
+    }
+
+    // Role might have been selected
+    store.setDeviceRole(this.selectedRole);
+
+    // Force save all settings
+    store.forceSave();
+
+    // Mark onboarding as completed
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    closeModal(this.modal);
+
+    // Navigate to appropriate view based on role
+    if (this.selectedRole === 'gateJudge') {
+      store.setView('gateJudge');
+      const gateJudgeTab = document.getElementById('gate-judge-tab');
+      if (gateJudgeTab) gateJudgeTab.style.display = '';
+    } else {
+      store.setView('timer');
+    }
+
+    // Clean up
+    if (this.recentRacesDocumentHandler) {
+      document.removeEventListener('click', this.recentRacesDocumentHandler);
+      this.recentRacesDocumentHandler = null;
     }
   }
 

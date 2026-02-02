@@ -731,3 +731,237 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* ===== Landscape Mode ===== */
+@media (orientation: landscape) {
+  /* Two-column grid layout: dial on left, controls on right */
+  .timer-view.radial-mode.active {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "dial bib"
+      "dial stats"
+      "dial timebtn";
+    padding: 0 !important;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* Left column: Dial area - takes height-based square */
+  .radial-center-area {
+    grid-area: dial;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+  }
+
+  /* Dial sized to fit available height */
+  .dial-container {
+    --dial-size: min(calc(100vh - 100px), 60vw);
+    width: var(--dial-size);
+    height: var(--dial-size);
+  }
+
+  /* Adjust tick marks for landscape dial size */
+  .dial-tick {
+    transform-origin: 0 calc(var(--dial-size, 50vh) / 2 - 8px);
+  }
+
+  /* Top right: Bib and clear button */
+  .radial-top-row {
+    grid-area: bib;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    padding-right: max(16px, env(safe-area-inset-right));
+    gap: 16px;
+    z-index: 20;
+  }
+
+  /* Bib section horizontal in landscape */
+  .radial-bib-corner {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .radial-bib-label {
+    font-size: 12px;
+  }
+
+  .radial-bib-value {
+    font-size: 42px;
+  }
+
+  /* Clear button inline with bib */
+  .radial-clear-corner {
+    padding-top: 0;
+  }
+
+  .radial-clear-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  /* Bottom row contains stats and time button */
+  .radial-bottom-row {
+    display: contents !important;
+  }
+
+  /* Stats in middle right */
+  .radial-stats-corner {
+    grid-area: stats;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 16px;
+    padding-right: max(16px, env(safe-area-inset-right));
+    background: var(--surface);
+    margin: 0 16px;
+    margin-right: max(16px, env(safe-area-inset-right));
+    border-radius: 12px;
+  }
+
+  .radial-stats-label {
+    font-size: 10px;
+  }
+
+  .radial-stats-bib {
+    font-size: 18px;
+  }
+
+  .radial-stats-time {
+    font-size: 13px;
+  }
+
+  .radial-stats-count {
+    font-size: 11px;
+  }
+
+  /* Time button at bottom right */
+  .radial-time-btn-corner {
+    grid-area: timebtn;
+    display: flex;
+    padding: 12px 16px;
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .radial-time-btn {
+    flex: 1;
+    min-height: 56px;
+    border-radius: 12px;
+    font-size: 13px;
+    border-left: none;
+  }
+
+  /* Smaller dial center elements in landscape */
+  .dial-center {
+    width: 50%;
+    height: 50%;
+  }
+
+  .radial-time-seconds {
+    font-size: 40px;
+  }
+
+  .radial-time-subseconds {
+    font-size: 20px;
+  }
+
+  .radial-time-hm {
+    font-size: 14px;
+  }
+
+  .radial-point-btn,
+  .radial-run-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+
+  .radial-timing-point {
+    left: 6px;
+    gap: 4px;
+  }
+
+  .radial-run-selector {
+    right: 6px;
+    gap: 4px;
+  }
+
+  .dial-number {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+}
+
+/* Landscape with short height (e.g., phones) */
+@media (orientation: landscape) and (max-height: 450px) {
+  .dial-container {
+    --dial-size: min(calc(100vh - 90px), 55vw);
+  }
+
+  .radial-top-row {
+    padding: 8px 12px;
+    gap: 12px;
+  }
+
+  .radial-bib-value {
+    font-size: 32px;
+  }
+
+  .radial-time-seconds {
+    font-size: 28px;
+  }
+
+  .radial-time-subseconds {
+    font-size: 14px;
+  }
+
+  .radial-time-hm {
+    font-size: 11px;
+  }
+
+  .dial-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .radial-point-btn,
+  .radial-run-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 9px;
+  }
+
+  .radial-time-btn {
+    min-height: 44px;
+    font-size: 11px;
+  }
+
+  .radial-stats-corner {
+    padding: 8px 12px;
+    margin: 0 12px;
+  }
+
+  .radial-time-btn-corner {
+    padding: 8px 12px;
+  }
+
+  .radial-clear-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}

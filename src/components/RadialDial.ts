@@ -30,6 +30,7 @@ export class RadialDial {
   private accumulatedRotation = 0;
   private spinAnimationId: number | null = null;
   private snapBackTimeoutId: number | null = null;
+  private resizeTimeoutId: number | null = null;
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
@@ -129,7 +130,21 @@ export class RadialDial {
     this.container.addEventListener('touchstart', this.handleDragStart, { passive: false });
     window.addEventListener('touchmove', this.handleDragMove, { passive: false });
     window.addEventListener('touchend', this.handleDragEnd);
+
+    // Re-layout on orientation/resize change
+    window.addEventListener('resize', this.handleResize);
   }
+
+  private handleResize = (): void => {
+    // Debounce resize events
+    if (this.resizeTimeoutId) {
+      clearTimeout(this.resizeTimeoutId);
+    }
+    this.resizeTimeoutId = window.setTimeout(() => {
+      this.generateDialNumbers();
+      this.resizeTimeoutId = null;
+    }, 100);
+  };
 
   private handleDragStart = (e: MouseEvent | TouchEvent): void => {
     const isTouch = 'touches' in e;
@@ -436,10 +451,14 @@ export class RadialDial {
     if (this.snapBackTimeoutId) {
       clearTimeout(this.snapBackTimeoutId);
     }
+    if (this.resizeTimeoutId) {
+      clearTimeout(this.resizeTimeoutId);
+    }
 
     window.removeEventListener('mousemove', this.handleDragMove);
     window.removeEventListener('mouseup', this.handleDragEnd);
     window.removeEventListener('touchmove', this.handleDragMove);
     window.removeEventListener('touchend', this.handleDragEnd);
+    window.removeEventListener('resize', this.handleResize);
   }
 }

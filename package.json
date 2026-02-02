@@ -1,6 +1,6 @@
 {
   "name": "ski-race-timer",
-  "version": "5.8.19",
+  "version": "5.8.21",
   "description": "GPS-synchronized race timing for ski races",
   "private": true,
   "type": "module",

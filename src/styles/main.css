@@ -2345,6 +2345,31 @@ body {
   justify-content: center;
   box-shadow: none;
   overflow-y: auto;
+  position: relative;
+}
+
+/* Skip button - always visible at top right */
+.onboarding-skip-btn {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--text-tertiary);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.onboarding-skip-btn:hover,
+.onboarding-skip-btn:active {
+  background: var(--surface-elevated);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 @media (min-height: 700px) {
