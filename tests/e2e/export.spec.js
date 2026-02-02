@@ -157,13 +157,19 @@ test.describe('Export - Edge Cases', () => {
 
     await navigateTo(page, 'results');
 
+    // Wait for any toast notifications to disappear
+    await page.waitForFunction(() => {
+      const toast = document.querySelector('.toast');
+      return !toast || !toast.classList.contains('show');
+    }, { timeout: 5000 }).catch(() => {});
+
     // Export button should still work or be disabled
     const exportBtn = page.locator('#export-btn');
     const isVisible = await exportBtn.isVisible();
 
     if (isVisible) {
       const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
-      await exportBtn.click();
+      await exportBtn.click({ force: true });
       const download = await downloadPromise;
 
       // Either no download (disabled) or empty file

@@ -209,11 +209,17 @@ test.describe('Offline Functionality', () => {
 });
 
 test.describe('Service Worker', () => {
+  // Service worker tests only work in production builds, not dev mode
+  // Skip unless explicitly testing production (npm run test:e2e:prod)
+  const isDevMode = !process.env.PROD_TESTS;
+
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
   test('should register service worker', async ({ page }) => {
+    test.skip(isDevMode, 'Service workers only register in production builds');
+
     // Wait for service worker registration
     await page.waitForTimeout(1000);
 
@@ -229,6 +235,8 @@ test.describe('Service Worker', () => {
   });
 
   test('should cache essential resources', async ({ page }) => {
+    test.skip(isDevMode, 'Caches only exist in production builds');
+
     await page.waitForTimeout(1000);
 
     // Check if caches exist
