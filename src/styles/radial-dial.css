@@ -309,6 +309,25 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     0 0 20px rgba(56, 189, 248, 0.3);
 }
 
+/* Keyboard focus indicator - visible ring for accessibility */
+.dial-number:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(56, 189, 248, 0.5);
+}
+
+.dial-number:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(56, 189, 248, 0.6);
+}
+
 .dial-number.flash {
   color: var(--primary);
   border-color: var(--primary);

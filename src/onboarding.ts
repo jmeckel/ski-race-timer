@@ -98,7 +98,9 @@ export class OnboardingController {
 
     // Reset role selection
     this.modal.querySelectorAll('.role-card').forEach(card => {
-      card.classList.toggle('selected', card.getAttribute('data-role') === 'timer');
+      const isTimer = card.getAttribute('data-role') === 'timer';
+      card.classList.toggle('selected', isTimer);
+      card.setAttribute('aria-checked', String(isTimer));
     });
 
     // Reset gate inputs
@@ -195,8 +197,11 @@ export class OnboardingController {
         const role = card.getAttribute('data-role') as DeviceRole;
         if (role) {
           this.selectedRole = role;
-          this.modal!.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
+          this.modal!.querySelectorAll('.role-card').forEach(c => {
+            const isSelected = c === card;
+            c.classList.toggle('selected', isSelected);
+            c.setAttribute('aria-checked', String(isSelected));
+          });
           feedbackTap();
         }
       });

@@ -1145,7 +1145,15 @@ body {
 .onboarding-btn:focus-visible,
 .recent-races-btn:focus-visible,
 .photo-viewer-close:focus-visible,
-.race-delete-btn:focus-visible {
+.race-delete-btn:focus-visible,
+.result-item:focus-visible,
+.result-group-header:focus-visible,
+.result-sub-item:focus-visible,
+.recent-race-item:focus-visible,
+.inline-bib-btn:focus-visible,
+.inline-gate-btn:focus-visible,
+.inline-fault-type-btn:focus-visible,
+.role-card:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }

@@ -628,9 +628,9 @@
             <div class="setting-label">
               <span class="setting-title" data-i18n="language">Language</span>
             </div>
-            <div class="lang-toggle" id="lang-toggle">
-              <span class="lang-option active" data-lang="de">DE</span>
-              <span class="lang-option" data-lang="en">EN</span>
+            <div class="lang-toggle" id="lang-toggle" role="radiogroup" aria-label="Language selection">
+              <span class="lang-option active" data-lang="de" role="radio" tabindex="0" aria-checked="true" aria-label="German">DE</span>
+              <span class="lang-option" data-lang="en" role="radio" tabindex="0" aria-checked="false" aria-label="English">EN</span>
             </div>
           </div>
         </div>
@@ -1208,22 +1208,22 @@
         <div class="onboarding-card" data-step="2" style="display:none">
           <h2 data-i18n="onboardingRole">What's Your Role?</h2>
           <p data-i18n="onboardingRoleDesc">Choose how you'll be helping at the race</p>
-          <div class="onboarding-role-select">
-            <button class="role-card selected" data-role="timer" id="onboarding-role-timer">
-              <div class="role-card-icon">⏱️</div>
+          <div class="onboarding-role-select" role="radiogroup" aria-label="Role selection">
+            <button class="role-card selected" data-role="timer" id="onboarding-role-timer" role="radio" aria-checked="true">
+              <div class="role-card-icon" aria-hidden="true">⏱️</div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleTimerTitle">Timer</span>
                 <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
               </div>
-              <div class="role-card-check">✓</div>
+              <div class="role-card-check" aria-hidden="true">✓</div>
             </button>
-            <button class="role-card" data-role="gateJudge" id="onboarding-role-judge">
-              <div class="role-card-icon">🚩</div>
+            <button class="role-card" data-role="gateJudge" id="onboarding-role-judge" role="radio" aria-checked="false">
+              <div class="role-card-icon" aria-hidden="true">🚩</div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleJudgeTitle">Gate Judge</span>
                 <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
               </div>
-              <div class="role-card-check">✓</div>
+              <div class="role-card-check" aria-hidden="true">✓</div>
             </button>
           </div>
           <div class="onboarding-btn-row">

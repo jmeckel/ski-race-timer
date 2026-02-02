@@ -103,6 +103,16 @@ export function initFaultRecordingModal(): void {
   // Fault type buttons - click selects the type (no auto-save)
   const faultTypeButtons = document.getElementById('fault-type-buttons');
   if (faultTypeButtons) {
+    // Helper to select a fault type button
+    const selectFaultType = (faultType: FaultType) => {
+      const btn = faultTypeButtons.querySelector(`[data-fault="${faultType}"]`);
+      if (btn) {
+        faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        feedbackTap();
+      }
+    };
+
     faultTypeButtons.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       const btn = target.closest('.fault-type-btn');
@@ -110,10 +120,37 @@ export function initFaultRecordingModal(): void {
 
       const faultType = btn.getAttribute('data-fault') as FaultType;
       if (faultType) {
-        // Mark selected (just selection, no recording)
-        faultTypeButtons.querySelectorAll('.fault-type-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        feedbackTap();
+        selectFaultType(faultType);
+      }
+    });
+
+    // Keyboard support for fault type buttons
+    faultTypeButtons.addEventListener('keydown', (e) => {
+      const event = e as KeyboardEvent;
+      const target = event.target as HTMLElement;
+      const btn = target.closest('.fault-type-btn');
+
+      // Space/Enter to select focused button
+      if (btn && (event.key === ' ' || event.key === 'Enter')) {
+        event.preventDefault();
+        const faultType = btn.getAttribute('data-fault') as FaultType;
+        if (faultType) {
+          selectFaultType(faultType);
+        }
+        return;
+      }
+
+      // Keyboard shortcuts: M=MG, S/T=STR, B=BR
+      const key = event.key.toUpperCase();
+      if (key === 'M' || key === 'G') {
+        event.preventDefault();
+        selectFaultType('MG');
+      } else if (key === 'T') {
+        event.preventDefault();
+        selectFaultType('STR');
+      } else if (key === 'B' || key === 'R') {
+        event.preventDefault();
+        selectFaultType('BR');
       }
     });
   }
@@ -715,6 +752,7 @@ export function updateInlineBibSelector(): void {
     const btn = document.createElement('button');
     btn.className = 'inline-bib-btn';
     btn.setAttribute('data-bib', bib);
+    btn.setAttribute('aria-pressed', String(bib === inlineSelectedBib));
     btn.textContent = bib;
 
     if (bib === inlineSelectedBib) {
@@ -724,6 +762,35 @@ export function updateInlineBibSelector(): void {
     btn.addEventListener('click', () => {
       feedbackTap();
       selectInlineBib(bib);
+    });
+
+    // Keyboard support: Space/Enter to select, arrow keys to navigate
+    btn.addEventListener('keydown', (e) => {
+      const buttons = Array.from(container.querySelectorAll('.inline-bib-btn')) as HTMLElement[];
+      const currentIndex = buttons.indexOf(btn);
+
+      switch (e.key) {
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          feedbackTap();
+          selectInlineBib(bib);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          if (currentIndex > 0) {
+            buttons[currentIndex - 1].focus();
+          }
+          break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          if (currentIndex < buttons.length - 1) {
+            buttons[currentIndex + 1].focus();
+          }
+          break;
+      }
     });
 
     container.appendChild(btn);
@@ -738,7 +805,9 @@ export function selectInlineBib(bib: string): void {
 
   // Update bib buttons
   document.querySelectorAll('#inline-bib-selector .inline-bib-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-bib') === bib);
+    const isSelected = btn.getAttribute('data-bib') === bib;
+    btn.classList.toggle('selected', isSelected);
+    btn.setAttribute('aria-pressed', String(isSelected));
   });
 
   // Update manual input
@@ -767,6 +836,8 @@ export function updateInlineGateSelector(): void {
     const btn = document.createElement('button');
     btn.className = `inline-gate-btn ${color}`;
     btn.setAttribute('data-gate', String(gate));
+    btn.setAttribute('aria-pressed', String(gate === inlineSelectedGate));
+    btn.setAttribute('aria-label', `Gate ${gate}`);
     btn.textContent = String(gate);
 
     if (gate === inlineSelectedGate) {
@@ -776,6 +847,47 @@ export function updateInlineGateSelector(): void {
     btn.addEventListener('click', () => {
       feedbackTap();
       selectInlineGate(gate);
+    });
+
+    // Keyboard support: Space/Enter to select, arrow keys to navigate, number shortcuts
+    btn.addEventListener('keydown', (e) => {
+      const buttons = Array.from(container.querySelectorAll('.inline-gate-btn')) as HTMLElement[];
+      const currentIndex = buttons.indexOf(btn);
+
+      switch (e.key) {
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          feedbackTap();
+          selectInlineGate(gate);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          if (currentIndex > 0) {
+            buttons[currentIndex - 1].focus();
+          }
+          break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          if (currentIndex < buttons.length - 1) {
+            buttons[currentIndex + 1].focus();
+          }
+          break;
+        default:
+          // Number shortcuts: 1-9 for gates 1-9, 0 for gate 10
+          if (/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            const targetGate = e.key === '0' ? 10 : parseInt(e.key);
+            const targetBtn = container.querySelector(`[data-gate="${targetGate}"]`) as HTMLElement;
+            if (targetBtn) {
+              feedbackTap();
+              selectInlineGate(targetGate);
+              targetBtn.focus();
+            }
+          }
+      }
     });
 
     container.appendChild(btn);
@@ -790,7 +902,9 @@ export function selectInlineGate(gate: number): void {
 
   // Update gate buttons
   document.querySelectorAll('#inline-gate-selector .inline-gate-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-gate') === String(gate));
+    const isSelected = btn.getAttribute('data-gate') === String(gate);
+    btn.classList.toggle('selected', isSelected);
+    btn.setAttribute('aria-pressed', String(isSelected));
   });
 
   updateInlineSaveButtonState();
@@ -819,11 +933,8 @@ export function initInlineFaultEntry(): void {
   // Fault type buttons
   const faultTypeContainer = document.getElementById('inline-fault-types');
   if (faultTypeContainer) {
-    faultTypeContainer.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('.inline-fault-type-btn');
-      if (!btn) return;
-
+    // Helper to select a fault type button
+    const selectFaultTypeBtn = (btn: Element) => {
       feedbackTap();
       const faultType = btn.getAttribute('data-fault') as FaultType;
       inlineSelectedFaultType = faultType;
@@ -831,9 +942,58 @@ export function initInlineFaultEntry(): void {
       // Update button states
       faultTypeContainer.querySelectorAll('.inline-fault-type-btn').forEach(b => {
         b.classList.toggle('selected', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
       });
 
       updateInlineSaveButtonState();
+    };
+
+    faultTypeContainer.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('.inline-fault-type-btn');
+      if (!btn) return;
+      selectFaultTypeBtn(btn);
+    });
+
+    // Keyboard support: Space/Enter to select, M/G/T/B shortcuts
+    faultTypeContainer.addEventListener('keydown', (e) => {
+      const event = e as KeyboardEvent;
+      const target = event.target as HTMLElement;
+      const btn = target.closest('.inline-fault-type-btn');
+
+      // Handle Space/Enter on focused button
+      if (btn && (event.key === ' ' || event.key === 'Enter')) {
+        event.preventDefault();
+        selectFaultTypeBtn(btn);
+        return;
+      }
+
+      // Handle keyboard shortcuts (M/G=MG, T=STR, B/R=BR)
+      const key = event.key.toUpperCase();
+      let faultType: string | null = null;
+
+      switch (key) {
+        case 'M':
+        case 'G':
+          faultType = 'MG';
+          break;
+        case 'T':
+          faultType = 'STR';
+          break;
+        case 'B':
+        case 'R':
+          faultType = 'BR';
+          break;
+      }
+
+      if (faultType) {
+        event.preventDefault();
+        const faultBtn = faultTypeContainer.querySelector(`[data-fault="${faultType}"]`);
+        if (faultBtn) {
+          selectFaultTypeBtn(faultBtn);
+          (faultBtn as HTMLElement).focus();
+        }
+      }
     });
   }
 

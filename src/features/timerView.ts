@@ -56,6 +56,10 @@ export function destroyClock(): void {
  */
 export function initTabs(): void {
   const tabBtns = document.querySelectorAll('.tab-btn');
+  const visibleTabs = () => Array.from(tabBtns).filter(btn =>
+    (btn as HTMLElement).style.display !== 'none'
+  ) as HTMLElement[];
+
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.getAttribute('data-view') as 'timer' | 'results' | 'settings' | 'gateJudge';
@@ -66,6 +70,43 @@ export function initTabs(): void {
         tabBtns.forEach(t => {
           t.setAttribute('aria-selected', t === btn ? 'true' : 'false');
         });
+      }
+    });
+
+    // Keyboard navigation for tabs (WCAG 2.1 compliant)
+    btn.addEventListener('keydown', (e: Event) => {
+      const event = e as KeyboardEvent;
+      const tabs = visibleTabs();
+      const currentIndex = tabs.indexOf(btn as HTMLElement);
+      let newIndex = currentIndex;
+
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          event.preventDefault();
+          newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+          break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+          event.preventDefault();
+          newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+          break;
+        case 'Home':
+          event.preventDefault();
+          newIndex = 0;
+          break;
+        case 'End':
+          event.preventDefault();
+          newIndex = tabs.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      if (newIndex !== currentIndex) {
+        const newTab = tabs[newIndex];
+        newTab.focus();
+        newTab.click();
       }
     });
   });

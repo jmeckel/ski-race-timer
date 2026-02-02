@@ -322,6 +322,16 @@ function initRadialKeyboard(): void {
       return;
     }
 
+    // L1/L2 run selection with Alt+1 or Alt+2 (to avoid conflict with bib input)
+    if (e.altKey && (e.key === '1' || e.key === '2')) {
+      e.preventDefault();
+      const run = e.key === '1' ? 1 : 2;
+      store.setSelectedRun(run as 1 | 2);
+      feedbackTap();
+      updateRadialRunSelection();
+      return;
+    }
+
     // Space/Enter for timestamp
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();

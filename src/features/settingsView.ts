@@ -215,14 +215,45 @@ export function initSettingsView(): void {
   // Language toggle
   const langToggle = getElement('lang-toggle');
   if (langToggle) {
-    langToggle.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const lang = target.getAttribute('data-lang') as 'de' | 'en';
+    const selectLanguage = (lang: 'de' | 'en') => {
       if (lang && lang !== store.getState().currentLang) {
         store.setLanguage(lang);
         updateTranslations();
         updateLangToggle();
       }
+    };
+
+    langToggle.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const lang = target.getAttribute('data-lang') as 'de' | 'en';
+      selectLanguage(lang);
+    });
+
+    // Keyboard support for language options
+    langToggle.querySelectorAll('.lang-option').forEach((opt) => {
+      opt.addEventListener('keydown', (e) => {
+        const event = e as KeyboardEvent;
+        const lang = (opt as HTMLElement).getAttribute('data-lang') as 'de' | 'en';
+
+        switch (event.key) {
+          case 'Enter':
+          case ' ':
+            event.preventDefault();
+            selectLanguage(lang);
+            break;
+          case 'ArrowLeft':
+          case 'ArrowRight':
+            event.preventDefault();
+            // Toggle between the two options
+            const otherLang = lang === 'de' ? 'en' : 'de';
+            const otherOpt = langToggle.querySelector(`[data-lang="${otherLang}"]`) as HTMLElement;
+            if (otherOpt) {
+              otherOpt.focus();
+              selectLanguage(otherLang);
+            }
+            break;
+        }
+      });
     });
   }
 
@@ -496,7 +527,9 @@ export function updateLangToggle(): void {
   const langToggle = getElement('lang-toggle');
   if (langToggle) {
     langToggle.querySelectorAll('.lang-option').forEach(opt => {
-      opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
+      const isActive = opt.getAttribute('data-lang') === lang;
+      opt.classList.toggle('active', isActive);
+      opt.setAttribute('aria-checked', String(isActive));
     });
   }
 }

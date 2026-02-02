@@ -598,9 +598,20 @@ export class VirtualList {
 
     // Keyboard support for accessibility
     header.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        this.toggleGroup(group.id);
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          this.toggleGroup(group.id);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.focusNextItem(header);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.focusPreviousItem(header);
+          break;
       }
     });
 
@@ -623,6 +634,7 @@ export class VirtualList {
     const item = document.createElement('div');
     item.className = 'result-item';
     item.setAttribute('role', 'listitem');
+    item.setAttribute('tabindex', '0');
     item.setAttribute('data-entry-id', entry.id);
     item.style.cssText = `
       position: absolute;
@@ -737,6 +749,36 @@ export class VirtualList {
       item.style.background = 'var(--surface)';
     }, { passive: true });
 
+    // Keyboard support: Enter/Space to open, E to edit, Delete to delete
+    item.addEventListener('keydown', (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          this.options.onItemClick?.(entry, new MouseEvent('click'));
+          break;
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          this.options.onItemClick?.(entry, new MouseEvent('click'));
+          break;
+        case 'Delete':
+        case 'd':
+        case 'D':
+          e.preventDefault();
+          this.options.onItemDelete?.(entry);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.focusNextItem(item);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.focusPreviousItem(item);
+          break;
+      }
+    });
+
     return item;
   }
 
@@ -750,6 +792,7 @@ export class VirtualList {
 
     item.className = `result-item fault-only-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
     item.setAttribute('role', 'listitem');
+    item.setAttribute('tabindex', '0');
     item.setAttribute('data-fault-id', group.id);
     item.style.cssText = `
       position: absolute;
@@ -885,6 +928,45 @@ export class VirtualList {
       item.style.background = 'var(--surface)';
     }, { passive: true });
 
+    // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
+    item.addEventListener('keydown', (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          if (faults.length > 0) {
+            const event = new CustomEvent('fault-edit-request', {
+              bubbles: true,
+              detail: { fault: faults[0] }
+            });
+            item.dispatchEvent(event);
+          }
+          break;
+        case 'Delete':
+        case 'd':
+        case 'D':
+          e.preventDefault();
+          if (faults.length > 0) {
+            const event = new CustomEvent('fault-delete-request', {
+              bubbles: true,
+              detail: { fault: faults[0] }
+            });
+            item.dispatchEvent(event);
+          }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.focusNextItem(item);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.focusPreviousItem(item);
+          break;
+      }
+    });
+
     return item;
   }
 
@@ -895,6 +977,7 @@ export class VirtualList {
     const item = document.createElement('div');
     item.className = 'result-sub-item entry-sub-item';
     item.setAttribute('role', 'listitem');
+    item.setAttribute('tabindex', '0');
     item.setAttribute('data-entry-id', entry.id);
     item.style.cssText = `
       position: absolute;
@@ -981,6 +1064,33 @@ export class VirtualList {
       item.style.background = 'var(--surface-elevated)';
     }, { passive: true });
 
+    // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
+    item.addEventListener('keydown', (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          this.options.onItemClick?.(entry, new MouseEvent('click'));
+          break;
+        case 'Delete':
+        case 'd':
+        case 'D':
+          e.preventDefault();
+          this.options.onItemDelete?.(entry);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.focusNextItem(item);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.focusPreviousItem(item);
+          break;
+      }
+    });
+
     return item;
   }
 
@@ -993,6 +1103,7 @@ export class VirtualList {
 
     item.className = `result-sub-item fault-sub-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
     item.setAttribute('role', 'listitem');
+    item.setAttribute('tabindex', '0');
     item.setAttribute('data-fault-id', fault.id);
     item.style.cssText = `
       position: absolute;
@@ -1093,6 +1204,45 @@ export class VirtualList {
       item.style.background = 'var(--surface-elevated)';
     }, { passive: true });
 
+    // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
+    item.addEventListener('keydown', (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          {
+            const event = new CustomEvent('fault-edit-request', {
+              bubbles: true,
+              detail: { fault }
+            });
+            item.dispatchEvent(event);
+          }
+          break;
+        case 'Delete':
+        case 'd':
+        case 'D':
+          e.preventDefault();
+          {
+            const event = new CustomEvent('fault-delete-request', {
+              bubbles: true,
+              detail: { fault }
+            });
+            item.dispatchEvent(event);
+          }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.focusNextItem(item);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.focusPreviousItem(item);
+          break;
+      }
+    });
+
     return item;
   }
 
@@ -1180,6 +1330,57 @@ export class VirtualList {
   getVisibleCount(): number {
     // Count all timing entries across all groups (after filtering)
     return this.groups.reduce((sum, group) => sum + group.entries.length, 0);
+  }
+
+  /**
+   * Focus the next focusable item in the list
+   */
+  private focusNextItem(currentItem: HTMLElement): void {
+    const focusableItems = Array.from(
+      this.contentContainer.querySelectorAll('[tabindex="0"]')
+    ) as HTMLElement[];
+
+    // Sort by Y position (transform translateY)
+    focusableItems.sort((a, b) => {
+      const aY = this.getItemYPosition(a);
+      const bY = this.getItemYPosition(b);
+      return aY - bY;
+    });
+
+    const currentIndex = focusableItems.indexOf(currentItem);
+    if (currentIndex < focusableItems.length - 1) {
+      focusableItems[currentIndex + 1].focus();
+    }
+  }
+
+  /**
+   * Focus the previous focusable item in the list
+   */
+  private focusPreviousItem(currentItem: HTMLElement): void {
+    const focusableItems = Array.from(
+      this.contentContainer.querySelectorAll('[tabindex="0"]')
+    ) as HTMLElement[];
+
+    // Sort by Y position (transform translateY)
+    focusableItems.sort((a, b) => {
+      const aY = this.getItemYPosition(a);
+      const bY = this.getItemYPosition(b);
+      return aY - bY;
+    });
+
+    const currentIndex = focusableItems.indexOf(currentItem);
+    if (currentIndex > 0) {
+      focusableItems[currentIndex - 1].focus();
+    }
+  }
+
+  /**
+   * Extract Y position from transform style
+   */
+  private getItemYPosition(item: HTMLElement): number {
+    const transform = item.style.transform;
+    const match = transform.match(/translateY\((\d+)px\)/);
+    return match ? parseInt(match[1], 10) : 0;
   }
 
   /**
