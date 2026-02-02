@@ -94,12 +94,8 @@ export function initResultsView(): void {
     container,
     onItemClick: (entry) => dispatchOpenEditModal(entry),
     onItemDelete: (entry) => dispatchPromptDelete(entry),
-    onItemSelect: (entry, selected) => {
-      if (selected) {
-        store.toggleEntrySelection(entry.id);
-      } else {
-        store.toggleEntrySelection(entry.id);
-      }
+    onItemSelect: (entry) => {
+      store.toggleEntrySelection(entry.id);
     },
     onViewPhoto: (entry) => openPhotoViewer(entry)
   });

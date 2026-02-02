@@ -332,8 +332,10 @@ export function initSettingsView(): void {
       feedbackTap();
       if (settingsRecentRacesDropdown.style.display === 'none') {
         showSettingsRecentRacesDropdown(settingsRecentRacesDropdown);
+        settingsRecentRacesBtn.setAttribute('aria-expanded', 'true');
       } else {
         settingsRecentRacesDropdown.style.display = 'none';
+        settingsRecentRacesBtn.setAttribute('aria-expanded', 'false');
       }
     });
 
@@ -343,6 +345,7 @@ export function initSettingsView(): void {
         const target = e.target as Node;
         if (!settingsRecentRacesBtn.contains(target) && !settingsRecentRacesDropdown.contains(target)) {
           settingsRecentRacesDropdown.style.display = 'none';
+          settingsRecentRacesBtn.setAttribute('aria-expanded', 'false');
         }
       };
       document.addEventListener('click', settingsRecentRacesDocumentHandler);

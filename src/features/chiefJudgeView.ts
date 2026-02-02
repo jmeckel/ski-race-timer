@@ -8,7 +8,7 @@ import { syncService, syncFault, deleteFaultFromCloud } from '../services/sync';
 import { showToast } from '../components';
 import { feedbackTap, feedbackSuccess, feedbackDelete } from '../services';
 import { t } from '../i18n/translations';
-import { escapeHtml } from '../utils';
+import { escapeHtml, escapeAttr } from '../utils';
 import { exportResults, exportChiefSummary, exportFaultSummaryWhatsApp } from './export';
 import type { FaultEntry, FaultType, Language, Run } from '../types';
 
@@ -287,6 +287,7 @@ export function updateChiefJudgeView(): void {
   if (!resultsView || !toggleBtn) return;
 
   toggleBtn.classList.toggle('active', state.isChiefJudgeView);
+  toggleBtn.setAttribute('aria-pressed', String(state.isChiefJudgeView));
   resultsView.classList.toggle('chief-mode', state.isChiefJudgeView);
 
   if (state.isChiefJudgeView) {
@@ -337,7 +338,7 @@ export function updateJudgesOverview(): void {
   const cardsHtml = allJudges.map(judge => `
     <div class="judge-card${judge.isReady ? ' ready' : ''}">
       <span class="judge-ready-indicator"></span>
-      <span class="judge-name" title="${escapeHtml(judge.deviceName)}">${escapeHtml(judge.deviceName)}</span>
+      <span class="judge-name" title="${escapeAttr(judge.deviceName)}">${escapeHtml(judge.deviceName)}</span>
       <span class="judge-gates">${judge.gateStart}–${judge.gateEnd}</span>
     </div>
   `).join('');
@@ -414,7 +415,7 @@ export function updateFaultSummaryPanel(): void {
           <div class="fault-gate-info">
             <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${fault.gateNumber}</span>
             <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
-            ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${deletionInfo}">⚠</span>` : ''}
+            ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${escapeAttr(deletionInfo)}">⚠</span>` : ''}
           </div>
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">

@@ -298,7 +298,7 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
 ### XSS Prevention
 - **Always use `escapeHtml()`** from `src/utils/format.ts` when inserting dynamic content into `innerHTML`
 - This includes: bib numbers, device names, race IDs, gate numbers, any user-controlled data
-- For `data-*` attributes, also escape values: `data-bib="${escapeHtml(bib)}"`
+- For `data-*` attributes and other HTML attributes, use `escapeAttr()`: `data-bib="${escapeAttr(bib)}"`
 - Prefer `textContent` over `innerHTML` when not rendering HTML markup
 
 ### Example patterns:

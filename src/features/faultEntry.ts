@@ -8,7 +8,7 @@ import { syncFault, deleteFaultFromCloud } from '../services/sync';
 import { showToast } from '../components';
 import { feedbackTap, feedbackWarning, feedbackSuccess } from '../services';
 import { t } from '../i18n/translations';
-import { escapeHtml, makeNumericInput } from '../utils';
+import { escapeHtml, escapeAttr, makeNumericInput } from '../utils';
 import { formatTime as formatTimeDisplay } from '../utils/format';
 import { openModal, closeModal } from './modals';
 import { getFaultTypeLabel } from './chiefJudgeView';
@@ -31,7 +31,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
   const bibSelector = document.getElementById('fault-bib-selector');
   if (bibSelector) {
     bibSelector.innerHTML = activeBibs.map(bib => `
-      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeHtml(bib)}">${escapeHtml(bib)}</button>
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeAttr(bib)}">${escapeHtml(bib)}</button>
     `).join('');
 
     // Add click handlers

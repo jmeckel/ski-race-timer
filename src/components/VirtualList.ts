@@ -99,7 +99,12 @@ export class VirtualList {
         this.resizeDebounceTimeout = null;
         try {
           this.containerHeight = this.scrollContainer.clientHeight;
-          this.render();
+          // Respect pause state to avoid background rendering
+          if (this.isPaused) {
+            this.needsRefreshOnResume = true;
+          } else {
+            this.render();
+          }
         } catch (error) {
           logger.error('VirtualList resize error:', error);
         }
@@ -259,7 +264,13 @@ export class VirtualList {
     this.visibleItems.clear();
 
     this.updateContentHeight();
-    this.render();
+
+    // Respect pause state to avoid background rendering
+    if (this.isPaused) {
+      this.needsRefreshOnResume = true;
+    } else {
+      this.render();
+    }
   }
 
   /**
@@ -279,7 +290,13 @@ export class VirtualList {
     this.visibleItems.clear();
 
     this.updateContentHeight();
-    this.render();
+
+    // Respect pause state
+    if (this.isPaused) {
+      this.needsRefreshOnResume = true;
+    } else {
+      this.render();
+    }
   }
 
   /**
@@ -337,7 +354,12 @@ export class VirtualList {
    */
   private onScroll(): void {
     this.scrollTop = this.scrollContainer.scrollTop;
-    this.render();
+    // Respect pause state to avoid background rendering
+    if (this.isPaused) {
+      this.needsRefreshOnResume = true;
+    } else {
+      this.render();
+    }
   }
 
   /**
@@ -504,6 +526,10 @@ export class VirtualList {
     const header = document.createElement('div');
     header.className = `result-group-header ${isExpanded ? 'expanded' : ''}`;
     header.setAttribute('data-group-id', group.id);
+    // ARIA attributes for accessibility
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', String(isExpanded));
     header.style.cssText = `
       position: absolute;
       left: 0;
@@ -541,7 +567,7 @@ export class VirtualList {
 
     // Chevron icon
     const chevronSvg = `
-      <svg class="group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink: 0; transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
+      <svg class="group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="flex-shrink: 0; transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
         <path d="M9 18l6-6-6-6"/>
       </svg>
     `;
@@ -568,6 +594,14 @@ export class VirtualList {
     // Click to toggle
     header.addEventListener('click', () => {
       this.toggleGroup(group.id);
+    });
+
+    // Keyboard support for accessibility
+    header.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.toggleGroup(group.id);
+      }
     });
 
     // Touch feedback
@@ -1124,11 +1158,18 @@ export class VirtualList {
     // If it's a multi-item group, expand it
     if (group.isMultiItem) {
       this.expandedGroups.add(group.id);
-      this.render();
+      // Respect pause state to avoid background rendering
+      if (this.isPaused) {
+        this.needsRefreshOnResume = true;
+      } else {
+        this.render();
+      }
     }
 
-    // Scroll to the group
-    this.scrollContainer.scrollTo({ top: offset, behavior: 'smooth' });
+    // Scroll to the group (skip if paused since view isn't visible)
+    if (!this.isPaused) {
+      this.scrollContainer.scrollTo({ top: offset, behavior: 'smooth' });
+    }
   }
 
   /**

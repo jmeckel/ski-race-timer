@@ -225,8 +225,10 @@ export class OnboardingController {
         feedbackTap();
         if (recentRacesDropdown.style.display === 'none') {
           this.showRecentRacesDropdown(recentRacesDropdown, 'onboarding-race-id');
+          recentRacesBtn.setAttribute('aria-expanded', 'true');
         } else {
           recentRacesDropdown.style.display = 'none';
+          recentRacesBtn.setAttribute('aria-expanded', 'false');
         }
       });
 
@@ -236,6 +238,7 @@ export class OnboardingController {
           const target = e.target as Node;
           if (!recentRacesBtn.contains(target) && !recentRacesDropdown.contains(target)) {
             recentRacesDropdown.style.display = 'none';
+            recentRacesBtn.setAttribute('aria-expanded', 'false');
           }
         };
         document.addEventListener('click', this.recentRacesDocumentHandler);
