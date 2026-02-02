@@ -455,6 +455,11 @@ export class RadialDial {
       clearTimeout(this.resizeTimeoutId);
     }
 
+    // Remove container event listeners (prevents memory leak)
+    this.container.removeEventListener('mousedown', this.handleDragStart);
+    this.container.removeEventListener('touchstart', this.handleDragStart);
+
+    // Remove window event listeners
     window.removeEventListener('mousemove', this.handleDragMove);
     window.removeEventListener('mouseup', this.handleDragEnd);
     window.removeEventListener('touchmove', this.handleDragMove);

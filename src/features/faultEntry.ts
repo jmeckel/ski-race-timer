@@ -31,7 +31,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
   const bibSelector = document.getElementById('fault-bib-selector');
   if (bibSelector) {
     bibSelector.innerHTML = activeBibs.map(bib => `
-      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${bib}">${bib}</button>
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeHtml(bib)}">${escapeHtml(bib)}</button>
     `).join('');
 
     // Add click handlers
@@ -509,7 +509,7 @@ export function openMarkDeletionModal(fault: FaultEntry): void {
   const detailsEl = document.getElementById('mark-deletion-details');
   if (detailsEl) {
     detailsEl.innerHTML = `
-      <div>#${fault.bib.padStart(3, '0')} T${fault.gateNumber} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}</div>
+      <div>#${escapeHtml(fault.bib.padStart(3, '0'))} T${escapeHtml(String(fault.gateNumber))} (${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}) - ${escapeHtml(t(fault.run === 1 ? 'run1' : 'run2', lang))}</div>
     `;
   }
 
@@ -584,7 +584,7 @@ export function updateActiveBibsList(): void {
 
     const card = document.createElement('div');
     card.className = `active-bib-card${hasFault ? ' has-fault' : ''}`;
-    card.setAttribute('data-bib', bib);
+    card.setAttribute('data-bib', escapeHtml(bib));
     card.setAttribute('role', 'listitem');
 
     const timeStr = startTime ? formatTimeDisplay(startTime) : '--:--:--';
@@ -669,7 +669,7 @@ export function updateInlineFaultsList(): void {
       <div class="gate-judge-fault-info">
         <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
         <div class="gate-judge-fault-details">
-          <span class="gate-judge-fault-gate ${gateColor}">T${fault.gateNumber}</span>
+          <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
           <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
         </div>
       </div>

@@ -330,30 +330,28 @@ class Store {
   // Notify all listeners of state changes
   // RE-ENTRANCY FIX: Queue notifications to prevent mutations during notification
   // STATE SNAPSHOT FIX: Capture state at notification time so all listeners see consistent state
-  // COALESCING: Merge notifications for same keys within a batch to prevent queue explosion
+  // NO COALESCING of snapshots: Each notification keeps its own snapshot to prevent race conditions
   private notify(changedKeys: (keyof AppState)[]) {
-    // Coalesce: if we're already notifying and the last pending notification has overlapping keys,
-    // merge them instead of adding a new notification
-    if (this.pendingNotifications.length > 0) {
-      const lastNotification = this.pendingNotifications[this.pendingNotifications.length - 1];
-      // Merge keys into the last notification (they'll all use the same state snapshot)
-      const mergedKeys = new Set([...lastNotification.keys, ...changedKeys]);
-      lastNotification.keys = Array.from(mergedKeys) as (keyof AppState)[];
-      lastNotification.stateSnapshot = this.state; // Update to latest state
+    // Capture state snapshot immediately at the time of change
+    const stateSnapshot = this.state;
 
-      // If already notifying, let the current notification loop handle it
-      if (this.isNotifying) {
-        return;
+    // If queue has pending notifications, merge keys but DON'T update the snapshot
+    // This ensures listeners see the state as it was when each key actually changed
+    if (this.pendingNotifications.length > 0 && this.isNotifying) {
+      // Only merge keys into existing notification if we're mid-notification
+      // Each notification keeps its own snapshot for consistency
+      this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
+
+      // Safety limit: if queue is too large, drain oldest notifications
+      if (this.pendingNotifications.length > MAX_NOTIFICATION_QUEUE) {
+        logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`);
+        this.pendingNotifications.splice(0, Math.floor(MAX_NOTIFICATION_QUEUE / 2));
       }
-    } else {
-      // Queue the notification with a snapshot of current state
-      this.pendingNotifications.push({ keys: changedKeys, stateSnapshot: this.state });
+      return;
     }
 
-    // Safety limit: if queue is too large, something is wrong - log warning and drain
-    if (this.pendingNotifications.length > MAX_NOTIFICATION_QUEUE) {
-      logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - possible infinite loop`);
-    }
+    // Queue the notification with a snapshot of current state
+    this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
 
     // If already notifying, let the current notification loop handle it
     if (this.isNotifying) {

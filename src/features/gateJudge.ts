@@ -95,7 +95,7 @@ export function updateInlineFaultsList(): void {
       <div class="gate-judge-fault-info">
         <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
         <div class="gate-judge-fault-details">
-          <span class="gate-judge-fault-gate ${gateColor}">T${fault.gateNumber}</span>
+          <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
           <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
         </div>
       </div>

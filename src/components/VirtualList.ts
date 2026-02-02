@@ -49,6 +49,8 @@ export class VirtualList {
   private resizeDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
   private isPaused = false;
   private needsRefreshOnResume = false;
+  private isDestroyed = false;
+  private domRemovalObserver: MutationObserver | null = null;
 
   constructor(options: VirtualListOptions) {
     this.options = options;
@@ -111,6 +113,21 @@ export class VirtualList {
         this.setEntries(stateSnapshot.entries);
       }
     });
+
+    // Watch for container removal from DOM to auto-cleanup (prevents memory leak)
+    this.domRemovalObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const removedNode of mutation.removedNodes) {
+          if (removedNode === this.container || removedNode.contains?.(this.container)) {
+            this.destroy();
+            return;
+          }
+        }
+      }
+    });
+    // Observe the parent of the container (or body as fallback)
+    const observeTarget = this.container.parentElement || document.body;
+    this.domRemovalObserver.observe(observeTarget, { childList: true, subtree: true });
 
     // Initial setup
     this.containerHeight = this.scrollContainer.clientHeight;
@@ -1120,27 +1137,44 @@ export class VirtualList {
    * Clean up resources
    */
   destroy(): void {
+    // Guard against double-destruction
+    if (this.isDestroyed) {
+      return;
+    }
+    this.isDestroyed = true;
+
+    // Clean up DOM removal observer first (prevents recursive calls)
+    if (this.domRemovalObserver) {
+      this.domRemovalObserver.disconnect();
+      this.domRemovalObserver = null;
+    }
+
     // Clean up scroll listener
     if (this.scrollHandler) {
       this.scrollContainer.removeEventListener('scroll', this.scrollHandler);
+      this.scrollHandler = null;
     }
 
     // Clean up debounce timeouts
     if (this.scrollDebounceTimeout !== null) {
       clearTimeout(this.scrollDebounceTimeout);
+      this.scrollDebounceTimeout = null;
     }
     if (this.resizeDebounceTimeout !== null) {
       clearTimeout(this.resizeDebounceTimeout);
+      this.resizeDebounceTimeout = null;
     }
 
     // Clean up resize observer
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
 
     // Clean up store subscription
     if (this.unsubscribe) {
       this.unsubscribe();
+      this.unsubscribe = null;
     }
 
     // Clear DOM
