@@ -739,6 +739,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     display: grid !important;
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto auto 1fr auto;
+    column-gap: 16px;
     min-height: 100vh;
     min-height: 100dvh;
   }
@@ -747,8 +748,8 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   .app:has(.timer-view.radial-mode.active) > .header {
     grid-column: 2;
     grid-row: 1;
-    padding: 4px 12px;
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding: 4px 16px;
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 
   /* Main dissolves so timer-view children participate in grid */
@@ -769,14 +770,14 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 8px;
-    padding-left: max(8px, env(safe-area-inset-left));
+    padding: 4px;
+    padding-left: max(4px, env(safe-area-inset-left));
     background: var(--background);
   }
 
   /* Dial sized to full viewport height */
   .dial-container {
-    --dial-size: min(calc(100vh - 16px), calc(100dvh - 16px), 55vw);
+    --dial-size: min(calc(100vh - 8px), calc(100dvh - 8px), 55vw);
     width: var(--dial-size);
     height: var(--dial-size);
   }
@@ -793,8 +794,8 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 8px 12px;
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding: 8px 0;
+    padding-right: max(16px, env(safe-area-inset-right));
     gap: 12px;
     z-index: 20;
   }
@@ -840,8 +841,8 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding: 8px 0;
+    padding-right: max(16px, env(safe-area-inset-right));
     background: transparent;
     margin: 0;
     border-radius: 0;
@@ -873,8 +874,8 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     grid-column: 2;
     grid-row: 4;
     display: flex;
-    padding: 8px 12px;
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding: 16px 0 8px 0;
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 
   .radial-time-btn {
