@@ -121,9 +121,9 @@
               <!-- Center with time and selectors -->
               <div class="dial-center">
                 <!-- Timing Point Selector - Left side -->
-                <div class="radial-timing-point" id="radial-timing-point">
-                  <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="startShort">S</button>
-                  <button class="radial-point-btn finish active" data-point="F" data-i18n="finishShort">F</button>
+                <div class="radial-timing-point" id="radial-timing-point" role="radiogroup" aria-label="Timing point">
+                  <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="startShort" role="radio" aria-checked="false">S</button>
+                  <button class="radial-point-btn finish active" data-point="F" data-i18n="finishShort" role="radio" aria-checked="true">F</button>
                 </div>
 
                 <!-- Time Display - Center -->
@@ -134,9 +134,9 @@
                 </div>
 
                 <!-- Run Selector - Right side -->
-                <div class="radial-run-selector" id="radial-run-selector">
-                  <button class="radial-run-btn active" data-run="1">L1</button>
-                  <button class="radial-run-btn" data-run="2">L2</button>
+                <div class="radial-run-selector" id="radial-run-selector" role="radiogroup" aria-label="Run selector">
+                  <button class="radial-run-btn active" data-run="1" role="radio" aria-checked="true" aria-label="Run 1">L1</button>
+                  <button class="radial-run-btn" data-run="2" role="radio" aria-checked="false" aria-label="Run 2">L2</button>
                 </div>
               </div>
             </div>
@@ -453,16 +453,16 @@
         <!-- Device Role (Prominent at top) -->
         <div class="settings-section role-section">
           <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
-          <div class="role-cards-settings" id="role-toggle">
-            <button class="role-card-setting active" data-role="timer">
-              <div class="role-card-icon">⏱️</div>
+          <div class="role-cards-settings" id="role-toggle" role="radiogroup" aria-label="Device role">
+            <button class="role-card-setting active" data-role="timer" role="radio" aria-checked="true">
+              <div class="role-card-icon" aria-hidden="true">⏱️</div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleTimer">Timer</span>
                 <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
               </div>
             </button>
-            <button class="role-card-setting" data-role="gateJudge">
-              <div class="role-card-icon">🚩</div>
+            <button class="role-card-setting" data-role="gateJudge" role="radio" aria-checked="false">
+              <div class="role-card-icon" aria-hidden="true">🚩</div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleGateJudge">Gate Judge</span>
                 <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>

@@ -464,7 +464,9 @@ export function updateRoleToggle(): void {
   const state = store.getState();
   roleToggle.querySelectorAll('.role-card-setting').forEach(card => {
     const role = card.getAttribute('data-role');
-    card.classList.toggle('active', role === state.deviceRole);
+    const isActive = role === state.deviceRole;
+    card.classList.toggle('active', isActive);
+    card.setAttribute('aria-checked', String(isActive));
   });
 }
 

@@ -186,6 +186,7 @@ function updateRadialTimingPointSelection(): void {
   document.querySelectorAll('.radial-point-btn').forEach(btn => {
     const isActive = btn.getAttribute('data-point') === state.selectedPoint;
     btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
   });
 }
 
@@ -223,6 +224,7 @@ function updateRadialRunSelection(): void {
     const runStr = btn.getAttribute('data-run');
     const isActive = runStr === String(state.selectedRun);
     btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
   });
 }
 

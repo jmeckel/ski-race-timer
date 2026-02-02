@@ -1153,7 +1153,11 @@ body {
 .inline-bib-btn:focus-visible,
 .inline-gate-btn:focus-visible,
 .inline-fault-type-btn:focus-visible,
-.role-card:focus-visible {
+.role-card:focus-visible,
+.role-card-setting:focus-visible,
+.radial-point-btn:focus-visible,
+.radial-run-btn:focus-visible,
+.radial-clear-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
