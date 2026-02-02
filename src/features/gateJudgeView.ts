@@ -18,17 +18,6 @@ import {
 import { logger } from '../utils/logger';
 import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 
-// Callback for role toggle update (injected from app.ts)
-let updateRoleToggleCallback: (() => void) | null = null;
-
-/**
- * Set the callback for updating role toggle
- * This avoids circular dependency with settings view
- */
-export function setUpdateRoleToggleCallback(callback: () => void): void {
-  updateRoleToggleCallback = callback;
-}
-
 /**
  * Update tab visibility based on device role
  * Timer role: show Timer tab, hide Gate Judge tab
@@ -57,10 +46,8 @@ export function updateGateJudgeTabVisibility(): void {
  * Initialize Gate Judge view
  */
 export function initGateJudgeView(): void {
-  // Initialize role toggle state
-  if (updateRoleToggleCallback) {
-    updateRoleToggleCallback();
-  }
+  // Request role toggle update via CustomEvent (settingsView listens for this)
+  window.dispatchEvent(new CustomEvent('update-role-toggle'));
   updateGateJudgeTabVisibility();
 
   // Gate assignment change button

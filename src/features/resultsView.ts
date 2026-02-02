@@ -10,9 +10,7 @@ import { t } from '../i18n/translations';
 import { getElement } from '../utils';
 import { exportResults } from './export';
 import { openPhotoViewer } from './photoViewer';
-import { initChiefJudgeToggle } from './chiefJudgeView';
-import { openFaultEditModal, openMarkDeletionModal, updateInlineFaultsList, updateInlineBibSelector, updateInlineGateSelector } from './faultEntry';
-import { verifyPinForChiefJudge } from './raceManagement';
+import { openFaultEditModal, openMarkDeletionModal } from './faultEntry';
 import type { Entry, FaultEntry, Language } from '../types';
 
 // Module state
@@ -24,26 +22,28 @@ let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 type EventListenerRef = { element: HTMLElement | null; event: string; handler: EventListener };
 let eventListeners: EventListenerRef[] = [];
 
-// Callback types
-type ConfirmModalAction = 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd';
-
-// Callbacks for functions defined in app.ts (injected to avoid circular imports)
-let openEditModalCallback: ((entry: Entry) => void) | null = null;
-let promptDeleteCallback: ((entry: Entry) => void) | null = null;
-let openConfirmModalCallback: ((action: ConfirmModalAction) => void) | null = null;
+// CustomEvent type declarations for results view
+export type ConfirmModalAction = 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd';
 
 /**
- * Set callbacks for functions that would cause circular imports if imported directly
- * (app.ts imports from resultsView.ts, so resultsView.ts cannot import from app.ts)
+ * Dispatch event to open edit modal for an entry
  */
-export function setResultsViewCallbacks(callbacks: {
-  openEditModal: (entry: Entry) => void;
-  promptDelete: (entry: Entry) => void;
-  openConfirmModal: (action: ConfirmModalAction) => void;
-}): void {
-  openEditModalCallback = callbacks.openEditModal;
-  promptDeleteCallback = callbacks.promptDelete;
-  openConfirmModalCallback = callbacks.openConfirmModal;
+function dispatchOpenEditModal(entry: Entry): void {
+  window.dispatchEvent(new CustomEvent('open-edit-modal', { detail: { entry } }));
+}
+
+/**
+ * Dispatch event to prompt delete for an entry
+ */
+function dispatchPromptDelete(entry: Entry): void {
+  window.dispatchEvent(new CustomEvent('prompt-delete', { detail: { entry } }));
+}
+
+/**
+ * Dispatch event to open confirm modal
+ */
+function dispatchOpenConfirmModal(action: ConfirmModalAction): void {
+  window.dispatchEvent(new CustomEvent('open-confirm-modal', { detail: { action } }));
 }
 
 /**
@@ -92,8 +92,8 @@ export function initResultsView(): void {
 
   virtualList = new VirtualList({
     container,
-    onItemClick: (entry) => openEditModalCallback?.(entry),
-    onItemDelete: (entry) => promptDeleteCallback?.(entry),
+    onItemClick: (entry) => dispatchOpenEditModal(entry),
+    onItemDelete: (entry) => dispatchPromptDelete(entry),
     onItemSelect: (entry, selected) => {
       if (selected) {
         store.toggleEntrySelection(entry.id);
@@ -177,7 +177,7 @@ function initResultsActions(): void {
       showToast(t('noEntries', state.currentLang), 'info');
       return;
     }
-    openConfirmModalCallback?.('clearAll');
+    dispatchOpenConfirmModal('clearAll');
   });
 
   // Undo button
@@ -187,7 +187,7 @@ function initResultsActions(): void {
       const nextAction = store.peekUndo();
       if (nextAction && nextAction.type === 'ADD_ENTRY') {
         // Show confirmation modal for destructive undo
-        openConfirmModalCallback?.('undoAdd');
+        dispatchOpenConfirmModal('undoAdd');
       } else {
         // Non-destructive undo - proceed immediately
         const result = store.undo();
@@ -211,19 +211,10 @@ function initResultsActions(): void {
   addListener(getElement('delete-selected-btn'), 'click', () => {
     const state = store.getState();
     if (state.selectedEntries.size > 0) {
-      openConfirmModalCallback?.('deleteSelected');
+      dispatchOpenConfirmModal('deleteSelected');
     }
   });
 
-  // Chief Judge toggle
-  initChiefJudgeToggle({
-    verifyPinForChiefJudge,
-    openFaultEditModal,
-    openMarkDeletionModal,
-    updateInlineFaultsList,
-    updateInlineBibSelector,
-    updateInlineGateSelector
-  });
 }
 
 /**

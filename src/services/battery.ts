@@ -12,7 +12,7 @@ const BATTERY_CRITICAL = 0.10; // 10%
 
 export type BatteryLevel = 'normal' | 'low' | 'critical';
 
-interface BatteryStatus {
+export interface BatteryStatus {
   level: number; // 0.0 - 1.0
   charging: boolean;
   batteryLevel: BatteryLevel;

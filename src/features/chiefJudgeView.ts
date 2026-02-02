@@ -12,19 +12,66 @@ import { escapeHtml } from '../utils';
 import { exportResults, exportChiefSummary, exportFaultSummaryWhatsApp } from './export';
 import type { FaultEntry, FaultType, Language, Run } from '../types';
 
-// Callback types for external dependencies
-type VerifyPinCallback = (lang: Language) => Promise<boolean>;
-type OpenFaultEditCallback = (fault: FaultEntry) => void;
-type OpenMarkDeletionCallback = (fault: FaultEntry) => void;
-type UpdateGateJudgeCallback = () => void;
+// Promise resolver for PIN verification (async event pattern)
+type PinVerifyResolve = (verified: boolean) => void;
+let pendingPinVerifyResolve: PinVerifyResolve | null = null;
 
-// Store callbacks for use in event handlers
-let verifyPinForChiefJudgeCallback: VerifyPinCallback | null = null;
-let openFaultEditModalCallback: OpenFaultEditCallback | null = null;
-let openMarkDeletionModalCallback: OpenMarkDeletionCallback | null = null;
-let updateInlineFaultsListCallback: UpdateGateJudgeCallback | null = null;
-let updateInlineBibSelectorCallback: UpdateGateJudgeCallback | null = null;
-let updateInlineGateSelectorCallback: UpdateGateJudgeCallback | null = null;
+/**
+ * Request PIN verification via CustomEvent (Promise-based)
+ * app.ts listens for this and calls resolvePinVerification when done
+ */
+async function requestPinVerification(lang: Language): Promise<boolean> {
+  return new Promise((resolve) => {
+    pendingPinVerifyResolve = resolve;
+    window.dispatchEvent(new CustomEvent('request-pin-verification', { detail: { lang } }));
+  });
+}
+
+/**
+ * Resolve pending PIN verification request
+ * Called by app.ts after PIN verification completes
+ */
+export function resolvePinVerification(verified: boolean): void {
+  if (pendingPinVerifyResolve) {
+    pendingPinVerifyResolve(verified);
+    pendingPinVerifyResolve = null;
+  }
+}
+
+/**
+ * Dispatch event to open fault edit modal
+ */
+function dispatchOpenFaultEditModal(fault: FaultEntry): void {
+  window.dispatchEvent(new CustomEvent('open-fault-edit-modal', { detail: { fault } }));
+}
+
+/**
+ * Dispatch event to open mark deletion modal
+ */
+function dispatchOpenMarkDeletionModal(fault: FaultEntry): void {
+  window.dispatchEvent(new CustomEvent('open-mark-deletion-modal', { detail: { fault } }));
+}
+
+/**
+ * Dispatch event to update inline faults list (gate judge mode)
+ */
+function dispatchUpdateInlineFaultsList(): void {
+  window.dispatchEvent(new CustomEvent('update-inline-faults-list'));
+}
+
+/**
+ * Dispatch event to update inline bib selector (gate judge mode)
+ */
+function dispatchUpdateInlineBibSelector(): void {
+  window.dispatchEvent(new CustomEvent('update-inline-bib-selector'));
+}
+
+/**
+ * Dispatch event to update inline gate selector (gate judge mode)
+ */
+function dispatchUpdateInlineGateSelector(): void {
+  window.dispatchEvent(new CustomEvent('update-inline-gate-selector'));
+}
 
 /**
  * Get localized fault type label
@@ -40,24 +87,9 @@ export function getFaultTypeLabel(faultType: FaultType, lang: Language): string 
 
 /**
  * Initialize Chief Judge toggle button
- * @param callbacks External callbacks for PIN verification and modal functions
+ * Uses CustomEvents instead of callbacks for decoupled communication
  */
-export function initChiefJudgeToggle(callbacks: {
-  verifyPinForChiefJudge: VerifyPinCallback;
-  openFaultEditModal: OpenFaultEditCallback;
-  openMarkDeletionModal: OpenMarkDeletionCallback;
-  updateInlineFaultsList: UpdateGateJudgeCallback;
-  updateInlineBibSelector: UpdateGateJudgeCallback;
-  updateInlineGateSelector: UpdateGateJudgeCallback;
-}): void {
-  // Store callbacks for use in event handlers
-  verifyPinForChiefJudgeCallback = callbacks.verifyPinForChiefJudge;
-  openFaultEditModalCallback = callbacks.openFaultEditModal;
-  openMarkDeletionModalCallback = callbacks.openMarkDeletionModal;
-  updateInlineFaultsListCallback = callbacks.updateInlineFaultsList;
-  updateInlineBibSelectorCallback = callbacks.updateInlineBibSelector;
-  updateInlineGateSelectorCallback = callbacks.updateInlineGateSelector;
-
+export function initChiefJudgeToggle(): void {
   const toggleBtn = document.getElementById('chief-judge-toggle-btn');
   if (!toggleBtn) return;
 
@@ -75,8 +107,8 @@ export function initChiefJudgeToggle(callbacks: {
     }
 
     // Entering Chief Judge mode - require PIN verification if sync is enabled
-    if (state.settings.sync && state.raceId && verifyPinForChiefJudgeCallback) {
-      const verified = await verifyPinForChiefJudgeCallback(lang);
+    if (state.settings.sync && state.raceId) {
+      const verified = await requestPinVerification(lang);
       if (!verified) {
         return;
       }
@@ -113,16 +145,16 @@ export function initChiefJudgeToggle(callbacks: {
     }
     // Update inline fault list when faults change and device is a gate judge
     if (keys.includes('faultEntries') && stateSnapshot.deviceRole === 'gateJudge') {
-      updateInlineFaultsListCallback?.();
-      updateInlineBibSelectorCallback?.();
+      dispatchUpdateInlineFaultsList();
+      dispatchUpdateInlineBibSelector();
     }
     // Update inline bib selector when entries change (new starts/finishes) and device is a gate judge
     if (keys.includes('entries') && stateSnapshot.deviceRole === 'gateJudge') {
-      updateInlineBibSelectorCallback?.();
+      dispatchUpdateInlineBibSelector();
     }
     // Update inline gate selector when gate assignment changes
     if (keys.includes('gateAssignment') && stateSnapshot.deviceRole === 'gateJudge') {
-      updateInlineGateSelectorCallback?.();
+      dispatchUpdateInlineGateSelector();
     }
   });
 
@@ -461,10 +493,10 @@ export function updateFaultSummaryPanel(): void {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const faultId = (btn as HTMLElement).dataset.faultId;
-      if (faultId && openFaultEditModalCallback) {
+      if (faultId) {
         const fault = store.getState().faultEntries.find(f => f.id === faultId);
         if (fault) {
-          openFaultEditModalCallback(fault);
+          dispatchOpenFaultEditModal(fault);
         }
       }
     });
@@ -480,8 +512,8 @@ export function updateFaultSummaryPanel(): void {
         if (fault) {
           if (fault.markedForDeletion) {
             handleRejectFaultDeletion(fault);
-          } else if (openMarkDeletionModalCallback) {
-            openMarkDeletionModalCallback(fault);
+          } else {
+            dispatchOpenMarkDeletionModal(fault);
           }
         }
       }

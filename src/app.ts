@@ -13,7 +13,7 @@ import { t } from './i18n/translations';
 import { applyViewServices } from './utils/viewServices';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { OnboardingController } from './onboarding';
-import type { Entry, FaultEntry, TimingPoint, Language, RaceInfo, FaultType, DeviceRole, Run, VoiceStatus } from './types';
+import type { Entry, FaultEntry, TimingPoint, Language, FaultType, DeviceRole, Run, VoiceStatus } from './types';
 
 // Feature modules
 import { openModal, closeModal, closeAllModalsAnimated } from './features/modals';
@@ -27,21 +27,27 @@ import {
 } from './features/radialTimerView';
 import { openPhotoViewer, closePhotoViewer, deletePhoto } from './features/photoViewer';
 import {
-  initFaultEditModal, updateActiveBibsList, updateInlineFaultsList, refreshInlineFaultUI
+  initFaultEditModal, updateActiveBibsList, updateInlineFaultsList, refreshInlineFaultUI,
+  openFaultEditModal, openMarkDeletionModal, updateInlineBibSelector, updateInlineGateSelector
 } from './features/faultEntry';
 import {
-  setUpdateRoleToggleCallback, updateGateJudgeTabVisibility, initGateJudgeView,
+  updateGateJudgeTabVisibility, initGateJudgeView,
   updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection, handleGateJudgeVoiceIntent
 } from './features/gateJudgeView';
 import {
-  setResultsViewCallbacks, getVirtualList, initResultsView,
+  getVirtualList, initResultsView,
   updateStats, updateEntryCountBadge, cleanupSearchTimeout
 } from './features/resultsView';
+import type { ConfirmModalAction } from './features/resultsView';
 import {
-  setSettingsViewCallbacks, initSettingsView, updateRoleToggle,
+  initSettingsView, updateRoleToggle,
   updateSettingsInputs, updateLangToggle, updateTranslations, applySettings,
-  applyGlassEffectSettings, cleanupSettingsTimeouts
+  applyGlassEffectSettings, cleanupSettingsTimeouts,
+  resolvePhotoSyncWarning, resolveRaceChangeDialog
 } from './features/settingsView';
+import {
+  initChiefJudgeToggle, resolvePinVerification
+} from './features/chiefJudgeView';
 import {
   initRaceManagement, verifyPinForRaceJoin, verifyPinForChiefJudge,
   showRaceChangeDialog, showPhotoSyncWarningModal, handleRaceDeleted, handleAuthExpired,
@@ -108,24 +114,14 @@ export function initApp(): void {
     initRunSelector();
     initTimestampButton();
   }
-  // Set callbacks for resultsView before initialization
-  // (callbacks needed to avoid circular imports: app.ts imports from resultsView.ts)
-  setResultsViewCallbacks({
-    openEditModal,
-    promptDelete,
-    openConfirmModal
-  });
+  // Initialize views (now using CustomEvents instead of callbacks)
   initResultsView();
-  // Set callbacks for settingsView before initialization
-  // (callbacks needed to avoid circular imports: app.ts imports from settingsView.ts)
-  setSettingsViewCallbacks({
-    showPhotoSyncWarningModal,
-    showRaceChangeDialog
-  });
   initSettingsView();
-  // Set callback for gateJudgeView to access updateRoleToggle
-  setUpdateRoleToggleCallback(updateRoleToggle);
   initGateJudgeView();
+  initChiefJudgeToggle();
+
+  // Set up CustomEvent listeners for decoupled module communication
+  initCustomEventListeners();
   initModals();
   initRaceManagement();
   initRippleEffects();
@@ -1024,4 +1020,69 @@ function handleBeforeUnload(): void {
 
   // MEMORY LEAK FIX: Resolve any pending PIN verification promise
   cleanupPinVerification();
+}
+
+/**
+ * Initialize CustomEvent listeners for decoupled module communication
+ * Replaces the old callback injection pattern
+ */
+function initCustomEventListeners(): void {
+  // Results view events
+  window.addEventListener('open-edit-modal', ((e: CustomEvent<{ entry: Entry }>) => {
+    openEditModal(e.detail.entry);
+  }) as EventListener);
+
+  window.addEventListener('prompt-delete', ((e: CustomEvent<{ entry: Entry }>) => {
+    promptDelete(e.detail.entry);
+  }) as EventListener);
+
+  window.addEventListener('open-confirm-modal', ((e: CustomEvent<{ action: ConfirmModalAction }>) => {
+    openConfirmModal(e.detail.action);
+  }) as EventListener);
+
+  // Settings view events
+  window.addEventListener('request-photo-sync-warning', (async () => {
+    await showPhotoSyncWarningModal();
+    resolvePhotoSyncWarning();
+  }) as EventListener);
+
+  window.addEventListener('request-race-change-dialog', (async (e: Event) => {
+    const customEvent = e as CustomEvent<{ type: 'synced' | 'unsynced'; lang: Language }>;
+    const result = await showRaceChangeDialog(customEvent.detail.type, customEvent.detail.lang);
+    resolveRaceChangeDialog(result);
+  }) as EventListener);
+
+  // Gate judge view events
+  window.addEventListener('update-role-toggle', (() => {
+    updateRoleToggle();
+  }) as EventListener);
+
+  // Chief judge view events - PIN verification (Promise-based)
+  window.addEventListener('request-pin-verification', (async (e: Event) => {
+    const customEvent = e as CustomEvent<{ lang: Language }>;
+    const verified = await verifyPinForChiefJudge(customEvent.detail.lang);
+    resolvePinVerification(verified);
+  }) as EventListener);
+
+  // Chief judge view events - fault modal dispatchers
+  window.addEventListener('open-fault-edit-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+    openFaultEditModal(e.detail.fault);
+  }) as EventListener);
+
+  window.addEventListener('open-mark-deletion-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+    openMarkDeletionModal(e.detail.fault);
+  }) as EventListener);
+
+  // Chief judge view events - inline fault UI updates (gate judge mode)
+  window.addEventListener('update-inline-faults-list', (() => {
+    updateInlineFaultsList();
+  }) as EventListener);
+
+  window.addEventListener('update-inline-bib-selector', (() => {
+    updateInlineBibSelector();
+  }) as EventListener);
+
+  window.addEventListener('update-inline-gate-selector', (() => {
+    updateInlineGateSelector();
+  }) as EventListener);
 }

@@ -25,21 +25,56 @@ let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let raceCheckRequestId = 0;
 let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
 let lastRaceExistsState: { exists: boolean | null; entryCount: number } = { exists: null, entryCount: 0 };
+let updateRoleToggleHandler: (() => void) | null = null;
 
-// Callbacks for functions defined in app.ts (injected to avoid circular imports)
-let showPhotoSyncWarningModalCallback: (() => Promise<void>) | null = null;
-let showRaceChangeDialogCallback: ((type: 'synced' | 'unsynced', lang: Language) => Promise<'export' | 'delete' | 'keep' | 'cancel'>) | null = null;
+// Promise-based event helpers for async operations
+type PhotoSyncWarningResolve = () => void;
+type RaceChangeDialogResolve = (result: 'export' | 'delete' | 'keep' | 'cancel') => void;
+let pendingPhotoSyncResolve: PhotoSyncWarningResolve | null = null;
+let pendingRaceChangeResolve: RaceChangeDialogResolve | null = null;
 
 /**
- * Set callbacks for functions that would cause circular imports if imported directly
- * (app.ts imports from settingsView.ts, so settingsView.ts cannot import from app.ts)
+ * Request photo sync warning modal via CustomEvent
+ * Returns a promise that resolves when the modal is dismissed
  */
-export function setSettingsViewCallbacks(callbacks: {
-  showPhotoSyncWarningModal: () => Promise<void>;
-  showRaceChangeDialog: (type: 'synced' | 'unsynced', lang: Language) => Promise<'export' | 'delete' | 'keep' | 'cancel'>;
-}): void {
-  showPhotoSyncWarningModalCallback = callbacks.showPhotoSyncWarningModal;
-  showRaceChangeDialogCallback = callbacks.showRaceChangeDialog;
+async function requestPhotoSyncWarningModal(): Promise<void> {
+  return new Promise((resolve) => {
+    pendingPhotoSyncResolve = resolve;
+    window.dispatchEvent(new CustomEvent('request-photo-sync-warning'));
+  });
+}
+
+/**
+ * Request race change dialog via CustomEvent
+ * Returns a promise that resolves with the user's choice
+ */
+async function requestRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
+  return new Promise((resolve) => {
+    pendingRaceChangeResolve = resolve;
+    window.dispatchEvent(new CustomEvent('request-race-change-dialog', {
+      detail: { type, lang }
+    }));
+  });
+}
+
+/**
+ * Resolve pending photo sync warning (called from app.ts when modal closes)
+ */
+export function resolvePhotoSyncWarning(): void {
+  if (pendingPhotoSyncResolve) {
+    pendingPhotoSyncResolve();
+    pendingPhotoSyncResolve = null;
+  }
+}
+
+/**
+ * Resolve pending race change dialog (called from app.ts with user's choice)
+ */
+export function resolveRaceChangeDialog(result: 'export' | 'delete' | 'keep' | 'cancel'): void {
+  if (pendingRaceChangeResolve) {
+    pendingRaceChangeResolve(result);
+    pendingRaceChangeResolve = null;
+  }
 }
 
 /**
@@ -126,9 +161,7 @@ export function initSettingsView(): void {
         // User is enabling photo sync - show warning modal
         e.preventDefault();
         target.checked = false; // Revert toggle until confirmed
-        if (showPhotoSyncWarningModalCallback) {
-          await showPhotoSyncWarningModalCallback();
-        }
+        await requestPhotoSyncWarningModal();
       } else {
         // Disabling photo sync - no confirmation needed
         store.updateSettings({ syncPhotos: false });
@@ -222,10 +255,10 @@ export function initSettingsView(): void {
         const wasPreviouslySynced = state.lastSyncedRaceId !== '';
         const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
 
-        if (hasEntries && isChangingRace && showRaceChangeDialogCallback) {
+        if (hasEntries && isChangingRace) {
           if (wasPreviouslySynced) {
             // Was synced with another race - ask to export or delete
-            const action = await showRaceChangeDialogCallback('synced', state.currentLang);
+            const action = await requestRaceChangeDialog('synced', state.currentLang);
             if (action === 'export') {
               exportResults();
               store.clearAll();
@@ -240,7 +273,7 @@ export function initSettingsView(): void {
             }
           } else {
             // Not previously synced - ask to keep or delete
-            const action = await showRaceChangeDialogCallback('unsynced', state.currentLang);
+            const action = await requestRaceChangeDialog('unsynced', state.currentLang);
             if (action === 'delete') {
               store.clearAll();
               await photoStorage.clearAll();
@@ -326,6 +359,12 @@ export function initSettingsView(): void {
 
   // Device Role toggle
   initRoleToggle();
+
+  // Listen for update-role-toggle events from gateJudgeView
+  if (!updateRoleToggleHandler) {
+    updateRoleToggleHandler = () => updateRoleToggle();
+    window.addEventListener('update-role-toggle', updateRoleToggleHandler);
+  }
 
   // Advanced settings collapsible toggle
   initAdvancedSettingsToggle();
