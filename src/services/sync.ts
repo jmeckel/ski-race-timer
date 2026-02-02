@@ -84,6 +84,9 @@ class SyncService {
   private onlineHandler: (() => void) | null = null;
   private offlineHandler: (() => void) | null = null;
 
+  // Current polling interval tracking (prevents race condition in setPollingInterval)
+  private currentPollingIntervalMs = 0;
+
   /**
    * Initialize sync service
    */
@@ -294,16 +297,19 @@ class SyncService {
    * Start polling for cloud updates
    */
   private startPolling(): void {
+    // Clear tracking to ensure fresh start
+    this.currentPollingIntervalMs = 0;
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
+      this.pollInterval = null;
     }
 
     // Initial fetch
     this.fetchCloudEntries();
 
-    // Set up polling
+    // Set up polling using centralized method
     const interval = this.consecutiveErrors > 2 ? POLL_INTERVAL_ERROR : POLL_INTERVAL_NORMAL;
-    this.pollInterval = setInterval(() => this.fetchCloudEntries(), interval);
+    this.setPollingInterval(interval);
   }
 
   /**
@@ -345,12 +351,20 @@ class SyncService {
 
   /**
    * Centralized method to set the polling interval
-   * Prevents race conditions by using a single point of interval management
+   * Prevents race conditions by:
+   * 1. Using a single point of interval management
+   * 2. Skipping recreation if already at the desired interval
    */
   private setPollingInterval(intervalMs: number): void {
+    // Skip if already at desired interval (prevents race condition when
+    // applyBatteryAwarePolling and adjustPollingInterval both try to set)
+    if (this.currentPollingIntervalMs === intervalMs && this.pollInterval) {
+      return;
+    }
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
     }
+    this.currentPollingIntervalMs = intervalMs;
     this.pollInterval = setInterval(() => this.fetchCloudEntries(), intervalMs);
   }
 
@@ -911,6 +925,7 @@ class SyncService {
     this.currentIdleLevel = 0;
     this.currentBatteryLevel = 'normal';
     this.isMeteredConnection = false;
+    this.currentPollingIntervalMs = 0;
 
     store.setSyncStatus('disconnected');
   }
