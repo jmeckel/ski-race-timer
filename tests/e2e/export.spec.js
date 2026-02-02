@@ -8,17 +8,17 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
 
-// Helper to add test entries
+// Helper to add test entries via radial dial
 async function addTestEntries(page, count = 3) {
   for (let i = 1; i <= count; i++) {
     // Wait for clear button to be ready (not covered by overlay)
-    await page.waitForSelector('[data-action="clear"]', { state: 'visible' });
-    await page.click('[data-action="clear"]');
+    await page.waitForSelector('#radial-clear-btn', { state: 'visible' });
+    await page.click('#radial-clear-btn');
     const bib = String(i).padStart(3, '0');
     for (const digit of bib) {
-      await page.click(`[data-num="${digit}"]`);
+      await page.click(`.dial-number[data-num="${digit}"]`);
     }
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
     // Small buffer after confirmation to ensure app is ready
     await page.waitForTimeout(100);
@@ -153,7 +153,7 @@ test.describe('Export - Edge Cases', () => {
     // Clear any existing data
     await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     await navigateTo(page, 'results');
 
@@ -182,8 +182,8 @@ test.describe('Export - Edge Cases', () => {
     await setupPage(page);
 
     // Add entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Go to results and check entry exists
@@ -218,8 +218,8 @@ test.describe('Export - Multiple Runs', () => {
 
   test('should export entries with run number', async ({ page }) => {
     // Add Run 1 entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -242,9 +242,9 @@ test.describe('Export - Multiple Runs', () => {
 
   test('should export Run 2 entries correctly', async ({ page }) => {
     // Select Run 2
-    await page.click('#run-selector [data-run="2"]');
-    await page.click('[data-num="2"]');
-    await page.click('#timestamp-btn');
+    await page.click('#radial-run-selector [data-run="2"]');
+    await page.click('.dial-number[data-num="2"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -265,16 +265,16 @@ test.describe('Export - Multiple Runs', () => {
 
   test('should export both Run 1 and Run 2 entries', async ({ page }) => {
     // Add Run 1 entry
-    await page.click('#run-selector [data-run="1"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('#radial-run-selector [data-run="1"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Run 2 entry
-    await page.click('[data-action="clear"]');
-    await page.click('#run-selector [data-run="2"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('#radial-clear-btn');
+    await page.click('#radial-run-selector [data-run="2"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -305,16 +305,16 @@ test.describe('Export - Multiple Timing Points', () => {
 
   test('should export entries with different timing points', async ({ page }) => {
     // Add Start entry
-    await page.click('[data-point="S"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('.radial-point-btn[data-point="S"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
-    await page.click('[data-action="clear"]');
-    await page.click('[data-point="F"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('#radial-clear-btn');
+    await page.click('.radial-point-btn[data-point="F"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -336,9 +336,9 @@ test.describe('Export - Multiple Timing Points', () => {
 
   test('should export Start timing point as ST (Race Horology format)', async ({ page }) => {
     // Add Start entry
-    await page.click('[data-point="S"]');
-    await page.click('[data-num="5"]');
-    await page.click('#timestamp-btn');
+    await page.click('.radial-point-btn[data-point="S"]');
+    await page.click('.dial-number[data-num="5"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -359,9 +359,9 @@ test.describe('Export - Multiple Timing Points', () => {
 
   test('should export Finish timing point as FT (Race Horology format)', async ({ page }) => {
     // Add Finish entry
-    await page.click('[data-point="F"]');
-    await page.click('[data-num="7"]');
-    await page.click('#timestamp-btn');
+    await page.click('.radial-point-btn[data-point="F"]');
+    await page.click('.dial-number[data-num="7"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export
@@ -382,16 +382,16 @@ test.describe('Export - Multiple Timing Points', () => {
 
   test('should export both ST and FT in same file', async ({ page }) => {
     // Add Start entry
-    await page.click('[data-point="S"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('.radial-point-btn[data-point="S"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
-    await page.click('[data-action="clear"]');
-    await page.click('[data-point="F"]');
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('#radial-clear-btn');
+    await page.click('.radial-point-btn[data-point="F"]');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Export

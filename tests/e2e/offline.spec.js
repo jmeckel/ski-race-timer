@@ -7,15 +7,15 @@
 import { test, expect } from '@playwright/test';
 import { setupPage, clickToggle, navigateTo, waitForConfirmationToHide } from './helpers.js';
 
-// Helper to add test entries
+// Helper to add test entries via radial dial
 async function addTestEntries(page, count = 3) {
   for (let i = 1; i <= count; i++) {
-    await page.click('[data-action="clear"]');
+    await page.click('#radial-clear-btn');
     const bib = String(i).padStart(3, '0');
     for (const digit of bib) {
-      await page.click(`[data-num="${digit}"]`);
+      await page.click(`.dial-number[data-num="${digit}"]`);
     }
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
   }
 }
@@ -34,7 +34,7 @@ test.describe('Data Persistence', () => {
 
     // Reload page
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // Check entries persisted via stats counter
     await navigateTo(page, 'results');
@@ -61,9 +61,9 @@ test.describe('LocalStorage Operations', () => {
   test('should save entries to localStorage', async ({ page }) => {
     await setupPage(page);
 
-    // Add entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    // Add entry via radial dial
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Check localStorage
@@ -106,14 +106,14 @@ test.describe('LocalStorage Operations', () => {
 
     // Reload - should handle error gracefully
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // App should still work
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
 
     // Should show confirmation (app recovered)
-    await expect(page.locator('.confirmation-overlay')).toBeVisible();
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
   });
 
   test('should handle missing localStorage gracefully', async ({ page }) => {
@@ -126,11 +126,11 @@ test.describe('LocalStorage Operations', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // App should still work with defaults
-    await expect(page.locator('.clock-time')).toBeVisible();
-    await expect(page.locator('#timestamp-btn')).toBeVisible();
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
+    await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 });
 
@@ -143,19 +143,19 @@ test.describe('Offline Functionality', () => {
   });
 
   test('should display app when loaded', async ({ page }) => {
-    // Main elements should be visible
-    await expect(page.locator('.clock-time')).toBeVisible();
-    await expect(page.locator('.bib-display')).toBeVisible();
-    await expect(page.locator('#timestamp-btn')).toBeVisible();
+    // Main elements should be visible (radial mode)
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
+    await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 
   test('should record entries without network', async ({ page, context }) => {
     // Go offline
     await context.setOffline(true);
 
-    // Record entry
-    await page.click('[data-num="5"]');
-    await page.click('#timestamp-btn');
+    // Record entry via radial dial
+    await page.click('.dial-number[data-num="5"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Should still work locally
@@ -199,7 +199,7 @@ test.describe('Offline Functionality', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // Data should persist
     await navigateTo(page, 'results');
@@ -255,7 +255,7 @@ test.describe('Edge Cases', () => {
   test('should handle rapid entry recording', async ({ page }) => {
     // Record multiple entries quickly (5 entries is sufficient to test)
     for (let i = 0; i < 5; i++) {
-      await page.click('#timestamp-btn');
+      await page.click('#radial-time-btn');
       // Wait for confirmation overlay to hide before next entry
       await waitForConfirmationToHide(page);
     }
@@ -270,8 +270,8 @@ test.describe('Edge Cases', () => {
 
   test('should handle concurrent operations', async ({ page }) => {
     // Add entry while navigating
-    await page.click('[data-num="1"]');
-    const timestampButton = page.locator('#timestamp-btn');
+    await page.click('.dial-number[data-num="1"]');
+    const timestampButton = page.locator('#radial-time-btn');
     await expect(timestampButton).toBeVisible();
     await Promise.all([
       timestampButton.click({ force: true }),
@@ -282,7 +282,7 @@ test.describe('Edge Cases', () => {
 
     // App should still be functional
     await navigateTo(page, 'timer');
-    await expect(page.locator('.clock-time')).toBeVisible();
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
   });
 });
 
@@ -297,7 +297,7 @@ test.describe('Data Recovery', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // Should start fresh with defaults
     await navigateTo(page, 'settings');

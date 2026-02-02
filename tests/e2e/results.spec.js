@@ -29,7 +29,7 @@ test.describe('Results View', () => {
       // Add test entries (reduced to 2 for CI)
       for (let i = 1; i <= 2; i++) {
         await enterBib(page, i);
-        await page.click('#timestamp-btn');
+        await page.click('#radial-time-btn');
         await waitForConfirmationToHide(page);
       }
       await navigateTo(page, 'results');
@@ -67,10 +67,10 @@ test.describe('Results View', () => {
       // Need full mode for search bar to be visible (has data-advanced attribute)
       await setupPageFullMode(page);
       await enterBib(page, 10);
-      await page.click('#timestamp-btn');
+      await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
       await enterBib(page, 20);
-      await page.click('#timestamp-btn');
+      await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
       await navigateTo(page, 'results');
     });
@@ -97,7 +97,7 @@ test.describe('Results View', () => {
     test.beforeEach(async ({ page }) => {
       await setupPage(page);
       await enterBib(page, 55);
-      await page.click('#timestamp-btn');
+      await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
       await navigateTo(page, 'results');
     });
@@ -129,7 +129,7 @@ test.describe('Results View', () => {
       // Reduced to 2 entries for CI
       for (let i = 1; i <= 2; i++) {
         await enterBib(page, i);
-        await page.click('#timestamp-btn');
+        await page.click('#radial-time-btn');
         await waitForConfirmationToHide(page);
       }
       await navigateTo(page, 'results');
@@ -146,7 +146,7 @@ test.describe('Results View - Export', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
     await enterBib(page, 42);
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
     await navigateTo(page, 'results');
   });

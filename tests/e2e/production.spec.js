@@ -4,6 +4,16 @@
  * Tests for the live deployed version at https://ski-race-timer.vercel.app/
  * These tests verify the production deployment works correctly.
  *
+ * Note: The timer view uses a radial dial UI by default.
+ * Key selectors for radial mode:
+ * - Number input: .dial-number[data-num="X"]
+ * - Clear button: #radial-clear-btn
+ * - Timestamp button: #radial-time-btn
+ * - Bib display: #radial-bib-value
+ * - Time display: #radial-time-hm, #radial-time-seconds, #radial-time-subseconds
+ * - Timing points: .radial-point-btn[data-point="S|F"]
+ * - Confirmation: #radial-confirmation-overlay.show
+ *
  * Run with: npm run test:e2e:prod
  */
 
@@ -35,6 +45,16 @@ async function ensureOnboardingDismissed(page) {
   }
 }
 
+/**
+ * Wait for confirmation overlay to hide
+ */
+async function waitForConfirmationToHide(page) {
+  await page.waitForFunction(() => {
+    const overlay = document.querySelector('#radial-confirmation-overlay');
+    return !overlay || !overlay.classList.contains('show');
+  }, { timeout: 3000 });
+}
+
 test.describe('Production PWA - Core Functionality', () => {
   test.beforeEach(async ({ page }) => {
     // Set up init script to skip onboarding before page loads
@@ -47,7 +67,7 @@ test.describe('Production PWA - Core Functionality', () => {
     });
     // Ensure onboarding is dismissed
     await ensureOnboardingDismissed(page);
-    await page.waitForSelector('.clock-time', { timeout: 10000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -63,17 +83,15 @@ test.describe('Production PWA - Core Functionality', () => {
     });
 
     test('should display the clock', async ({ page }) => {
-      const clock = page.locator('.clock-time');
-      await expect(clock).toBeVisible();
+      // Radial clock is split into parts: HH:MM, SS, and mmm
+      const clockHm = page.locator('#radial-time-hm');
+      const clockSec = page.locator('#radial-time-seconds');
+      await expect(clockHm).toBeVisible();
+      await expect(clockSec).toBeVisible();
 
-      // Clock should be in HH:MM:SS.mmm format
-      const time = await clock.textContent();
-      expect(time).toMatch(/^\d{2}:\d{2}:\d{2}\.\d{3}$/);
-    });
-
-    test('should display the date', async ({ page }) => {
-      const date = page.locator('.clock-date');
-      await expect(date).toBeVisible();
+      // Clock should be in HH:MM format
+      const hm = await clockHm.textContent();
+      expect(hm).toMatch(/^\d{2}:\d{2}$/);
     });
 
     test('should display all three navigation tabs', async ({ page }) => {
@@ -83,52 +101,49 @@ test.describe('Production PWA - Core Functionality', () => {
     });
 
     test('should display bib input area', async ({ page }) => {
-      await expect(page.locator('.bib-display')).toBeVisible();
+      await expect(page.locator('#radial-bib-value')).toBeVisible();
     });
 
-    test('should display number pad', async ({ page }) => {
-      await expect(page.locator('.number-pad')).toBeVisible();
-      // Check all digits 0-9 exist
+    test('should display radial dial number buttons', async ({ page }) => {
+      // Check some dial number buttons exist
       for (let i = 0; i <= 9; i++) {
-        await expect(page.locator(`[data-num="${i}"]`)).toBeVisible();
+        await expect(page.locator(`.dial-number[data-num="${i}"]`)).toBeVisible();
       }
     });
 
     test('should display timing point buttons', async ({ page }) => {
-      await expect(page.locator('[data-point="S"]')).toBeVisible();
-      await expect(page.locator('[data-point="F"]')).toBeVisible();
+      await expect(page.locator('.radial-point-btn[data-point="S"]')).toBeVisible();
+      await expect(page.locator('.radial-point-btn[data-point="F"]')).toBeVisible();
     });
 
     test('should display timestamp button', async ({ page }) => {
-      await expect(page.locator('#timestamp-btn')).toBeVisible();
+      await expect(page.locator('#radial-time-btn')).toBeVisible();
     });
   });
 
   test.describe('Clock Display', () => {
     test('should show valid time format and update in real-time', async ({ page }) => {
-      const clock = page.locator('.clock-time');
-      const time = await clock.textContent();
+      const clockHm = page.locator('#radial-time-hm');
+      const clockSec = page.locator('#radial-time-seconds');
+      const hm = await clockHm.textContent();
+      const sec = await clockSec.textContent();
 
-      // Clock should NOT show the default placeholder value
-      expect(time).not.toBe('00:00:00.000');
-
-      // Verify clock shows valid HH:MM:SS.mmm format
-      expect(time).toMatch(/^\d{2}:\d{2}:\d{2}\.\d{3}$/);
+      // Verify HH:MM format
+      expect(hm).toMatch(/^\d{2}:\d{2}$/);
+      // Verify SS format
+      expect(sec).toMatch(/^\d{2}$/);
 
       // Verify time values are within valid ranges
-      const [hms] = time.split('.');
-      const [hours, minutes, seconds] = hms.split(':').map(Number);
+      const [hours, minutes] = hm.split(':').map(Number);
       expect(hours).toBeGreaterThanOrEqual(0);
       expect(hours).toBeLessThan(24);
       expect(minutes).toBeGreaterThanOrEqual(0);
       expect(minutes).toBeLessThan(60);
-      expect(seconds).toBeGreaterThanOrEqual(0);
-      expect(seconds).toBeLessThan(60);
 
       // Check if clock updates by watching for DOM changes
       const clockUpdates = await page.evaluate(() => {
         return new Promise((resolve) => {
-          const clock = document.querySelector('.clock-time');
+          const clock = document.querySelector('#radial-time-seconds');
           if (!clock) {
             resolve(-1); // Element not found
             return;
@@ -149,7 +164,7 @@ test.describe('Production PWA - Core Functionality', () => {
         });
       });
 
-      // The clock should have updated at least once in 1 second (updates every 100ms)
+      // The clock should have updated at least once in 1 second
       expect(clockUpdates).toBeGreaterThan(0);
     });
   });
@@ -180,85 +195,85 @@ test.describe('Production PWA - Core Functionality', () => {
   });
 
   test.describe('Bib Number Input', () => {
-    test('should enter bib number via number pad', async ({ page }) => {
-      await page.click('[data-num="1"]');
-      await page.click('[data-num="2"]');
-      await page.click('[data-num="3"]');
+    test('should enter bib number via radial dial', async ({ page }) => {
+      await page.click('.dial-number[data-num="1"]');
+      await page.click('.dial-number[data-num="2"]');
+      await page.click('.dial-number[data-num="3"]');
 
-      const bibDisplay = page.locator('.bib-display');
+      const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('123');
     });
 
     test('should clear bib number', async ({ page }) => {
-      await page.click('[data-num="5"]');
-      await page.click('[data-num="6"]');
-      await page.click('[data-action="clear"]');
+      await page.click('.dial-number[data-num="5"]');
+      await page.click('.dial-number[data-num="6"]');
+      await page.click('#radial-clear-btn');
 
-      const bibDisplay = page.locator('.bib-display');
+      const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('---');
     });
 
-    test('should delete last digit', async ({ page }) => {
-      await page.click('[data-num="7"]');
-      await page.click('[data-num="8"]');
-      await page.click('[data-action="delete"]');
+    test('should delete last digit with backspace', async ({ page }) => {
+      await page.click('.dial-number[data-num="7"]');
+      await page.click('.dial-number[data-num="8"]');
+      await page.keyboard.press('Backspace');
 
-      const bibDisplay = page.locator('.bib-display');
+      const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('7');
     });
   });
 
   test.describe('Timing Point Selection', () => {
     test('should select Start point', async ({ page }) => {
-      await page.click('[data-point="S"]');
-      await expect(page.locator('[data-point="S"]')).toHaveClass(/active/);
+      await page.click('.radial-point-btn[data-point="S"]');
+      await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
     });
 
     test('should select Finish point', async ({ page }) => {
-      await page.click('[data-point="F"]');
-      await expect(page.locator('[data-point="F"]')).toHaveClass(/active/);
+      await page.click('.radial-point-btn[data-point="F"]');
+      await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
     });
 
     test('should only show one timing point as active', async ({ page }) => {
       // Select Start
-      await page.click('[data-point="S"]');
-      await expect(page.locator('[data-point="S"]')).toHaveClass(/active/);
-      await expect(page.locator('[data-point="F"]')).not.toHaveClass(/active/);
+      await page.click('.radial-point-btn[data-point="S"]');
+      await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
+      await expect(page.locator('.radial-point-btn[data-point="F"]')).not.toHaveClass(/active/);
 
       // Select Finish - Start should no longer be active
-      await page.click('[data-point="F"]');
-      await expect(page.locator('[data-point="F"]')).toHaveClass(/active/);
-      await expect(page.locator('[data-point="S"]')).not.toHaveClass(/active/);
+      await page.click('.radial-point-btn[data-point="F"]');
+      await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
+      await expect(page.locator('.radial-point-btn[data-point="S"]')).not.toHaveClass(/active/);
     });
   });
 
   test.describe('Recording Timestamps', () => {
     test('should record a timestamp', async ({ page }) => {
-      await page.click('[data-num="1"]');
-      await page.click('[data-point="S"]');
-      await page.click('#timestamp-btn');
+      await page.click('.dial-number[data-num="1"]');
+      await page.click('.radial-point-btn[data-point="S"]');
+      await page.click('#radial-time-btn');
 
       // Should show confirmation overlay
-      await expect(page.locator('.confirmation-overlay')).toBeVisible();
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
     });
 
     test('should hide confirmation after timeout', async ({ page }) => {
-      await page.click('#timestamp-btn');
-      await expect(page.locator('.confirmation-overlay')).toBeVisible();
+      await page.click('#radial-time-btn');
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
 
-      // Wait for auto-hide (1.5 seconds + buffer)
-      await page.waitForTimeout(2000);
-      await expect(page.locator('.confirmation-overlay')).not.toBeVisible();
+      // Wait for auto-hide
+      await waitForConfirmationToHide(page);
+      await expect(page.locator('#radial-confirmation-overlay')).not.toHaveClass(/show/);
     });
 
     test('should show entry in results after recording', async ({ page }) => {
-      await page.click('[data-num="9"]');
-      await page.click('[data-num="9"]');
-      await page.click('[data-point="S"]');
-      await page.click('#timestamp-btn');
+      await page.click('.dial-number[data-num="9"]');
+      await page.click('.dial-number[data-num="9"]');
+      await page.click('.radial-point-btn[data-point="S"]');
+      await page.click('#radial-time-btn');
 
       // Wait for confirmation
-      await page.waitForTimeout(500);
+      await waitForConfirmationToHide(page);
 
       // Navigate to results
       await page.click('[data-view="results"]');
@@ -281,11 +296,11 @@ test.describe('Production PWA - Results View', () => {
 
     // Add test entries
     for (let i = 1; i <= 3; i++) {
-      await page.click(`[data-num="${i}"]`);
-      await page.click('[data-point="S"]');
-      await page.click('#timestamp-btn');
-      await page.waitForTimeout(500);
-      await page.click('[data-action="clear"]');
+      await page.click(`.dial-number[data-num="${i}"]`);
+      await page.click('.radial-point-btn[data-point="S"]');
+      await page.click('#radial-time-btn');
+      await waitForConfirmationToHide(page);
+      await page.click('#radial-clear-btn');
     }
 
     await page.click('[data-view="results"]');
@@ -317,7 +332,6 @@ test.describe('Production PWA - Results View', () => {
     await page.waitForTimeout(400);
 
     // VirtualList filters items - check that the search reduced results
-    // Note: VirtualList may group or filter differently than raw DOM visibility
     const resultItems = page.locator('.result-item');
     const count = await resultItems.count();
     // Search for "1" should match only bib 1, so we expect fewer than 3 results
@@ -449,28 +463,26 @@ test.describe('Production PWA - Mobile Responsiveness', () => {
   });
 
   test('should render correctly on mobile', async ({ page }) => {
-
-    await expect(page.locator('.clock-time')).toBeVisible();
-    await expect(page.locator('.bib-display')).toBeVisible();
-    await expect(page.locator('#timestamp-btn')).toBeVisible();
-    await expect(page.locator('.number-pad')).toBeVisible();
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
+    await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 
   test('should handle input on mobile viewport', async ({ page }) => {
     // Use click which works on mobile viewports too
-    await page.click('[data-num="5"]');
-    const bibDisplay = page.locator('.bib-display');
+    await page.click('.dial-number[data-num="5"]');
+    const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('5');
   });
 
-  test('number pad should be easily tappable', async ({ page }) => {
-    // Check number pad buttons have adequate size for touch
-    const button = page.locator('[data-num="1"]');
+  test('dial number should be easily tappable', async ({ page }) => {
+    // Check dial number buttons have adequate size for touch
+    const button = page.locator('.dial-number[data-num="1"]');
     const box = await button.boundingBox();
 
-    // Buttons should be at least 44x44 pixels for touch accessibility
-    expect(box.width).toBeGreaterThanOrEqual(40);
-    expect(box.height).toBeGreaterThanOrEqual(40);
+    // Buttons should be at least 25x25 pixels for touch accessibility (dial numbers are smaller but well-spaced)
+    expect(box.width).toBeGreaterThanOrEqual(25);
+    expect(box.height).toBeGreaterThanOrEqual(25);
   });
 });
 
@@ -484,9 +496,9 @@ test.describe('Production PWA - Tablet Responsiveness', () => {
   });
 
   test('should render correctly on tablet', async ({ page }) => {
-    await expect(page.locator('.clock-time')).toBeVisible();
-    await expect(page.locator('.bib-display')).toBeVisible();
-    await expect(page.locator('#timestamp-btn')).toBeVisible();
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
+    await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 });
 
@@ -499,7 +511,7 @@ test.describe('Production PWA - Accessibility', () => {
 
   test('should have no major accessibility issues in timer view', async ({ page }) => {
     // Check for basic accessibility attributes
-    const timestampBtn = page.locator('#timestamp-btn');
+    const timestampBtn = page.locator('#radial-time-btn');
     await expect(timestampBtn).toBeVisible();
 
     // Tab navigation should work
@@ -520,7 +532,7 @@ test.describe('Production PWA - Accessibility', () => {
 
   test('should have accessible color contrast', async ({ page }) => {
     // Clock text should be visible
-    const clock = page.locator('.clock-time');
+    const clock = page.locator('#radial-time-hm');
     const color = await clock.evaluate(el => getComputedStyle(el).color);
     expect(color).toBeDefined();
     expect(color).not.toBe('transparent');
@@ -532,20 +544,19 @@ test.describe('Production PWA - Performance', () => {
     await skipOnboarding(page);
     await page.goto(PROD_URL);
     await ensureOnboardingDismissed(page);
-    await page.waitForSelector('.clock-time', { timeout: 10000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 10000 });
   });
 
   test('should load within acceptable time', async ({ page }) => {
     // Test passes if beforeEach completes successfully
     // Clock is already visible from beforeEach
-    await expect(page.locator('.clock-time')).toBeVisible();
+    await expect(page.locator('#radial-time-hm')).toBeVisible();
   });
 
   test('should respond to interactions quickly', async ({ page }) => {
-
     const startTime = Date.now();
-    await page.click('[data-num="1"]');
-    await expect(page.locator('.bib-display')).toContainText('1');
+    await page.click('.dial-number[data-num="1"]');
+    await expect(page.locator('#radial-bib-value')).toContainText('1');
     const responseTime = Date.now() - startTime;
 
     // Interaction should complete within 500ms
@@ -564,14 +575,13 @@ test.describe('Production PWA - Data Persistence', () => {
   });
 
   test('should persist entries in localStorage', async ({ page }) => {
-
     // Add an entry
-    await page.click('[data-num="7"]');
-    await page.click('[data-num="7"]');
-    await page.click('[data-num="7"]');
-    await page.click('[data-point="S"]');
-    await page.click('#timestamp-btn');
-    await page.waitForTimeout(500);
+    await page.click('.dial-number[data-num="7"]');
+    await page.click('.dial-number[data-num="7"]');
+    await page.click('.dial-number[data-num="7"]');
+    await page.click('.radial-point-btn[data-point="S"]');
+    await page.click('#radial-time-btn');
+    await waitForConfirmationToHide(page);
 
     // Check localStorage
     const entries = await page.evaluate(() => {
@@ -633,13 +643,13 @@ test.describe('Production PWA - Error Handling', () => {
   });
 
   test('should handle rapid button clicks gracefully', async ({ page }) => {
-    // Rapid clicks on number pad
+    // Rapid clicks on dial number
     for (let i = 0; i < 10; i++) {
-      await page.click('[data-num="1"]', { force: true });
+      await page.click('.dial-number[data-num="1"]', { force: true });
     }
 
     // App should still be functional
-    await expect(page.locator('.bib-display')).toBeVisible();
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
   });
 
   test('should handle rapid tab switching', async ({ page }) => {

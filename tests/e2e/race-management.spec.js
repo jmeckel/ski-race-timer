@@ -51,7 +51,7 @@ test.describe('Race Management - Admin PIN', () => {
     });
     // Reload to apply changes
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await goToSettings(page);
   }
 
@@ -182,7 +182,7 @@ test.describe('Race Management - PIN Verification Modal', () => {
       localStorage.setItem('skiTimerAdminPin', hash('1234'));
     });
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await goToSettings(page);
   });
 
@@ -274,7 +274,7 @@ test.describe('Race Management - Race List Modal', () => {
       localStorage.setItem('skiTimerAdminPin', hash('1234'));
     });
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await goToSettings(page);
 
     // Open race management

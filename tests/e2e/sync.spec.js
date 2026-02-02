@@ -64,13 +64,13 @@ async function addTestEntry(page, bib = '001') {
   await navigateTo(page, 'timer');
 
   // Clear and enter bib
-  await page.click('[data-action="clear"]');
+  await page.click('#radial-clear-btn');
   for (const digit of bib) {
-    await page.click(`[data-num="${digit}"]`);
+    await page.click(`.dial-number[data-num="${digit}"]`);
   }
 
   // Record timestamp
-  await page.click('#timestamp-btn');
+  await page.click('#radial-time-btn');
   await page.waitForTimeout(500);
 }
 
@@ -121,7 +121,7 @@ test.describe('Cloud Sync', () => {
 
       // Reload and verify
       await page.reload();
-      await page.waitForSelector('.clock-time', { timeout: 5000 });
+      await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
       await navigateTo(page, 'settings');
 
       if (!(await isToggleOn(page, '#sync-toggle'))) {
@@ -210,7 +210,7 @@ test.describe('Cloud Sync', () => {
 
       // Reload page
       await page.reload();
-      await page.waitForSelector('.clock-time', { timeout: 5000 });
+      await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
       // Check entries persisted
       await navigateTo(page, 'results');
@@ -274,7 +274,7 @@ test.describe('Sync Settings Persistence', () => {
 
     // Reload
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await navigateTo(page, 'settings');
 
     // Should still be disabled
@@ -507,7 +507,7 @@ test.describe('Cloud Sync Improvements', () => {
       await page.waitForTimeout(500);
 
       // The bib should have auto-incremented to 002
-      const bibDisplay = page.locator('.bib-value');
+      const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('002');
     });
 
@@ -633,7 +633,7 @@ test.describe('Verification Steps', () => {
 
     // Reload and use lowercase - manually handle the race change modal
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await navigateTo(page, 'settings');
 
     if (!(await isToggleOn(page, '#sync-toggle'))) {
@@ -695,11 +695,11 @@ test.describe('Verification Steps', () => {
     await enterBib(page, 1);
 
     // Record timestamp
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await page.waitForTimeout(500);
 
     // Bib should show 002
-    const bibDisplay = page.locator('.bib-value');
+    const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('002');
   });
 });
@@ -768,7 +768,7 @@ test.describe('Delete Sync', () => {
 
     // Reload page and re-enable sync
     await page.reload();
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await enableSync(page, uniqueRaceId);
 
     // Wait for sync
@@ -818,9 +818,9 @@ test.describe('Delete Sync', () => {
     // Add multiple entries
     await navigateTo(page, 'timer');
     for (let i = 1; i <= 3; i++) {
-      await page.click('[data-action="clear"]');
-      await page.click(`[data-num="${i}"]`);
-      await page.click('#timestamp-btn');
+      await page.click('#radial-clear-btn');
+      await page.click(`.dial-number[data-num="${i}"]`);
+      await page.click('#radial-time-btn');
       await page.waitForTimeout(500);
     }
 

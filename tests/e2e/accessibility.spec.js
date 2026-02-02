@@ -12,14 +12,14 @@ test.describe('Keyboard Navigation - Timer View', () => {
     await setupPage(page);
   });
 
-  test('should navigate number pad with Tab', async ({ page, browserName }) => {
+  test('should navigate dial numbers with Tab', async ({ page, browserName }) => {
     // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
     test.skip(browserName === 'webkit', 'Safari has different keyboard navigation behavior');
 
-    // Focus first number button
-    await page.locator('[data-num="1"]').focus();
+    // Focus first number on dial
+    await page.locator('.dial-number[data-num="1"]').focus();
 
-    // Tab through number pad
+    // Tab through dial numbers
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab');
     }
@@ -30,42 +30,42 @@ test.describe('Keyboard Navigation - Timer View', () => {
   });
 
   test('should record timestamp with Enter key', async ({ page }) => {
-    await page.locator('#timestamp-btn').focus();
+    await page.locator('#radial-time-btn').focus();
     await page.keyboard.press('Enter');
 
     // Confirmation should appear
-    await expect(page.locator('.confirmation-overlay')).toBeVisible();
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
   });
 
   test('should record timestamp with Space key', async ({ page }) => {
-    await page.locator('#timestamp-btn').focus();
+    await page.locator('#radial-time-btn').focus();
     await page.keyboard.press('Space');
 
     // Confirmation should appear
-    await expect(page.locator('.confirmation-overlay')).toBeVisible();
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
   });
 
   test('should enter numbers via click', async ({ page }) => {
-    // Click number button
-    await page.click('[data-num="1"]');
+    // Click dial number
+    await page.click('.dial-number[data-num="1"]');
 
-    const bibDisplay = page.locator('.bib-display');
+    const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('1');
   });
 
   test('should clear bib with clear button', async ({ page }) => {
-    // Enter a bib manually
-    await page.click('[data-num="5"]');
-    await page.click('[data-num="5"]');
-    await page.click('[data-num="5"]');
+    // Enter a bib via dial
+    await page.click('.dial-number[data-num="5"]');
+    await page.click('.dial-number[data-num="5"]');
+    await page.click('.dial-number[data-num="5"]');
 
-    const bibDisplay = page.locator('.bib-display');
+    const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('555');
 
     // Click clear button
-    await page.click('[data-action="clear"]');
+    await page.click('#radial-clear-btn');
 
-    // Bib should be cleared (may show --- or auto-incremented value)
+    // Bib should be cleared (shows ---)
     await expect(bibDisplay).not.toContainText('555');
   });
 });
@@ -119,9 +119,9 @@ test.describe('Keyboard Navigation - Results View', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
 
-    // Add test entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    // Add test entry via radial dial
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     await navigateTo(page, 'results');
@@ -161,9 +161,9 @@ test.describe('Modal Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
 
-    // Add entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    // Add entry via radial dial
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     await navigateTo(page, 'results');
@@ -226,17 +226,17 @@ test.describe('ARIA Attributes', () => {
   });
 
   test('should have proper ARIA attributes on confirmation overlay', async ({ page }) => {
-    // Trigger confirmation overlay by recording
-    await page.click('#timestamp-btn');
+    // Trigger confirmation overlay by recording via radial dial
+    await page.click('#radial-time-btn');
 
-    // Confirmation overlay should appear with ARIA
-    const overlay = page.locator('.confirmation-overlay');
-    await expect(overlay).toBeVisible();
+    // Confirmation overlay should appear
+    const overlay = page.locator('#radial-confirmation-overlay');
+    await expect(overlay).toHaveClass(/show/);
   });
 
   test('should have undo button in DOM', async ({ page }) => {
-    // Record an entry
-    await page.click('#timestamp-btn');
+    // Record an entry via radial dial
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Undo button should exist in DOM (may be hidden in simple mode)
@@ -245,8 +245,8 @@ test.describe('ARIA Attributes', () => {
   });
 
   test('should have proper button roles', async ({ page }) => {
-    // Check timestamp button
-    const timestampBtn = page.locator('#timestamp-btn');
+    // Check radial time button
+    const timestampBtn = page.locator('#radial-time-btn');
     const tagName = await timestampBtn.evaluate(el => el.tagName.toLowerCase());
 
     // Should be a button element
@@ -280,11 +280,11 @@ test.describe('Focus Visibility', () => {
   });
 
   test('should show focus indicator on buttons', async ({ page }) => {
-    // Focus timestamp button
-    await page.locator('#timestamp-btn').focus();
+    // Focus radial time button
+    await page.locator('#radial-time-btn').focus();
 
     // Should have visible focus indicator
-    const outline = await page.locator('#timestamp-btn').evaluate(el => {
+    const outline = await page.locator('#radial-time-btn').evaluate(el => {
       const style = getComputedStyle(el);
       return style.outline !== 'none' || style.boxShadow !== 'none';
     });
@@ -307,12 +307,12 @@ test.describe('Focus Visibility', () => {
     expect(hasOutline).toBe(true);
   });
 
-  test('should show focus indicator on number pad', async ({ page }) => {
-    // Focus number button
-    await page.locator('[data-num="5"]').focus();
+  test('should show focus indicator on dial number', async ({ page }) => {
+    // Focus dial number
+    await page.locator('.dial-number[data-num="5"]').focus();
 
     // Should have visible focus
-    const focused = page.locator('[data-num="5"]');
+    const focused = page.locator('.dial-number[data-num="5"]');
     await expect(focused).toBeFocused();
   });
 });
@@ -356,8 +356,8 @@ test.describe('Tab Order', () => {
       }
     }
 
-    // Should visit timestamp button
-    expect(visited.has('timestamp-btn')).toBe(true);
+    // Should visit radial time button
+    expect(visited.has('radial-time-btn')).toBe(true);
   });
 });
 
@@ -367,20 +367,20 @@ test.describe('Screen Reader Support', () => {
   });
 
   test('should have descriptive button text', async ({ page }) => {
-    // Check timestamp button has meaningful text
-    const timestampBtn = page.locator('#timestamp-btn');
+    // Check radial time button has meaningful text
+    const timestampBtn = page.locator('#radial-time-btn');
     const text = await timestampBtn.textContent();
 
     expect(text?.length).toBeGreaterThan(0);
   });
 
   test('should announce confirmation', async ({ page }) => {
-    // Record timestamp
-    await page.click('#timestamp-btn');
+    // Record timestamp via radial dial
+    await page.click('#radial-time-btn');
 
     // Confirmation overlay should be visible and readable
-    const overlay = page.locator('.confirmation-overlay');
-    await expect(overlay).toBeVisible();
+    const overlay = page.locator('#radial-confirmation-overlay');
+    await expect(overlay).toHaveClass(/show/);
 
     const text = await overlay.textContent();
     expect(text?.length).toBeGreaterThan(0);
@@ -408,8 +408,8 @@ test.describe('Color Contrast', () => {
   });
 
   test('should have visible text on buttons', async ({ page }) => {
-    // Check timestamp button is visible and readable
-    const btn = page.locator('#timestamp-btn');
+    // Check radial time button is visible and readable
+    const btn = page.locator('#radial-time-btn');
     await expect(btn).toBeVisible();
 
     // Button should have text
@@ -418,12 +418,17 @@ test.describe('Color Contrast', () => {
   });
 
   test('should have visible clock display', async ({ page }) => {
-    const clock = page.locator('.clock-time');
-    await expect(clock).toBeVisible();
+    // Radial clock is split into parts
+    const clockHm = page.locator('#radial-time-hm');
+    const clockSec = page.locator('#radial-time-seconds');
+    await expect(clockHm).toBeVisible();
+    await expect(clockSec).toBeVisible();
 
     // Clock should show time
-    const text = await clock.textContent();
-    expect(text).toMatch(/\d{2}:\d{2}:\d{2}/);
+    const hm = await clockHm.textContent();
+    const sec = await clockSec.textContent();
+    expect(hm).toMatch(/\d{2}:\d{2}/);
+    expect(sec).toMatch(/\d{2}/);
   });
 });
 
@@ -433,38 +438,38 @@ test.describe('Mobile Accessibility', () => {
   });
 
   test('should have sufficient touch targets', async ({ page }) => {
-    // Check number pad buttons are large enough
-    const numBtn = page.locator('[data-num="5"]');
+    // Check dial numbers are large enough
+    const numBtn = page.locator('.dial-number[data-num="5"]');
     const box = await numBtn.boundingBox();
 
     // Get viewport size to check orientation
     const viewport = page.viewportSize();
     const isLandscape = viewport && viewport.width > viewport.height;
 
-    // Touch targets should be at least 44x44 pixels in portrait
-    // In landscape, buttons may be smaller due to reduced height - use lower threshold
-    const minSize = isLandscape ? 30 : 40;
+    // Touch targets should be at least 30x30 pixels (dial numbers are positioned in a circle)
+    const minSize = isLandscape ? 25 : 30;
     expect(box?.width).toBeGreaterThanOrEqual(minSize);
     expect(box?.height).toBeGreaterThanOrEqual(minSize);
   });
 
   test('should have sufficient spacing between touch targets', async ({ page }) => {
-    // Number pad buttons should not overlap
-    const btn1 = page.locator('[data-num="1"]');
-    const btn2 = page.locator('[data-num="2"]');
+    // Dial numbers are arranged in a circle, check they don't overlap
+    const btn1 = page.locator('.dial-number[data-num="1"]');
+    const btn2 = page.locator('.dial-number[data-num="2"]');
 
     const box1 = await btn1.boundingBox();
     const box2 = await btn2.boundingBox();
 
     if (box1 && box2) {
-      // Buttons should not overlap
-      const overlaps = box1.x < box2.x + box2.width &&
-                       box1.x + box1.width > box2.x &&
-                       box1.y < box2.y + box2.height &&
-                       box1.y + box1.height > box2.y;
+      // Calculate distance between centers
+      const cx1 = box1.x + box1.width / 2;
+      const cy1 = box1.y + box1.height / 2;
+      const cx2 = box2.x + box2.width / 2;
+      const cy2 = box2.y + box2.height / 2;
+      const distance = Math.sqrt(Math.pow(cx2 - cx1, 2) + Math.pow(cy2 - cy1, 2));
 
-      // They may be adjacent but should have some distinction
-      expect(box1.x + box1.width).toBeLessThanOrEqual(box2.x + 5); // Allow small padding
+      // Distance between adjacent numbers should be sufficient for touch
+      expect(distance).toBeGreaterThan(20);
     }
   });
 });

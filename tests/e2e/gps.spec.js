@@ -93,7 +93,7 @@ test.describe('GPS Settings', () => {
     });
 
     await page.goto('/');
-    await page.waitForSelector('.clock-time', { timeout: 5000 });
+    await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await navigateTo(page, 'settings');
 
     // GPS should be checked
@@ -225,7 +225,7 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     await enterBib(page, 1);
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Verify entry recorded
@@ -249,7 +249,7 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry anyway
     await navigateTo(page, 'timer');
     await enterBib(page, 2);
-    await page.click('#timestamp-btn');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Entry should still be recorded (fallback to local time)

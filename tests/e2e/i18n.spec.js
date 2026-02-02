@@ -88,16 +88,16 @@ test.describe('German Language (Default)', () => {
   });
 
   test('should show German button labels', async ({ page }) => {
-    // Check timestamp button
-    const timestampBtn = page.locator('#timestamp-btn');
+    // Check radial time button
+    const timestampBtn = page.locator('#radial-time-btn');
     const text = await timestampBtn.textContent();
 
     expect(text?.length).toBeGreaterThan(0);
   });
 
   test('should show timing point code in results', async ({ page }) => {
-    // Record an entry
-    await page.click('#timestamp-btn');
+    // Record an entry via radial dial
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Go to results
@@ -123,8 +123,8 @@ test.describe('English Language', () => {
   });
 
   test('should show Finish label in English', async ({ page }) => {
-    // Record an entry
-    await page.click('#timestamp-btn');
+    // Record an entry via radial dial
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Go to results
@@ -154,14 +154,14 @@ test.describe('Language Consistency Across Views', () => {
   test('should maintain language in Timer view', async ({ page }) => {
     await navigateTo(page, 'timer');
 
-    // Timestamp button should have English text
-    const timestampBtn = page.locator('#timestamp-btn');
+    // Radial time button should be visible
+    const timestampBtn = page.locator('#radial-time-btn');
     await expect(timestampBtn).toBeVisible();
   });
 
   test('should maintain language in Results view', async ({ page }) => {
-    // Add an entry
-    await page.click('#timestamp-btn');
+    // Add an entry via radial dial
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     await navigateTo(page, 'results');
@@ -188,22 +188,23 @@ test.describe('Date Formatting by Language', () => {
   test('should format date in German format', async ({ page }) => {
     await setupPage(page);
 
-    const dateDisplay = page.locator('.clock-date');
-    const dateText = await dateDisplay.textContent();
+    // Radial mode doesn't show date, but check the time display is visible
+    const timeDisplay = page.locator('#radial-time-hm');
+    const timeText = await timeDisplay.textContent();
 
-    // German date format: DD.MM.YYYY or similar
-    // Should contain a date-like pattern
-    expect(dateText?.length).toBeGreaterThan(0);
+    // Should show time in HH:MM format
+    expect(timeText).toMatch(/\d{2}:\d{2}/);
   });
 
   test('should format date in English format', async ({ page }) => {
     await setupPageEnglish(page);
 
-    const dateDisplay = page.locator('.clock-date');
-    const dateText = await dateDisplay.textContent();
+    // Radial mode doesn't show date, but check the time display is visible
+    const timeDisplay = page.locator('#radial-time-hm');
+    const timeText = await timeDisplay.textContent();
 
-    // English date format: MM/DD/YYYY or Month DD, YYYY
-    expect(dateText?.length).toBeGreaterThan(0);
+    // Should show time in HH:MM format
+    expect(timeText).toMatch(/\d{2}:\d{2}/);
   });
 });
 
@@ -211,9 +212,9 @@ test.describe('Status Labels by Language', () => {
   test('should show status in current language', async ({ page }) => {
     await setupPage(page);
 
-    // Add entry
-    await page.click('[data-num="1"]');
-    await page.click('#timestamp-btn');
+    // Add entry via radial dial
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Go to results
@@ -238,7 +239,7 @@ test.describe('Timing Point Labels by Language', () => {
   test('should show Start as S in both languages', async ({ page }) => {
     await setupPageFullMode(page);
 
-    const startBtn = page.locator('[data-point="S"]');
+    const startBtn = page.locator('.radial-point-btn[data-point="S"]');
     const text = await startBtn.textContent();
 
     // Start is abbreviated as S in both languages
@@ -248,10 +249,10 @@ test.describe('Timing Point Labels by Language', () => {
   test('should show Finish/Ziel appropriately', async ({ page }) => {
     await setupPage(page);
 
-    const finishBtn = page.locator('[data-point="F"]');
+    const finishBtn = page.locator('.radial-point-btn[data-point="F"]');
     const text = await finishBtn.textContent();
 
-    // Should show Finish (EN) or Ziel (DE)
+    // Should show Finish (EN) or Ziel (DE) or F
     expect(text).toMatch(/Finish|Ziel|F|Z/i);
   });
 });
