@@ -303,12 +303,35 @@ Commit the version bump separately with a message like "Bump version to X.Y.Z" s
 
 ### Example patterns:
 ```typescript
-// GOOD: escaped
+// GOOD: escaped for HTML content
 element.innerHTML = `<span>${escapeHtml(userInput)}</span>`;
-el.setAttribute('data-id', escapeHtml(id));
+
+// GOOD: escaped for HTML attributes (includes quote escaping)
+element.innerHTML = `<div title="${escapeAttr(userInput)}">...</div>`;
 
 // BAD: vulnerable to XSS
 element.innerHTML = `<span>${userInput}</span>`;
+
+// BAD: escapeHtml doesn't escape quotes for attributes
+element.innerHTML = `<div title="${escapeHtml(userInput)}">...</div>`;
+// Input: `" onmouseover="alert(1)` breaks out of attribute
+```
+
+### Security Headers
+Configure in `vercel.json` for defense in depth:
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
 ```
 
 ## Browser API Error Handling
@@ -436,6 +459,30 @@ dropdownBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 - All clickable elements must be focusable (buttons are by default)
 - Custom controls should support keyboard interaction (Space/Enter to activate)
 - Focus should be trapped in modals when open
+- Modals should dismiss with Escape key
+
+### Custom Interactive Elements
+For non-button elements that respond to click, add full keyboard support:
+```typescript
+el.setAttribute('tabindex', '0');
+el.setAttribute('role', 'button');
+el.setAttribute('aria-label', 'Description of action');
+el.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    handleClick();
+  }
+});
+```
+
+### Focus Management
+After showing overlays or modals, focus the first interactive element:
+```typescript
+document.body.appendChild(overlay);
+setTimeout(() => {
+  document.getElementById('dismiss-btn')?.focus();
+}, 100);
+```
 
 ## State Management Notes
 
@@ -468,6 +515,69 @@ These patterns emerged from comprehensive code review and should be followed in 
 9. **Clean up event handlers on ALL error paths** - When registering event listeners before an async operation, ensure cleanup happens if the operation fails. Example: GPS visibility handler must be cleaned up if `watchPosition` throws.
 
 10. **Accessible interactive elements need ARIA attributes** - Buttons with icons need `aria-label`, SVGs inside buttons need `aria-hidden="true"`, dropdowns need `aria-expanded` and `aria-haspopup`. Screen readers rely on these for navigation.
+
+11. **Use escapeAttr() for HTML attributes** - `escapeHtml()` doesn't escape quotes. For attributes, use `escapeAttr()` which also escapes `"` and `'`. A malicious input like `" onmouseover="alert(1)` can escape an unprotected attribute.
+
+12. **Track separate RAF IDs for different animations** - When a component has multiple animation types (e.g., momentum spin vs snap-back), use separate RAF ID variables. Otherwise one animation can cancel another incorrectly, or animations run forever when interrupted.
+
+13. **Check RAF ID before scheduling recovery** - When error recovery schedules a new RAF, first check if `animationId === null`. Scheduling without checking can create duplicate concurrent loops (120fps instead of 60fps), doubling battery drain.
+
+14. **Clear debounce timers when state changes directly** - Functions like `applyFilters()` that call `render()` directly should clear any pending debounced `render()` calls to prevent double execution.
+
+15. **Show loading states during async operations** - Users need feedback. Show loading indicator (spinner, text) before async operations, then update with results/errors after completion.
+
+16. **Warn users about deferred validation** - When validation is skipped (e.g., offline PIN check), warn users it will happen later: "PIN will be verified when online". Prevents surprise failures.
+
+17. **Modals should dismiss with Escape key** - Standard UX pattern users expect. Add `keydown` listener for Escape that calls dismiss/close handler.
+
+18. **Use semantic HTML for data display** - Definition lists (`<dl>`, `<dt>`, `<dd>`) convey label-value relationships to screen readers better than generic divs with spans.
+
+19. **Focus management after showing overlays** - After displaying error overlays or modals, focus the first interactive element (usually dismiss/close button) so keyboard users can proceed.
+
+20. **Add visual feedback for actions** - Buttons should provide visual confirmation (CSS flash/pulse animation) in addition to haptic feedback, especially for actions like "Clear" where the result might not be immediately visible.
+
+21. **Add keyboard support to custom interactive elements** - Elements that respond to click need: `tabindex="0"`, `role="button"`, `aria-label`, and `keydown` handler for Enter/Space.
+
+22. **Security headers provide defense in depth** - Add `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy` headers in vercel.json. These protect even if code-level defenses fail.
+
+## Animation Patterns
+
+### Multiple Animation Types
+When a component has different animation modes (e.g., momentum vs snap-back), track them separately:
+```typescript
+private spinAnimationId: number | null = null;
+private snapBackAnimationId: number | null = null;
+
+// When starting new interaction, cancel BOTH
+if (this.spinAnimationId) cancelAnimationFrame(this.spinAnimationId);
+if (this.snapBackAnimationId) cancelAnimationFrame(this.snapBackAnimationId);
+```
+
+### RAF Error Recovery
+When recovering from errors in RAF loops, prevent duplicate loops:
+```typescript
+} catch (error) {
+  logger.error('Tick error:', error);
+  // Only schedule recovery if not already scheduled
+  if (this.animationId === null) {
+    this.animationId = requestAnimationFrame(this.tick);
+  }
+}
+```
+
+### Debounce + Direct Call Interaction
+When a debounced function can also be called directly, clear pending debounce:
+```typescript
+applyFilters(): void {
+  // Clear any pending debounced render
+  if (this.scrollDebounceTimeout !== null) {
+    clearTimeout(this.scrollDebounceTimeout);
+    this.scrollDebounceTimeout = null;
+  }
+  // ... then render directly
+  this.render();
+}
+```
 
 ## Radial Dial Development Notes
 
