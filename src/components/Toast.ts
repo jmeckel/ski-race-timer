@@ -6,6 +6,7 @@ interface ToastOptions {
 }
 
 const DEFAULT_DURATION = 3000;
+const COPY_DEBOUNCE_MS = 1000; // Debounce copy notifications
 
 /**
  * Toast notification component
@@ -15,6 +16,7 @@ export class Toast {
   private queue: Array<{ message: string; options: ToastOptions }> = [];
   private isShowing = false;
   private toastEventListener: EventListener;
+  private lastCopyTime = 0; // Track last copy to prevent duplicate notifications
 
   constructor() {
     this.container = this.createContainer();
@@ -144,7 +146,40 @@ export class Toast {
       <span>${this.escapeHtml(message)}</span>
     `;
 
+    // Add click handler to copy message and prevent event propagation
+    toast.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this.copyToClipboard(message);
+    });
+
+    // Also block mousedown/touchstart to prevent any underlying click handlers
+    toast.addEventListener('mousedown', (e) => e.stopPropagation());
+    toast.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+
     return toast;
+  }
+
+  /**
+   * Copy toast message to clipboard with debounced notification
+   */
+  private async copyToClipboard(message: string): Promise<void> {
+    const now = Date.now();
+
+    // Debounce: only show "copied" notification if enough time has passed
+    const shouldShowNotification = now - this.lastCopyTime > COPY_DEBOUNCE_MS;
+    this.lastCopyTime = now;
+
+    try {
+      await navigator.clipboard.writeText(message);
+
+      if (shouldShowNotification) {
+        // Show a brief "copied" feedback - use a shorter duration
+        this.show('Copied to clipboard', { type: 'success', duration: 1500 });
+      }
+    } catch {
+      // Clipboard API not available or failed - silent fail
+    }
   }
 
   /**

@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-Ds5v2QCv.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-Dvz-ayoz.css">
+  <script type="module" crossorigin src="/assets/main-D8xyX-7Y.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-Dq3bM6WA.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -90,7 +90,7 @@
 
             <!-- Top Right: Clear Button -->
             <div class="radial-clear-corner">
-              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear">C</button>
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number">C</button>
             </div>
 
             <!-- Status (hidden, using header instead) -->
@@ -124,8 +124,8 @@
               <div class="dial-center">
                 <!-- Timing Point Selector - Left side -->
                 <div class="radial-timing-point" id="radial-timing-point">
-                  <button class="radial-point-btn start" data-point="S" data-advanced>S</button>
-                  <button class="radial-point-btn finish active" data-point="F">F</button>
+                  <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="startShort">S</button>
+                  <button class="radial-point-btn finish active" data-point="F" data-i18n="finishShort">F</button>
                 </div>
 
                 <!-- Time Display - Center -->
@@ -148,19 +148,19 @@
           <div class="radial-bottom-row">
             <!-- Bottom Left: Stats -->
             <div class="radial-stats-corner">
-              <div class="radial-stats-label" data-i18n="lastRecordedShort">Last</div>
+              <div class="radial-stats-label" data-i18n="lastRecordedShort">Last:</div>
               <div class="radial-stats-last">
                 <span class="radial-stats-bib" id="radial-last-bib">---</span>
-                <span class="radial-stats-point finish" id="radial-last-point">F</span>
+                <span class="radial-stats-point finish" id="radial-last-point" data-i18n="finishShort">F</span>
               </div>
               <div class="radial-stats-time" id="radial-last-time">--:--:--.---</div>
-              <div class="radial-stats-count" id="radial-stats-count">0 entries</div>
+              <div class="radial-stats-count" id="radial-stats-count">---</div>
             </div>
 
             <!-- Bottom Right: Time Button -->
             <div class="radial-time-btn-corner">
               <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
-                <svg class="radial-time-btn-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="radial-time-btn-icon" aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -512,8 +512,8 @@
             </div>
             <div class="race-id-input-row">
               <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;">
-              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
@@ -1184,6 +1184,7 @@
   <!-- Onboarding Modal (Full-screen setup wizard) -->
   <div class="modal-overlay onboarding-fullscreen" id="onboarding-modal">
     <div class="onboarding-container">
+      <button class="onboarding-skip-btn" data-action="dismiss" aria-label="Skip setup" data-i18n="skipSetup">Skip</button>
       <div class="onboarding-progress" id="onboarding-progress">
         <span class="progress-dot active"></span>
         <span class="progress-dot"></span>
@@ -1298,8 +1299,8 @@
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
             <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024">
-            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <polyline points="12 6 12 12 16 14"/>
               </svg>
