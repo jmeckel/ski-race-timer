@@ -46,6 +46,9 @@ export function getAuthToken(): string | null {
   return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+// Token exchange timeout in milliseconds
+const TOKEN_EXCHANGE_TIMEOUT_MS = 10000;
+
 /**
  * Exchange PIN for JWT token
  */
@@ -55,13 +58,18 @@ export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJud
   error?: string;
   isNewPin?: boolean;
 }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TOKEN_EXCHANGE_TIMEOUT_MS);
+
   try {
     const response = await fetch('/api/v1/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, role })
+      body: JSON.stringify({ pin, role }),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
     const data = await response.json();
 
     if (!response.ok) {
@@ -75,6 +83,13 @@ export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJud
 
     return { success: false, error: 'No token received' };
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.error('Token exchange timeout');
+      return { success: false, error: 'Request timeout' };
+    }
+
     logger.error('Token exchange error:', error);
     return { success: false, error: 'Network error' };
   }

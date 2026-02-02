@@ -270,10 +270,25 @@ export function updateEntryCountBadge(): void {
 /**
  * Cleanup results view resources (for page unload or re-initialization)
  */
-export function cleanupSearchTimeout(): void {
+export function cleanupResultsView(): void {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
     searchTimeout = null;
   }
   removeAllListeners();
+  if (pullToRefreshInstance) {
+    pullToRefreshInstance.destroy();
+    pullToRefreshInstance = null;
+  }
+  if (virtualList) {
+    virtualList.destroy();
+    virtualList = null;
+  }
+}
+
+/**
+ * @deprecated Use cleanupResultsView instead
+ */
+export function cleanupSearchTimeout(): void {
+  cleanupResultsView();
 }

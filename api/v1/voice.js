@@ -38,9 +38,9 @@ const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 voice requests per minute per IP
 async function checkRateLimit(clientIP) {
   const client = await getRedis();
   if (!client || hasRedisError()) {
-    // If Redis is down, allow request but log warning
-    console.warn('Rate limiting skipped - Redis unavailable');
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS };
+    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
+    console.error('Rate limiting unavailable - denying voice request');
+    return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
   }
 
   const key = `voice:rate:${clientIP}`;

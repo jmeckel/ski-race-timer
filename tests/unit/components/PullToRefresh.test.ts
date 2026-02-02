@@ -160,16 +160,17 @@ describe('PullToRefresh Component', () => {
   });
 
   describe('indicator text', () => {
-    it('should show "Pull to refresh" initially', () => {
+    it('should show pull message initially', () => {
       const ptr = new PullToRefresh({ container, onRefresh });
 
       const text = container.querySelector('.pull-text');
-      expect(text?.textContent).toBe('Pull to refresh');
+      // Store defaults to German - check for localized text
+      expect(text?.textContent).toBe('Zum Aktualisieren ziehen');
 
       ptr.destroy();
     });
 
-    it('should show "Release to refresh" when pulled enough', () => {
+    it('should show release message when pulled enough', () => {
       const ptr = new PullToRefresh({ container, onRefresh });
       scrollableParent.scrollTop = 0;
 
@@ -184,7 +185,8 @@ describe('PullToRefresh Component', () => {
       }));
 
       const text = container.querySelector('.pull-text');
-      expect(text?.textContent).toBe('Release to refresh');
+      // Store defaults to German - check for localized text
+      expect(text?.textContent).toBe('Loslassen zum Aktualisieren');
 
       ptr.destroy();
     });

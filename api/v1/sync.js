@@ -57,8 +57,8 @@ async function checkRateLimit(client, ip, method) {
     };
   } catch (error) {
     console.error('Rate limit check error:', error.message);
-    // Allow request if rate limiting fails (fail open)
-    return { allowed: true, remaining: limit, reset: windowStart + RATE_LIMIT_WINDOW, limit };
+    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
+    return { allowed: false, remaining: 0, reset: windowStart + RATE_LIMIT_WINDOW, limit, error: 'Rate limiting unavailable' };
   }
 }
 

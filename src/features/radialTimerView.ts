@@ -19,6 +19,7 @@ let radialDial: RadialDial | null = null;
 let clockInterval: number | null = null;
 let frozenTime: string | null = null;
 let isInitialized = false;
+let radialKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 /**
  * Initialize the radial timer view
@@ -261,7 +262,13 @@ function initRadialClearButton(): void {
  * Initialize keyboard shortcuts
  */
 function initRadialKeyboard(): void {
-  document.addEventListener('keydown', (e) => {
+  // Remove existing handler if re-initializing
+  if (radialKeydownHandler) {
+    document.removeEventListener('keydown', radialKeydownHandler);
+    radialKeydownHandler = null;
+  }
+
+  radialKeydownHandler = (e: KeyboardEvent) => {
     const activeTag = document.activeElement?.tagName;
     const state = store.getState();
 
@@ -340,7 +347,28 @@ function initRadialKeyboard(): void {
       recordRadialTimestamp();
       return;
     }
-  });
+  };
+
+  document.addEventListener('keydown', radialKeydownHandler);
+}
+
+/**
+ * Cleanup radial timer view resources (for re-initialization or unmount)
+ */
+export function cleanupRadialTimerView(): void {
+  if (radialKeydownHandler) {
+    document.removeEventListener('keydown', radialKeydownHandler);
+    radialKeydownHandler = null;
+  }
+  if (clockInterval !== null) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+  if (radialDial) {
+    radialDial.destroy();
+    radialDial = null;
+  }
+  isInitialized = false;
 }
 
 /**

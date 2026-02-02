@@ -15,6 +15,7 @@ import type { Entry, TimingPoint, VoiceIntent } from '../types';
 
 // Module state
 let clock: Clock | null = null;
+let timerKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 /**
  * Check if bib is all zeros (e.g., "0", "00", "000")
@@ -221,8 +222,14 @@ export function initTimestampButton(): void {
     await recordTimestamp();
   });
 
+  // Remove existing handler if re-initializing
+  if (timerKeydownHandler) {
+    document.removeEventListener('keydown', timerKeydownHandler);
+    timerKeydownHandler = null;
+  }
+
   // Comprehensive keyboard navigation for timer view
-  document.addEventListener('keydown', (e) => {
+  timerKeydownHandler = (e: KeyboardEvent) => {
     const activeTag = document.activeElement?.tagName;
     const state = store.getState();
 
@@ -309,7 +316,19 @@ export function initTimestampButton(): void {
       recordTimestamp();
       return;
     }
-  });
+  };
+
+  document.addEventListener('keydown', timerKeydownHandler);
+}
+
+/**
+ * Cleanup timer view resources (for re-initialization or unmount)
+ */
+export function cleanupTimerView(): void {
+  if (timerKeydownHandler) {
+    document.removeEventListener('keydown', timerKeydownHandler);
+    timerKeydownHandler = null;
+  }
 }
 
 /**
