@@ -374,6 +374,24 @@ The store uses a notification queue to handle re-entrant state changes. Key rule
 - Don't merge state snapshots when coalescing - only merge the changed key arrays
 - The queue has a safety limit (`MAX_NOTIFICATION_QUEUE`) that drains oldest notifications when exceeded
 
+## Key Learnings (Code Review Findings)
+
+These patterns emerged from comprehensive code review and should be followed in all new code:
+
+1. **Always escape user data before innerHTML** - Even seemingly "safe" data like bib numbers (`"045"`) should be escaped. Attackers can inject malicious race IDs or device names that flow through the system.
+
+2. **Components need FULL event listener cleanup** - When a component adds listeners to both its container AND window/document, the `destroy()` method must remove ALL of them. Missing container listeners is a common oversight.
+
+3. **Guard against double-destruction** - Always add an `isDestroyed` flag and check it at the start of `destroy()`. MutationObservers, error handlers, or user actions can trigger multiple destroy calls.
+
+4. **Use MutationObserver for auto-cleanup** - When components might be removed from DOM without explicit `destroy()` (e.g., parent element removed), watch for removal and auto-cleanup to prevent memory leaks.
+
+5. **Capture state snapshots immediately** - In notification/event systems, capture the state at the moment of change, not when processing the queue. Delayed snapshot capture causes race conditions where listeners see inconsistent state.
+
+6. **Fail closed for security features** - Rate limiting, authentication, and other security features should deny access when the backing service (Redis, etc.) fails, not allow access.
+
+7. **Escape data attributes too** - `data-*` attributes are often forgotten but can be vectors for attribute injection attacks.
+
 ## Radial Dial Development Notes
 
 When working on the radial dial component, be aware of these common issues:
