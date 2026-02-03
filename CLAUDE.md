@@ -754,6 +754,18 @@ These patterns emerged from comprehensive code review and should be followed in 
 
 63. **Decorative status icons need aria-hidden** - Checkmarks (✓), warning icons (⚠), and other decorative indicators inside dialogs should have `aria-hidden="true"`. Screen readers get context from text, not emoji.
 
+64. **Rate limiting must fail closed consistently** - All rate limiters (general API, photos, etc.) should deny requests when Redis/backing store fails. Inconsistent behavior (some fail-open, some fail-closed) creates security gaps. Grep for "allowed: true" in catch blocks.
+
+65. **Track per-element listeners in a Map for cleanup** - When adding event listeners to dynamically created elements (like dial numbers, list items), store them in a `Map<HTMLElement, EventListener>` and iterate to remove in `destroy()`. Anonymous arrow functions can't be removed without a reference.
+
+66. **Defense in depth: escape even "safe" input** - Even when input is validated elsewhere (e.g., bib numbers should only be digits), escape before innerHTML. Attackers may find ways to bypass validation, and future code changes may introduce paths that skip it.
+
+67. **Check for existing variables before adding new ones** - When modifying a function, check if variables like `lang`, `state`, `index` already exist in scope. Adding `const lang = ...` when `lang` already exists causes "Cannot redeclare block-scoped variable" errors.
+
+68. **Pluralization needs separate translation keys** - Don't use ternary in translation values. Create separate keys like `timeEntry`/`timeEntries` (singular/plural) and select with: `t(count === 1 ? 'timeEntry' : 'timeEntries', lang)`.
+
+69. **Comprehensive code reviews should check rate limit error paths** - When reviewing API code, specifically check catch blocks in rate limiting functions. The pattern `return { allowed: true, ... }` in a catch block is a security vulnerability.
+
 ## Animation Patterns
 
 ### Multiple Animation Types
