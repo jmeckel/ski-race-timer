@@ -37,6 +37,14 @@ interface ItemListeners {
   keydown?: EventListener;
   touchstart?: EventListener;
   touchend?: EventListener;
+  // Child button listeners
+  editClick?: EventListener;
+  deleteClick?: EventListener;
+  photoClick?: EventListener;
+  // References to child elements for cleanup
+  editBtn?: HTMLElement;
+  deleteBtn?: HTMLElement;
+  photoBtn?: HTMLElement;
 }
 
 export class VirtualList {
@@ -442,9 +450,9 @@ export class VirtualList {
 
     if (!item) {
       if (group.entries.length > 0) {
-        item = this.createEntryItem(group.entries[0], group.faults);
+        item = this.createEntryItem(group.entries[0], group.faults, itemId);
       } else if (group.faults.length > 0) {
-        item = this.createFaultOnlyItem(group);
+        item = this.createFaultOnlyItem(group, itemId);
       } else {
         return;
       }
@@ -503,7 +511,7 @@ export class VirtualList {
       let subItem = this.visibleItems.get(subId);
 
       if (!subItem) {
-        subItem = this.createSubEntryItem(entry);
+        subItem = this.createSubEntryItem(entry, subId);
         this.visibleItems.set(subId, subItem);
         this.contentContainer.appendChild(subItem);
       }
@@ -521,7 +529,7 @@ export class VirtualList {
       let subItem = this.visibleItems.get(subId);
 
       if (!subItem) {
-        subItem = this.createSubFaultItem(fault);
+        subItem = this.createSubFaultItem(fault, subId);
         this.visibleItems.set(subId, subItem);
         this.contentContainer.appendChild(subItem);
       }
@@ -653,7 +661,7 @@ export class VirtualList {
   /**
    * Create a timing entry item (for single-item groups)
    */
-  private createEntryItem(entry: Entry, faults: FaultEntry[]): HTMLElement {
+  private createEntryItem(entry: Entry, faults: FaultEntry[], itemId: string): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-item';
     item.setAttribute('role', 'listitem');
@@ -688,7 +696,7 @@ export class VirtualList {
     const hasFaults = faults.length > 0;
     const faultBadgeHtml = hasFaults ? `
       <span class="result-fault-badge" title="${escapeHtml(faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0].gateNumber}`}
+        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     ` : '';
 
@@ -738,69 +746,89 @@ export class VirtualList {
       </button>
     `;
 
-    // Event listeners
+    // Track all event listeners for cleanup
+    const listeners: ItemListeners = {};
+
+    // Edit button
     const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
-    editBtn.addEventListener('click', (e) => {
+    listeners.editBtn = editBtn;
+    listeners.editClick = ((e: Event) => {
       e.stopPropagation();
       this.options.onItemClick?.(entry, e as MouseEvent);
-    });
+    }) as EventListener;
+    editBtn.addEventListener('click', listeners.editClick);
 
+    // Delete button
     const deleteBtn = item.querySelector('.result-delete') as HTMLButtonElement;
-    deleteBtn.addEventListener('click', (e) => {
+    listeners.deleteBtn = deleteBtn;
+    listeners.deleteClick = ((e: Event) => {
       e.stopPropagation();
       this.options.onItemDelete?.(entry);
-    });
+    }) as EventListener;
+    deleteBtn.addEventListener('click', listeners.deleteClick);
 
+    // Photo button (optional)
     const photoBtn = item.querySelector('.result-photo-btn') as HTMLButtonElement | null;
     if (photoBtn) {
-      photoBtn.addEventListener('click', (e) => {
+      listeners.photoBtn = photoBtn;
+      listeners.photoClick = ((e: Event) => {
         e.stopPropagation();
         this.options.onViewPhoto?.(entry);
-      });
+      }) as EventListener;
+      photoBtn.addEventListener('click', listeners.photoClick);
     }
 
-    item.addEventListener('click', (e) => {
-      this.options.onItemClick?.(entry, e);
-    });
+    // Main item click
+    listeners.click = ((e: Event) => {
+      this.options.onItemClick?.(entry, e as MouseEvent);
+    }) as EventListener;
+    item.addEventListener('click', listeners.click);
 
     // Touch feedback
-    item.addEventListener('touchstart', () => {
+    listeners.touchstart = (() => {
       item.style.background = 'var(--surface-elevated)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
 
-    item.addEventListener('touchend', () => {
+    listeners.touchend = (() => {
       item.style.background = 'var(--surface)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchend', listeners.touchend, { passive: true });
 
     // Keyboard support: Enter/Space to open, E to edit, Delete to delete
-    item.addEventListener('keydown', (e: KeyboardEvent) => {
-      switch (e.key) {
+    listeners.keydown = ((e: Event) => {
+      const ke = e as KeyboardEvent;
+      switch (ke.key) {
         case 'Enter':
         case ' ':
-          e.preventDefault();
+          ke.preventDefault();
           this.options.onItemClick?.(entry, new MouseEvent('click'));
           break;
         case 'e':
         case 'E':
-          e.preventDefault();
+          ke.preventDefault();
           this.options.onItemClick?.(entry, new MouseEvent('click'));
           break;
         case 'Delete':
         case 'd':
         case 'D':
-          e.preventDefault();
+          ke.preventDefault();
           this.options.onItemDelete?.(entry);
           break;
         case 'ArrowDown':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusNextItem(item);
           break;
         case 'ArrowUp':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusPreviousItem(item);
           break;
       }
-    });
+    }) as EventListener;
+    item.addEventListener('keydown', listeners.keydown);
+
+    // Store listeners for cleanup
+    this.itemListeners.set(itemId, listeners);
 
     return item;
   }
@@ -808,7 +836,7 @@ export class VirtualList {
   /**
    * Create a fault-only item (for single-item groups with only faults)
    */
-  private createFaultOnlyItem(group: DisplayGroup): HTMLElement {
+  private createFaultOnlyItem(group: DisplayGroup, itemId: string): HTMLElement {
     const item = document.createElement('div');
     const faults = group.faults;
     const hasMarkedForDeletion = faults.some(f => f.markedForDeletion);
@@ -902,34 +930,41 @@ export class VirtualList {
       </button>
     `;
 
+    // Track all event listeners for cleanup
+    const listeners: ItemListeners = {};
+
     // Edit button
     const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
     if (editBtn && faults.length > 0) {
-      editBtn.addEventListener('click', (e) => {
+      listeners.editBtn = editBtn;
+      listeners.editClick = ((e: Event) => {
         e.stopPropagation();
         const event = new CustomEvent('fault-edit-request', {
           bubbles: true,
           detail: { fault: faults[0] }
         });
         item.dispatchEvent(event);
-      });
+      }) as EventListener;
+      editBtn.addEventListener('click', listeners.editClick);
     }
 
     // Delete button
     const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
     if (deleteBtn && faults.length > 0) {
-      deleteBtn.addEventListener('click', (e) => {
+      listeners.deleteBtn = deleteBtn;
+      listeners.deleteClick = ((e: Event) => {
         e.stopPropagation();
         const event = new CustomEvent('fault-delete-request', {
           bubbles: true,
           detail: { fault: faults[0] }
         });
         item.dispatchEvent(event);
-      });
+      }) as EventListener;
+      deleteBtn.addEventListener('click', listeners.deleteClick);
     }
 
     // Click opens edit modal for first fault
-    item.addEventListener('click', (e) => {
+    listeners.click = ((e: Event) => {
       const target = e.target as HTMLElement;
       if (target.closest('.fault-delete-btn') || target.closest('.result-edit-btn')) return;
 
@@ -940,25 +975,29 @@ export class VirtualList {
         });
         item.dispatchEvent(event);
       }
-    });
+    }) as EventListener;
+    item.addEventListener('click', listeners.click);
 
     // Touch feedback
-    item.addEventListener('touchstart', () => {
+    listeners.touchstart = (() => {
       item.style.background = 'var(--surface-elevated)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
 
-    item.addEventListener('touchend', () => {
+    listeners.touchend = (() => {
       item.style.background = 'var(--surface)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchend', listeners.touchend, { passive: true });
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
-    item.addEventListener('keydown', (e: KeyboardEvent) => {
-      switch (e.key) {
+    listeners.keydown = ((e: Event) => {
+      const ke = e as KeyboardEvent;
+      switch (ke.key) {
         case 'Enter':
         case ' ':
         case 'e':
         case 'E':
-          e.preventDefault();
+          ke.preventDefault();
           if (faults.length > 0) {
             const event = new CustomEvent('fault-edit-request', {
               bubbles: true,
@@ -970,7 +1009,7 @@ export class VirtualList {
         case 'Delete':
         case 'd':
         case 'D':
-          e.preventDefault();
+          ke.preventDefault();
           if (faults.length > 0) {
             const event = new CustomEvent('fault-delete-request', {
               bubbles: true,
@@ -980,15 +1019,19 @@ export class VirtualList {
           }
           break;
         case 'ArrowDown':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusNextItem(item);
           break;
         case 'ArrowUp':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusPreviousItem(item);
           break;
       }
-    });
+    }) as EventListener;
+    item.addEventListener('keydown', listeners.keydown);
+
+    // Store listeners for cleanup
+    this.itemListeners.set(itemId, listeners);
 
     return item;
   }
@@ -996,7 +1039,7 @@ export class VirtualList {
   /**
    * Create a sub-item for timing entry (inside expanded group)
    */
-  private createSubEntryItem(entry: Entry): HTMLElement {
+  private createSubEntryItem(entry: Entry, itemId: string): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-sub-item entry-sub-item';
     item.setAttribute('role', 'listitem');
@@ -1059,60 +1102,75 @@ export class VirtualList {
       </button>
     `;
 
+    // Track all event listeners for cleanup
+    const listeners: ItemListeners = {};
+
     // Edit button
     const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
-    editBtn.addEventListener('click', (e) => {
+    listeners.editBtn = editBtn;
+    listeners.editClick = ((e: Event) => {
       e.stopPropagation();
       this.options.onItemClick?.(entry, e as MouseEvent);
-    });
+    }) as EventListener;
+    editBtn.addEventListener('click', listeners.editClick);
 
     // Delete button
     const deleteBtn = item.querySelector('.result-delete') as HTMLButtonElement;
-    deleteBtn.addEventListener('click', (e) => {
+    listeners.deleteBtn = deleteBtn;
+    listeners.deleteClick = ((e: Event) => {
       e.stopPropagation();
       this.options.onItemDelete?.(entry);
-    });
+    }) as EventListener;
+    deleteBtn.addEventListener('click', listeners.deleteClick);
 
     // Click on row opens edit
-    item.addEventListener('click', (e) => {
-      this.options.onItemClick?.(entry, e);
-    });
+    listeners.click = ((e: Event) => {
+      this.options.onItemClick?.(entry, e as MouseEvent);
+    }) as EventListener;
+    item.addEventListener('click', listeners.click);
 
     // Touch feedback
-    item.addEventListener('touchstart', () => {
+    listeners.touchstart = (() => {
       item.style.background = 'var(--surface)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
 
-    item.addEventListener('touchend', () => {
+    listeners.touchend = (() => {
       item.style.background = 'var(--surface-elevated)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchend', listeners.touchend, { passive: true });
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
-    item.addEventListener('keydown', (e: KeyboardEvent) => {
-      switch (e.key) {
+    listeners.keydown = ((e: Event) => {
+      const ke = e as KeyboardEvent;
+      switch (ke.key) {
         case 'Enter':
         case ' ':
         case 'e':
         case 'E':
-          e.preventDefault();
+          ke.preventDefault();
           this.options.onItemClick?.(entry, new MouseEvent('click'));
           break;
         case 'Delete':
         case 'd':
         case 'D':
-          e.preventDefault();
+          ke.preventDefault();
           this.options.onItemDelete?.(entry);
           break;
         case 'ArrowDown':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusNextItem(item);
           break;
         case 'ArrowUp':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusPreviousItem(item);
           break;
       }
-    });
+    }) as EventListener;
+    item.addEventListener('keydown', listeners.keydown);
+
+    // Store listeners for cleanup
+    this.itemListeners.set(itemId, listeners);
 
     return item;
   }
@@ -1120,7 +1178,7 @@ export class VirtualList {
   /**
    * Create a sub-item for fault (inside expanded group)
    */
-  private createSubFaultItem(fault: FaultEntry): HTMLElement {
+  private createSubFaultItem(fault: FaultEntry, itemId: string): HTMLElement {
     const item = document.createElement('div');
     const hasMarkedForDeletion = fault.markedForDeletion;
 
@@ -1187,54 +1245,65 @@ export class VirtualList {
       </button>
     `;
 
+    // Track all event listeners for cleanup
+    const listeners: ItemListeners = {};
+
     // Edit button
     const editBtn = item.querySelector('.result-edit-btn') as HTMLButtonElement;
-    editBtn.addEventListener('click', (e) => {
+    listeners.editBtn = editBtn;
+    listeners.editClick = ((e: Event) => {
       e.stopPropagation();
       const event = new CustomEvent('fault-edit-request', {
         bubbles: true,
         detail: { fault }
       });
       item.dispatchEvent(event);
-    });
+    }) as EventListener;
+    editBtn.addEventListener('click', listeners.editClick);
 
     // Delete button
     const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
-    deleteBtn.addEventListener('click', (e) => {
+    listeners.deleteBtn = deleteBtn;
+    listeners.deleteClick = ((e: Event) => {
       e.stopPropagation();
       const event = new CustomEvent('fault-delete-request', {
         bubbles: true,
         detail: { fault }
       });
       item.dispatchEvent(event);
-    });
+    }) as EventListener;
+    deleteBtn.addEventListener('click', listeners.deleteClick);
 
     // Click opens edit
-    item.addEventListener('click', () => {
+    listeners.click = (() => {
       const event = new CustomEvent('fault-edit-request', {
         bubbles: true,
         detail: { fault }
       });
       item.dispatchEvent(event);
-    });
+    }) as EventListener;
+    item.addEventListener('click', listeners.click);
 
     // Touch feedback
-    item.addEventListener('touchstart', () => {
+    listeners.touchstart = (() => {
       item.style.background = 'var(--surface)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
 
-    item.addEventListener('touchend', () => {
+    listeners.touchend = (() => {
       item.style.background = 'var(--surface-elevated)';
-    }, { passive: true });
+    }) as EventListener;
+    item.addEventListener('touchend', listeners.touchend, { passive: true });
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
-    item.addEventListener('keydown', (e: KeyboardEvent) => {
-      switch (e.key) {
+    listeners.keydown = ((e: Event) => {
+      const ke = e as KeyboardEvent;
+      switch (ke.key) {
         case 'Enter':
         case ' ':
         case 'e':
         case 'E':
-          e.preventDefault();
+          ke.preventDefault();
           {
             const event = new CustomEvent('fault-edit-request', {
               bubbles: true,
@@ -1246,7 +1315,7 @@ export class VirtualList {
         case 'Delete':
         case 'd':
         case 'D':
-          e.preventDefault();
+          ke.preventDefault();
           {
             const event = new CustomEvent('fault-delete-request', {
               bubbles: true,
@@ -1256,15 +1325,19 @@ export class VirtualList {
           }
           break;
         case 'ArrowDown':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusNextItem(item);
           break;
         case 'ArrowUp':
-          e.preventDefault();
+          ke.preventDefault();
           this.focusPreviousItem(item);
           break;
       }
-    });
+    }) as EventListener;
+    item.addEventListener('keydown', listeners.keydown);
+
+    // Store listeners for cleanup
+    this.itemListeners.set(itemId, listeners);
 
     return item;
   }
@@ -1410,10 +1483,21 @@ export class VirtualList {
   private cleanupItemListeners(itemId: string, item: HTMLElement): void {
     const listeners = this.itemListeners.get(itemId);
     if (listeners) {
+      // Main item listeners
       if (listeners.click) item.removeEventListener('click', listeners.click);
       if (listeners.keydown) item.removeEventListener('keydown', listeners.keydown);
       if (listeners.touchstart) item.removeEventListener('touchstart', listeners.touchstart);
       if (listeners.touchend) item.removeEventListener('touchend', listeners.touchend);
+      // Child button listeners
+      if (listeners.editBtn && listeners.editClick) {
+        listeners.editBtn.removeEventListener('click', listeners.editClick);
+      }
+      if (listeners.deleteBtn && listeners.deleteClick) {
+        listeners.deleteBtn.removeEventListener('click', listeners.deleteClick);
+      }
+      if (listeners.photoBtn && listeners.photoClick) {
+        listeners.photoBtn.removeEventListener('click', listeners.photoClick);
+      }
       this.itemListeners.delete(itemId);
     }
   }

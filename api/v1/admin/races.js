@@ -91,8 +91,8 @@ async function listRaces(client) {
 
 // Delete a race and set tombstone
 async function deleteRace(client, raceId) {
-  // Validate raceId before proceeding
-  if (!raceId || typeof raceId !== 'string') {
+  // Validate raceId before proceeding (defensive: check type and non-empty)
+  if (!raceId || typeof raceId !== 'string' || raceId.trim() === '') {
     return { success: false, error: 'Invalid race ID' };
   }
 
