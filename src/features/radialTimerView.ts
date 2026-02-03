@@ -8,7 +8,7 @@ import { RadialDial } from '../components/RadialDial';
 import { showToast } from '../components';
 import { syncService, gpsService, captureTimingPhoto, photoStorage } from '../services';
 import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
-import { generateEntryId, getPointLabel, logWarning, getElement } from '../utils';
+import { generateEntryId, getPointLabel, logWarning, getElement, escapeHtml } from '../utils';
 import { formatTime } from '../utils/format';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
@@ -150,7 +150,9 @@ function updateRadialBibDisplay(value: string): void {
     bibEl.innerHTML = '---' + cursor;
     bibEl.classList.remove('active');
   } else {
-    bibEl.innerHTML = value.padStart(3, '0') + (value.length < 3 ? cursor : '');
+    // Escape value for XSS protection (defense in depth)
+    const escapedValue = escapeHtml(value.padStart(3, '0'));
+    bibEl.innerHTML = escapedValue + (value.length < 3 ? cursor : '');
     bibEl.classList.add('active');
   }
 }

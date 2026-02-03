@@ -567,13 +567,13 @@ export class VirtualList {
     const faultCount = group.faults.length;
     const hasFaults = faultCount > 0;
 
-    // Summary text
+    // Summary text (localized)
     const summaryParts: string[] = [];
     if (entryCount > 0) {
-      summaryParts.push(`${entryCount} ${entryCount === 1 ? 'time' : 'times'}`);
+      summaryParts.push(`${entryCount} ${t(entryCount === 1 ? 'timeEntry' : 'timeEntries', lang)}`);
     }
     if (faultCount > 0) {
-      summaryParts.push(`${faultCount} ${faultCount === 1 ? 'fault' : 'faults'}`);
+      summaryParts.push(`${faultCount} ${t(faultCount === 1 ? 'faultEntry' : 'faultEntries', lang)}`);
     }
     const summaryText = summaryParts.join(', ');
 

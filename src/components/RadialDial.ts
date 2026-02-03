@@ -38,6 +38,7 @@ export class RadialDial {
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
+  private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> = new Map(); // Track for cleanup
 
   // Bib value
   private bibValue = '';
@@ -98,12 +99,15 @@ export class RadialDial {
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
       el.setAttribute('aria-label', `${t('numberLabel', lang)} ${num}`);
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+      const keydownHandler = (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') {
+          ke.preventDefault();
           this.handleNumberTap(num, el);
         }
-      });
+      };
+      el.addEventListener('keydown', keydownHandler);
+      this.numberKeydownListeners.set(el, keydownHandler);
 
       // Note: Tap detection is handled in handleDragEnd to avoid duplicate events
 
@@ -501,6 +505,12 @@ export class RadialDial {
       clearTimeout(timeoutId);
     }
     this.visualTimeoutIds.clear();
+
+    // Remove number element keydown listeners (prevents memory leak)
+    for (const [el, handler] of this.numberKeydownListeners) {
+      el.removeEventListener('keydown', handler);
+    }
+    this.numberKeydownListeners.clear();
 
     // Remove container event listeners (prevents memory leak)
     this.container.removeEventListener('mousedown', this.handleDragStart);

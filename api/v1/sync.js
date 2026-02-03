@@ -83,9 +83,9 @@ async function checkPhotoRateLimit(client, raceId, deviceId) {
     };
   } catch (error) {
     console.error('Photo rate limit check error:', error.message);
-    // Fail open on Redis errors (same as general rate limiting)
-    // Set redisError flag so caller can distinguish from actual rate limit
-    return { allowed: true, count: 0, limit: PHOTO_RATE_LIMIT_MAX, redisError: true };
+    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
+    // Prevents memory exhaustion if Redis is unavailable
+    return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX, error: 'Rate limiting unavailable' };
   }
 }
 

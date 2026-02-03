@@ -34,6 +34,10 @@ export const translations: Record<Language, Translations> = {
     finished: 'Finished',
     fastest: 'Fastest',
     average: 'Average',
+    timeEntry: 'time',
+    timeEntries: 'times',
+    faultEntry: 'fault',
+    faultEntries: 'faults',
 
     // Status
     ok: 'OK',
@@ -490,6 +494,10 @@ export const translations: Record<Language, Translations> = {
     finished: 'Im Ziel',
     fastest: 'Schnellste',
     average: 'Durchschnitt',
+    timeEntry: 'Zeit',
+    timeEntries: 'Zeiten',
+    faultEntry: 'Fehler',
+    faultEntries: 'Fehler',
 
     // Status
     ok: 'OK',
