@@ -626,145 +626,107 @@ The store uses a notification queue to handle re-entrant state changes. Key rule
 
 ## Key Learnings (Code Review Findings)
 
-These patterns emerged from comprehensive code review and should be followed in all new code:
-
-1. **Always escape user data before innerHTML** - Even seemingly "safe" data like bib numbers (`"045"`) should be escaped. Attackers can inject malicious race IDs or device names that flow through the system.
-
-2. **Components need FULL event listener cleanup** - When a component adds listeners to both its container AND window/document, the `destroy()` method must remove ALL of them. Missing container listeners is a common oversight.
-
-3. **Guard against double-destruction** - Always add an `isDestroyed` flag and check it at the start of `destroy()`. MutationObservers, error handlers, or user actions can trigger multiple destroy calls.
-
-4. **Use MutationObserver for auto-cleanup** - When components might be removed from DOM without explicit `destroy()` (e.g., parent element removed), watch for removal and auto-cleanup to prevent memory leaks.
-
-5. **Capture state snapshots immediately** - In notification/event systems, capture the state at the moment of change, not when processing the queue. Delayed snapshot capture causes race conditions where listeners see inconsistent state.
-
-6. **Fail closed for security features** - Rate limiting, authentication, and other security features should deny access when the backing service (Redis, etc.) fails, not allow access.
-
-7. **Escape data attributes too** - `data-*` attributes are often forgotten but can be vectors for attribute injection attacks.
-
-8. **Notify users when browser APIs fail silently** - APIs like Wake Lock can fail without visible feedback (low battery, permission denied, page not visible). Always notify users when critical features fail, e.g., "Screen may dim during timing" toast when wake lock fails.
-
-9. **Clean up event handlers on ALL error paths** - When registering event listeners before an async operation, ensure cleanup happens if the operation fails. Example: GPS visibility handler must be cleaned up if `watchPosition` throws.
-
-10. **Accessible interactive elements need ARIA attributes** - Buttons with icons need `aria-label`, SVGs inside buttons need `aria-hidden="true"`, dropdowns need `aria-expanded` and `aria-haspopup`. Screen readers rely on these for navigation.
-
-11. **Use escapeAttr() for HTML attributes** - `escapeHtml()` doesn't escape quotes. For attributes, use `escapeAttr()` which also escapes `"` and `'`. A malicious input like `" onmouseover="alert(1)` can escape an unprotected attribute.
-
-12. **Track separate RAF IDs for different animations** - When a component has multiple animation types (e.g., momentum spin vs snap-back), use separate RAF ID variables. Otherwise one animation can cancel another incorrectly, or animations run forever when interrupted.
-
-13. **Check RAF ID before scheduling recovery** - When error recovery schedules a new RAF, first check if `animationId === null`. Scheduling without checking can create duplicate concurrent loops (120fps instead of 60fps), doubling battery drain.
-
-14. **Clear debounce timers when state changes directly** - Functions like `applyFilters()` that call `render()` directly should clear any pending debounced `render()` calls to prevent double execution.
-
-15. **Show loading states during async operations** - Users need feedback. Show loading indicator (spinner, text) before async operations, then update with results/errors after completion.
-
-16. **Warn users about deferred validation** - When validation is skipped (e.g., offline PIN check), warn users it will happen later: "PIN will be verified when online". Prevents surprise failures.
-
-17. **Modals should dismiss with Escape key** - Standard UX pattern users expect. Add `keydown` listener for Escape that calls dismiss/close handler.
-
-18. **Use semantic HTML for data display** - Definition lists (`<dl>`, `<dt>`, `<dd>`) convey label-value relationships to screen readers better than generic divs with spans.
-
-19. **Focus management after showing overlays** - After displaying error overlays or modals, focus the first interactive element (usually dismiss/close button) so keyboard users can proceed.
-
-20. **Add visual feedback for actions** - Buttons should provide visual confirmation (CSS flash/pulse animation) in addition to haptic feedback, especially for actions like "Clear" where the result might not be immediately visible.
-
-21. **Add keyboard support to custom interactive elements** - Elements that respond to click need: `tabindex="0"`, `role="button"`, `aria-label`, and `keydown` handler for Enter/Space.
-
-22. **Security headers provide defense in depth** - Add `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy` headers in vercel.json. These protect even if code-level defenses fail.
-
-23. **Use role="radiogroup" for mutually exclusive choices** - When buttons form a group where only one can be active (timing points, runs, roles), wrap in a container with `role="radiogroup"` and `aria-label`. Each option gets `role="radio"` and `aria-checked`.
-
-24. **Update aria-checked on selection change** - When selection state changes via JavaScript, always update `aria-checked` alongside the visual class toggle. Screen readers rely on this attribute.
-
-25. **Button elements get Enter/Space for free** - Native `<button>` elements automatically respond to Enter and Space keys. Only add explicit keyboard handlers for additional shortcuts (like arrow keys) or for non-button elements.
-
-26. **WCAG tab navigation uses arrow keys** - Tab lists should use arrow keys (not Tab) to move between tabs. Tab key moves to the next component. Implement Home/End for first/last tab.
-
-27. **Decorative icons need aria-hidden** - Emoji icons inside buttons (⏱️, 🚩) should have `aria-hidden="true"` to prevent screen readers from announcing them.
-
-28. **Use CustomEvents instead of callbacks** - For cross-module communication, dispatch CustomEvents with `bubbles: true` instead of callback injection. This prevents circular dependencies and allows multiple listeners.
-
-29. **Focus-visible over focus for keyboard users** - Use `:focus-visible` CSS pseudo-class instead of `:focus` to show focus rings only for keyboard navigation, not mouse clicks.
-
-30. **List items need tabindex for keyboard nav** - Dynamically created list items (results, dropdown options) need `tabindex="0"` to be focusable. Add arrow key handlers for navigation between items.
-
-31. **All user-visible text must use translations** - Hardcoded strings like "Pull to refresh", "Ready", "Synced" must use `t()` function or `data-i18n` attributes. Check modals, tooltips, aria-labels, and dynamically generated content.
-
-32. **Aria-labels need localization too** - Screen reader labels like `aria-label="Delete"` or `aria-label="Gate 5"` must be translated. Use template literals with `t()`: ``aria-label="${t('gateNumberLabel', lang)} ${gate}"``.
-
-33. **Modal content needs data-i18n attributes** - Content inside modals defined in index.html needs `data-i18n` attributes since `updateTranslations()` scans the entire document. Static HTML defaults to English; JavaScript applies translations on load and language change.
-
-34. **Check all text sources when localizing** - Hardcoded text appears in: innerHTML templates, textContent assignments, aria-label attributes, title/tooltip attributes, placeholder attributes, and status indicators. All must use translation keys.
-
-35. **Import store and t() in components that display text** - Components like `PullToRefresh` or `RadialDial` that render user-visible text need to import both `store` (for `currentLang`) and `t()` from translations, even if they didn't originally need localization.
-
-36. **Remove deprecated auth methods, don't just mark deprecated** - Legacy authentication paths (like accepting PIN hash directly) create security vulnerabilities. If someone obtains the hash, they can authenticate without knowing the PIN. Remove legacy code entirely rather than leaving it with warnings.
-
-37. **Sensitive data in request body, not headers** - Headers can be logged by proxies, CDNs, and load balancers. Server PINs, API keys, and other secrets should be sent in the request body (over HTTPS) rather than headers like `X-Server-Pin`.
-
-38. **Track listeners in Maps for per-item cleanup** - For components that create multiple items with listeners (like VirtualList), use a `Map<itemId, { click, keydown, ... }>` to track listeners per item. This enables proper cleanup when items are removed or re-rendered.
-
-39. **Modal functions must clean up previous listeners** - Functions like `openFaultModal()` that add event listeners must remove old listeners before adding new ones. Store listener references at module level and remove them at the start of the function.
-
-40. **Wrap async init chains in try-catch** - Functions like `pushLocalEntries()` called during initialization should be wrapped in try-catch. One failure shouldn't prevent other initialization steps from completing.
-
-41. **BroadcastChannel handlers need defensive parsing** - Message handlers should use `event.data || {}` and wrap processing in try-catch. Malformed messages from other tabs shouldn't crash the listener.
-
-42. **Promise chains need .catch() even for fire-and-forget** - Even if you don't need the result, add `.catch()` to log errors. Silent promise rejections hide bugs: `initializeAdminPin().then(...).catch(err => logger.error(err))`.
-
-43. **Track visual effect timeouts, clear in destroy()** - Store setTimeout IDs in a Set and clear all in `destroy()`. Prevents callbacks firing after component destruction causing errors or visual glitches.
-
-44. **Use existing data structures over DOM queries** - Instead of `querySelectorAll('[tabindex="0"]')` on every keystroke, use the component's existing Map of visible items. DOM queries are expensive; data structure lookups are O(1).
-
-45. **Queue bounds check before push, not conditionally** - If a notification queue has a max size, check and drain BEFORE every push, not just inside an `if (isProcessing)` block. Ensures bounds are respected regardless of processing state.
-
-46. **Dispatch events for error states** - When sync operations fail, dispatch CustomEvents like `fault-sync-error` so UI components can update status indicators. Don't just log errors silently.
-
-47. **API helpers should return result objects** - Functions like `updateHighestBib()` should return `{ success: true }` or `{ success: false, error: '...' }` rather than returning void or throwing. Callers can then include warnings in responses.
-
-48. **Form labels need explicit `for` attribute** - Labels should have `for="input-id"` pointing to the input's `id`. Implicit association (label wrapping input) works but explicit is clearer. Toggle switches with wrapped checkboxes are an exception.
-
-49. **Dynamic containers need aria-live** - Containers that are populated dynamically (empty states, lists that load async) need `aria-live="polite"` so screen readers announce when content appears.
-
-50. **Test offline transitions thoroughly** - PWA offline testing should verify: (1) recording works offline, (2) data persists in localStorage, (3) app works after going back online, (4) no errors in console during transitions. Use Playwright's `context.setOffline(true/false)`.
-
-51. **Style elements created dynamically must be cleaned up** - If a component appends a `<style>` element to `document.head` (for animations, etc.), store the reference and remove it in `destroy()`. Otherwise styles accumulate on component re-creation.
-
-52. **Validate function parameters defensively** - Functions that receive IDs (like `deleteRace(raceId)`) should validate the parameter exists and is the right type before calling methods on it. `raceId.toLowerCase()` throws if raceId is null.
-
-53. **Array access needs bounds validation** - Before accessing `config.intervals[index]`, verify `config.intervals` exists and has elements. Add fallbacks: `config.intervals?.[index] ?? config.baseInterval`.
-
-54. **Modal close buttons (X) need event listeners** - When adding a modal with a close button in the header, don't forget to add the click handler. It's easy to add handlers for Cancel/Save buttons but miss the X button.
-
-55. **Overlays need ESC key AND click-outside dismissal** - Standard UX pattern. For overlays/dialogs, add both: (1) keydown listener for Escape, (2) click listener on backdrop that checks `e.target === overlay` to only dismiss when clicking outside content.
-
-56. **Document-level ESC handlers can conflict** - When multiple overlays/modals exist, document-level ESC handlers fire for all of them. Check if the specific overlay is visible AND no higher-priority modal is open: `overlay.classList.contains('show') && !isAnyModalOpen()`.
-
-57. **Use escapeAttr() for data attributes from user input** - When setting `data-*` attributes with values from user data (IDs, names), use `escapeAttr()` not just for display attributes. Example: `overlay.setAttribute('data-fault-id', escapeAttr(fault.id))`.
-
-58. **Add aria-live to dynamic status indicators** - Elements that update to show status (listening indicators, loading states, live transcription) need `aria-live="polite"` so screen readers announce changes.
-
-59. **Create data-i18n-aria-label pattern for translatable aria-labels** - Static HTML aria-labels can't use `t()`. Add `data-i18n-aria-label="keyName"` attribute and handle it in `updateTranslations()` alongside `data-i18n` and `data-i18n-placeholder`.
-
-60. **Check for existing translation keys before adding** - Before adding new translations, grep for the key name. Common words like "close", "cancel", "save" likely already exist. Duplicate keys cause TypeScript errors.
-
-61. **Version history must include ALL editable fields** - When implementing version tracking, the `extractVersionData()` function must include every field that can be edited. When adding new editable fields (like notes), update both extract and restore functions.
-
-62. **Confirmation overlays should auto-focus a button** - After showing a confirmation overlay, focus the primary action button (usually "Done" or "OK") so keyboard users can immediately dismiss with Enter: `setTimeout(() => doneBtn?.focus(), 100)`.
-
-63. **Decorative status icons need aria-hidden** - Checkmarks (✓), warning icons (⚠), and other decorative indicators inside dialogs should have `aria-hidden="true"`. Screen readers get context from text, not emoji.
-
-64. **Rate limiting must fail closed consistently** - All rate limiters (general API, photos, etc.) should deny requests when Redis/backing store fails. Inconsistent behavior (some fail-open, some fail-closed) creates security gaps. Grep for "allowed: true" in catch blocks.
-
-65. **Track per-element listeners in a Map for cleanup** - When adding event listeners to dynamically created elements (like dial numbers, list items), store them in a `Map<HTMLElement, EventListener>` and iterate to remove in `destroy()`. Anonymous arrow functions can't be removed without a reference.
-
-66. **Defense in depth: escape even "safe" input** - Even when input is validated elsewhere (e.g., bib numbers should only be digits), escape before innerHTML. Attackers may find ways to bypass validation, and future code changes may introduce paths that skip it.
-
-67. **Check for existing variables before adding new ones** - When modifying a function, check if variables like `lang`, `state`, `index` already exist in scope. Adding `const lang = ...` when `lang` already exists causes "Cannot redeclare block-scoped variable" errors.
-
-68. **Pluralization needs separate translation keys** - Don't use ternary in translation values. Create separate keys like `timeEntry`/`timeEntries` (singular/plural) and select with: `t(count === 1 ? 'timeEntry' : 'timeEntries', lang)`.
-
-69. **Comprehensive code reviews should check rate limit error paths** - When reviewing API code, specifically check catch blocks in rate limiting functions. The pattern `return { allowed: true, ... }` in a catch block is a security vulnerability.
+These patterns emerged from comprehensive code reviews. Organized by category for quick reference.
+
+### Security
+
+| Rule | Description |
+|------|-------------|
+| **Escape all innerHTML** | Always use `escapeHtml()` for content, `escapeAttr()` for attributes. Even "safe" data like bib numbers should be escaped (defense in depth). |
+| **Escape data attributes** | `data-*` attributes with user data need `escapeAttr()`: `setAttribute('data-id', escapeAttr(id))` |
+| **Fail closed on errors** | Rate limiting, auth, and security features must deny access when backing services fail. Grep for `allowed: true` in catch blocks. |
+| **Remove deprecated auth** | Don't mark legacy auth as deprecated—remove it entirely. Old paths create vulnerabilities. |
+| **Secrets in body, not headers** | Headers are logged by proxies/CDNs. Send PINs, API keys in request body over HTTPS. |
+| **Security headers** | Add `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` in vercel.json. |
+
+### Memory Management
+
+| Rule | Description |
+|------|-------------|
+| **Full listener cleanup** | `destroy()` must remove ALL listeners—container, window, document, and per-element. |
+| **Track listeners in Maps** | For dynamic elements, use `Map<HTMLElement, EventListener>` to enable removal. Anonymous functions can't be removed. |
+| **Double-destruction guard** | Add `isDestroyed` flag, check at start of `destroy()`. Multiple calls can occur. |
+| **MutationObserver for auto-cleanup** | Watch for DOM removal when components might be removed without `destroy()`. |
+| **Clear all timeouts** | Track setTimeout IDs in a Set, clear all in `destroy()`. |
+| **Clean up dynamic styles** | Remove `<style>` elements appended to `document.head` in `destroy()`. |
+| **Cleanup on error paths** | If registering listeners before async ops, clean up in catch block too. |
+
+### Accessibility
+
+| Rule | Description |
+|------|-------------|
+| **Icon buttons need aria-label** | `<button aria-label="Clear">C</button>` |
+| **SVGs need aria-hidden** | `<svg aria-hidden="true">` inside buttons |
+| **Decorative icons need aria-hidden** | Checkmarks (✓), emojis, status icons: `aria-hidden="true"` |
+| **Dropdowns need aria-expanded** | Update `aria-expanded="true/false"` on state change |
+| **Radio groups** | Wrap in `role="radiogroup"`, options get `role="radio"` + `aria-checked` |
+| **Dynamic content needs aria-live** | `aria-live="polite"` on status indicators, loading states, lists |
+| **Custom elements need full support** | `tabindex="0"`, `role="button"`, `aria-label`, Enter/Space handler |
+| **Focus management** | Focus first interactive element after showing modal/overlay |
+| **Use :focus-visible** | Not `:focus`—shows rings only for keyboard nav |
+| **Arrow keys for tabs** | Tab key moves between components; arrow keys move within |
+
+### Internationalization
+
+| Rule | Description |
+|------|-------------|
+| **All text needs translations** | Check: innerHTML, textContent, aria-label, title, placeholder |
+| **Aria-labels need translation** | Use `t()` in templates: `` aria-label="${t('key', lang)}" `` |
+| **Use data-i18n-aria-label** | For static HTML aria-labels that can't use `t()` |
+| **Check for existing keys** | Grep before adding—"close", "cancel" etc. likely exist. Duplicates cause TS errors. |
+| **Pluralization needs separate keys** | `timeEntry`/`timeEntries`, select with: `t(count === 1 ? 'timeEntry' : 'timeEntries', lang)` |
+| **Import store and t()** | Components displaying text need both for `currentLang` access |
+
+### Modal & Overlay Patterns
+
+| Rule | Description |
+|------|-------------|
+| **ESC key dismissal** | Standard UX—add keydown listener for Escape |
+| **Click-outside dismissal** | Check `e.target === overlay` to dismiss only on backdrop click |
+| **ESC handler conflicts** | Check `overlay.classList.contains('show') && !isAnyModalOpen()` |
+| **Close button (X) handlers** | Easy to miss—add click handler for header close button |
+| **Auto-focus button** | `setTimeout(() => doneBtn?.focus(), 100)` after showing |
+| **Clean up previous listeners** | Store refs at module level, remove at start of open function |
+
+### Error Handling
+
+| Rule | Description |
+|------|-------------|
+| **Notify on silent API failures** | Wake Lock, GPS, Camera, Mic—show toast when unavailable |
+| **Warn about deferred validation** | "PIN will be verified when online" when skipping offline |
+| **Show loading states** | Spinner/text before async ops, results/errors after |
+| **Wrap init chains in try-catch** | One failure shouldn't prevent other init steps |
+| **Always add .catch()** | Even fire-and-forget promises need `.catch(err => logger.error(err))` |
+| **Defensive BroadcastChannel** | Use `event.data || {}`, wrap in try-catch |
+| **Return result objects** | `{ success: true }` or `{ success: false, error }` not void/throw |
+
+### State & Events
+
+| Rule | Description |
+|------|-------------|
+| **Capture snapshots immediately** | In notification systems, snapshot at change time, not processing time |
+| **Queue bounds check before push** | Check and drain before every push, not just conditionally |
+| **Use CustomEvents** | `bubbles: true` for cross-module communication, avoids circular deps |
+| **Dispatch error events** | `fault-sync-error` etc. so UI can update indicators |
+| **Clear debounce on direct call** | If `applyFilters()` calls `render()`, clear pending debounced render |
+
+### Animation
+
+| Rule | Description |
+|------|-------------|
+| **Separate RAF IDs per animation type** | `spinAnimationId`, `snapBackAnimationId`—cancel both on new interaction |
+| **Check RAF ID before recovery** | `if (animationId === null)` before scheduling to prevent duplicate loops |
+
+### Code Quality
+
+| Rule | Description |
+|------|-------------|
+| **Check existing variables** | Before adding `const lang = ...`, check if `lang` exists in scope |
+| **Validate parameters defensively** | Check IDs exist and are correct type before using |
+| **Array bounds validation** | Use `config.intervals?.[index] ?? fallback` |
+| **Use data structures over DOM queries** | Component's Map is O(1); `querySelectorAll` is expensive |
+| **Semantic HTML** | `<dl>/<dt>/<dd>` for label-value pairs conveys meaning to screen readers |
+| **Version history completeness** | `extractVersionData()` must include ALL editable fields |
 
 ## Animation Patterns
 
