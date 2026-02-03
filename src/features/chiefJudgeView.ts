@@ -410,12 +410,14 @@ export function updateFaultSummaryPanel(): void {
       const deletionInfo = isMarkedForDeletion && fault.markedForDeletionBy
         ? `${t('deletionPending', lang)} (${fault.markedForDeletionBy})`
         : '';
+      const hasNotes = fault.notes && fault.notes.length > 0;
 
       return `
         <div class="fault-entry-row${isMarkedForDeletion ? ' marked-for-deletion' : ''}" data-fault-id="${fault.id}">
           <div class="fault-gate-info">
             <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${fault.gateNumber}</span>
             <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
+            ${hasNotes ? `<span class="fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
             ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${escapeAttr(deletionInfo)}">⚠</span>` : ''}
           </div>
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>

@@ -15,6 +15,7 @@ import {
   initInlineFaultEntry, refreshInlineFaultUI, updateActiveBibsList,
   recordFaultFromVoice
 } from './faultEntry';
+import { initVoiceNoteUI } from './voiceNoteUI';
 import { logger } from '../utils/logger';
 import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 
@@ -119,6 +120,9 @@ export function initGateJudgeView(): void {
   // Initialize inline fault entry handlers
   initInlineFaultEntry();
   refreshInlineFaultUI();
+
+  // Initialize voice note UI handlers
+  initVoiceNoteUI();
 
   // Update gate range display
   updateGateRangeDisplay();

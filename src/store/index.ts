@@ -656,7 +656,7 @@ class Store {
 
   updateFaultEntryWithHistory(
     id: string,
-    updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType'>>,
+    updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType' | 'notes' | 'notesSource' | 'notesTimestamp'>>,
     changeDescription?: string
   ): boolean {
     const faultEntries = faultsSlice.updateFaultEntryWithHistory(

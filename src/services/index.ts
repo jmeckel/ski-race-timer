@@ -14,3 +14,6 @@ export * from './feedback';
 export { voiceModeService } from './voice';
 export { speechSynthesis } from './speechSynthesis';
 export { processVoiceCommandWithTimeout } from './llmProvider';
+
+// Voice note service (distinct from voice command mode)
+export { voiceNoteService } from './voiceNote';

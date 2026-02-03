@@ -387,6 +387,10 @@ export default async function handler(req, res) {
         deviceName: sanitizedDeviceName,
         gateRange: fault.gateRange,
         syncedAt: Date.now(),
+        // Voice notes fields
+        notes: fault.notes ? sanitizeString(fault.notes, 500) : null,
+        notesSource: (fault.notesSource === 'voice' || fault.notesSource === 'manual') ? fault.notesSource : null,
+        notesTimestamp: fault.notesTimestamp || null,
         // Version tracking fields
         currentVersion: fault.currentVersion || 1,
         versionHistory: Array.isArray(fault.versionHistory) ? fault.versionHistory : [],

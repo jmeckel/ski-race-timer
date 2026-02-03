@@ -26,7 +26,11 @@ export function extractFaultVersionData(
     deviceId: fault.deviceId,
     deviceName: fault.deviceName,
     gateRange: fault.gateRange,
-    syncedAt: fault.syncedAt
+    syncedAt: fault.syncedAt,
+    // Voice notes
+    notes: fault.notes,
+    notesSource: fault.notesSource,
+    notesTimestamp: fault.notesTimestamp
   };
 }
 
@@ -119,7 +123,7 @@ export function updateFaultEntry(
 export function updateFaultEntryWithHistory(
   faultEntries: FaultEntry[],
   id: string,
-  updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType'>>,
+  updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType' | 'notes' | 'notesSource' | 'notesTimestamp'>>,
   deviceName: string,
   deviceId: string,
   changeDescription?: string
@@ -186,6 +190,10 @@ export function restoreFaultVersion(
     run: versionToRestore.data.run,
     gateNumber: versionToRestore.data.gateNumber,
     faultType: versionToRestore.data.faultType,
+    // Restore notes fields
+    notes: versionToRestore.data.notes,
+    notesSource: versionToRestore.data.notesSource,
+    notesTimestamp: versionToRestore.data.notesTimestamp,
     currentVersion: newVersion,
     versionHistory: appendToVersionHistory(oldFault.versionHistory, restoreVersionRecord)
   };

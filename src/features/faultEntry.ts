@@ -318,11 +318,14 @@ export function recordFaultFromVoice(bib: string, gateNumber: number, faultType:
 }
 
 /**
- * Show fault confirmation overlay
+ * Show fault confirmation overlay (no auto-dismiss - user must tap Done or Add Note)
  */
 export function showFaultConfirmation(fault: FaultEntry): void {
   const overlay = document.getElementById('fault-confirmation-overlay');
   if (!overlay) return;
+
+  // Store fault ID for "Add Note" button
+  overlay.setAttribute('data-fault-id', fault.id);
 
   const bibEl = overlay.querySelector('.fault-confirmation-bib');
   const gateEl = overlay.querySelector('.fault-confirmation-gate');
@@ -336,9 +339,7 @@ export function showFaultConfirmation(fault: FaultEntry): void {
 
   overlay.classList.add('show');
 
-  setTimeout(() => {
-    overlay.classList.remove('show');
-  }, 1500);
+  // NO auto-dismiss - user must tap "Done" or "Add Note"
 }
 
 /**
@@ -377,6 +378,28 @@ export function initFaultEditModal(): void {
     });
   }
 
+  // Notes textarea char count
+  const notesTextarea = document.getElementById('fault-edit-notes') as HTMLTextAreaElement;
+  const notesCharCount = document.getElementById('fault-edit-notes-char-count');
+  if (notesTextarea && notesCharCount) {
+    notesTextarea.addEventListener('input', () => {
+      const count = notesTextarea.value.length;
+      notesCharCount.textContent = `${count}/500`;
+      notesCharCount.classList.toggle('near-limit', count > 450);
+    });
+  }
+
+  // Notes mic button (dispatches event for voiceNoteUI to handle)
+  const micBtn = document.getElementById('fault-edit-mic-btn');
+  if (micBtn) {
+    micBtn.addEventListener('click', () => {
+      // Dispatch custom event for voice note recording in edit modal
+      window.dispatchEvent(new CustomEvent('fault-edit-mic-click', {
+        detail: { faultId: editingFaultId }
+      }));
+    });
+  }
+
   // Confirm mark deletion button
   const confirmMarkDeletionBtn = document.getElementById('confirm-mark-deletion-btn');
   if (confirmMarkDeletionBtn) {
@@ -408,10 +431,21 @@ export function openFaultEditModal(fault: FaultEntry): void {
   const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
   const gateRangeSpan = document.getElementById('fault-edit-gate-range');
   const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+  const notesTextarea = document.getElementById('fault-edit-notes') as HTMLTextAreaElement;
+  const notesCharCount = document.getElementById('fault-edit-notes-char-count');
 
   if (bibInput) bibInput.value = fault.bib || '';
   if (gateInput) gateInput.value = String(fault.gateNumber);
   if (typeSelect) typeSelect.value = fault.faultType;
+
+  // Populate notes field
+  if (notesTextarea) {
+    notesTextarea.value = fault.notes || '';
+  }
+  if (notesCharCount) {
+    const count = (fault.notes || '').length;
+    notesCharCount.textContent = `${count}/500`;
+  }
 
   // Show gate range info
   if (gateRangeSpan && fault.gateRange) {
@@ -476,10 +510,12 @@ export function handleSaveFaultEdit(): void {
   const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
   const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
   const runSelector = document.getElementById('fault-edit-run-selector');
+  const notesTextarea = document.getElementById('fault-edit-notes') as HTMLTextAreaElement;
 
   const newBib = bibInput?.value.padStart(3, '0') || fault.bib;
   const newGate = parseInt(gateInput?.value || String(fault.gateNumber), 10);
   const newType = (typeSelect?.value || fault.faultType) as FaultType;
+  const newNotes = notesTextarea?.value.trim().slice(0, 500) || '';
 
   // Gate range validation warning
   const lang = state.currentLang;
@@ -498,16 +534,30 @@ export function handleSaveFaultEdit(): void {
   if (newGate !== fault.gateNumber) changes.push(`gate: ${fault.gateNumber} → ${newGate}`);
   if (newType !== fault.faultType) changes.push(`type: ${fault.faultType} → ${newType}`);
   if (newRun !== fault.run) changes.push(`run: ${fault.run} → ${newRun}`);
+  if (newNotes !== (fault.notes || '')) {
+    const notesDesc = newNotes ? `notes: ${newNotes.slice(0, 30)}${newNotes.length > 30 ? '...' : ''}` : 'notes removed';
+    changes.push(notesDesc);
+  }
 
   const changeDescription = changes.length > 0 ? changes.join(', ') : undefined;
 
-  // Update with version history
-  const success = store.updateFaultEntryWithHistory(editingFaultId, {
+  // Build update object including notes
+  const updateData: Partial<FaultEntry> = {
     bib: newBib,
     gateNumber: newGate,
     faultType: newType,
     run: newRun
-  }, changeDescription);
+  };
+
+  // Only include notes fields if notes changed
+  if (newNotes !== (fault.notes || '')) {
+    updateData.notes = newNotes || undefined;
+    updateData.notesSource = newNotes ? 'manual' : undefined;
+    updateData.notesTimestamp = newNotes ? new Date().toISOString() : undefined;
+  }
+
+  // Update with version history
+  const success = store.updateFaultEntryWithHistory(editingFaultId, updateData, changeDescription);
 
   if (success) {
     // Sync updated fault to cloud
@@ -729,6 +779,7 @@ export function updateInlineFaultsList(): void {
 
   sortedFaults.forEach(fault => {
     const gateColor = store.getGateColor(fault.gateNumber);
+    const hasNotes = fault.notes && fault.notes.length > 0;
     const item = document.createElement('div');
     item.className = 'gate-judge-fault-item';
     item.setAttribute('data-fault-id', fault.id);
@@ -739,6 +790,7 @@ export function updateInlineFaultsList(): void {
         <div class="gate-judge-fault-details">
           <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
           <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
+          ${hasNotes ? `<span class="gate-judge-fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
         </div>
       </div>
       <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">

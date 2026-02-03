@@ -439,7 +439,22 @@ export const translations: Record<Language, Translations> = {
     currentTime: 'Current time',
 
     // Localization - PIN Verification
-    pinVerifyOnline: 'PIN will be verified when online'
+    pinVerifyOnline: 'PIN will be verified when online',
+
+    // Voice Notes
+    addNote: 'Add Note',
+    done: 'Done',
+    recordNote: 'Record Note',
+    listening: 'Listening...',
+    noteSaved: 'Note saved',
+    noteDeleted: 'Note deleted',
+    noteCharCount: 'characters',
+    voiceNoteUnsupported: 'Voice input not supported in this browser',
+    voiceNoteError: 'Voice input error',
+    typeNote: 'Type or speak your note...',
+    hasNote: 'Has note',
+    noteTextLabel: 'Note text',
+    recordVoiceNoteLabel: 'Record voice note'
   },
 
   de: {
@@ -880,7 +895,22 @@ export const translations: Record<Language, Translations> = {
     currentTime: 'Aktuelle Uhrzeit',
 
     // Localization - PIN Verification
-    pinVerifyOnline: 'PIN wird online überprüft'
+    pinVerifyOnline: 'PIN wird online überprüft',
+
+    // Voice Notes
+    addNote: 'Notiz hinzufügen',
+    done: 'Fertig',
+    recordNote: 'Notiz aufnehmen',
+    listening: 'Höre zu...',
+    noteSaved: 'Notiz gespeichert',
+    noteDeleted: 'Notiz gelöscht',
+    noteCharCount: 'Zeichen',
+    voiceNoteUnsupported: 'Spracheingabe in diesem Browser nicht unterstützt',
+    voiceNoteError: 'Spracheingabe-Fehler',
+    typeNote: 'Notiz eintippen oder sprechen...',
+    hasNote: 'Hat Notiz',
+    noteTextLabel: 'Notiztext',
+    recordVoiceNoteLabel: 'Sprachnotiz aufnehmen'
   }
 };
 

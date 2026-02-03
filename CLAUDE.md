@@ -734,6 +734,26 @@ These patterns emerged from comprehensive code review and should be followed in 
 
 53. **Array access needs bounds validation** - Before accessing `config.intervals[index]`, verify `config.intervals` exists and has elements. Add fallbacks: `config.intervals?.[index] ?? config.baseInterval`.
 
+54. **Modal close buttons (X) need event listeners** - When adding a modal with a close button in the header, don't forget to add the click handler. It's easy to add handlers for Cancel/Save buttons but miss the X button.
+
+55. **Overlays need ESC key AND click-outside dismissal** - Standard UX pattern. For overlays/dialogs, add both: (1) keydown listener for Escape, (2) click listener on backdrop that checks `e.target === overlay` to only dismiss when clicking outside content.
+
+56. **Document-level ESC handlers can conflict** - When multiple overlays/modals exist, document-level ESC handlers fire for all of them. Check if the specific overlay is visible AND no higher-priority modal is open: `overlay.classList.contains('show') && !isAnyModalOpen()`.
+
+57. **Use escapeAttr() for data attributes from user input** - When setting `data-*` attributes with values from user data (IDs, names), use `escapeAttr()` not just for display attributes. Example: `overlay.setAttribute('data-fault-id', escapeAttr(fault.id))`.
+
+58. **Add aria-live to dynamic status indicators** - Elements that update to show status (listening indicators, loading states, live transcription) need `aria-live="polite"` so screen readers announce changes.
+
+59. **Create data-i18n-aria-label pattern for translatable aria-labels** - Static HTML aria-labels can't use `t()`. Add `data-i18n-aria-label="keyName"` attribute and handle it in `updateTranslations()` alongside `data-i18n` and `data-i18n-placeholder`.
+
+60. **Check for existing translation keys before adding** - Before adding new translations, grep for the key name. Common words like "close", "cancel", "save" likely already exist. Duplicate keys cause TypeScript errors.
+
+61. **Version history must include ALL editable fields** - When implementing version tracking, the `extractVersionData()` function must include every field that can be edited. When adding new editable fields (like notes), update both extract and restore functions.
+
+62. **Confirmation overlays should auto-focus a button** - After showing a confirmation overlay, focus the primary action button (usually "Done" or "OK") so keyboard users can immediately dismiss with Enter: `setTimeout(() => doneBtn?.focus(), 100)`.
+
+63. **Decorative status icons need aria-hidden** - Checkmarks (✓), warning icons (⚠), and other decorative indicators inside dialogs should have `aria-hidden="true"`. Screen readers get context from text, not emoji.
+
 ## Animation Patterns
 
 ### Multiple Animation Types

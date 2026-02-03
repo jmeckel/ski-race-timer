@@ -67,6 +67,11 @@ export interface FaultEntry {
   gateRange: [number, number];   // Gates this judge watches (e.g., [4, 12] = gates 4-12)
   syncedAt?: number;
 
+  // Voice notes - optional details about the fault
+  notes?: string;                    // Transcribed/typed text (max 500 chars)
+  notesSource?: 'voice' | 'manual';  // How note was created
+  notesTimestamp?: string;           // When note was recorded (ISO)
+
   // Version tracking
   currentVersion: number;       // Current version number (starts at 1)
   versionHistory: FaultVersion[]; // All previous versions

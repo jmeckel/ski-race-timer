@@ -1134,6 +1134,24 @@
             <button class="edit-run-btn" data-run="2" type="button">2</button>
           </div>
         </div>
+        <!-- Notes -->
+        <div class="fault-edit-notes-section" style="margin-bottom: 16px;">
+          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Notes</label>
+          <div class="fault-edit-notes-row">
+            <textarea class="text-input fault-edit-notes" id="fault-edit-notes" maxlength="500" rows="2" data-i18n-placeholder="typeNote" placeholder="Type or speak your note..." aria-label="Note text"></textarea>
+            <button class="fault-edit-mic-btn" id="fault-edit-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <div class="fault-edit-notes-footer">
+            <span class="fault-edit-notes-char-count" id="fault-edit-notes-char-count">0/500</span>
+          </div>
+        </div>
         <!-- Version History -->
         <div class="fault-version-history" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--surface-elevated);">
           <label for="fault-version-select" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="versionHistory">Version History</label>
@@ -1170,12 +1188,82 @@
   </div>
 
   <!-- Fault Confirmation Overlay -->
-  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay">
+  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="fault-confirmation-title">
     <div class="fault-confirmation-content">
-      <div class="fault-confirmation-icon">⚠️</div>
-      <div class="fault-confirmation-bib">---</div>
+      <div class="fault-confirmation-icon" aria-hidden="true">✓</div>
+      <div class="fault-confirmation-bib" id="fault-confirmation-title">---</div>
       <div class="fault-confirmation-gate">Gate --</div>
       <div class="fault-confirmation-type">--</div>
+      <div class="fault-confirmation-actions">
+        <button class="fault-confirmation-btn note" id="fault-confirmation-add-note-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span data-i18n="addNote">Add Note</span>
+        </button>
+        <button class="fault-confirmation-btn done" id="fault-confirmation-done-btn" data-i18n="done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Note Modal -->
+  <div class="modal-overlay glass-enable-target" id="voice-note-modal" role="dialog" aria-modal="true" aria-labelledby="voice-note-modal-title">
+    <div class="modal-content glass-surface-1 voice-note-modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="voice-note-modal-title" data-i18n="recordNote">Record Note</h2>
+        <button class="modal-close-btn" id="voice-note-close-btn" aria-label="Close" data-i18n-aria-label="close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Listening Indicator -->
+        <div class="voice-note-listening-indicator" id="voice-note-listening-indicator" aria-live="polite">
+          <div class="voice-note-pulse-ring"></div>
+          <div class="voice-note-mic-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+          <span class="voice-note-status-text" data-i18n="listening">Listening...</span>
+        </div>
+
+        <!-- Note Textarea -->
+        <div class="voice-note-input-section">
+          <textarea
+            class="voice-note-textarea"
+            id="voice-note-textarea"
+            maxlength="500"
+            rows="4"
+            data-i18n-placeholder="typeNote"
+            placeholder="Type or speak your note..."
+            aria-label="Note text"
+            data-i18n-aria-label="noteTextLabel"
+          ></textarea>
+          <div class="voice-note-input-footer">
+            <span class="voice-note-char-count" id="voice-note-char-count">0/500</span>
+            <button class="voice-note-mic-btn" id="voice-note-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false" data-i18n-aria-label="recordVoiceNoteLabel">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="voice-note-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="voice-note-save-btn" data-i18n="save">Save</button>
+      </div>
     </div>
   </div>
 

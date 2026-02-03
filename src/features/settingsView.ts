@@ -599,6 +599,13 @@ export function updateTranslations(): void {
     }
   });
 
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    const key = el.getAttribute('data-i18n-aria-label');
+    if (key) {
+      el.setAttribute('aria-label', t(key, lang));
+    }
+  });
+
   // Update dynamically set text that depends on language
   updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
 }
