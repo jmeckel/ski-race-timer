@@ -2,7 +2,7 @@
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.11.0 | Last Updated: February 2026
+Version 5.14.2 | Last Updated: February 2026
 
 ---
 
@@ -233,6 +233,25 @@ Record gate faults during the race.
    - **STR** - Straddling
    - **BR** - Binding Release
 4. **Tap "Save Fault"**
+
+### Voice Notes
+
+After recording a fault, you can add a voice note to document details:
+
+1. **After recording** - A confirmation overlay appears with "Add Note" button
+2. **Tap "Add Note"** - Opens the voice recording modal
+3. **Speak your note** - The app transcribes your voice in real-time
+4. **Edit if needed** - Correct any transcription errors
+5. **Tap "Save"** - Note is attached to the fault (max 500 characters)
+
+**Adding notes to existing faults:**
+1. Tap a fault in the list to edit
+2. Use the microphone button (🎤) next to the notes field
+3. Or type manually in the text area
+
+**Note indicator:** Faults with notes show a 📝 icon in the list.
+
+> **Tip:** Voice notes work offline using your device's speech recognition. You can always type manually if voice isn't available.
 
 ### Ready Status
 

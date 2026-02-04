@@ -2,7 +2,7 @@
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.11.0 | Stand: Februar 2026
+Version 5.14.2 | Stand: Februar 2026
 
 ---
 
@@ -233,6 +233,25 @@ Torfehler während des Rennens erfassen.
    - **EF** - Einfädler
    - **BO** - Bindung offen
 4. **"Fehler speichern" tippen**
+
+### Sprachnotizen
+
+Nach der Erfassung eines Fehlers können Sie eine Sprachnotiz hinzufügen, um Details zu dokumentieren:
+
+1. **Nach der Erfassung** - Eine Bestätigungs-Anzeige erscheint mit "Notiz hinzufügen" Button
+2. **"Notiz hinzufügen" tippen** - Öffnet das Sprachaufnahme-Fenster
+3. **Ihre Notiz sprechen** - Die App transkribiert Ihre Stimme in Echtzeit
+4. **Bei Bedarf korrigieren** - Transkriptionsfehler korrigieren
+5. **"Speichern" tippen** - Notiz wird dem Fehler angehängt (max. 500 Zeichen)
+
+**Notizen zu bestehenden Fehlern hinzufügen:**
+1. Auf einen Fehler in der Liste tippen zum Bearbeiten
+2. Das Mikrofon-Symbol (🎤) neben dem Notiz-Feld verwenden
+3. Oder manuell in das Textfeld eingeben
+
+**Notiz-Anzeige:** Fehler mit Notizen zeigen ein 📝 Symbol in der Liste.
+
+> **Tipp:** Sprachnotizen funktionieren offline mit der Spracherkennung Ihres Geräts. Sie können jederzeit manuell tippen, wenn Spracheingabe nicht verfügbar ist.
 
 ### Bereit-Status
 
