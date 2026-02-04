@@ -79,6 +79,9 @@ export const translations: Record<Language, Translations> = {
     cloudSync: 'Cloud Sync',
     syncStatus: 'Sync Status',
     pendingSync: 'pending sync',
+    raceSetup: 'Race Setup',
+    raceSetupDesc: 'Required for multi-device timing and syncing.',
+    firstGateLabel: 'First gate',
 
     // Feedback
     saved: 'Saved',
@@ -106,6 +109,7 @@ export const translations: Record<Language, Translations> = {
     hapticFeedback: 'Haptic Feedback',
     soundFeedback: 'Sound Feedback',
     language: 'Language',
+    advancedSettingsHint: 'These options can affect timing accuracy. Change only if needed.',
 
     // Settings descriptions
     simpleModeDesc: 'Simplified interface for basic timing',
@@ -247,9 +251,9 @@ export const translations: Record<Language, Translations> = {
     onboardingRole: 'What\'s Your Role?',
     onboardingRoleDesc: 'Choose how you\'ll be helping at the race',
     roleTimerTitle: 'Timer',
-    roleTimerDesc: 'Record start and finish times',
+    roleTimerDesc: 'You will record start and finish times',
     roleJudgeTitle: 'Gate Judge',
-    roleJudgeDesc: 'Record gate faults (Torrichter)',
+    roleJudgeDesc: 'You will record gate faults (Torrichter)',
     onboardingDeviceName: 'Name Your Timer',
     onboardingDeviceNameDesc: 'This identifies your device when syncing',
     onboardingDeviceNameJudge: 'Your Name',
@@ -539,6 +543,9 @@ export const translations: Record<Language, Translations> = {
     cloudSync: 'Cloud-Sync',
     syncStatus: 'Sync-Status',
     pendingSync: 'ausstehend',
+    raceSetup: 'Rennen einrichten',
+    raceSetupDesc: 'Erforderlich für Timing und Sync über mehrere Geräte.',
+    firstGateLabel: 'Erstes Tor',
 
     // Feedback
     saved: 'Gespeichert',
@@ -566,6 +573,7 @@ export const translations: Record<Language, Translations> = {
     hapticFeedback: 'Vibration',
     soundFeedback: 'Signalton',
     language: 'Sprache',
+    advancedSettingsHint: 'Diese Optionen beeinflussen die Zeitmessung. Nur bei Bedarf ändern.',
 
     // Settings descriptions
     simpleModeDesc: 'Vereinfachte Oberfläche für einfache Zeitmessung',
@@ -707,9 +715,9 @@ export const translations: Record<Language, Translations> = {
     onboardingRole: 'Was ist deine Aufgabe?',
     onboardingRoleDesc: 'Wähle aus, wie du beim Rennen hilfst',
     roleTimerTitle: 'Zeitnehmer',
-    roleTimerDesc: 'Start- und Zielzeiten erfassen',
+    roleTimerDesc: 'Du erfasst Start- und Zielzeiten',
     roleJudgeTitle: 'Torrichter',
-    roleJudgeDesc: 'Torfehler erfassen',
+    roleJudgeDesc: 'Du erfasst Torfehler',
     onboardingDeviceName: 'Timer benennen',
     onboardingDeviceNameDesc: 'Dieser Name identifiziert dein Gerät beim Synchronisieren',
     onboardingDeviceNameJudge: 'Dein Name',

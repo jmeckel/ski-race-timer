@@ -60,7 +60,8 @@ async function checkRateLimit(clientIP) {
     };
   } catch (error) {
     console.error('Rate limit check failed:', error.message);
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS };
+    // SECURITY: Fail closed if rate limiting cannot be enforced
+    return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
   }
 }
 const MAX_TRANSCRIPT_LENGTH = 500;
@@ -334,6 +335,9 @@ export default async function handler(req, res) {
   const rateLimit = await checkRateLimit(clientIP);
   if (!rateLimit.allowed) {
     console.log(`[RATE_LIMIT] Voice API rate limit exceeded: ip=${clientIP}`);
+    if (rateLimit.error) {
+      return sendServiceUnavailable(res, 'Rate limiting unavailable');
+    }
     return sendRateLimitExceeded(res, RATE_LIMIT_WINDOW);
   }
 

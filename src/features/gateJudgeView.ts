@@ -210,6 +210,8 @@ export function initGateAssignmentModal(): void {
  */
 export function updateGateRangeDisplay(): void {
   const display = getElement('gate-range-display');
+  const colorIndicator = getElement('gate-color-indicator');
+  const colorText = getElement('gate-color-text');
   if (!display) return;
 
   const state = store.getState();
@@ -217,6 +219,14 @@ export function updateGateRangeDisplay(): void {
     display.textContent = `${state.gateAssignment[0]}–${state.gateAssignment[1]}`;
   } else {
     display.textContent = '--';
+  }
+
+  if (colorIndicator && colorText) {
+    const lang = state.currentLang;
+    const colorKey = state.firstGateColor === 'red' ? 'colorRed' : 'colorBlue';
+    colorText.textContent = `${t('firstGateLabel', lang)}: ${t(colorKey, lang)}`;
+    colorIndicator.classList.toggle('red', state.firstGateColor === 'red');
+    colorIndicator.classList.toggle('blue', state.firstGateColor === 'blue');
   }
 
   // Also update other judges coverage

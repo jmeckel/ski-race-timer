@@ -38,11 +38,12 @@ async function checkRateLimit(client, ip) {
     };
   } catch (error) {
     console.error('Rate limit check error:', error.message);
-    // Fail open to avoid blocking auth if Redis has a hiccup
+    // SECURITY: Fail closed if rate limiting cannot be enforced
     return {
-      allowed: true,
-      remaining: RATE_LIMIT_MAX_REQUESTS,
-      reset: windowStart + RATE_LIMIT_WINDOW
+      allowed: false,
+      remaining: 0,
+      reset: windowStart + RATE_LIMIT_WINDOW,
+      error: 'Rate limiting unavailable'
     };
   }
 }
@@ -79,6 +80,9 @@ export default async function handler(req, res) {
     setRateLimitHeaders(res, RATE_LIMIT_MAX_REQUESTS, rateLimitResult.remaining, rateLimitResult.reset);
 
     if (!rateLimitResult.allowed) {
+      if (rateLimitResult.error) {
+        return sendServiceUnavailable(res, 'Rate limiting unavailable');
+      }
       return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
     }
 

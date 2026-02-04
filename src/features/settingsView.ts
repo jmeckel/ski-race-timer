@@ -584,6 +584,7 @@ function initVoiceModeToggle(): void {
  */
 export function updateTranslations(): void {
   const lang = store.getState().currentLang as Language;
+  document.documentElement.lang = lang;
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');

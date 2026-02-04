@@ -610,6 +610,15 @@ export class OnboardingController {
         dot.classList.add('completed');
       }
     });
+
+    const label = this.modal.querySelector('#onboarding-progress-label');
+    if (label) {
+      const totalSteps = dots.length;
+      const lang = store.getState().currentLang;
+      label.textContent = lang === 'de'
+        ? `Schritt ${this.currentStep} von ${totalSteps}`
+        : `Step ${this.currentStep} of ${totalSteps}`;
+    }
   }
 
   /**

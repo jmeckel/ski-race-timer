@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0D0D0D">
   <meta name="description" content="GPS-synchronized ski race timing application">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -357,6 +357,10 @@
           <div class="gate-assignment-display">
             <span class="gate-label" data-i18n="gates">Gates</span>
             <span class="gate-range" id="gate-range-display">--</span>
+            <span class="gate-color-indicator" id="gate-color-indicator" aria-live="polite">
+              <span class="gate-color-dot" aria-hidden="true"></span>
+              <span class="gate-color-text" id="gate-color-text"></span>
+            </span>
             <button class="gate-change-btn" id="gate-change-btn" data-i18n="changeGates">Change</button>
           </div>
           <div class="run-selector gate-judge-run-selector" id="gate-judge-run-selector" role="radiogroup" aria-label="Run">
@@ -485,9 +489,10 @@
           </div>
         </div>
 
-        <!-- Cloud Sync -->
-        <div class="settings-section">
-          <div class="settings-section-title" data-i18n="cloudSync">Cloud Sync</div>
+        <!-- Race Setup -->
+        <div class="settings-section race-setup-section">
+          <div class="settings-section-title" data-i18n="raceSetup">Race Setup</div>
+          <div class="settings-section-subtitle" data-i18n="raceSetupDesc">Required for multi-device timing and syncing.</div>
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="cloudSync">Cloud Sync</span>
@@ -541,6 +546,7 @@
         <div class="settings-section collapsible expanded" id="advanced-settings-section">
           <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings" role="button" tabindex="0" aria-expanded="true" aria-controls="advanced-settings-content">Advanced Settings</div>
           <div class="settings-section-content" id="advanced-settings-content">
+            <div class="settings-section-hint" data-i18n="advancedSettingsHint">These options can affect timing accuracy. Change only if needed.</div>
             <!-- GPS -->
             <div class="setting-row">
               <div class="setting-label">
@@ -1277,7 +1283,9 @@
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
       </div>
+      <div class="onboarding-progress-label" id="onboarding-progress-label" aria-live="polite"></div>
 
       <div class="onboarding-cards">
         <!-- Card 1: Welcome + Language -->
