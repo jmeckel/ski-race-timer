@@ -2,7 +2,7 @@
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.14.2 | Stand: Februar 2026
+Version 5.15.0 | Stand: Februar 2026
 
 ---
 
