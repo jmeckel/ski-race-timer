@@ -1,6 +1,17 @@
 /* ===== Radial Dial Timer ===== */
 /* Alternative timer view with iPod-style dial input */
 
+/* Radial dial color scheme (ski racing signals: green=go, red=stop) */
+:root {
+  --radial-start-color: #22c55e;
+  --radial-start-color-dark: #16a34a;
+  --radial-finish-color: #ef4444;
+  --radial-finish-color-dark: #dc2626;
+  --radial-clear-color: #991b1b;
+  --radial-clear-color-dark: #7f1d1d;
+  --radial-clear-border: #b91c1c;
+}
+
 /* Ensure header and tab-bar are visible in radial mode (unless ambient mode) */
 body:not(.ambient-mode) .timer-view.radial-mode.active ~ .tab-bar,
 body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
@@ -118,8 +129,8 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
-  border: 2px solid #b91c1c;
+  background: linear-gradient(135deg, var(--radial-clear-color-dark) 0%, var(--radial-clear-color) 100%);
+  border: 2px solid var(--radial-clear-border);
   color: rgba(255, 255, 255, 0.9);
   font-size: 18px;
   font-weight: 600;
@@ -130,11 +141,11 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   justify-content: center;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px rgba(127, 29, 29, 0.4);
+    0 2px 8px color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
 }
 
 .radial-clear-btn:active {
-  background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+  background: linear-gradient(135deg, var(--radial-clear-color) 0%, var(--radial-clear-color-dark) 100%);
   transform: scale(0.95);
 }
 
@@ -450,17 +461,17 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-point-btn.start.active {
-  border-color: #22c55e;
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.2);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+  border-color: var(--radial-start-color);
+  color: var(--radial-start-color);
+  background: color-mix(in srgb, var(--radial-start-color) 20%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--radial-start-color) 40%, transparent);
 }
 
 .radial-point-btn.finish.active {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.2);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  border-color: var(--radial-finish-color);
+  color: var(--radial-finish-color);
+  background: color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--radial-finish-color) 40%, transparent);
 }
 
 /* Run Selector - Right side inside dial center */
@@ -575,7 +586,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--radial-finish-color) 0%, var(--radial-finish-color-dark) 100%);
   color: white;
   border: none;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -591,15 +602,15 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   -webkit-backdrop-filter: blur(10px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 -4px 20px rgba(239, 68, 68, 0.3);
+    0 -4px 20px color-mix(in srgb, var(--radial-finish-color) 30%, transparent);
 }
 
 .radial-time-btn:active {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, var(--radial-finish-color-dark) 0%, var(--radial-clear-border) 100%);
   transform: scale(0.98);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 -2px 10px rgba(239, 68, 68, 0.2);
+    0 -2px 10px color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
 }
 
 .radial-time-btn.flash {
@@ -608,14 +619,14 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
 @keyframes btnFlash {
   0% {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    box-shadow: 0 0 40px rgba(34, 197, 94, 0.5);
+    background: linear-gradient(135deg, var(--radial-start-color) 0%, var(--radial-start-color-dark) 100%);
+    box-shadow: 0 0 40px color-mix(in srgb, var(--radial-start-color) 50%, transparent);
   }
   100% {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: linear-gradient(135deg, var(--radial-finish-color) 0%, var(--radial-finish-color-dark) 100%);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      0 -4px 20px rgba(239, 68, 68, 0.3);
+      0 -4px 20px color-mix(in srgb, var(--radial-finish-color) 30%, transparent);
   }
 }
 

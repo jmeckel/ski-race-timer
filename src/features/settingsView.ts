@@ -670,15 +670,25 @@ export async function checkRaceExists(raceId: string): Promise<void> {
   // Increment request ID to track this request
   const currentRequestId = ++raceCheckRequestId;
 
-  const result = await syncService.checkRaceExists(raceId);
+  try {
+    const result = await syncService.checkRaceExists(raceId);
 
-  // Ignore stale response if a newer request was made while this one was in flight
-  if (currentRequestId !== raceCheckRequestId) {
-    return;
+    // Ignore stale response if a newer request was made while this one was in flight
+    if (currentRequestId !== raceCheckRequestId) {
+      return;
+    }
+
+    store.setRaceExistsInCloud(result.exists);
+    updateRaceExistsIndicator(result.exists, result.entryCount);
+  } catch (err) {
+    // Ignore stale response errors
+    if (currentRequestId !== raceCheckRequestId) {
+      return;
+    }
+    // Network error - show unknown state (null) instead of stale data
+    logger.warn('Race exists check failed:', err);
+    updateRaceExistsIndicator(null, 0);
   }
-
-  store.setRaceExistsInCloud(result.exists);
-  updateRaceExistsIndicator(result.exists, result.entryCount);
 }
 
 /**

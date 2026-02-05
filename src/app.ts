@@ -1043,14 +1043,24 @@ function initCustomEventListeners(): void {
 
   // Settings view events
   window.addEventListener('request-photo-sync-warning', (async () => {
-    await showPhotoSyncWarningModal();
-    resolvePhotoSyncWarning();
+    try {
+      await showPhotoSyncWarningModal();
+      resolvePhotoSyncWarning();
+    } catch (err) {
+      logger.error('Photo sync warning modal failed:', err);
+      resolvePhotoSyncWarning(); // Resolve anyway to prevent hanging
+    }
   }) as EventListener);
 
   window.addEventListener('request-race-change-dialog', (async (e: Event) => {
-    const customEvent = e as CustomEvent<{ type: 'synced' | 'unsynced'; lang: Language }>;
-    const result = await showRaceChangeDialog(customEvent.detail.type, customEvent.detail.lang);
-    resolveRaceChangeDialog(result);
+    try {
+      const customEvent = e as CustomEvent<{ type: 'synced' | 'unsynced'; lang: Language }>;
+      const result = await showRaceChangeDialog(customEvent.detail.type, customEvent.detail.lang);
+      resolveRaceChangeDialog(result);
+    } catch (err) {
+      logger.error('Race change dialog failed:', err);
+      resolveRaceChangeDialog('cancel'); // Safe default to prevent hanging
+    }
   }) as EventListener);
 
   // Gate judge view events
@@ -1060,9 +1070,14 @@ function initCustomEventListeners(): void {
 
   // Chief judge view events - PIN verification (Promise-based)
   window.addEventListener('request-pin-verification', (async (e: Event) => {
-    const customEvent = e as CustomEvent<{ lang: Language }>;
-    const verified = await verifyPinForChiefJudge(customEvent.detail.lang);
-    resolvePinVerification(verified);
+    try {
+      const customEvent = e as CustomEvent<{ lang: Language }>;
+      const verified = await verifyPinForChiefJudge(customEvent.detail.lang);
+      resolvePinVerification(verified);
+    } catch (err) {
+      logger.error('PIN verification failed:', err);
+      resolvePinVerification(false); // Deny access on error
+    }
   }) as EventListener);
 
   // Chief judge view events - fault modal dispatchers
