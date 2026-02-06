@@ -12,6 +12,9 @@ import { escapeHtml, escapeAttr } from '../utils';
 import { exportResults, exportChiefSummary, exportFaultSummaryWhatsApp } from './export';
 import type { FaultEntry, FaultType, Language, Run } from '../types';
 
+// Module-level store subscription cleanup
+let unsubscribeChiefJudge: (() => void) | null = null;
+
 // Promise resolver for PIN verification (async event pattern)
 type PinVerifyResolve = (verified: boolean) => void;
 let pendingPinVerifyResolve: PinVerifyResolve | null = null;
@@ -126,7 +129,7 @@ export function initChiefJudgeToggle(): void {
 
   // Subscribe to state changes to update visibility and refresh panel
   // Note: stateSnapshot is captured when notification was queued - use store.getState() if you need latest
-  store.subscribe((stateSnapshot, keys) => {
+  unsubscribeChiefJudge = store.subscribe((stateSnapshot, keys) => {
     if (keys.includes('settings') || keys.includes('faultEntries')) {
       updateChiefJudgeToggleVisibility();
     }
@@ -413,23 +416,23 @@ export function updateFaultSummaryPanel(): void {
       const hasNotes = fault.notes && fault.notes.length > 0;
 
       return `
-        <div class="fault-entry-row${isMarkedForDeletion ? ' marked-for-deletion' : ''}" data-fault-id="${fault.id}">
+        <div class="fault-entry-row${isMarkedForDeletion ? ' marked-for-deletion' : ''}" data-fault-id="${escapeAttr(fault.id)}">
           <div class="fault-gate-info">
-            <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${fault.gateNumber}</span>
+            <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${escapeHtml(String(fault.gateNumber))}</span>
             <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
             ${hasNotes ? `<span class="fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
             ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${escapeAttr(deletionInfo)}">⚠</span>` : ''}
           </div>
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">
-            <button class="fault-row-btn edit-fault-btn" data-fault-id="${fault.id}" title="${t('edit', lang)}" ${isMarkedForDeletion ? 'disabled' : ''}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="fault-row-btn edit-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('edit', lang))}" ${isMarkedForDeletion ? 'disabled' : ''}>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </button>
-            <button class="fault-row-btn delete-fault-btn" data-fault-id="${fault.id}" title="${isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang)}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="fault-row-btn delete-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 ${isMarkedForDeletion
                   ? '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/>'
                   : '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'}
@@ -442,13 +445,13 @@ export function updateFaultSummaryPanel(): void {
 
     const actionHtml = isFinalized
       ? `<div class="finalized-badge">
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
              <path d="M20 6L9 17l-5-5"/>
            </svg>
            ${t('finalized', lang)}
          </div>`
-      : `<button class="finalize-btn" data-bib="${bib}" data-run="${run}">
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      : `<button class="finalize-btn" data-bib="${escapeAttr(bib)}" data-run="${escapeAttr(String(run))}">
+           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
              <path d="M20 6L9 17l-5-5"/>
            </svg>
            ${t('finalize', lang)}
@@ -460,9 +463,9 @@ export function updateFaultSummaryPanel(): void {
       : `<span class="fault-card-result dsq">DSQ</span>`;
 
     cardsHtml.push(`
-      <div class="fault-summary-card${isFinalized ? ' finalized' : ''}" data-bib="${bib}" data-run="${run}">
+      <div class="fault-summary-card${isFinalized ? ' finalized' : ''}" data-bib="${escapeAttr(bib)}" data-run="${escapeAttr(String(run))}">
         <div class="fault-card-header">
-          <span class="fault-card-bib">#${bib.padStart(3, '0')}</span>
+          <span class="fault-card-bib">#${escapeHtml(bib.padStart(3, '0'))}</span>
           <div class="fault-card-status">
             ${statusHtml}
           </div>
@@ -593,23 +596,23 @@ export function updatePendingDeletionsPanel(): void {
       : '';
 
     return `
-      <div class="pending-deletion-item" data-fault-id="${fault.id}">
+      <div class="pending-deletion-item" data-fault-id="${escapeAttr(fault.id)}">
         <div class="pending-deletion-info">
           <span class="pending-deletion-fault">
-            #${fault.bib.padStart(3, '0')} T${fault.gateNumber} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}
+            #${escapeHtml(fault.bib.padStart(3, '0'))} T${escapeHtml(String(fault.gateNumber))} (${getFaultTypeLabel(fault.faultType, lang)}) - ${t(fault.run === 1 ? 'run1' : 'run2', lang)}
           </span>
           <span class="pending-deletion-meta">
-            ${t('deletionMarkedBy', lang)}: ${fault.markedForDeletionBy || '?'} (${timeStr})
+            ${t('deletionMarkedBy', lang)}: ${escapeHtml(fault.markedForDeletionBy || '?')} (${escapeHtml(timeStr)})
           </span>
         </div>
         <div class="pending-deletion-actions">
-          <button class="pending-deletion-btn approve" data-fault-id="${fault.id}" title="${t('approveDeletion', lang)}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <button class="pending-deletion-btn approve" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('approveDeletion', lang))}">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
           </button>
-          <button class="pending-deletion-btn reject" data-fault-id="${fault.id}" title="${t('rejectDeletion', lang)}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="pending-deletion-btn reject" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('rejectDeletion', lang))}">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
@@ -665,4 +668,14 @@ function handleFinalizeClick(event: Event): void {
   showToast(`#${bib.padStart(3, '0')} ${t('finalized', state.currentLang)}`, 'success');
 
   updateFaultSummaryPanel();
+}
+
+/**
+ * Clean up Chief Judge view store subscription
+ */
+export function cleanupChiefJudgeView(): void {
+  if (unsubscribeChiefJudge) {
+    unsubscribeChiefJudge();
+    unsubscribeChiefJudge = null;
+  }
 }

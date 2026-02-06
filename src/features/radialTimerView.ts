@@ -20,6 +20,7 @@ let clockInterval: number | null = null;
 let frozenTime: string | null = null;
 let isInitialized = false;
 let radialKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+let storeUnsubscribe: (() => void) | null = null;
 
 /**
  * Initialize the radial timer view
@@ -51,7 +52,7 @@ export function initRadialTimerView(): void {
   updateRadialStatsDisplay();
 
   // Subscribe to store changes
-  store.subscribe((_state, changedKeys) => {
+  storeUnsubscribe = store.subscribe((_state, changedKeys) => {
     if (changedKeys.includes('settings')) {
       updateRadialGpsStatus();
       updateRadialSyncStatus();
@@ -358,6 +359,10 @@ function initRadialKeyboard(): void {
  * Cleanup radial timer view resources (for re-initialization or unmount)
  */
 export function cleanupRadialTimerView(): void {
+  if (storeUnsubscribe) {
+    storeUnsubscribe();
+    storeUnsubscribe = null;
+  }
   if (radialKeydownHandler) {
     document.removeEventListener('keydown', radialKeydownHandler);
     radialKeydownHandler = null;
@@ -590,7 +595,7 @@ function updateRadialStatsDisplay(): void {
   // Entry count
   const countEl = getElement('radial-stats-count');
   if (countEl) {
-    countEl.textContent = `${entries.length} ${entries.length === 1 ? t('entry') : t('entries')}`;
+    countEl.textContent = `${entries.length} ${entries.length === 1 ? t('entry', state.currentLang) : t('entries', state.currentLang)}`;
   }
 
   // Last recorded
@@ -602,7 +607,7 @@ function updateRadialStatsDisplay(): void {
 
     if (lastBibEl) lastBibEl.textContent = lastEntry.bib || '---';
     if (lastPointEl) {
-      lastPointEl.textContent = lastEntry.point === 'S' ? t('startShort') : t('finishShort');
+      lastPointEl.textContent = lastEntry.point === 'S' ? t('startShort', state.currentLang) : t('finishShort', state.currentLang);
       lastPointEl.className = `radial-stats-point ${lastEntry.point === 'S' ? 'start' : 'finish'}`;
     }
     if (lastTimeEl) {
@@ -616,6 +621,11 @@ function updateRadialStatsDisplay(): void {
  * Cleanup radial timer view
  */
 export function destroyRadialTimerView(): void {
+  if (storeUnsubscribe) {
+    storeUnsubscribe();
+    storeUnsubscribe = null;
+  }
+
   if (clockInterval) {
     clearInterval(clockInterval);
     clockInterval = null;

@@ -16,6 +16,7 @@ import type { Entry, TimingPoint, VoiceIntent } from '../types';
 // Module state
 let clock: Clock | null = null;
 let timerKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+let timerTimeoutIds: Set<number> = new Set();
 
 /**
  * Check if bib is all zeros (e.g., "0", "00", "000")
@@ -329,6 +330,12 @@ export function cleanupTimerView(): void {
     document.removeEventListener('keydown', timerKeydownHandler);
     timerKeydownHandler = null;
   }
+
+  // Clear all tracked timeouts
+  for (const id of timerTimeoutIds) {
+    clearTimeout(id);
+  }
+  timerTimeoutIds.clear();
 }
 
 /**
@@ -481,9 +488,11 @@ function showConfirmation(entry: Entry): void {
   // Trigger snowflake burst
   triggerSnowflakeBurst(entry.point);
 
-  setTimeout(() => {
+  const timeoutId = window.setTimeout(() => {
     overlay.classList.remove('show');
+    timerTimeoutIds.delete(timeoutId);
   }, 1500);
+  timerTimeoutIds.add(timeoutId);
 }
 
 /**
@@ -540,9 +549,11 @@ function showDuplicateWarning(entry: Entry): void {
 
   showConfirmation(entry);
 
-  setTimeout(() => {
+  const timeoutId = window.setTimeout(() => {
     if (warningEl) warningEl.style.display = 'none';
+    timerTimeoutIds.delete(timeoutId);
   }, 2500);
+  timerTimeoutIds.add(timeoutId);
 }
 
 /**
@@ -559,9 +570,11 @@ function showZeroBibWarning(entry: Entry): void {
 
   showConfirmation(entry);
 
-  setTimeout(() => {
+  const timeoutId = window.setTimeout(() => {
     if (warningEl) warningEl.style.display = 'none';
+    timerTimeoutIds.delete(timeoutId);
   }, 2500);
+  timerTimeoutIds.add(timeoutId);
 }
 
 /**

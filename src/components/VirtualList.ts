@@ -1,5 +1,5 @@
 import type { Entry, FaultEntry, Run } from '../types';
-import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml } from '../utils';
+import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml, escapeAttr } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
@@ -695,7 +695,7 @@ export class VirtualList {
 
     const hasFaults = faults.length > 0;
     const faultBadgeHtml = hasFaults ? `
-      <span class="result-fault-badge" title="${escapeHtml(faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+      <span class="result-fault-badge" title="${escapeAttr(faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
         ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     ` : '';
@@ -873,7 +873,7 @@ export class VirtualList {
       .join(', ');
 
     const faultBadgeHtml = `
-      <span class="result-fault-badge" title="${escapeHtml(faultDetails)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+      <span class="result-fault-badge" title="${escapeAttr(faultDetails)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
         ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     `;

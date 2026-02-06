@@ -44,7 +44,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
   const bibSelector = document.getElementById('fault-bib-selector');
   if (bibSelector) {
     bibSelector.innerHTML = activeBibs.map(bib => `
-      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeAttr(bib)}">${escapeHtml(bib)}</button>
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeAttr(bib)}" aria-label="Select bib ${escapeAttr(bib)}">${escapeHtml(bib)}</button>
     `).join('');
 
     // Add click handlers
@@ -100,7 +100,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
     for (let i = start; i <= end; i++) {
       const gateColor = store.getGateColor(i);
       const colorClass = gateColor === 'red' ? 'gate-red' : 'gate-blue';
-      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}">${i}</button>`;
+      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}" aria-label="Gate ${i}">${i}</button>`;
     }
     gateSelector.innerHTML = gatesHtml;
 
@@ -374,6 +374,7 @@ export function initFaultEditModal(): void {
 
       faultEditRunSelector.querySelectorAll('.edit-run-btn').forEach(b => {
         b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
       });
     });
   }
@@ -713,8 +714,8 @@ export function updateActiveBibsList(): void {
         ${hasFault ? `<span class="bib-fault-indicator">${faults.length} ${t('faultCount', state.currentLang)}</span>` : ''}
       </div>
       <div class="bib-card-actions">
-        <button class="bib-action-btn fault" data-action="fault">${t('faultMGShort', state.currentLang)}</button>
-        <button class="bib-action-btn ok" data-action="ok">${t('ok', state.currentLang)}</button>
+        <button class="bib-action-btn fault" data-action="fault" aria-label="${escapeAttr(t('recordFault', state.currentLang))}">${t('faultMGShort', state.currentLang)}</button>
+        <button class="bib-action-btn ok" data-action="ok" aria-label="${escapeAttr(t('markOk', state.currentLang))}">${t('ok', state.currentLang)}</button>
       </div>
     `;
 

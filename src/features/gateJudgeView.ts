@@ -19,6 +19,14 @@ import { initVoiceNoteUI } from './voiceNoteUI';
 import { logger } from '../utils/logger';
 import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 
+// Track event listeners for cleanup
+let gateChangeBtnListener: EventListener | null = null;
+let gateJudgeRunSelectorListener: EventListener | null = null;
+let recordFaultBtnListener: EventListener | null = null;
+let readyToggleBtnListener: EventListener | null = null;
+let colorSelectorListener: EventListener | null = null;
+let saveBtnListener: EventListener | null = null;
+
 /**
  * Update tab visibility based on device role
  * Timer role: show Timer tab, hide Gate Judge tab
@@ -54,17 +62,18 @@ export function initGateJudgeView(): void {
   // Gate assignment change button
   const gateChangeBtn = getElement('gate-change-btn');
   if (gateChangeBtn) {
-    gateChangeBtn.addEventListener('click', () => {
+    gateChangeBtnListener = () => {
       feedbackTap();
       openGateAssignmentModal();
-    });
+    };
+    gateChangeBtn.addEventListener('click', gateChangeBtnListener);
   }
 
   // Gate Judge run selector
   const gateJudgeRunSelector = getElement('gate-judge-run-selector');
   if (gateJudgeRunSelector) {
-    gateJudgeRunSelector.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
+    gateJudgeRunSelectorListener = ((e: Event) => {
+      const target = (e as MouseEvent).target as HTMLElement;
       const btn = target.closest('.run-btn');
       if (!btn) return;
 
@@ -82,22 +91,24 @@ export function initGateJudgeView(): void {
       // Refresh active bibs list and inline fault UI
       updateActiveBibsList();
       refreshInlineFaultUI();
-    });
+    }) as EventListener;
+    gateJudgeRunSelector.addEventListener('click', gateJudgeRunSelectorListener);
   }
 
   // Record fault button
   const recordFaultBtn = getElement('record-fault-btn');
   if (recordFaultBtn) {
-    recordFaultBtn.addEventListener('click', () => {
+    recordFaultBtnListener = () => {
       feedbackTap();
       openFaultRecordingModal();
-    });
+    };
+    recordFaultBtn.addEventListener('click', recordFaultBtnListener);
   }
 
   // Ready toggle button
   const readyToggleBtn = getElement('ready-toggle-btn');
   if (readyToggleBtn) {
-    readyToggleBtn.addEventListener('click', () => {
+    readyToggleBtnListener = () => {
       const state = store.getState();
       const newReadyState = !state.isJudgeReady;
       store.setJudgeReady(newReadyState);
@@ -106,7 +117,8 @@ export function initGateJudgeView(): void {
       // Show confirmation
       const lang = state.currentLang;
       showToast(newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang), 'success');
-    });
+    };
+    readyToggleBtn.addEventListener('click', readyToggleBtnListener);
     // Set initial state
     updateReadyButtonState();
   }
@@ -151,7 +163,9 @@ export function openGateAssignmentModal(): void {
   if (colorSelector) {
     colorSelector.querySelectorAll('.gate-color-btn').forEach(btn => {
       const color = btn.getAttribute('data-color');
-      btn.classList.toggle('active', color === state.firstGateColor);
+      const isActive = color === state.firstGateColor;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-checked', String(isActive));
     });
   }
 
@@ -165,19 +179,24 @@ export function initGateAssignmentModal(): void {
   // Gate color selector toggle
   const colorSelector = getElement('gate-color-selector');
   if (colorSelector) {
-    colorSelector.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest('.gate-color-btn');
+    colorSelectorListener = ((e: Event) => {
+      const btn = ((e as MouseEvent).target as HTMLElement).closest('.gate-color-btn');
       if (!btn) return;
 
-      colorSelector.querySelectorAll('.gate-color-btn').forEach(b => b.classList.remove('active'));
+      colorSelector.querySelectorAll('.gate-color-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-checked', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
       feedbackTap();
-    });
+    }) as EventListener;
+    colorSelector.addEventListener('click', colorSelectorListener);
   }
 
   const saveBtn = getElement('save-gate-assignment-btn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtnListener = () => {
       const startInput = getElement<HTMLInputElement>('gate-start-input');
       const endInput = getElement<HTMLInputElement>('gate-end-input');
       if (!startInput || !endInput) return;
@@ -201,7 +220,8 @@ export function initGateAssignmentModal(): void {
 
       const lang = store.getState().currentLang;
       showToast(t('saved', lang), 'success');
-    });
+    };
+    saveBtn.addEventListener('click', saveBtnListener);
   }
 }
 
@@ -258,7 +278,7 @@ export function updateOtherJudgesCoverage(): void {
   const lang = store.getState().currentLang;
   coverageList.innerHTML = otherAssignments.map(a => `
     <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? t('readySuffix', lang) : ''}">
-      ${a.isReady ? '<span class="ready-check">✓</span>' : ''}
+      ${a.isReady ? '<span class="ready-check" aria-hidden="true">✓</span>' : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
     </div>
@@ -434,5 +454,46 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
 
     default:
       logger.debug('[GateJudgeView] Unhandled voice intent:', intent.action);
+  }
+}
+
+/**
+ * Clean up event listeners added by initGateJudgeView
+ */
+export function cleanupGateJudgeView(): void {
+  const gateChangeBtn = getElement('gate-change-btn');
+  if (gateChangeBtn && gateChangeBtnListener) {
+    gateChangeBtn.removeEventListener('click', gateChangeBtnListener);
+    gateChangeBtnListener = null;
+  }
+
+  const gateJudgeRunSelector = getElement('gate-judge-run-selector');
+  if (gateJudgeRunSelector && gateJudgeRunSelectorListener) {
+    gateJudgeRunSelector.removeEventListener('click', gateJudgeRunSelectorListener);
+    gateJudgeRunSelectorListener = null;
+  }
+
+  const recordFaultBtn = getElement('record-fault-btn');
+  if (recordFaultBtn && recordFaultBtnListener) {
+    recordFaultBtn.removeEventListener('click', recordFaultBtnListener);
+    recordFaultBtnListener = null;
+  }
+
+  const readyToggleBtn = getElement('ready-toggle-btn');
+  if (readyToggleBtn && readyToggleBtnListener) {
+    readyToggleBtn.removeEventListener('click', readyToggleBtnListener);
+    readyToggleBtnListener = null;
+  }
+
+  const colorSelector = getElement('gate-color-selector');
+  if (colorSelector && colorSelectorListener) {
+    colorSelector.removeEventListener('click', colorSelectorListener);
+    colorSelectorListener = null;
+  }
+
+  const saveBtn = getElement('save-gate-assignment-btn');
+  if (saveBtn && saveBtnListener) {
+    saveBtn.removeEventListener('click', saveBtnListener);
+    saveBtnListener = null;
   }
 }

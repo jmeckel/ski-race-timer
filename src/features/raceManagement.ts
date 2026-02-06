@@ -456,17 +456,6 @@ async function handleSavePin(): Promise<void> {
 }
 
 /**
- * Cryptographically secure hash function for PIN using SHA-256
- */
-async function hashPin(pin: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
  * Handle race deleted event from sync service
  */
 export function handleRaceDeleted(event: CustomEvent<{ raceId: string; deletedAt: number; message: string }>): void {
@@ -507,7 +496,7 @@ export function handleAuthExpired(event: CustomEvent<{ message: string }>): void
   const lang = store.getState().currentLang;
 
   // Show toast notification about session expiry
-  showToast(message || 'Session expired. Please re-enter your PIN.', 'warning', 5000);
+  showToast(message || t('sessionExpired', lang), 'warning', 5000);
 
   // Prompt for PIN re-authentication using existing modal
   verifyPinForRaceJoin(lang).then((verified) => {
@@ -517,9 +506,9 @@ export function handleAuthExpired(event: CustomEvent<{ message: string }>): void
       if (state.settings.sync && state.raceId) {
         syncService.initialize();
       }
-      showToast('Authentication successful', 'success');
+      showToast(t('authSuccess', lang), 'success');
     }
-  });
+  }).catch(err => logger.error('Re-auth failed:', err));
 
   feedbackWarning();
 }

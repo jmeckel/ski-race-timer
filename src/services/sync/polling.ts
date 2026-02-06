@@ -28,6 +28,7 @@ class PollingManager {
   private currentIdleLevel = 0;
   private currentBatteryLevel: BatteryLevel = 'normal';
   private batteryUnsubscribe: (() => void) | null = null;
+  private meteredUnsubscribe: (() => void) | null = null;
   private isAdjustingInterval = false;
   private currentPollingIntervalMs = 0;
   private pollCallback: (() => void) | null = null;
@@ -50,7 +51,7 @@ class PollingManager {
     });
 
     // Subscribe to network metered state changes
-    networkMonitor.onMeteredChange(() => {
+    this.meteredUnsubscribe = networkMonitor.onMeteredChange(() => {
       if (this.pollInterval) {
         this.applyBatteryAwarePolling();
       }
@@ -275,6 +276,11 @@ class PollingManager {
     if (this.batteryUnsubscribe) {
       this.batteryUnsubscribe();
       this.batteryUnsubscribe = null;
+    }
+
+    if (this.meteredUnsubscribe) {
+      this.meteredUnsubscribe();
+      this.meteredUnsubscribe = null;
     }
 
     this.pollCallback = null;

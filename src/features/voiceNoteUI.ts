@@ -19,6 +19,10 @@ let accumulatedTranscript = '';
 let unsubscribeStatus: (() => void) | null = null;
 let unsubscribeTranscript: (() => void) | null = null;
 
+// References for cleanup
+let faultEditObserver: MutationObserver | null = null;
+let overlayKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+
 // Max note length
 const MAX_NOTE_LENGTH = 500;
 
@@ -342,14 +346,15 @@ export function initFaultConfirmationOverlay(): void {
   // Dismiss on Escape key
   if (overlay) {
     // Use document-level listener to catch ESC even without focus
-    document.addEventListener('keydown', (e) => {
+    overlayKeydownHandler = (e: KeyboardEvent) => {
       // Only dismiss if overlay is visible AND no other modal is open
       // (modals take precedence over the confirmation overlay)
       if (e.key === 'Escape' && overlay.classList.contains('show') && !isAnyModalOpen()) {
         e.preventDefault();
         dismissFaultConfirmation();
       }
-    });
+    };
+    document.addEventListener('keydown', overlayKeydownHandler);
   }
 }
 
@@ -475,7 +480,7 @@ function initFaultEditMicHandler(): void {
   // Clean up when fault edit modal closes
   const faultEditModal = document.getElementById('fault-edit-modal');
   if (faultEditModal) {
-    const observer = new MutationObserver((mutations) => {
+    faultEditObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const isVisible = faultEditModal.classList.contains('active') ||
@@ -491,8 +496,23 @@ function initFaultEditMicHandler(): void {
         }
       }
     });
-    observer.observe(faultEditModal, { attributes: true });
+    faultEditObserver.observe(faultEditModal, { attributes: true });
   }
+}
+
+/**
+ * Cleanup voice note UI resources
+ */
+export function cleanupVoiceNoteUI(): void {
+  if (faultEditObserver) {
+    faultEditObserver.disconnect();
+    faultEditObserver = null;
+  }
+  if (overlayKeydownHandler) {
+    document.removeEventListener('keydown', overlayKeydownHandler);
+    overlayKeydownHandler = null;
+  }
+  cleanupSubscriptions();
 }
 
 /**

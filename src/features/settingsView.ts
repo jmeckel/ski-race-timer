@@ -829,4 +829,14 @@ export function cleanupSettingsTimeouts(): void {
     clearTimeout(raceCheckTimeout);
     raceCheckTimeout = null;
   }
+
+  if (settingsRecentRacesDocumentHandler) {
+    document.removeEventListener('click', settingsRecentRacesDocumentHandler);
+    settingsRecentRacesDocumentHandler = null;
+  }
+
+  if (updateRoleToggleHandler) {
+    window.removeEventListener('update-role-toggle', updateRoleToggleHandler);
+    updateRoleToggleHandler = null;
+  }
 }

@@ -70,7 +70,7 @@
           <span class="voice-dot"></span>
           <span class="voice-status-text" id="voice-status-text"></span>
         </div>
-        <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
+        <span class="entry-count-badge" id="entry-count-badge" style="display: none;" aria-live="polite">0</span>
       </div>
     </header>
 
@@ -152,7 +152,7 @@
                 <span class="radial-stats-point finish" id="radial-last-point" data-i18n="finishShort">F</span>
               </div>
               <div class="radial-stats-time" id="radial-last-time">--:--:--.---</div>
-              <div class="radial-stats-count" id="radial-stats-count">---</div>
+              <div class="radial-stats-count" id="radial-stats-count" aria-live="polite">---</div>
             </div>
 
             <!-- Bottom Right: Time Button -->
@@ -169,7 +169,7 @@
 
           <!-- Confirmation Overlay -->
           <div class="radial-confirmation-overlay" id="radial-confirmation-overlay">
-            <div class="radial-confirmation-check">✓</div>
+            <div class="radial-confirmation-check" aria-hidden="true">✓</div>
             <div class="radial-confirmation-bib" id="radial-confirm-bib">---</div>
             <div class="radial-confirmation-time" id="radial-confirm-time">--:--:--.---</div>
             <div class="radial-confirmation-point finish" id="radial-confirm-point">Finish</div>
@@ -208,7 +208,7 @@
           </div>
 
           <!-- Stats -->
-          <div class="stats-row">
+          <div class="stats-row" aria-live="polite">
             <div class="stat-item">
               <div class="stat-value" id="stat-total">0</div>
               <div class="stat-label" data-i18n="total">Total</div>
@@ -255,7 +255,7 @@
             </div>
             <div class="penalty-seconds-selector" id="penalty-seconds-selector">
               <button class="penalty-adj-btn" data-adj="-1" aria-label="Decrease penalty seconds">−</button>
-              <span class="penalty-seconds-value" id="penalty-seconds-value">5</span>
+              <span class="penalty-seconds-value" id="penalty-seconds-value" aria-live="polite">5</span>
               <span class="penalty-seconds-unit">s</span>
               <button class="penalty-adj-btn" data-adj="+1" aria-label="Increase penalty seconds">+</button>
             </div>
@@ -691,7 +691,7 @@
 
         <!-- Version -->
         <div class="settings-section">
-          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
           </button>
         </div>
@@ -1033,12 +1033,12 @@
         <!-- First Gate Color Selection -->
         <div class="first-gate-color-section" style="margin-top: 20px;">
           <label data-i18n="firstGateColor" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Color of first gate</label>
-          <div class="gate-color-selector" id="gate-color-selector">
-            <button type="button" class="gate-color-btn red active" data-color="red">
+          <div class="gate-color-selector" id="gate-color-selector" role="radiogroup" aria-label="First gate color">
+            <button type="button" class="gate-color-btn red active" data-color="red" role="radio" aria-checked="true">
               <span class="gate-color-dot" style="background: #ef4444;"></span>
               <span data-i18n="colorRed">Red</span>
             </button>
-            <button type="button" class="gate-color-btn blue" data-color="blue">
+            <button type="button" class="gate-color-btn blue" data-color="blue" role="radio" aria-checked="false">
               <span class="gate-color-dot" style="background: #3b82f6;"></span>
               <span data-i18n="colorBlue">Blue</span>
             </button>

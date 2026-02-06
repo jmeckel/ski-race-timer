@@ -7,6 +7,7 @@
 import { feedbackTap } from '../services';
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 export interface RadialDialOptions {
   onChange?: (value: string) => void;
@@ -39,6 +40,7 @@ export class RadialDial {
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
   private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> = new Map(); // Track for cleanup
+  private isDestroyed = false;
 
   // Bib value
   private bibValue = '';
@@ -61,7 +63,7 @@ export class RadialDial {
     this.gestureArea = this.container.querySelector('.dial-gesture-area');
 
     if (!this.dialNumbers) {
-      console.warn('[RadialDial] Required elements not found');
+      logger.warn('[RadialDial] Required elements not found');
       return;
     }
 
@@ -487,6 +489,9 @@ export class RadialDial {
   }
 
   destroy(): void {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
+
     if (this.spinAnimationId) {
       cancelAnimationFrame(this.spinAnimationId);
     }

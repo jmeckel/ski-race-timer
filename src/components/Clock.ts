@@ -29,6 +29,7 @@ export class Clock {
   private frameSkipCount = FRAME_SKIP_NORMAL;
   private currentFrame = 0;
   private batteryUnsubscribe: (() => void) | null = null;
+  private isDestroyed = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -154,7 +155,7 @@ export class Clock {
         this.batteryUnsubscribe = batteryService.subscribe((status) => {
           this.updateFrameSkipFromBattery(status.batteryLevel);
         });
-      });
+      }).catch(err => logger.debug('Battery API unavailable:', err));
     }
   }
 
@@ -294,6 +295,9 @@ export class Clock {
    * Cleanup
    */
   destroy(): void {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
+
     this.stop();
 
     // Remove visibility change handler

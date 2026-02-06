@@ -17,6 +17,7 @@ export class Toast {
   private isShowing = false;
   private toastEventListener: EventListener;
   private lastCopyTime = 0; // Track last copy to prevent duplicate notifications
+  private isDestroyed = false;
 
   constructor() {
     this.container = this.createContainer();
@@ -204,6 +205,9 @@ export class Toast {
    * Destroy toast instance and cleanup event listeners
    */
   destroy(): void {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
+
     window.removeEventListener('show-toast', this.toastEventListener);
     this.clear();
     this.container.remove();

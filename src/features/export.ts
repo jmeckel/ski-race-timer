@@ -7,6 +7,7 @@ import { store } from '../store';
 import { t } from '../i18n/translations';
 import { showToast } from '../components';
 import { feedbackSuccess } from '../services';
+import { logger } from '../utils/logger';
 import type { Entry, Language, FaultEntry, FaultType } from '../types';
 
 /**
@@ -189,7 +190,7 @@ export function exportResults(): void {
     feedbackSuccess();
     showToast(t('exported', lang), 'success');
   } catch (error) {
-    console.error('CSV export failed:', error);
+    logger.error('CSV export failed:', error);
     showToast(t('operationFailed', lang), 'error');
   }
 }

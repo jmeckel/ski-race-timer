@@ -462,7 +462,11 @@ export const translations: Record<Language, Translations> = {
     typeNote: 'Type or speak your note...',
     hasNote: 'Has note',
     noteTextLabel: 'Note text',
-    recordVoiceNoteLabel: 'Record voice note'
+    recordVoiceNoteLabel: 'Record voice note',
+
+    // Auth
+    sessionExpired: 'Session expired. Please re-enter your PIN.',
+    authSuccess: 'Authentication successful'
   },
 
   de: {
@@ -476,7 +480,7 @@ export const translations: Record<Language, Translations> = {
     finish: 'Ziel',
     startShort: 'S',
     finishShort: 'Z',
-    bib: 'Startnummer',
+    bib: 'Startnr.',
     point: 'Punkt',
     run: 'Lauf',
     run1: 'L1',
@@ -579,7 +583,7 @@ export const translations: Record<Language, Translations> = {
     simpleModeDesc: 'Vereinfachte Oberfläche für einfache Zeitmessung',
     cloudSyncDesc: 'Mit anderen Geräten synchronisieren',
     gpsDesc: 'GPS für genaue Zeitstempel verwenden',
-    autoIncrementDesc: 'Startnummer nach Erfassung erhöhen',
+    autoIncrementDesc: 'Startnr. nach Erfassung erhöhen',
     photoCaptureDesc: 'Foto bei Zeiterfassung aufnehmen',
     hapticFeedbackDesc: 'Vibration bei Aktionen',
     soundFeedbackDesc: 'Akustische Bestätigung',
@@ -723,7 +727,7 @@ export const translations: Record<Language, Translations> = {
     onboardingDeviceNameJudge: 'Dein Name',
     onboardingDeviceNameJudgeDesc: 'Dies identifiziert dich als Torrichter',
     onboardingPhoto: 'Foto-Dokumentation',
-    onboardingPhotoDesc: 'Automatisch ein Foto bei jeder Zeiterfassung aufnehmen. Nützlich zur Überprüfung von Startnummern und bei Unstimmigkeiten.',
+    onboardingPhotoDesc: 'Automatisch ein Foto bei jeder Zeiterfassung aufnehmen. Nützlich zur Überprüfung von Startnr. und bei Unstimmigkeiten.',
     enablePhotoCapture: 'Foto-Aufnahme aktivieren',
     photoCaptureLabel: 'Foto-Aufnahme',
     onboardingGates: 'Deine Tor-Zuweisung',
@@ -734,7 +738,7 @@ export const translations: Record<Language, Translations> = {
     onboardingReady: 'Bereit zur Zeitmessung!',
     onboardingReadyJudge: 'Bereit als Torrichter!',
     onboardingTip: 'Tippe auf den großen blauen Button um Zeiten zu erfassen',
-    onboardingTipJudge: 'Tippe auf eine Startnummer um einen Fehler zu erfassen',
+    onboardingTipJudge: 'Tippe auf eine Startnr. um einen Fehler zu erfassen',
     startTiming: 'Zeitmessung starten',
     startJudging: 'Starten',
     continue: 'Weiter',
@@ -926,7 +930,11 @@ export const translations: Record<Language, Translations> = {
     typeNote: 'Notiz eintippen oder sprechen...',
     hasNote: 'Hat Notiz',
     noteTextLabel: 'Notiztext',
-    recordVoiceNoteLabel: 'Sprachnotiz aufnehmen'
+    recordVoiceNoteLabel: 'Sprachnotiz aufnehmen',
+
+    // Auth
+    sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',
+    authSuccess: 'Authentifizierung erfolgreich'
   }
 };
 
