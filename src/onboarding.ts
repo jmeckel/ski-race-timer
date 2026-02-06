@@ -640,41 +640,57 @@ export class OnboardingController {
     if (summary) {
       summary.innerHTML = '';
 
-      const rows: Array<[string, string]> = [];
+      type SummaryRow = { label: string; value: string; badge?: 'enabled' | 'disabled' | 'role' };
+      const rows: SummaryRow[] = [];
 
       // Role
-      rows.push([t('deviceRole', lang), this.selectedRole === 'gateJudge' ? t('roleJudgeTitle', lang) : t('roleTimerTitle', lang)]);
+      const roleLabel = this.selectedRole === 'gateJudge' ? t('roleJudgeTitle', lang) : t('roleTimerTitle', lang);
+      rows.push({ label: t('deviceRole', lang), value: roleLabel, badge: 'role' });
 
       // Device/Judge name
-      rows.push([this.selectedRole === 'gateJudge' ? t('onboardingDeviceNameJudge', lang) : t('deviceNameLabel', lang), state.deviceName]);
+      const nameLabel = this.selectedRole === 'gateJudge' ? t('onboardingDeviceNameJudge', lang) : t('deviceNameLabel', lang);
+      rows.push({ label: nameLabel, value: state.deviceName });
 
       // Role-specific row
       if (this.selectedRole === 'gateJudge') {
         const gateRange = state.gateAssignment;
-        rows.push([t('gates', lang), gateRange ? `${gateRange[0]}–${gateRange[1]}` : '—']);
+        rows.push({ label: t('gates', lang), value: gateRange ? `${gateRange[0]}–${gateRange[1]}` : '—' });
       } else {
-        rows.push([t('photoCaptureLabel', lang), state.settings.photoCapture ? t('enabled', lang) : t('disabled', lang)]);
+        const photoOn = state.settings.photoCapture;
+        rows.push({ label: t('photoCaptureLabel', lang), value: photoOn ? t('enabled', lang) : t('disabled', lang), badge: photoOn ? 'enabled' : 'disabled' });
       }
 
-      // Race ID & Sync
-      rows.push([t('raceIdLabel', lang), state.raceId || '—']);
-      rows.push([t('syncStatusLabel', lang), state.settings.sync ? t('enabled', lang) : t('disabled', lang)]);
+      // Race ID
+      rows.push({ label: t('raceIdLabel', lang), value: state.raceId || '—' });
 
-      // Use semantic definition list for summary
-      const dl = document.createElement('dl');
-      dl.className = 'onboarding-summary-list';
+      // Sync
+      const syncOn = state.settings.sync;
+      rows.push({ label: t('syncStatusLabel', lang), value: syncOn ? t('enabled', lang) : t('disabled', lang), badge: syncOn ? 'enabled' : 'disabled' });
 
-      rows.forEach(([label, value]) => {
-        const dt = document.createElement('dt');
-        dt.textContent = label;
+      const container = document.createElement('div');
+      container.className = 'onboarding-summary-list';
 
-        const dd = document.createElement('dd');
-        dd.textContent = value;
+      rows.forEach(({ label, value, badge }) => {
+        const row = document.createElement('div');
+        row.className = 'onboarding-summary-row';
 
-        dl.append(dt, dd);
+        const labelEl = document.createElement('span');
+        labelEl.className = 'onboarding-summary-label';
+        labelEl.textContent = label;
+
+        const valueEl = document.createElement('span');
+        if (badge) {
+          valueEl.className = `onboarding-summary-badge ${badge}`;
+        } else {
+          valueEl.className = 'onboarding-summary-value';
+        }
+        valueEl.textContent = value;
+
+        row.append(labelEl, valueEl);
+        container.appendChild(row);
       });
 
-      summary.appendChild(dl);
+      summary.appendChild(container);
     }
   }
 
