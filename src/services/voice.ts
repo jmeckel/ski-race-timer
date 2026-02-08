@@ -48,6 +48,7 @@ class VoiceModeService {
   private recognition: SpeechRecognition | null = null;
   private llmConfig: LLMConfig | null = null;
   private isEnabled = false;
+  private isPaused = false;
   private isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
   private pendingIntent: VoiceIntent | null = null;
   private status: VoiceStatus = 'inactive';
@@ -164,8 +165,8 @@ class VoiceModeService {
     this.recognition.onend = () => {
       logger.debug('[Voice] Recognition ended');
 
-      // Restart if still enabled and online
-      if (this.isEnabled && this.isOnline && this.status !== 'error') {
+      // Restart if still enabled, online, and not paused
+      if (this.isEnabled && this.isOnline && !this.isPaused && this.status !== 'error') {
         this.scheduleRestart();
       }
     };
@@ -180,7 +181,7 @@ class VoiceModeService {
     }
 
     this.restartTimeout = setTimeout(() => {
-      if (this.isEnabled && this.isOnline) {
+      if (this.isEnabled && this.isOnline && !this.isPaused) {
         try {
           this.recognition?.start();
         } catch (e) {
@@ -384,6 +385,7 @@ class VoiceModeService {
    */
   disable(): void {
     this.isEnabled = false;
+    this.isPaused = false;
     this.pendingIntent = null;
 
     if (this.confirmationTimeout) {
@@ -404,6 +406,47 @@ class VoiceModeService {
 
     speechSynthesis.cancel();
     this.setStatus('inactive');
+  }
+
+  /**
+   * Pause voice mode temporarily (e.g., while voice note is recording)
+   * Stops recognition without triggering auto-restart.
+   * Call resume() to re-enable.
+   */
+  pause(): void {
+    if (!this.isEnabled || this.isPaused) return;
+
+    this.isPaused = true;
+
+    // Cancel any pending restart so it doesn't fight back
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
+
+    try {
+      this.recognition?.abort();
+    } catch (e) {
+      // Ignore
+    }
+
+    logger.debug('[Voice] Paused');
+  }
+
+  /**
+   * Resume voice mode after a pause.
+   * No-op if not previously paused or if voice mode was disabled.
+   */
+  resume(): void {
+    if (!this.isEnabled || !this.isPaused) return;
+
+    this.isPaused = false;
+
+    if (this.isOnline && this.status !== 'error') {
+      this.scheduleRestart();
+    }
+
+    logger.debug('[Voice] Resumed');
   }
 
   /**
@@ -434,6 +477,13 @@ class VoiceModeService {
   onAction(callback: ActionCallback): () => void {
     this.actionCallbacks.add(callback);
     return () => this.actionCallbacks.delete(callback);
+  }
+
+  /**
+   * Check if voice mode is paused
+   */
+  isPausedState(): boolean {
+    return this.isPaused;
   }
 
   /**

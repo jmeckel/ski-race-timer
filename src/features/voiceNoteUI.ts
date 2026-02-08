@@ -5,13 +5,12 @@
 
 import { store } from '../store';
 import { voiceNoteService } from '../services/voiceNote';
+import { voiceModeService } from '../services/voice';
 import { syncFault } from '../services/sync';
 import { showToast } from '../components';
 import { feedbackTap, feedbackSuccess } from '../services';
 import { t } from '../i18n/translations';
 import { openModal, closeModal, isAnyModalOpen } from './modals';
-import { escapeAttr } from '../utils';
-import type { FaultEntry } from '../types';
 
 // Module state
 let currentFaultId: string | null = null;
@@ -70,6 +69,8 @@ export function closeVoiceNoteModal(): void {
   currentFaultId = null;
   accumulatedTranscript = '';
   closeModal(document.getElementById('voice-note-modal'));
+  // Resume voice mode in case it was paused
+  voiceModeService.resume();
 }
 
 /**
@@ -116,6 +117,7 @@ export function saveVoiceNote(): void {
 
 /**
  * Start voice recording
+ * Pauses voice mode service first to avoid SpeechRecognition conflicts
  */
 export function startVoiceRecording(): void {
   const lang = store.getState().currentLang;
@@ -125,12 +127,18 @@ export function startVoiceRecording(): void {
     return;
   }
 
+  // Pause voice mode to avoid SpeechRecognition conflicts
+  // Browser only allows one active SpeechRecognition session at a time
+  voiceModeService.pause();
+
   // Set up callbacks
   unsubscribeStatus = voiceNoteService.onStatusChange((status) => {
     updateListeningIndicator(status === 'listening');
 
     if (status === 'error') {
       showToast(t('voiceNoteError', lang), 'warning');
+      // Resume voice mode on error
+      voiceModeService.resume();
     }
   });
 
@@ -155,16 +163,22 @@ export function startVoiceRecording(): void {
   const started = voiceNoteService.start();
   if (started) {
     feedbackTap();
+  } else {
+    // Failed to start - resume voice mode
+    voiceModeService.resume();
   }
 }
 
 /**
  * Stop voice recording
+ * Resumes voice mode service after stopping
  */
 export function stopVoiceRecording(): void {
   voiceNoteService.stop();
   cleanupSubscriptions();
   updateListeningIndicator(false);
+  // Resume voice mode after voice note recording stops
+  voiceModeService.resume();
 }
 
 /**
@@ -359,47 +373,6 @@ export function initFaultConfirmationOverlay(): void {
 }
 
 /**
- * Show fault confirmation with note option (replaces auto-dismiss)
- */
-export function showFaultConfirmationWithNoteOption(fault: FaultEntry): void {
-  const overlay = document.getElementById('fault-confirmation-overlay');
-  if (!overlay) return;
-
-  // Store fault ID for "Add Note" button (escaped for safety)
-  overlay.setAttribute('data-fault-id', escapeAttr(fault.id));
-
-  const bibEl = overlay.querySelector('.fault-confirmation-bib');
-  const gateEl = overlay.querySelector('.fault-confirmation-gate');
-  const typeEl = overlay.querySelector('.fault-confirmation-type');
-
-  const state = store.getState();
-  const lang = state.currentLang;
-
-  // Using textContent which auto-escapes HTML
-  if (bibEl) bibEl.textContent = fault.bib;
-  if (gateEl) gateEl.textContent = `${t('gate', lang)} ${fault.gateNumber}`;
-  if (typeEl) typeEl.textContent = getFaultTypeLabel(fault.faultType, lang);
-
-  overlay.classList.add('show');
-
-  // Focus the Done button for keyboard accessibility
-  const doneBtn = document.getElementById('fault-confirmation-done-btn');
-  setTimeout(() => doneBtn?.focus(), 100);
-}
-
-/**
- * Get localized fault type label (imported from chiefJudgeView but duplicated to avoid circular deps)
- */
-function getFaultTypeLabel(faultType: string, lang: string): string {
-  const labels: Record<string, string> = {
-    'MG': t('faultMGShort', lang as 'en' | 'de'),
-    'STR': t('faultSTRShort', lang as 'en' | 'de'),
-    'BR': t('faultBRShort', lang as 'en' | 'de')
-  };
-  return labels[faultType] || faultType;
-}
-
-/**
  * Initialize fault edit modal voice recording
  */
 function initFaultEditMicHandler(): void {
@@ -437,8 +410,12 @@ function initFaultEditMicHandler(): void {
       isEditRecording = false;
       micBtn?.classList.remove('recording');
       micBtn?.setAttribute('aria-pressed', 'false');
+      voiceModeService.resume();
       return;
     }
+
+    // Pause voice mode before starting voice note recording
+    voiceModeService.pause();
 
     // Start recording
     editUnsubscribeStatus = voiceNoteService.onStatusChange((status) => {
@@ -448,6 +425,7 @@ function initFaultEditMicHandler(): void {
         isEditRecording = false;
         micBtn?.classList.remove('recording');
         micBtn?.setAttribute('aria-pressed', 'false');
+        voiceModeService.resume();
       }
     });
 
@@ -474,6 +452,8 @@ function initFaultEditMicHandler(): void {
       micBtn?.classList.add('recording');
       micBtn?.setAttribute('aria-pressed', 'true');
       feedbackTap();
+    } else {
+      voiceModeService.resume();
     }
   });
 
@@ -483,7 +463,7 @@ function initFaultEditMicHandler(): void {
     faultEditObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-          const isVisible = faultEditModal.classList.contains('active') ||
+          const isVisible = faultEditModal.classList.contains('show') ||
                            faultEditModal.style.display !== 'none';
           if (!isVisible && isEditRecording) {
             voiceNoteService.stop();
@@ -492,6 +472,7 @@ function initFaultEditMicHandler(): void {
             const micBtn = document.getElementById('fault-edit-mic-btn');
             micBtn?.classList.remove('recording');
             micBtn?.setAttribute('aria-pressed', 'false');
+            voiceModeService.resume();
           }
         }
       }
