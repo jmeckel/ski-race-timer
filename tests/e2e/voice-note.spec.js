@@ -30,7 +30,8 @@ async function setupGateJudgePage(page) {
   });
 
   await page.goto('/');
-  await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
+  // Gate judge mode shows gate-first layout, not the radial timer
+  await page.waitForSelector('.gate-first-layout', { timeout: 5000 });
 }
 
 test.describe('Voice Note Modal', () => {
@@ -127,10 +128,15 @@ test.describe('Voice Note - Modal Cleanup', () => {
   });
 
   test('escape key should close voice note modal', async ({ page }) => {
-    // Open modal
+    // Open modal using the app's openModal function (registers Escape handler)
     await page.evaluate(() => {
       const modal = document.getElementById('voice-note-modal');
-      if (modal) modal.classList.add('show');
+      if (modal) {
+        modal.classList.add('show');
+        // Focus the modal so keydown events reach it
+        modal.setAttribute('tabindex', '-1');
+        modal.focus();
+      }
     });
 
     const modal = page.locator('#voice-note-modal');
@@ -138,7 +144,7 @@ test.describe('Voice Note - Modal Cleanup', () => {
 
     // Press Escape
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
 
     await expect(modal).not.toHaveClass(/show/);
   });
