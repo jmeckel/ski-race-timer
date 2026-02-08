@@ -374,10 +374,7 @@ export function updateJudgeReadyStatus(): void {
   // Update indicator classes based on ready state
   judgeReadyIndicator.classList.remove('none-ready', 'some-ready', 'all-ready');
 
-  if (totalJudges === 0) {
-    // No judges at all - show as none ready
-    judgeReadyIndicator.classList.add('none-ready');
-  } else if (readyJudges === 0) {
+  if (readyJudges === 0 || totalJudges === 0) {
     judgeReadyIndicator.classList.add('none-ready');
   } else if (readyJudges === totalJudges) {
     judgeReadyIndicator.classList.add('all-ready');

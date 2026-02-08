@@ -79,12 +79,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
     bibInput.addEventListener('input', faultModalBibInputListener);
   }
 
-  // Set preselected bib
-  if (preselectedBib) {
-    store.setSelectedFaultBib(preselectedBib);
-  } else {
-    store.setSelectedFaultBib('');
-  }
+  store.setSelectedFaultBib(preselectedBib || '');
 
   // Clean up old gate button listeners before adding new ones (M6 fix)
   for (const [element, listener] of faultModalGateListeners) {
@@ -206,35 +201,12 @@ export function initFaultRecordingModal(): void {
 }
 
 /**
- * Record a fault entry
+ * Create, store, sync, and confirm a fault entry.
+ * Shared logic used by all fault recording paths (modal, voice, inline).
  */
-export function recordFault(faultType: FaultType): void {
+function createAndSyncFault(bib: string, gateNumber: number, faultType: FaultType): void {
   const state = store.getState();
 
-  // Get selected bib
-  let bib = state.selectedFaultBib;
-  if (!bib) {
-    const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
-    bib = bibInput?.value.padStart(3, '0') || '';
-  }
-
-  if (!bib) {
-    const lang = state.currentLang;
-    showToast(t('selectBib', lang), 'warning');
-    return;
-  }
-
-  // Get selected gate
-  const selectedGateBtn = document.querySelector('#fault-gate-selector .fault-gate-btn.selected');
-  const gateNumber = selectedGateBtn ? parseInt(selectedGateBtn.getAttribute('data-gate') || '0', 10) : 0;
-
-  if (!gateNumber) {
-    const lang = state.currentLang;
-    showToast(t('selectGate', lang), 'warning');
-    return;
-  }
-
-  // Create fault entry (without version fields - added by store)
   const fault = {
     id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     bib,
@@ -248,23 +220,47 @@ export function recordFault(faultType: FaultType): void {
   };
 
   store.addFaultEntry(fault);
-  feedbackWarning(); // Use warning feedback for fault (attention-getting)
+  feedbackWarning();
 
-  // Get the fault with version fields from store and sync to cloud
   const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
   if (storedFault) {
     syncFault(storedFault);
     showFaultConfirmation(storedFault);
   }
 
-  // Close modal
+  showToast(t('faultRecorded', state.currentLang), 'success');
+}
+
+/**
+ * Record a fault entry
+ */
+export function recordFault(faultType: FaultType): void {
+  const state = store.getState();
+
+  // Get selected bib
+  let bib = state.selectedFaultBib;
+  if (!bib) {
+    const bibInput = document.getElementById('fault-bib-input') as HTMLInputElement;
+    bib = bibInput?.value.padStart(3, '0') || '';
+  }
+
+  if (!bib) {
+    showToast(t('selectBib', state.currentLang), 'warning');
+    return;
+  }
+
+  // Get selected gate
+  const selectedGateBtn = document.querySelector('#fault-gate-selector .fault-gate-btn.selected');
+  const gateNumber = selectedGateBtn ? parseInt(selectedGateBtn.getAttribute('data-gate') || '0', 10) : 0;
+
+  if (!gateNumber) {
+    showToast(t('selectGate', state.currentLang), 'warning');
+    return;
+  }
+
+  createAndSyncFault(bib, gateNumber, faultType);
   closeModal(document.getElementById('fault-modal'));
-
-  // Refresh active bibs list
   updateActiveBibsList();
-
-  const lang = state.currentLang;
-  showToast(t('faultRecorded', lang), 'success');
 }
 
 /**
@@ -278,43 +274,13 @@ export function recordFaultFromVoice(bib: string, gateNumber: number, faultType:
   if (state.gateAssignment) {
     const [start, end] = state.gateAssignment;
     if (gateNumber < start || gateNumber > end) {
-      const lang = state.currentLang;
-      showToast(t('gateOutOfRange', lang), 'warning');
+      showToast(t('gateOutOfRange', state.currentLang), 'warning');
       return;
     }
   }
 
-  // Normalize bib to 3 digits
-  const normalizedBib = bib.padStart(3, '0');
-
-  // Create fault entry (without version fields - added by store)
-  const fault = {
-    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    bib: normalizedBib,
-    run: state.selectedRun,
-    gateNumber,
-    faultType,
-    timestamp: new Date().toISOString(),
-    deviceId: state.deviceId,
-    deviceName: state.deviceName,
-    gateRange: state.gateAssignment || [1, 1]
-  };
-
-  store.addFaultEntry(fault);
-  feedbackWarning(); // Use warning feedback for fault (attention-getting)
-
-  // Get the fault with version fields from store and sync to cloud
-  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
-  if (storedFault) {
-    syncFault(storedFault);
-    showFaultConfirmation(storedFault);
-  }
-
-  // Refresh active bibs list
+  createAndSyncFault(bib.padStart(3, '0'), gateNumber, faultType);
   updateActiveBibsList();
-
-  const lang = state.currentLang;
-  showToast(t('faultRecorded', lang), 'success');
 }
 
 /**
@@ -1233,11 +1199,7 @@ export function initInlineFaultEntry(): void {
 
   // Save fault button
   const saveBtn = document.getElementById('inline-save-fault-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      saveInlineFault();
-    });
-  }
+  saveBtn?.addEventListener('click', saveInlineFault);
 }
 
 /**
@@ -1255,45 +1217,24 @@ export function updateInlineSaveButtonState(): void {
  * Save a fault from the inline entry interface
  */
 export function saveInlineFault(): void {
-  const state = store.getState();
+  const lang = store.getState().currentLang;
 
   if (!inlineSelectedBib) {
-    showToast(t('selectBib', state.currentLang), 'warning');
+    showToast(t('selectBib', lang), 'warning');
     return;
   }
 
   if (!inlineSelectedGate) {
-    showToast(t('selectGate', state.currentLang), 'warning');
+    showToast(t('selectGate', lang), 'warning');
     return;
   }
 
   if (!inlineSelectedFaultType) {
-    showToast(t('selectFaultType', state.currentLang), 'warning');
+    showToast(t('selectFaultType', lang), 'warning');
     return;
   }
 
-  // Create fault entry
-  const fault = {
-    id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    bib: inlineSelectedBib,
-    run: state.selectedRun,
-    gateNumber: inlineSelectedGate,
-    faultType: inlineSelectedFaultType,
-    timestamp: new Date().toISOString(),
-    deviceId: state.deviceId,
-    deviceName: state.deviceName,
-    gateRange: state.gateAssignment || [1, 1]
-  };
-
-  store.addFaultEntry(fault);
-  feedbackWarning();
-
-  // Sync to cloud
-  const storedFault = store.getState().faultEntries.find(f => f.id === fault.id);
-  if (storedFault) {
-    syncFault(storedFault);
-    showFaultConfirmation(storedFault);
-  }
+  createAndSyncFault(inlineSelectedBib, inlineSelectedGate, inlineSelectedFaultType);
 
   // Reset fault type (keep gate and bib for quick successive faults on same gate)
   inlineSelectedFaultType = null;
@@ -1304,12 +1245,7 @@ export function saveInlineFault(): void {
     btn.setAttribute('aria-pressed', 'false');
   });
 
-  updateInlineFaultsList();
-  updateInlineBibSelector();
-  updateInlineGateSelector();
-  updateInlineSaveButtonState();
-
-  showToast(t('faultRecorded', state.currentLang), 'success');
+  refreshInlineFaultUI();
 }
 
 /**

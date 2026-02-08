@@ -245,56 +245,33 @@ export function initVoiceNoteModal(): void {
 
   // Mic button
   const micBtn = document.getElementById('voice-note-mic-btn');
-  if (micBtn) {
-    micBtn.addEventListener('click', () => {
-      toggleVoiceRecording();
-    });
-  }
+  micBtn?.addEventListener('click', toggleVoiceRecording);
 
   // Save button
   const saveBtn = document.getElementById('voice-note-save-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      saveVoiceNote();
-    });
-  }
+  saveBtn?.addEventListener('click', saveVoiceNote);
 
-  // Cancel button
+  // Cancel and close buttons both dismiss the modal
   const cancelBtn = document.getElementById('voice-note-cancel-btn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      closeVoiceNoteModal();
-    });
-  }
+  cancelBtn?.addEventListener('click', closeVoiceNoteModal);
 
-  // Close button (X in header)
   const closeBtn = document.getElementById('voice-note-close-btn');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      closeVoiceNoteModal();
-    });
-  }
+  closeBtn?.addEventListener('click', closeVoiceNoteModal);
 
   // Textarea input handler for char count
   const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
-  if (textarea) {
-    textarea.addEventListener('input', () => {
-      updateCharCount();
-    });
-  }
+  textarea?.addEventListener('input', updateCharCount);
 
-  // Close on Escape key
   if (modal) {
+    // Close on Escape key
     modal.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeVoiceNoteModal();
       }
     });
-  }
 
-  // Close on click outside modal content (on backdrop)
-  if (modal) {
+    // Close on click outside modal content (on backdrop)
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         closeVoiceNoteModal();

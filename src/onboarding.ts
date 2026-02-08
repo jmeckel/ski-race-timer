@@ -396,23 +396,11 @@ export class OnboardingController {
   }
 
   /**
-   * Dismiss the onboarding wizard, saving any progress made
+   * Finalize onboarding: save state, close modal, navigate, and clean up.
+   * Shared by both dismiss() and complete() paths.
    */
-  private dismiss(): void {
-    // Save any settings that were configured during onboarding
-    // Device name might have been set
-    const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
-    if (deviceNameInput?.value.trim()) {
-      store.setDeviceName(deviceNameInput.value.trim());
-    }
-
-    // Role might have been selected
-    store.setDeviceRole(this.selectedRole);
-
-    // Force save all settings
+  private finalize(): void {
     store.forceSave();
-
-    // Mark onboarding as completed
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     closeModal(this.modal);
 
@@ -425,11 +413,25 @@ export class OnboardingController {
       store.setView('timer');
     }
 
-    // Clean up
+    // Clean up document listener
     if (this.recentRacesDocumentHandler) {
       document.removeEventListener('click', this.recentRacesDocumentHandler);
       this.recentRacesDocumentHandler = null;
     }
+  }
+
+  /**
+   * Dismiss the onboarding wizard, saving any progress made
+   */
+  private dismiss(): void {
+    // Save any settings that were configured during onboarding
+    const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+    if (deviceNameInput?.value.trim()) {
+      store.setDeviceName(deviceNameInput.value.trim());
+    }
+
+    store.setDeviceRole(this.selectedRole);
+    this.finalize();
   }
 
   /**
@@ -747,29 +749,8 @@ export class OnboardingController {
    * Complete the onboarding wizard
    */
   private complete(): void {
-    // Force save all settings before closing (bypasses debounce to ensure persistence)
-    store.forceSave();
-
-    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
-    closeModal(this.modal);
-
-    // Navigate to appropriate view based on role
-    if (this.selectedRole === 'gateJudge') {
-      store.setView('gateJudge');
-      // Show gate judge tab
-      const gateJudgeTab = document.getElementById('gate-judge-tab');
-      if (gateJudgeTab) gateJudgeTab.style.display = '';
-    } else {
-      store.setView('timer');
-    }
-
-    // Show success feedback
+    this.finalize();
     feedbackSuccess();
     showToast(t('onboardingComplete', store.getState().currentLang), 'success');
-
-    if (this.recentRacesDocumentHandler) {
-      document.removeEventListener('click', this.recentRacesDocumentHandler);
-      this.recentRacesDocumentHandler = null;
-    }
   }
 }
