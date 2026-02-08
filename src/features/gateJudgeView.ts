@@ -11,7 +11,7 @@ import { t } from '../i18n/translations';
 import { escapeHtml, escapeAttr, getElement } from '../utils';
 import { openModal, closeModal } from './modals';
 import {
-  openFaultRecordingModal, initFaultRecordingModal,
+  initFaultRecordingModal,
   initInlineFaultEntry, refreshInlineFaultUI, updateActiveBibsList,
   recordFaultFromVoice
 } from './faultEntry';
@@ -22,7 +22,6 @@ import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 // Track event listeners for cleanup
 let gateChangeBtnListener: EventListener | null = null;
 let gateJudgeRunSelectorListener: EventListener | null = null;
-let recordFaultBtnListener: EventListener | null = null;
 let readyToggleBtnListener: EventListener | null = null;
 let colorSelectorListener: EventListener | null = null;
 let saveBtnListener: EventListener | null = null;
@@ -93,16 +92,6 @@ export function initGateJudgeView(): void {
       refreshInlineFaultUI();
     }) as EventListener;
     gateJudgeRunSelector.addEventListener('click', gateJudgeRunSelectorListener);
-  }
-
-  // Record fault button
-  const recordFaultBtn = getElement('record-fault-btn');
-  if (recordFaultBtn) {
-    recordFaultBtnListener = () => {
-      feedbackTap();
-      openFaultRecordingModal();
-    };
-    recordFaultBtn.addEventListener('click', recordFaultBtnListener);
   }
 
   // Ready toggle button
@@ -471,12 +460,6 @@ export function cleanupGateJudgeView(): void {
   if (gateJudgeRunSelector && gateJudgeRunSelectorListener) {
     gateJudgeRunSelector.removeEventListener('click', gateJudgeRunSelectorListener);
     gateJudgeRunSelectorListener = null;
-  }
-
-  const recordFaultBtn = getElement('record-fault-btn');
-  if (recordFaultBtn && recordFaultBtnListener) {
-    recordFaultBtn.removeEventListener('click', recordFaultBtnListener);
-    recordFaultBtnListener = null;
   }
 
   const readyToggleBtn = getElement('ready-toggle-btn');

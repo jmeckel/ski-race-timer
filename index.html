@@ -379,9 +379,56 @@
           <div class="coverage-list" id="other-judges-list"></div>
         </div>
 
-        <!-- Split Layout: Fault List + Inline Entry -->
-        <div class="gate-judge-split">
-          <!-- Recorded Faults List -->
+        <!-- Gate-First Quick Entry Layout -->
+        <div class="gate-first-layout">
+          <!-- Gate Grid (PRIMARY UI - large prominent buttons) -->
+          <div class="gate-grid-section">
+            <div class="gate-grid" id="inline-gate-selector" role="radiogroup" aria-label="Select gate">
+              <!-- Populated dynamically based on gate assignment -->
+            </div>
+          </div>
+
+          <!-- Fault Detail Panel (appears after selecting a gate) -->
+          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;" aria-live="polite">
+            <div class="fault-detail-header">
+              <span class="fault-detail-gate-label" id="fault-detail-gate-label"></span>
+              <button class="fault-detail-close" id="fault-detail-close" aria-label="Close" data-i18n-aria-label="close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Fault Type Selection -->
+            <div class="inline-fault-types" id="inline-fault-types">
+              <button class="inline-fault-type-btn" data-fault="MG" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
+                <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
+              </button>
+              <button class="inline-fault-type-btn" data-fault="STR" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
+                <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
+              </button>
+              <button class="inline-fault-type-btn" data-fault="BR" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
+                <span class="fault-type-long" data-i18n="faultBR">Binding Release</span>
+              </button>
+            </div>
+
+            <!-- Bib Selection (auto-filled from last starter) -->
+            <div class="fault-detail-bib-row">
+              <label class="inline-entry-label" data-i18n="bib">Bib</label>
+              <div class="inline-bib-selector" id="inline-bib-selector">
+                <!-- Populated dynamically -->
+              </div>
+              <div class="inline-bib-manual-row">
+                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
+                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" aria-label="Bib number">
+              </div>
+            </div>
+          </div>
+
+          <!-- Recorded Faults (compact scrollable list) -->
           <div class="gate-judge-faults-section">
             <div class="section-header">
               <span class="section-title" data-i18n="recordedFaults">Recorded Faults</span>
@@ -395,54 +442,11 @@
               </div>
             </div>
           </div>
-
-          <!-- Inline Fault Entry Interface -->
-          <div class="gate-judge-entry-section">
-            <!-- Bib Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="selectBib">Select Bib</label>
-              <div class="inline-bib-selector" id="inline-bib-selector">
-                <!-- Populated dynamically -->
-              </div>
-              <div class="inline-bib-manual-row">
-                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
-                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" aria-label="Bib number">
-              </div>
-            </div>
-
-            <!-- Gate Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="selectGate">Gate</label>
-              <div class="inline-gate-selector" id="inline-gate-selector">
-                <!-- Populated dynamically based on gate assignment -->
-              </div>
-            </div>
-
-            <!-- Fault Type Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="faultType">Fault Type</label>
-              <div class="inline-fault-types" id="inline-fault-types">
-                <button class="inline-fault-type-btn" data-fault="MG">
-                  <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
-                  <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
-                </button>
-                <button class="inline-fault-type-btn" data-fault="STR">
-                  <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
-                  <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
-                </button>
-                <button class="inline-fault-type-btn" data-fault="BR">
-                  <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
-                  <span class="fault-type-long" data-i18n="faultBR">Binding Release</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
         </div>
 
-        <!-- Action Buttons Row (Save Fault + Ready) -->
+        <!-- Footer: Save Fault + Ready (thumb-reachable at bottom) -->
         <div class="gate-judge-footer">
-          <button class="inline-save-fault-btn" id="inline-save-fault-btn" data-i18n="saveFault">Save Fault</button>
+          <button class="inline-save-fault-btn" id="inline-save-fault-btn" disabled data-i18n="saveFault">Save Fault</button>
           <button class="ready-toggle-btn" id="ready-toggle-btn" aria-pressed="false">
             <svg class="ready-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M20 6L9 17l-5-5"/>

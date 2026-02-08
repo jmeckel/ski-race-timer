@@ -1170,8 +1170,9 @@ body {
 .result-sub-item:focus-visible,
 .recent-race-item:focus-visible,
 .inline-bib-btn:focus-visible,
-.inline-gate-btn:focus-visible,
+.gate-grid-btn:focus-visible,
 .inline-fault-type-btn:focus-visible,
+.fault-detail-close:focus-visible,
 .role-card:focus-visible,
 .role-card-setting:focus-visible,
 .radial-point-btn:focus-visible,
@@ -3381,14 +3382,132 @@ body {
   flex-shrink: 0;
 }
 
-/* Gate Judge Split Layout */
-.gate-judge-split {
+/* Gate-First Quick Entry Layout */
+.gate-first-layout {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   gap: 12px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Gate Grid Section */
+.gate-grid-section {
+  flex-shrink: 0;
+}
+
+.gate-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.gate-grid-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  background: var(--surface-elevated);
+  border: 3px solid transparent;
+  border-radius: var(--radius);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.gate-grid-btn:active {
+  transform: scale(0.93);
+}
+
+.gate-grid-btn.red {
+  color: var(--error);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.gate-grid-btn.red.selected {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--error);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.gate-grid-btn.blue {
+  color: var(--primary);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.gate-grid-btn.blue.selected {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Fault count badge on gate button */
+.gate-grid-btn .gate-fault-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--warning);
+  color: var(--background);
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Fault Detail Panel (expands after gate selection) */
+.fault-detail-panel {
+  flex-shrink: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px;
+  border: 1px solid var(--surface-elevated);
+}
+
+.fault-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.fault-detail-gate-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fault-detail-close {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: color 0.15s ease;
+}
+
+.fault-detail-close:active {
+  color: var(--text-primary);
+}
+
+/* Bib row within detail panel */
+.fault-detail-bib-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
 }
 
 /* Faults List Section */
@@ -3396,8 +3515,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 120px;
-  max-height: 40%;
+  min-height: 80px;
   background: var(--surface);
   border-radius: var(--radius);
   overflow: hidden;
@@ -3535,22 +3653,7 @@ body {
   color: var(--error);
 }
 
-/* Entry Section */
-.gate-judge-entry-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  background: var(--surface);
-  border-radius: var(--radius);
-}
-
-.inline-entry-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
+/* Inline entry label (used in fault detail panel) */
 .inline-entry-label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -3615,58 +3718,6 @@ body {
   font-size: 0.7rem;
   color: var(--text-tertiary);
   white-space: nowrap;
-}
-
-/* Inline Gate Selector */
-.inline-gate-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.inline-gate-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  height: 44px;
-  padding: 0 10px;
-  background: var(--surface-elevated);
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.inline-gate-btn:active {
-  transform: scale(0.95);
-}
-
-.inline-gate-btn.selected {
-  border-color: currentColor;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.inline-gate-btn.red {
-  color: var(--error);
-}
-
-.inline-gate-btn.red.selected {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: var(--error);
-}
-
-.inline-gate-btn.blue {
-  color: var(--primary);
-}
-
-.inline-gate-btn.blue.selected {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: var(--primary);
 }
 
 /* Inline Fault Type Buttons */
@@ -4640,17 +4691,33 @@ body {
     font-size: 1rem;
   }
 
-  /* Split layout: faults on left, entry on right */
-  .gate-judge-split {
-    flex-direction: row !important;
+  /* Two-column layout: gates + detail on left, faults on right */
+  .gate-first-layout {
+    flex-direction: row;
     gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .gate-grid-section {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .gate-grid-btn {
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .fault-detail-panel {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px;
   }
 
   .gate-judge-faults-section {
     flex: 0.8;
     min-height: 0;
-    max-height: none;
-    min-width: 180px;
+    min-width: 160px;
   }
 
   .gate-judge-faults-section .section-header {
@@ -4667,19 +4734,8 @@ body {
     gap: 4px;
   }
 
-  .gate-judge-faults-list .empty-state svg,
   .gate-judge-faults-list .empty-state .empty-icon {
     font-size: 1.5rem;
-  }
-
-  .gate-judge-entry-section {
-    flex: 1.5;
-    padding: 6px;
-    gap: 4px;
-  }
-
-  .inline-entry-row {
-    gap: 2px;
   }
 
   .inline-entry-label {
@@ -4687,13 +4743,11 @@ body {
     margin-bottom: 1px;
   }
 
-  /* Bib selector row - more compact */
   .inline-bib-selector {
     gap: 4px;
   }
 
-  .inline-bib-btn,
-  .inline-gate-btn {
+  .inline-bib-btn {
     min-width: 36px;
     height: 32px;
     font-size: 0.8rem;
@@ -4710,12 +4764,6 @@ body {
     margin-top: 2px;
   }
 
-  /* Gate selector - compact */
-  .inline-gate-selector {
-    gap: 4px;
-  }
-
-  /* Fault type buttons - horizontal and compact */
   .inline-fault-types {
     gap: 4px;
   }
@@ -4731,15 +4779,7 @@ body {
   }
 
   .inline-fault-type-btn .fault-type-long {
-    font-size: 0.5rem;
-    display: none; /* Hide long text in landscape to save space */
-  }
-
-  /* Save fault button inline with entry */
-  .gate-judge-entry-section .inline-save-fault-btn {
-    margin-top: 4px;
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    display: none;
   }
 
   .gate-judge-footer {
@@ -4747,8 +4787,7 @@ body {
     padding-top: 4px;
   }
 
-  .inline-save-fault-btn,
-  .inline-ready-btn {
+  .inline-save-fault-btn {
     padding: 8px 14px;
     font-size: 0.8rem;
   }

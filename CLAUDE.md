@@ -93,6 +93,45 @@ The timer view uses a radial dial interface inspired by the iPod click wheel. Lo
 .dial-number { /* Positioned absolutely around dial ring */ }
 ```
 
+### Gate Judge - Gate-First Quick Entry
+
+The gate judge view uses a "gate-first" quick entry pattern. Located in:
+- `src/features/faultEntry.ts` - Inline fault entry logic, gate grid rendering, save flow
+- `src/features/gateJudgeView.ts` - View initialization, gate assignment, ready status
+- `src/styles/main.css` - Gate grid and fault detail panel styles
+
+**Design Principle - Gate-First:**
+Gates are the PRIMARY UI element because real ski gate judges watch specific gates and see faults happen at them. The flow is: tap gate -> select fault type -> bib auto-fills -> save. This is a 2-tap minimum flow (gate + fault type) instead of the old 3-step bib-first flow.
+
+**Layout (top to bottom):**
+1. Header: gate range display, L1/L2 run selector, "Change" button
+2. Gate Grid: 5-column grid of large, color-coded (red/blue) gate buttons with fault count badges
+3. Fault Detail Panel: appears below gates after selecting a gate, contains fault type selector + bib selector
+4. Recorded Faults: compact scrollable list of recorded faults
+5. Footer: "Save Fault" button + "Ready" toggle (thumb-reachable at bottom)
+
+**Thumb-Reachable Principle:**
+Primary action buttons (Save Fault, Ready) are positioned at the bottom of the viewport for one-handed phone operation. This is critical for gate judges who may be holding equipment or wearing gloves.
+
+**Key Implementation Details:**
+- Gate grid uses CSS Grid with `grid-template-columns: repeat(5, 1fr)`
+- Gate buttons show fault count badges (absolute positioned) when faults exist for that gate
+- Tapping a gate reveals the fault detail panel and auto-selects the most recently started bib
+- Tapping the same gate again deselects it and hides the detail panel
+- After saving a fault, gate and bib remain selected for quick successive faults
+- Only the fault type resets after save
+
+**CSS Structure:**
+```css
+.gate-first-layout { /* flex column, scrollable */ }
+.gate-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.gate-grid-btn { height: 56px; /* large touch targets */ }
+.gate-grid-btn.red { color: var(--error); }
+.gate-grid-btn.blue { color: var(--primary); }
+.fault-detail-panel { /* expandable section below gates */ }
+.gate-judge-footer { /* sticky at bottom, thumb-reachable */ }
+```
+
 ### Data Storage
 
 - **LocalStorage keys**:
@@ -275,6 +314,37 @@ Examples:
 - Complete rewrite or breaking change → bump major (4.1.0 → 5.0.0)
 
 Commit the version bump separately with a message like "Bump version to X.Y.Z" summarizing what changed.
+
+## Feature Completion Checklist
+
+When completing a feature, always run through this checklist before marking done:
+
+1. **Run tests**: `npm test` for unit tests, `npm run test:e2e` for E2E tests
+2. **Check for TypeScript errors**: `npm run typecheck`
+3. **Test in browser if UI-related**: Verify visual appearance and interactions work correctly
+4. **Update relevant documentation**: README, CLAUDE.md, inline comments as needed
+
+## Deployment
+
+For sessions involving deployment: complete all code changes and reviews BEFORE starting deployment steps. Do not interleave deployment with bug fixes.
+
+**Deployment workflow:**
+1. Finish all code changes
+2. Run the Feature Completion Checklist above
+3. Commit all changes
+4. Only then proceed with deployment steps
+
+## Code Review
+
+When asked to "review the app" or similar broad requests, first propose a structured review plan with specific areas to check, then get user confirmation before starting.
+
+**Review plan template:**
+1. Define scope: What areas/files will be reviewed?
+2. Define criteria: What are we checking for? (security, accessibility, performance, etc.)
+3. Define out-of-scope: What should be noted but NOT fixed in this review?
+4. Get user confirmation before starting
+
+This prevents scope creep mid-review and ensures focused, actionable findings.
 
 ## Key Implementation Details
 
