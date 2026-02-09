@@ -73,6 +73,8 @@ batteryService.initialize().then(() => {
   batteryService.subscribe((status) => {
     document.body.classList.toggle('power-saver', status.batteryLevel !== 'normal');
   });
+}).catch(() => {
+  // Battery API unavailable - animations stay enabled
 });
 
 // Handle visibility change (pause/resume)

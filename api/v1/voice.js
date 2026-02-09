@@ -347,12 +347,14 @@ export default async function handler(req, res) {
   res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
 
   // SECURITY: Validate authentication - voice API proxies to expensive LLM APIs
+  // Fail closed: if Redis is unavailable, deny access rather than skip auth
   const redisClient = await getRedis();
-  if (redisClient && !hasRedisError()) {
-    const authResult = await validateAuth(req, redisClient, CLIENT_PIN_KEY);
-    if (!authResult.valid) {
-      return sendAuthRequired(res, authResult.error, authResult.expired || false);
-    }
+  if (!redisClient || hasRedisError()) {
+    return sendServiceUnavailable(res, 'Authentication service unavailable');
+  }
+  const authResult = await validateAuth(req, redisClient, CLIENT_PIN_KEY);
+  if (!authResult.valid) {
+    return sendAuthRequired(res, authResult.error, authResult.expired || false);
   }
 
   // Determine provider (default to OpenAI)

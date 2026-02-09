@@ -859,6 +859,46 @@ describe('Store', () => {
       vi.advanceTimersByTime(100);
       expect(entriesSetItemCalls()).toBe(initialCalls + 1);
     });
+
+    it('should only save dirty slices (entries change should not save settings)', () => {
+      // Clear all previous calls
+      localStorageMock.setItem.mockClear();
+
+      // Add an entry (dirties 'entries' slice only)
+      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-dirty1' }));
+      vi.advanceTimersByTime(150);
+
+      const setItemKeys = localStorageMock.setItem.mock.calls.map(
+        (call: [string, string]) => call[0]
+      );
+
+      // Should save entries
+      expect(setItemKeys).toContain('skiTimerEntries');
+      // Should NOT save settings (settings slice was not changed)
+      expect(setItemKeys).not.toContain('skiTimerSettings');
+    });
+
+    it('should only save dirty slices (settings change should not save entries)', () => {
+      // Add an entry first so entries exist
+      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-dirty2' }));
+      vi.advanceTimersByTime(150);
+
+      // Clear all previous calls
+      localStorageMock.setItem.mockClear();
+
+      // Change a setting (dirties 'settings' slice only)
+      store.updateSettings({ sound: true });
+      vi.advanceTimersByTime(150);
+
+      const setItemKeys = localStorageMock.setItem.mock.calls.map(
+        (call: [string, string]) => call[0]
+      );
+
+      // Should save settings
+      expect(setItemKeys).toContain('skiTimerSettings');
+      // Should NOT save entries (entries slice was not changed)
+      expect(setItemKeys).not.toContain('skiTimerEntries');
+    });
   });
 });
 

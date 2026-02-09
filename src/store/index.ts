@@ -317,6 +317,8 @@ class Store {
     const dirty = this.dirtySlices;
     this.dirtySlices = new Set();
 
+    if (dirty.size === 0) return;
+
     try {
       this.checkStorageQuota();
 

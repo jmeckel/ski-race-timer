@@ -144,6 +144,9 @@ function initRadialClock(): void {
           clockFrameSkip = FRAME_SKIP_NORMAL;
       }
     });
+  }).catch(() => {
+    // Battery API unavailable - use normal frame rate
+    clockFrameSkip = FRAME_SKIP_NORMAL;
   });
 
   // Pause when page is hidden, resume when visible
