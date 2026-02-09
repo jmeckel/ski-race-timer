@@ -54,6 +54,13 @@ const STORAGE_KEYS = {
 // Maximum pending notification queue size
 const MAX_NOTIFICATION_QUEUE = 100;
 
+// All state keys that get persisted to localStorage
+const PERSISTENT_KEYS = [
+  'entries', 'settings', 'currentLang', 'deviceName', 'raceId',
+  'lastSyncedRaceId', 'syncQueue', 'deviceRole', 'gateAssignment',
+  'firstGateColor', 'faultEntries'
+] as const;
+
 /**
  * State change listener type
  */
@@ -227,19 +234,15 @@ class Store {
   private notify(changedKeys: (keyof AppState)[]) {
     const stateSnapshot = this.state;
 
-    // Check queue bounds before adding - apply to all additions
+    // Check queue bounds before adding
     if (this.pendingNotifications.length >= MAX_NOTIFICATION_QUEUE) {
       logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`);
       this.pendingNotifications.splice(0, Math.floor(MAX_NOTIFICATION_QUEUE / 2));
     }
 
-    if (this.pendingNotifications.length > 0 && this.isNotifying) {
-      this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
-      return;
-    }
-
     this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
 
+    // If already processing notifications, the while loop will pick up the new entry
     if (this.isNotifying) {
       return;
     }
@@ -305,9 +308,7 @@ class Store {
       this.saveTimeout = null;
     }
     // Mark all persistent slices as dirty for a full save
-    for (const key of ['entries', 'settings', 'currentLang', 'deviceName', 'raceId',
-      'lastSyncedRaceId', 'syncQueue', 'deviceRole', 'gateAssignment',
-      'firstGateColor', 'faultEntries']) {
+    for (const key of PERSISTENT_KEYS) {
       this.dirtySlices.add(key);
     }
     this.saveToStorage();

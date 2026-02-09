@@ -77,13 +77,6 @@ batteryService.initialize().then(() => {
   // Battery API unavailable - animations stay enabled
 });
 
-// Handle visibility change (pause/resume)
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    // App became visible - could refresh sync here
-  }
-});
-
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   // Clear SW update interval to prevent memory leak

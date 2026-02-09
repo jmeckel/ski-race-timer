@@ -309,23 +309,20 @@
   pointer-events: none;
 }
 
-/* ===== No Glass Effects Override ===== */
-.no-glass-effects .breathe-glow,
-.no-glass-effects .breathe-glow-success,
-.no-glass-effects .breathe-glow-danger,
-.no-glass-effects .breathe-full {
+/* ===== No Glass Effects / Power Saver Override ===== */
+/* .no-glass-effects: user preference to disable glass effects */
+/* .power-saver: applied via JS when battery is low - stops infinite animations to save GPU */
+:is(.no-glass-effects, .power-saver) .breathe-glow,
+:is(.no-glass-effects, .power-saver) .breathe-glow-success,
+:is(.no-glass-effects, .power-saver) .breathe-glow-danger,
+:is(.no-glass-effects, .power-saver) .breathe-full {
   animation: none;
 }
 
-/* ===== Power Saver Override ===== */
-/* Applied via JS when battery is low - stops all infinite animations to save GPU */
-.power-saver .breathe-glow,
-.power-saver .breathe-glow-success,
-.power-saver .breathe-glow-danger,
+/* Power saver also stops additional breathing and snowflake animations */
 .power-saver .breathe-scale,
 .power-saver .breathe-opacity,
-.power-saver .breathe-border,
-.power-saver .breathe-full {
+.power-saver .breathe-border {
   animation: none;
 }
 

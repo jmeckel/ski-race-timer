@@ -205,56 +205,58 @@ function parseIntentFromContent(content) {
 }
 
 /**
+ * Fetch with timeout and abort handling
+ * Shared by both LLM provider implementations
+ */
+async function fetchWithTimeout(url, options, providerName) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`${providerName} API error:`, response.status, errorText);
+      throw new Error(`${providerName} API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
+  }
+}
+
+/**
  * Call OpenAI API
  */
 async function callOpenAI(transcript, context, apiKey) {
   const userMessage = buildUserMessage(transcript, context);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const result = await fetchWithTimeout(PROVIDERS.openai.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: PROVIDERS.openai.model,
+      max_tokens: MAX_TOKENS,
+      temperature: 0.1, // Low temperature for consistent parsing
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ]
+    })
+  }, 'OpenAI');
 
-  try {
-    const response = await fetch(PROVIDERS.openai.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: PROVIDERS.openai.model,
-        max_tokens: MAX_TOKENS,
-        temperature: 0.1, // Low temperature for consistent parsing
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage }
-        ]
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    // Extract content from OpenAI response format
-    const content = result.choices?.[0]?.message?.content || '';
-    return parseIntentFromContent(content);
-
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout');
-    }
-
-    throw error;
-  }
+  const content = result.choices?.[0]?.message?.content || '';
+  return parseIntentFromContent(content);
 }
 
 /**
@@ -263,55 +265,30 @@ async function callOpenAI(transcript, context, apiKey) {
 async function callAnthropic(transcript, context, apiKey) {
   const userMessage = buildUserMessage(transcript, context);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const result = await fetchWithTimeout(PROVIDERS.anthropic.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: PROVIDERS.anthropic.model,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  }, 'Anthropic');
 
-  try {
-    const response = await fetch(PROVIDERS.anthropic.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: PROVIDERS.anthropic.model,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }]
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Anthropic API error:', response.status, errorText);
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    // Extract content from Anthropic response format
-    let content = '';
-    if (result.content && Array.isArray(result.content)) {
-      content = result.content[0]?.text || '';
-    } else if (typeof result.content === 'string') {
-      content = result.content;
-    }
-
-    return parseIntentFromContent(content);
-
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout');
-    }
-
-    throw error;
+  // Extract content from Anthropic response format
+  let content = '';
+  if (result.content && Array.isArray(result.content)) {
+    content = result.content[0]?.text || '';
+  } else if (typeof result.content === 'string') {
+    content = result.content;
   }
+
+  return parseIntentFromContent(content);
 }
 
 /**

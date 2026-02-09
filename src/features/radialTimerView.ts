@@ -19,6 +19,12 @@ const FRAME_SKIP_NORMAL = 0;
 const FRAME_SKIP_LOW = 1; // 30fps
 const FRAME_SKIP_CRITICAL = 3; // 15fps
 
+const FRAME_SKIP_BY_LEVEL: Record<string, number> = {
+  normal: FRAME_SKIP_NORMAL,
+  low: FRAME_SKIP_LOW,
+  critical: FRAME_SKIP_CRITICAL
+};
+
 // Module state
 let radialDial: RadialDial | null = null;
 let clockAnimationId: number | null = null;
@@ -111,17 +117,14 @@ function initRadialClock(): void {
   };
 
   const tick = () => {
-    // Battery-aware frame skipping
-    if (clockFrameSkip > 0) {
-      clockCurrentFrame++;
-      if (clockCurrentFrame <= clockFrameSkip) {
-        clockAnimationId = requestAnimationFrame(tick);
-        return;
-      }
-      clockCurrentFrame = 0;
+    // Battery-aware frame skipping (matches Clock.ts pattern)
+    clockCurrentFrame++;
+    const shouldUpdate = clockFrameSkip === 0 || (clockCurrentFrame % (clockFrameSkip + 1)) === 0;
+
+    if (shouldUpdate) {
+      updateClock();
     }
 
-    updateClock();
     clockAnimationId = requestAnimationFrame(tick);
   };
 
@@ -133,20 +136,10 @@ function initRadialClock(): void {
   // Subscribe to battery changes for adaptive frame rate
   batteryService.initialize().then(() => {
     batteryUnsubscribe = batteryService.subscribe((status) => {
-      switch (status.batteryLevel) {
-        case 'critical':
-          clockFrameSkip = FRAME_SKIP_CRITICAL;
-          break;
-        case 'low':
-          clockFrameSkip = FRAME_SKIP_LOW;
-          break;
-        default:
-          clockFrameSkip = FRAME_SKIP_NORMAL;
-      }
+      clockFrameSkip = FRAME_SKIP_BY_LEVEL[status.batteryLevel];
     });
   }).catch(() => {
     // Battery API unavailable - use normal frame rate
-    clockFrameSkip = FRAME_SKIP_NORMAL;
   });
 
   // Pause when page is hidden, resume when visible
@@ -415,37 +408,6 @@ function initRadialKeyboard(): void {
 }
 
 /**
- * Cleanup radial timer view resources (for re-initialization or unmount)
- */
-export function cleanupRadialTimerView(): void {
-  if (storeUnsubscribe) {
-    storeUnsubscribe();
-    storeUnsubscribe = null;
-  }
-  if (radialKeydownHandler) {
-    document.removeEventListener('keydown', radialKeydownHandler);
-    radialKeydownHandler = null;
-  }
-  if (clockAnimationId !== null) {
-    cancelAnimationFrame(clockAnimationId);
-    clockAnimationId = null;
-  }
-  if (batteryUnsubscribe) {
-    batteryUnsubscribe();
-    batteryUnsubscribe = null;
-  }
-  if (visibilityHandler) {
-    document.removeEventListener('visibilitychange', visibilityHandler);
-    visibilityHandler = null;
-  }
-  if (radialDial) {
-    radialDial.destroy();
-    radialDial = null;
-  }
-  isInitialized = false;
-}
-
-/**
  * Record a timestamp with radial UI feedback
  */
 async function recordRadialTimestamp(): Promise<void> {
@@ -512,7 +474,7 @@ async function recordRadialTimestamp(): Promise<void> {
     // Sync
     syncService.broadcastEntry(entry);
 
-    // Auto-increment bib
+    // Auto-increment bib or clear after recording
     if (state.settings.auto && state.bibInput) {
       const localNext = parseInt(state.bibInput, 10) + 1;
       const nextBib = state.settings.sync && state.cloudHighestBib > 0
@@ -522,9 +484,7 @@ async function recordRadialTimestamp(): Promise<void> {
       store.setBibInput(newBib);
       radialDial?.setValue(newBib);
       updateRadialBibDisplay(newBib);
-    } else if (!state.bibInput) {
-      // Keep empty
-    } else if (!state.settings.auto) {
+    } else if (state.bibInput && !state.settings.auto) {
       store.setBibInput('');
       radialDial?.clear();
       updateRadialBibDisplay('');

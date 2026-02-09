@@ -163,7 +163,6 @@ export class Clock {
    * Update frame skip count based on battery level
    */
   private updateFrameSkipFromBattery(level: BatteryLevel): void {
-    const previousSkip = this.frameSkipCount;
     switch (level) {
       case 'critical':
         this.frameSkipCount = FRAME_SKIP_CRITICAL;
