@@ -3505,8 +3505,8 @@ body {
 /* Bib row within detail panel */
 .fault-detail-bib-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
   margin-top: 10px;
 }
 
@@ -3698,8 +3698,8 @@ body {
 }
 
 .inline-bib-input {
-  width: 100%;
-  height: 44px;
+  width: 7ch;
+  height: 56px;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.1rem;
