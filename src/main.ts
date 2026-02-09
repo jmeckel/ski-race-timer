@@ -33,12 +33,12 @@ if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
 
-      // Check for updates periodically (every 60 seconds when visible)
+      // Check for updates periodically (every 5 minutes when visible)
       swUpdateIntervalId = setInterval(() => {
         if (!document.hidden) {
           registration.update();
         }
-      }, 60000);
+      }, 300000);
 
       // Handle update found
       registration.addEventListener('updatefound', () => {

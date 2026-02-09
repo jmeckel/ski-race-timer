@@ -184,13 +184,23 @@ export function initApp(): void {
     }
   }
 
-  // Subscribe to ambient mode state changes - toggle body class
+  // Subscribe to ambient mode state changes - toggle body class and pause GPS
   ambientModeService.subscribe((state) => {
     document.body.classList.toggle('ambient-mode', state.isActive);
     if (state.triggeredBy) {
       document.body.dataset.ambientTrigger = state.triggeredBy;
     } else {
       delete document.body.dataset.ambientTrigger;
+    }
+
+    // Pause/resume GPS during ambient mode to save battery
+    const appState = store.getState();
+    if (appState.settings.gps) {
+      if (state.isActive) {
+        gpsService.pause();
+      } else if (appState.currentView === 'timer') {
+        gpsService.start();
+      }
     }
   });
 

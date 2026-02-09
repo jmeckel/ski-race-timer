@@ -1,13 +1,21 @@
 import { store } from '../store';
 import { logger } from '../utils/logger';
+import { batteryService } from './battery';
 
 // GPS configuration
 // maximumAge: 10s allows reuse of cached position, reducing GPS chip wake-ups
 // while still providing fresh-enough timestamps for race timing
-const GPS_OPTIONS: PositionOptions = {
+const GPS_OPTIONS_NORMAL: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 10000,
   maximumAge: 10000
+};
+
+// Low battery: disable high accuracy to save significant power
+const GPS_OPTIONS_LOW_BATTERY: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 15000,
+  maximumAge: 15000
 };
 
 // Accuracy thresholds (in meters)
@@ -19,6 +27,17 @@ class GpsService {
   private lastPosition: GeolocationPosition | null = null;
   private visibilityHandler: (() => void) | null = null;
   private wasActiveBeforeHidden = false;
+  private batteryUnsubscribe: (() => void) | null = null;
+  private usingLowPowerMode = false;
+
+  /**
+   * Get GPS options based on current battery level
+   */
+  private getGpsOptions(): PositionOptions {
+    const isLowBattery = batteryService.isLowBattery();
+    this.usingLowPowerMode = isLowBattery;
+    return isLowBattery ? GPS_OPTIONS_LOW_BATTERY : GPS_OPTIONS_NORMAL;
+  }
 
   /**
    * Start watching GPS position
@@ -37,10 +56,11 @@ class GpsService {
     store.setGpsStatus('searching');
 
     try {
+      const options = this.getGpsOptions();
       this.watchId = navigator.geolocation.watchPosition(
         (position) => this.handlePosition(position),
         (error) => this.handleError(error),
-        GPS_OPTIONS
+        options
       );
 
       // Add visibility change handler to pause/resume GPS for battery optimization
@@ -60,15 +80,37 @@ class GpsService {
             // Page is visible again - resume GPS if it was active before
             if (this.wasActiveBeforeHidden) {
               store.setGpsStatus('searching');
+              const opts = this.getGpsOptions();
               this.watchId = navigator.geolocation.watchPosition(
                 (position) => this.handlePosition(position),
                 (error) => this.handleError(error),
-                GPS_OPTIONS
+                opts
               );
             }
           }
         };
         document.addEventListener('visibilitychange', this.visibilityHandler);
+      }
+
+      // Subscribe to battery changes to switch GPS accuracy mode
+      if (!this.batteryUnsubscribe) {
+        this.batteryUnsubscribe = batteryService.subscribe(() => {
+          // Only react if actively watching
+          if (this.watchId === null) return;
+
+          const shouldUseLowPower = batteryService.isLowBattery();
+          if (shouldUseLowPower !== this.usingLowPowerMode) {
+            logger.debug(`[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`);
+            // Restart watch with new options
+            navigator.geolocation.clearWatch(this.watchId);
+            const opts = this.getGpsOptions();
+            this.watchId = navigator.geolocation.watchPosition(
+              (position) => this.handlePosition(position),
+              (error) => this.handleError(error),
+              opts
+            );
+          }
+        });
       }
 
       return true;
@@ -114,6 +156,12 @@ class GpsService {
       this.visibilityHandler = null;
     }
     this.wasActiveBeforeHidden = false;
+
+    // Remove battery subscription
+    if (this.batteryUnsubscribe) {
+      this.batteryUnsubscribe();
+      this.batteryUnsubscribe = null;
+    }
 
     this.lastPosition = null;
     store.setGpsStatus('inactive');
@@ -220,7 +268,7 @@ class GpsService {
           resolve(position);
         },
         () => resolve(null),
-        GPS_OPTIONS
+        this.getGpsOptions()
       );
     });
   }
