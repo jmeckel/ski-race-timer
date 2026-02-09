@@ -57,6 +57,9 @@ import {
 // DOM Elements cache
 let onboardingController: OnboardingController | null = null;
 
+// Custom event listener references (stored for cleanup in handleBeforeUnload)
+const customEventListeners: Map<string, EventListener> = new Map();
+
 /**
  * Initialize the application
  */
@@ -1022,6 +1025,12 @@ function handleBeforeUnload(): void {
   window.removeEventListener('storage-error', handleStorageError as EventListener);
   window.removeEventListener('storage-warning', handleStorageWarning as EventListener);
 
+  // MEMORY LEAK FIX: Remove all custom event listeners (stored by reference)
+  for (const [eventName, handler] of customEventListeners) {
+    window.removeEventListener(eventName, handler);
+  }
+  customEventListeners.clear();
+
   // MEMORY LEAK FIX: Clear debounced timeouts
   cleanupSearchTimeout();
   cleanupSettingsTimeouts();
@@ -1031,25 +1040,34 @@ function handleBeforeUnload(): void {
 }
 
 /**
+ * Register a custom event listener and store its reference for cleanup
+ */
+function addCustomEventListener(eventName: string, handler: EventListener): void {
+  customEventListeners.set(eventName, handler);
+  window.addEventListener(eventName, handler);
+}
+
+/**
  * Initialize CustomEvent listeners for decoupled module communication
  * Replaces the old callback injection pattern
+ * All listeners are stored as named references for cleanup in handleBeforeUnload
  */
 function initCustomEventListeners(): void {
   // Results view events
-  window.addEventListener('open-edit-modal', ((e: CustomEvent<{ entry: Entry }>) => {
+  addCustomEventListener('open-edit-modal', ((e: CustomEvent<{ entry: Entry }>) => {
     openEditModal(e.detail.entry);
   }) as EventListener);
 
-  window.addEventListener('prompt-delete', ((e: CustomEvent<{ entry: Entry }>) => {
+  addCustomEventListener('prompt-delete', ((e: CustomEvent<{ entry: Entry }>) => {
     promptDelete(e.detail.entry);
   }) as EventListener);
 
-  window.addEventListener('open-confirm-modal', ((e: CustomEvent<{ action: ConfirmModalAction }>) => {
+  addCustomEventListener('open-confirm-modal', ((e: CustomEvent<{ action: ConfirmModalAction }>) => {
     openConfirmModal(e.detail.action);
   }) as EventListener);
 
   // Settings view events
-  window.addEventListener('request-photo-sync-warning', (async () => {
+  addCustomEventListener('request-photo-sync-warning', (async () => {
     try {
       await showPhotoSyncWarningModal();
       resolvePhotoSyncWarning();
@@ -1059,7 +1077,7 @@ function initCustomEventListeners(): void {
     }
   }) as EventListener);
 
-  window.addEventListener('request-race-change-dialog', (async (e: Event) => {
+  addCustomEventListener('request-race-change-dialog', (async (e: Event) => {
     try {
       const customEvent = e as CustomEvent<{ type: 'synced' | 'unsynced'; lang: Language }>;
       const result = await showRaceChangeDialog(customEvent.detail.type, customEvent.detail.lang);
@@ -1071,12 +1089,12 @@ function initCustomEventListeners(): void {
   }) as EventListener);
 
   // Gate judge view events
-  window.addEventListener('update-role-toggle', (() => {
+  addCustomEventListener('update-role-toggle', (() => {
     updateRoleToggle();
   }) as EventListener);
 
   // Chief judge view events - PIN verification (Promise-based)
-  window.addEventListener('request-pin-verification', (async (e: Event) => {
+  addCustomEventListener('request-pin-verification', (async (e: Event) => {
     try {
       const customEvent = e as CustomEvent<{ lang: Language }>;
       const verified = await verifyPinForChiefJudge(customEvent.detail.lang);
@@ -1088,24 +1106,24 @@ function initCustomEventListeners(): void {
   }) as EventListener);
 
   // Chief judge view events - fault modal dispatchers
-  window.addEventListener('open-fault-edit-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+  addCustomEventListener('open-fault-edit-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
     openFaultEditModal(e.detail.fault);
   }) as EventListener);
 
-  window.addEventListener('open-mark-deletion-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+  addCustomEventListener('open-mark-deletion-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
     openMarkDeletionModal(e.detail.fault);
   }) as EventListener);
 
   // Chief judge view events - inline fault UI updates (gate judge mode)
-  window.addEventListener('update-inline-faults-list', (() => {
+  addCustomEventListener('update-inline-faults-list', (() => {
     updateInlineFaultsList();
   }) as EventListener);
 
-  window.addEventListener('update-inline-bib-selector', (() => {
+  addCustomEventListener('update-inline-bib-selector', (() => {
     updateInlineBibSelector();
   }) as EventListener);
 
-  window.addEventListener('update-inline-gate-selector', (() => {
+  addCustomEventListener('update-inline-gate-selector', (() => {
     updateInlineGateSelector();
   }) as EventListener);
 }

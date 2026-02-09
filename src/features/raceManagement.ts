@@ -19,7 +19,6 @@ import type { Language, RaceInfo } from '../types';
 const ADMIN_API_BASE = '/api/v1/admin/races';
 
 // Module state
-const DEFAULT_ADMIN_PIN = '1111'; // Default client PIN (synced across devices)
 let pendingRaceDelete: string | null = null;
 
 // PIN verification context - consolidates resolver and type into single object
@@ -103,20 +102,16 @@ export function showRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language
 }
 
 /**
- * Initialize admin PIN - sync from cloud or set default
+ * Initialize admin PIN state
+ * No longer auto-authenticates with a default PIN.
+ * Users must set their own PIN during setup or when enabling sync.
  */
 async function initializeAdminPin(): Promise<void> {
-  // If we already have a valid token, we're done
+  // If we already have a valid token, nothing to do
   if (hasAuthToken()) {
     return;
   }
-
-  // Try to authenticate with default PIN
-  // This will either:
-  // 1. Set the default PIN in Redis and return a token (if no PIN exists)
-  // 2. Authenticate with existing default PIN (if it matches)
-  // 3. Fail (if a different PIN is set in Redis)
-  await authenticateWithPin(DEFAULT_ADMIN_PIN);
+  // No default PIN - user must authenticate explicitly when needed
 }
 
 /**

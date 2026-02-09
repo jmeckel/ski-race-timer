@@ -10,6 +10,7 @@ import { initGlobalErrorHandlers } from './utils/errorBoundary';
 import { store } from './store';
 import { t } from './i18n/translations';
 import { logger } from './utils/logger';
+import { batteryService } from './services/battery';
 
 // Initialize global error handlers first (catches errors during init)
 initGlobalErrorHandlers();
@@ -65,6 +66,14 @@ function showUpdateNotification(): void {
   const lang = store.getState().currentLang;
   showToast(t('updateAvailable', lang), 'info', 10000); // Show for 10 seconds
 }
+
+// Toggle power-saver CSS class based on battery level
+// Stops infinite GPU animations when battery is low to save power
+batteryService.initialize().then(() => {
+  batteryService.subscribe((status) => {
+    document.body.classList.toggle('power-saver', status.batteryLevel !== 'normal');
+  });
+});
 
 // Handle visibility change (pause/resume)
 document.addEventListener('visibilitychange', () => {

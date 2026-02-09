@@ -3,6 +3,8 @@ import { logger } from '../utils/logger';
 
 // Audio context for sound feedback
 let audioContext: AudioContext | null = null;
+let audioIdleTimeoutId: number | null = null;
+const AUDIO_IDLE_TIMEOUT = 30000; // 30 seconds before suspending
 
 /**
  * Get or create AudioContext (lazy initialization)
@@ -17,6 +19,24 @@ function getAudioContext(): AudioContext | null {
     }
   }
   return audioContext;
+}
+
+/**
+ * Schedule AudioContext suspension after idle timeout
+ * Saves power by releasing audio hardware when not in use
+ */
+function scheduleAudioSuspend(): void {
+  if (audioIdleTimeoutId !== null) {
+    clearTimeout(audioIdleTimeoutId);
+  }
+  audioIdleTimeoutId = window.setTimeout(() => {
+    if (audioContext && audioContext.state === 'running') {
+      audioContext.suspend().catch(() => {
+        // Ignore suspension errors
+      });
+    }
+    audioIdleTimeoutId = null;
+  }, AUDIO_IDLE_TIMEOUT);
 }
 
 /**
@@ -44,6 +64,14 @@ export function playBeep(frequency: number = 880, duration: number = 100): void 
 
   const ctx = getAudioContext();
   if (!ctx) return;
+
+  // Resume if suspended (from idle timeout)
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(() => {});
+  }
+
+  // Schedule suspension after idle period
+  scheduleAudioSuspend();
 
   try {
     const oscillator = ctx.createOscillator();

@@ -1,5 +1,4 @@
-import crypto from 'crypto';
-import { generateToken, hashPin } from '../../lib/jwt.js';
+import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
   handlePreflight,
@@ -126,17 +125,16 @@ export default async function handler(req, res) {
       }
 
       // Verify provided PIN against stored chief judge PIN hash
-      const providedPinHash = hashPin(pin);
-      let pinValid = false;
-
-      try {
-        pinValid = crypto.timingSafeEqual(Buffer.from(providedPinHash), Buffer.from(chiefPinHash));
-      } catch (e) {
-        pinValid = false;
-      }
+      const pinValid = verifyPin(pin, chiefPinHash);
 
       if (!pinValid) {
         return sendError(res, 'Invalid Chief Judge PIN', 401);
+      }
+
+      // Migrate legacy SHA-256 hash to PBKDF2 on successful verification
+      if (!chiefPinHash.includes(':')) {
+        const upgradedHash = hashPin(pin);
+        await client.set(CHIEF_JUDGE_PIN_KEY, upgradedHash);
       }
 
       // Chief Judge PIN is valid, generate JWT token
@@ -176,19 +174,17 @@ export default async function handler(req, res) {
     }
 
     // Verify provided PIN against stored hash
-    // SECURITY: Use constant-time comparison and identical error responses to prevent timing attacks
-    const providedPinHash = hashPin(pin);
-    let pinValid = false;
-
-    try {
-      pinValid = crypto.timingSafeEqual(Buffer.from(providedPinHash), Buffer.from(storedPinHash));
-    } catch (e) {
-      // Buffer length mismatch - PIN is invalid
-      pinValid = false;
-    }
+    // SECURITY: Uses timing-safe comparison internally to prevent timing attacks
+    const pinValid = verifyPin(pin, storedPinHash);
 
     if (!pinValid) {
       return sendError(res, 'Invalid PIN', 401);
+    }
+
+    // Migrate legacy SHA-256 hash to PBKDF2 on successful verification
+    if (!storedPinHash.includes(':')) {
+      const upgradedHash = hashPin(pin);
+      await client.set(CLIENT_PIN_KEY, upgradedHash);
     }
 
     // PIN is valid, generate JWT token

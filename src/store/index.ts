@@ -66,6 +66,7 @@ class Store {
   private state: AppState;
   private listeners: Set<StateListener> = new Set();
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private dirtySlices: Set<string> = new Set(); // Track which slices need saving
   private isNotifying = false;
   private pendingNotifications: { keys: (keyof AppState)[]; stateSnapshot: AppState }[] = [];
   private listenerErrorCallback: ListenerErrorCallback | null = null;
@@ -283,6 +284,10 @@ class Store {
     this.notify(changedKeys);
 
     if (persist) {
+      // Track which slices are dirty to avoid serializing unchanged data
+      for (const key of changedKeys) {
+        this.dirtySlices.add(key);
+      }
       this.scheduleSave();
     }
   }
@@ -299,36 +304,81 @@ class Store {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
+    // Mark all persistent slices as dirty for a full save
+    for (const key of ['entries', 'settings', 'currentLang', 'deviceName', 'raceId',
+      'lastSyncedRaceId', 'syncQueue', 'deviceRole', 'gateAssignment',
+      'firstGateColor', 'faultEntries']) {
+      this.dirtySlices.add(key);
+    }
     this.saveToStorage();
   }
 
   private saveToStorage() {
+    const dirty = this.dirtySlices;
+    this.dirtySlices = new Set();
+
     try {
       this.checkStorageQuota();
 
-      const entriesToSave = this.state.entries.map(entry => {
-        if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
-          return { ...entry, photo: 'indexeddb' };
-        }
-        return entry;
-      });
-
-      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entriesToSave));
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.state.settings));
-      localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
-      localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
-      localStorage.setItem(STORAGE_KEYS.RACE_ID, this.state.raceId);
-      localStorage.setItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID, this.state.lastSyncedRaceId);
-      localStorage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(this.state.syncQueue));
-      localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
-      localStorage.setItem(STORAGE_KEYS.DEVICE_ROLE, this.state.deviceRole);
-      if (this.state.gateAssignment) {
-        localStorage.setItem(STORAGE_KEYS.GATE_ASSIGNMENT, JSON.stringify(this.state.gateAssignment));
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+      // Only serialize slices that actually changed
+      if (dirty.has('entries')) {
+        const entriesToSave = this.state.entries.map(entry => {
+          if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
+            return { ...entry, photo: 'indexeddb' };
+          }
+          return entry;
+        });
+        localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entriesToSave));
       }
-      localStorage.setItem(STORAGE_KEYS.FIRST_GATE_COLOR, this.state.firstGateColor);
-      localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
+
+      if (dirty.has('settings')) {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.state.settings));
+      }
+
+      if (dirty.has('currentLang')) {
+        localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
+      }
+
+      if (dirty.has('deviceName')) {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
+      }
+
+      if (dirty.has('raceId')) {
+        localStorage.setItem(STORAGE_KEYS.RACE_ID, this.state.raceId);
+      }
+
+      if (dirty.has('lastSyncedRaceId')) {
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID, this.state.lastSyncedRaceId);
+      }
+
+      if (dirty.has('syncQueue')) {
+        localStorage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(this.state.syncQueue));
+      }
+
+      if (dirty.has('deviceRole')) {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_ROLE, this.state.deviceRole);
+      }
+
+      if (dirty.has('gateAssignment')) {
+        if (this.state.gateAssignment) {
+          localStorage.setItem(STORAGE_KEYS.GATE_ASSIGNMENT, JSON.stringify(this.state.gateAssignment));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+        }
+      }
+
+      if (dirty.has('firstGateColor')) {
+        localStorage.setItem(STORAGE_KEYS.FIRST_GATE_COLOR, this.state.firstGateColor);
+      }
+
+      if (dirty.has('faultEntries')) {
+        localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
+      }
+
+      // Schema version only needs writing when entries or settings change
+      if (dirty.has('entries') || dirty.has('settings')) {
+        localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
+      }
     } catch (e) {
       logger.error('Failed to save to storage:', e);
       this.dispatchStorageError(e as Error);

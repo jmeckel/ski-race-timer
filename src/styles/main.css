@@ -5532,3 +5532,14 @@ body.ambient-mode .app {
 body.ambient-mode #main {
   background: #000000;
 }
+
+/* ===== Power Saver: Stop infinite animations to save GPU ===== */
+.power-saver .sync-dot.syncing,
+.power-saver .gps-dot.searching,
+.power-saver .gps-dot.active,
+.power-saver .voice-indicator.listening .voice-dot,
+.power-saver .voice-indicator.processing .voice-dot,
+.power-saver .voice-indicator.confirming .voice-dot,
+.power-saver .ambient-touch-indicator {
+  animation: none;
+}

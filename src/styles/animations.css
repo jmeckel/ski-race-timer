@@ -316,3 +316,25 @@
 .no-glass-effects .breathe-full {
   animation: none;
 }
+
+/* ===== Power Saver Override ===== */
+/* Applied via JS when battery is low - stops all infinite animations to save GPU */
+.power-saver .breathe-glow,
+.power-saver .breathe-glow-success,
+.power-saver .breathe-glow-danger,
+.power-saver .breathe-scale,
+.power-saver .breathe-opacity,
+.power-saver .breathe-border,
+.power-saver .breathe-full {
+  animation: none;
+}
+
+.power-saver .snowflake-spinner .flake {
+  animation: none;
+  opacity: 0.7;
+}
+
+.power-saver .snowflake-burst .flake {
+  animation: none;
+  display: none;
+}

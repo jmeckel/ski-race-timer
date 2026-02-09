@@ -13,6 +13,7 @@
  * - ANTHROPIC_API_KEY: Required if using Anthropic
  */
 
+import { validateAuth } from '../lib/jwt.js';
 import {
   handlePreflight,
   sendSuccess,
@@ -20,9 +21,10 @@ import {
   sendMethodNotAllowed,
   sendServiceUnavailable,
   sendRateLimitExceeded,
+  sendAuthRequired,
   sanitizeString
 } from '../lib/response.js';
-import { getRedis, hasRedisError } from '../lib/redis.js';
+import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
 
 // Configuration
 const MAX_TOKENS = 256;
@@ -343,6 +345,15 @@ export default async function handler(req, res) {
 
   // Set rate limit headers
   res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+
+  // SECURITY: Validate authentication - voice API proxies to expensive LLM APIs
+  const redisClient = await getRedis();
+  if (redisClient && !hasRedisError()) {
+    const authResult = await validateAuth(req, redisClient, CLIENT_PIN_KEY);
+    if (!authResult.valid) {
+      return sendAuthRequired(res, authResult.error, authResult.expired || false);
+    }
+  }
 
   // Determine provider (default to OpenAI)
   const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();

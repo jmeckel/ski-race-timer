@@ -1,5 +1,4 @@
-import crypto from 'crypto';
-import { validateAuth, hashPin } from '../../lib/jwt.js';
+import { validateAuth, hashPin, verifyPin } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
   handlePreflight,
@@ -82,16 +81,7 @@ export default async function handler(req, res) {
       }
 
       // Verify current PIN using timing-safe comparison
-      const currentPinHash = hashPin(currentPin);
-      let currentPinValid = false;
-      try {
-        currentPinValid = crypto.timingSafeEqual(
-          Buffer.from(currentPinHash, 'utf8'),
-          Buffer.from(storedPinHash, 'utf8')
-        );
-      } catch (e) {
-        currentPinValid = false;
-      }
+      const currentPinValid = verifyPin(currentPin, storedPinHash);
 
       if (!currentPinValid) {
         return sendError(res, 'Current PIN is incorrect', 401);

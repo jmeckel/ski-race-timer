@@ -40,6 +40,8 @@ export class RadialDial {
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
   private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> = new Map(); // Track for cleanup
+  private cachedNumberSpans: HTMLElement[] = []; // Cached for hot-path animation
+  private cachedNumberElements: Map<string, HTMLElement> = new Map(); // digit -> element map
   private isDestroyed = false;
 
   // Bib value
@@ -76,6 +78,8 @@ export class RadialDial {
     if (!this.dialNumbers) return;
 
     this.dialNumbers.innerHTML = '';
+    this.cachedNumberSpans = [];
+    this.cachedNumberElements.clear();
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
     // Calculate radius based on container size
@@ -114,6 +118,11 @@ export class RadialDial {
       // Note: Tap detection is handled in handleDragEnd to avoid duplicate events
 
       this.dialNumbers!.appendChild(el);
+
+      // Cache elements for hot-path animation (avoids querySelectorAll per frame)
+      const span = el.querySelector('span') as HTMLElement;
+      if (span) this.cachedNumberSpans.push(span);
+      this.cachedNumberElements.set(String(num), el);
     });
   }
 
@@ -421,18 +430,17 @@ export class RadialDial {
     this.options.onChange(this.bibValue);
     feedbackTap();
 
-    // Flash corresponding digit
+    // Flash corresponding digit (uses cached map for O(1) lookup)
     const lastDigit = String(num % 10);
-    this.dialNumbers?.querySelectorAll('.dial-number').forEach(n => {
-      if ((n as HTMLElement).dataset.num === lastDigit) {
-        n.classList.add('flash');
-        const timeoutId = window.setTimeout(() => {
-          n.classList.remove('flash');
-          this.visualTimeoutIds.delete(timeoutId);
-        }, 150);
-        this.visualTimeoutIds.add(timeoutId);
-      }
-    });
+    const digitEl = this.cachedNumberElements.get(lastDigit);
+    if (digitEl) {
+      digitEl.classList.add('flash');
+      const timeoutId = window.setTimeout(() => {
+        digitEl.classList.remove('flash');
+        this.visualTimeoutIds.delete(timeoutId);
+      }, 150);
+      this.visualTimeoutIds.add(timeoutId);
+    }
   }
 
   private getAngle(x: number, y: number, rect: DOMRect): number {
@@ -445,10 +453,11 @@ export class RadialDial {
     if (!this.dialNumbers) return;
     this.dialNumbers.style.transform = `rotate(${this.rotation}deg)`;
 
-    // Counter-rotate text to stay upright
-    this.dialNumbers.querySelectorAll('.dial-number span').forEach(span => {
-      (span as HTMLElement).style.transform = `rotate(${-this.rotation}deg)`;
-    });
+    // Counter-rotate text to stay upright (uses cached elements for O(1) access)
+    const counterRotation = `rotate(${-this.rotation}deg)`;
+    for (const span of this.cachedNumberSpans) {
+      span.style.transform = counterRotation;
+    }
   }
 
   // Public methods

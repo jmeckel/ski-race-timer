@@ -147,11 +147,44 @@ export async function validateAuth(req, redisClient, clientPinKey = 'admin:clien
   return { valid: false, error: 'Invalid token. Please re-authenticate.' };
 }
 
+// PBKDF2 configuration for PIN hashing
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_KEY_LENGTH = 32;
+const PBKDF2_DIGEST = 'sha256';
+const SALT_LENGTH = 16;
+
 /**
- * Hash a PIN using SHA-256
+ * Hash a PIN using PBKDF2 with a random salt
  * @param {string} pin - PIN to hash
- * @returns {string} Hex-encoded hash
+ * @returns {string} Format: "salt:hash" (both hex-encoded)
  */
 export function hashPin(pin) {
-  return crypto.createHash('sha256').update(pin).digest('hex');
+  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
+  const hash = crypto.pbkdf2Sync(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+/**
+ * Verify a PIN against a stored hash
+ * Handles both new PBKDF2 format (salt:hash) and legacy SHA-256 format
+ * Uses timing-safe comparison to prevent timing attacks
+ * @param {string} pin - PIN to verify
+ * @param {string} storedHash - Stored hash to compare against
+ * @returns {boolean} True if PIN matches
+ */
+export function verifyPin(pin, storedHash) {
+  try {
+    if (storedHash.includes(':')) {
+      // New PBKDF2 format: salt:hash
+      const [salt, hash] = storedHash.split(':');
+      const computedHash = crypto.pbkdf2Sync(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST).toString('hex');
+      return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(hash, 'hex'));
+    } else {
+      // Legacy SHA-256 format (for migration from existing PINs)
+      const computedHash = crypto.createHash('sha256').update(pin).digest('hex');
+      return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(storedHash));
+    }
+  } catch {
+    return false;
+  }
 }

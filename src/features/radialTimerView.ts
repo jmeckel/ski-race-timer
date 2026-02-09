@@ -6,7 +6,7 @@
 import { store } from '../store';
 import { RadialDial } from '../components/RadialDial';
 import { showToast } from '../components';
-import { syncService, gpsService, captureTimingPhoto, photoStorage } from '../services';
+import { syncService, gpsService, captureTimingPhoto, photoStorage, batteryService } from '../services';
 import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
 import { generateEntryId, getPointLabel, logWarning, getElement, escapeHtml } from '../utils';
 import { formatTime } from '../utils/format';
@@ -14,13 +14,22 @@ import { t } from '../i18n/translations';
 import { logger } from '../utils/logger';
 import type { Entry, TimingPoint, Run } from '../types';
 
+// Battery-aware frame throttling (mirrors Clock.ts pattern)
+const FRAME_SKIP_NORMAL = 0;
+const FRAME_SKIP_LOW = 1; // 30fps
+const FRAME_SKIP_CRITICAL = 3; // 15fps
+
 // Module state
 let radialDial: RadialDial | null = null;
-let clockInterval: number | null = null;
+let clockAnimationId: number | null = null;
+let clockFrameSkip = FRAME_SKIP_NORMAL;
+let clockCurrentFrame = 0;
 let frozenTime: string | null = null;
 let isInitialized = false;
 let radialKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let storeUnsubscribe: (() => void) | null = null;
+let batteryUnsubscribe: (() => void) | null = null;
+let visibilityHandler: (() => void) | null = null;
 
 /**
  * Initialize the radial timer view
@@ -80,6 +89,7 @@ export function initRadialTimerView(): void {
 
 /**
  * Initialize the radial clock display
+ * Uses requestAnimationFrame with battery-aware frame skipping (mirrors Clock.ts)
  */
 function initRadialClock(): void {
   const updateClock = () => {
@@ -100,13 +110,59 @@ function initRadialClock(): void {
     if (subEl) subEl.textContent = ms;
   };
 
-  // Clear existing interval if re-initializing
-  if (clockInterval) {
-    clearInterval(clockInterval);
+  const tick = () => {
+    // Battery-aware frame skipping
+    if (clockFrameSkip > 0) {
+      clockCurrentFrame++;
+      if (clockCurrentFrame <= clockFrameSkip) {
+        clockAnimationId = requestAnimationFrame(tick);
+        return;
+      }
+      clockCurrentFrame = 0;
+    }
+
+    updateClock();
+    clockAnimationId = requestAnimationFrame(tick);
+  };
+
+  // Cancel existing animation if re-initializing
+  if (clockAnimationId !== null) {
+    cancelAnimationFrame(clockAnimationId);
   }
 
-  clockInterval = window.setInterval(updateClock, 16);
+  // Subscribe to battery changes for adaptive frame rate
+  batteryService.initialize().then(() => {
+    batteryUnsubscribe = batteryService.subscribe((status) => {
+      switch (status.batteryLevel) {
+        case 'critical':
+          clockFrameSkip = FRAME_SKIP_CRITICAL;
+          break;
+        case 'low':
+          clockFrameSkip = FRAME_SKIP_LOW;
+          break;
+        default:
+          clockFrameSkip = FRAME_SKIP_NORMAL;
+      }
+    });
+  });
+
+  // Pause when page is hidden, resume when visible
+  visibilityHandler = () => {
+    if (document.hidden) {
+      if (clockAnimationId !== null) {
+        cancelAnimationFrame(clockAnimationId);
+        clockAnimationId = null;
+      }
+    } else {
+      if (clockAnimationId === null) {
+        clockAnimationId = requestAnimationFrame(tick);
+      }
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
+
   updateClock();
+  clockAnimationId = requestAnimationFrame(tick);
 }
 
 /**
@@ -367,9 +423,17 @@ export function cleanupRadialTimerView(): void {
     document.removeEventListener('keydown', radialKeydownHandler);
     radialKeydownHandler = null;
   }
-  if (clockInterval !== null) {
-    clearInterval(clockInterval);
-    clockInterval = null;
+  if (clockAnimationId !== null) {
+    cancelAnimationFrame(clockAnimationId);
+    clockAnimationId = null;
+  }
+  if (batteryUnsubscribe) {
+    batteryUnsubscribe();
+    batteryUnsubscribe = null;
+  }
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    visibilityHandler = null;
   }
   if (radialDial) {
     radialDial.destroy();
@@ -626,9 +690,19 @@ export function destroyRadialTimerView(): void {
     storeUnsubscribe = null;
   }
 
-  if (clockInterval) {
-    clearInterval(clockInterval);
-    clockInterval = null;
+  if (clockAnimationId !== null) {
+    cancelAnimationFrame(clockAnimationId);
+    clockAnimationId = null;
+  }
+
+  if (batteryUnsubscribe) {
+    batteryUnsubscribe();
+    batteryUnsubscribe = null;
+  }
+
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    visibilityHandler = null;
   }
 
   if (radialDial) {
