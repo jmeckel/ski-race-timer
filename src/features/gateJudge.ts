@@ -125,39 +125,25 @@ export function updateInlineFaultsList(): void {
 }
 
 /**
- * Update inline bib selector buttons
+ * Update inline bib input with the most recent active bib
  */
 export function updateInlineBibSelector(): void {
   if (!deps) return;
 
-  const container = document.getElementById('inline-bib-selector');
-  if (!container) return;
-
   const state = deps.getState();
   const activeBibs = deps.getActiveBibs(state.selectedRun);
 
-  container.innerHTML = '';
+  // Auto-fill with most recent active bib if no bib selected yet
+  if (!inlineSelectedBib && activeBibs.length > 0) {
+    inlineSelectedBib = activeBibs[0];
+  }
 
-  // Show up to 6 most recent active bibs as quick-select buttons
-  const recentBibs = activeBibs.slice(0, 6);
+  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  if (bibInput && inlineSelectedBib) {
+    bibInput.value = inlineSelectedBib;
+  }
 
-  recentBibs.forEach(bib => {
-    const btn = document.createElement('button');
-    btn.className = 'inline-bib-btn';
-    btn.setAttribute('data-bib', bib);
-    btn.textContent = bib;
-
-    if (bib === inlineSelectedBib) {
-      btn.classList.add('selected');
-    }
-
-    btn.addEventListener('click', () => {
-      deps!.feedbackTap();
-      selectInlineBib(bib);
-    });
-
-    container.appendChild(btn);
-  });
+  updateInlineSaveButtonState();
 }
 
 /**
@@ -166,10 +152,10 @@ export function updateInlineBibSelector(): void {
 export function selectInlineBib(bib: string): void {
   inlineSelectedBib = bib;
 
-  // Update button styles
-  document.querySelectorAll('.inline-bib-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-bib') === bib);
-  });
+  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  if (bibInput) {
+    bibInput.value = bib;
+  }
 
   updateInlineSaveButtonState();
 }

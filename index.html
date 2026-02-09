@@ -415,16 +415,10 @@
               </button>
             </div>
 
-            <!-- Bib Selection (auto-filled from last starter) -->
+            <!-- Bib Entry (auto-filled from last starter) -->
             <div class="fault-detail-bib-row">
-              <label class="inline-entry-label" data-i18n="bib">Bib</label>
-              <div class="inline-bib-selector" id="inline-bib-selector">
-                <!-- Populated dynamically -->
-              </div>
-              <div class="inline-bib-manual-row">
-                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
-                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" aria-label="Bib number">
-              </div>
+              <label class="inline-entry-label" for="inline-bib-input" data-i18n="bib">Bib</label>
+              <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" data-i18n-aria-label="bib">
             </div>
           </div>
 

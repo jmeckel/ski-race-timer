@@ -3698,26 +3698,13 @@ body {
 }
 
 .inline-bib-input {
-  width: 70px;
-  height: 36px;
+  width: 100%;
+  height: 44px;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-}
-
-/* Manual Bib Entry Row */
-.inline-bib-manual-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.inline-bib-manual-label {
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-  white-space: nowrap;
+  border-radius: var(--radius);
 }
 
 /* Inline Fault Type Buttons */

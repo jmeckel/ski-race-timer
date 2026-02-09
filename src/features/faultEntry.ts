@@ -785,67 +785,23 @@ export function updateInlineFaultsList(): void {
 }
 
 /**
- * Update inline bib selector buttons
+ * Update inline bib input with the most recent active bib
  */
 export function updateInlineBibSelector(): void {
-  const container = document.getElementById('inline-bib-selector');
-  if (!container) return;
-
   const state = store.getState();
   const activeBibs = store.getActiveBibs(state.selectedRun);
 
-  container.innerHTML = '';
+  // Auto-fill with most recent active bib if no bib selected yet
+  if (!inlineSelectedBib && activeBibs.length > 0) {
+    inlineSelectedBib = activeBibs[0];
+  }
 
-  // Show up to 6 most recent active bibs as quick-select buttons
-  const recentBibs = activeBibs.slice(0, 6);
+  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  if (bibInput && inlineSelectedBib) {
+    bibInput.value = inlineSelectedBib;
+  }
 
-  recentBibs.forEach(bib => {
-    const btn = document.createElement('button');
-    btn.className = 'inline-bib-btn';
-    btn.setAttribute('data-bib', bib);
-    btn.setAttribute('aria-pressed', String(bib === inlineSelectedBib));
-    btn.textContent = bib;
-
-    if (bib === inlineSelectedBib) {
-      btn.classList.add('selected');
-    }
-
-    btn.addEventListener('click', () => {
-      feedbackTap();
-      selectInlineBib(bib);
-    });
-
-    // Keyboard support: Space/Enter to select, arrow keys to navigate
-    btn.addEventListener('keydown', (e) => {
-      const buttons = Array.from(container.querySelectorAll('.inline-bib-btn')) as HTMLElement[];
-      const currentIndex = buttons.indexOf(btn);
-
-      switch (e.key) {
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          feedbackTap();
-          selectInlineBib(bib);
-          break;
-        case 'ArrowLeft':
-        case 'ArrowUp':
-          e.preventDefault();
-          if (currentIndex > 0) {
-            buttons[currentIndex - 1].focus();
-          }
-          break;
-        case 'ArrowRight':
-        case 'ArrowDown':
-          e.preventDefault();
-          if (currentIndex < buttons.length - 1) {
-            buttons[currentIndex + 1].focus();
-          }
-          break;
-      }
-    });
-
-    container.appendChild(btn);
-  });
+  updateInlineSaveButtonState();
 }
 
 /**
@@ -854,14 +810,6 @@ export function updateInlineBibSelector(): void {
 export function selectInlineBib(bib: string): void {
   inlineSelectedBib = bib;
 
-  // Update bib buttons
-  document.querySelectorAll('#inline-bib-selector .inline-bib-btn').forEach(btn => {
-    const isSelected = btn.getAttribute('data-bib') === bib;
-    btn.classList.toggle('selected', isSelected);
-    btn.setAttribute('aria-pressed', String(isSelected));
-  });
-
-  // Update manual input
   const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
   if (bibInput) {
     bibInput.value = bib;
@@ -1090,10 +1038,6 @@ export function initInlineFaultEntry(): void {
     bibInput.addEventListener('input', () => {
       if (bibInput.value) {
         inlineSelectedBib = bibInput.value.padStart(3, '0');
-        // Deselect any quick-select button
-        document.querySelectorAll('#inline-bib-selector .inline-bib-btn').forEach(btn => {
-          btn.classList.remove('selected');
-        });
         updateInlineSaveButtonState();
       }
     });
