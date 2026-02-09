@@ -360,7 +360,7 @@ export function exportFaultSummaryWhatsApp(): void {
     if (state.usePenaltyMode) {
       lines.push(`🟡 ${t('penaltyLabel', lang)}:`);
     } else {
-      lines.push(`🔴 DSQ:`);
+      lines.push(`🔴 ${t('dsq', lang)}:`);
     }
     run1Bibs
       .sort((a, b) => parseInt(a[0].split('-')[0]) - parseInt(b[0].split('-')[0]))
@@ -376,7 +376,7 @@ export function exportFaultSummaryWhatsApp(): void {
     if (state.usePenaltyMode) {
       lines.push(`🟡 ${t('penaltyLabel', lang)}:`);
     } else {
-      lines.push(`🔴 DSQ:`);
+      lines.push(`🔴 ${t('dsq', lang)}:`);
     }
     run2Bibs
       .sort((a, b) => parseInt(a[0].split('-')[0]) - parseInt(b[0].split('-')[0]))
@@ -465,7 +465,7 @@ export function exportChiefSummary(): void {
           statusStr = t('flt', lang);
         } else {
           penaltyStr = '-'.padStart(9);
-          statusStr = 'DSQ';
+          statusStr = t('dsq', lang);
         }
 
         lines.push(`  ${paddedBib}   │ ${faultStr} │ ${penaltyStr} │ ${statusStr}`);

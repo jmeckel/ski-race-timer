@@ -6,6 +6,7 @@
 import type { AppState, FaultEntry, FaultType } from '../types';
 import { escapeHtml } from '../utils/format';
 import { t } from '../i18n/translations';
+import { getFaultTypeLabel } from './chiefJudgeView';
 
 // Module state
 let inlineSelectedBib = '';
@@ -97,7 +98,7 @@ export function updateInlineFaultsList(): void {
         <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
         <div class="gate-judge-fault-details">
           <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
-          <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
+          <span class="gate-judge-fault-type">${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}</span>
         </div>
       </div>
       <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">

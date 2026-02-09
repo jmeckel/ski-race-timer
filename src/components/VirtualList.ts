@@ -2,6 +2,7 @@ import type { Entry, FaultEntry, Run } from '../types';
 import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml, escapeAttr } from '../utils';
 import { store } from '../store';
 import { t } from '../i18n/translations';
+import { getFaultTypeLabel } from '../features/chiefJudgeView';
 import { logger } from '../utils/logger';
 
 // Group of items for the same bib+run
@@ -606,7 +607,7 @@ export class VirtualList {
       </div>
       ${hasFaults ? `
         <span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-          ${faultCount}× FLT
+          ${faultCount}× ${t('flt', lang)}
         </span>
       ` : ''}
     `;
@@ -695,8 +696,8 @@ export class VirtualList {
 
     const hasFaults = faults.length > 0;
     const faultBadgeHtml = hasFaults ? `
-      <span class="result-fault-badge" title="${escapeAttr(faults.map(f => `T${f.gateNumber} (${f.faultType})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
+      <span class="result-fault-badge" title="${escapeAttr(faults.map(f => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+        ${faults.length > 1 ? `${faults.length}× ${t('flt', lang)}` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     ` : '';
 
@@ -869,16 +870,16 @@ export class VirtualList {
 
     const faultDetails = faults
       .sort((a, b) => a.gateNumber - b.gateNumber)
-      .map(f => `T${f.gateNumber} (${f.faultType})${f.markedForDeletion ? ' ⚠' : ''}`)
+      .map(f => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})${f.markedForDeletion ? ' ⚠' : ''}`)
       .join(', ');
 
     const faultBadgeHtml = `
       <span class="result-fault-badge" title="${escapeAttr(faultDetails)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-        ${faults.length > 1 ? `${faults.length}× FLT` : `T${faults[0]?.gateNumber || '?'}`}
+        ${faults.length > 1 ? `${faults.length}× ${t('flt', lang)}` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
     `;
 
-    const statusLabel = state.usePenaltyMode ? t('flt', lang) : 'DSQ';
+    const statusLabel = state.usePenaltyMode ? t('flt', lang) : t('dsq', lang);
     const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
 
     const deletionPendingBadge = hasMarkedForDeletion ? `
@@ -1219,7 +1220,7 @@ export class VirtualList {
       </div>
       <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
-          ${escapeHtml(fault.faultType)}
+          ${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}
         </span>
         ${fault.deviceName ? `
           <span style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">

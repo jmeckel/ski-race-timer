@@ -32,6 +32,7 @@ let inlineFaultTypeKeydownListener: EventListener | null = null;
  */
 export function openFaultRecordingModal(preselectedBib?: string): void {
   const state = store.getState();
+  const lang = state.currentLang;
   const activeBibs = store.getActiveBibs(state.selectedRun);
 
   // Clean up old bib button listeners before adding new ones (M6 fix)
@@ -44,7 +45,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
   const bibSelector = document.getElementById('fault-bib-selector');
   if (bibSelector) {
     bibSelector.innerHTML = activeBibs.map(bib => `
-      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeAttr(bib)}" aria-label="Select bib ${escapeAttr(bib)}">${escapeHtml(bib)}</button>
+      <button class="fault-bib-btn ${bib === preselectedBib ? 'selected' : ''}" data-bib="${escapeAttr(bib)}" aria-label="${escapeAttr(t('selectBib', lang))} ${escapeAttr(bib)}">${escapeHtml(bib)}</button>
     `).join('');
 
     // Add click handlers
@@ -95,7 +96,7 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
     for (let i = start; i <= end; i++) {
       const gateColor = store.getGateColor(i);
       const colorClass = gateColor === 'red' ? 'gate-red' : 'gate-blue';
-      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}" aria-label="Gate ${i}">${i}</button>`;
+      gatesHtml += `<button class="fault-gate-btn ${colorClass}" data-gate="${i}" aria-label="${escapeAttr(t('gateNumberLabel', lang))} ${i}">${i}</button>`;
     }
     gateSelector.innerHTML = gatesHtml;
 
@@ -756,7 +757,7 @@ export function updateInlineFaultsList(): void {
         <span class="gate-judge-fault-bib">${escapeHtml(fault.bib)}</span>
         <div class="gate-judge-fault-details">
           <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
-          <span class="gate-judge-fault-type">${escapeHtml(fault.faultType)}</span>
+          <span class="gate-judge-fault-type">${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}</span>
           ${hasNotes ? `<span class="gate-judge-fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
         </div>
       </div>
@@ -1277,7 +1278,7 @@ export function openFaultDeleteConfirmation(fault: FaultEntry): void {
     infoEl.innerHTML = `
       <strong>#${escapeHtml(fault.bib)}</strong> -
       <span class="fault-gate ${gateColor}">T${fault.gateNumber}</span>
-      (${escapeHtml(fault.faultType)}) -
+      (${escapeHtml(getFaultTypeLabel(fault.faultType, state.currentLang))}) -
       ${t('run1', state.currentLang).replace('1', String(fault.run))}
     `;
   }

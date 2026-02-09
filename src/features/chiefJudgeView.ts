@@ -460,7 +460,7 @@ export function updateFaultSummaryPanel(): void {
     const statusHtml = state.usePenaltyMode
       ? `<span class="fault-card-penalty">+${penaltySeconds}s</span>
          <span class="fault-card-result flt">${t('flt', lang)}</span>`
-      : `<span class="fault-card-result dsq">DSQ</span>`;
+      : `<span class="fault-card-result dsq">${t('dsq', lang)}</span>`;
 
     cardsHtml.push(`
       <div class="fault-summary-card${isFinalized ? ' finalized' : ''}" data-bib="${escapeAttr(bib)}" data-run="${escapeAttr(String(run))}">
