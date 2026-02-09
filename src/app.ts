@@ -11,7 +11,7 @@ import { isValidRaceId, makeNumericInput } from './utils/validation';
 import { getElement } from './utils/domCache';
 import { t } from './i18n/translations';
 import { applyViewServices } from './utils/viewServices';
-import { injectSpeedInsights } from '@vercel/speed-insights';
+
 import { OnboardingController } from './onboarding';
 import type { Entry, FaultEntry, TimingPoint, Language, FaultType, DeviceRole, Run, VoiceStatus } from './types';
 
@@ -53,9 +53,6 @@ import {
   showRaceChangeDialog, showPhotoSyncWarningModal, handleRaceDeleted, handleAuthExpired,
   cleanupPinVerification, hasPendingPinVerification
 } from './features/raceManagement';
-
-// Initialize Vercel Speed Insights
-injectSpeedInsights();
 
 // DOM Elements cache
 let onboardingController: OnboardingController | null = null;

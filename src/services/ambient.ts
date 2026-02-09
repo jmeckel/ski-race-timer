@@ -27,7 +27,7 @@ class AmbientModeService {
   private isAmbientActive = false;
   private triggeredBy: AmbientTrigger = null;
   private lastActivityTimestamp = Date.now();
-  private animationFrameId: number | null = null;
+  private inactivityCheckId: ReturnType<typeof setInterval> | null = null;
   private batteryUnsubscribe: (() => void) | null = null;
   private callbacks: Set<AmbientChangeCallback> = new Set();
 
@@ -195,36 +195,29 @@ class AmbientModeService {
   }
 
   /**
-   * Start the inactivity monitoring loop using RAF
+   * Start the inactivity monitoring loop using setInterval (battery-friendly)
    */
   private startInactivityMonitor(): void {
-    if (this.animationFrameId !== null) return;
+    if (this.inactivityCheckId !== null) return;
 
-    const checkInactivity = () => {
-      if (!this.isEnabled) {
-        this.animationFrameId = null;
-        return;
-      }
+    this.inactivityCheckId = setInterval(() => {
+      if (!this.isEnabled) return;
 
       const elapsed = Date.now() - this.lastActivityTimestamp;
 
       if (elapsed >= this.INACTIVITY_THRESHOLD_MS && !this.isAmbientActive) {
         this.enterAmbientMode('inactivity');
       }
-
-      this.animationFrameId = requestAnimationFrame(checkInactivity);
-    };
-
-    this.animationFrameId = requestAnimationFrame(checkInactivity);
+    }, 5000); // Check every 5 seconds instead of 60fps RAF
   }
 
   /**
    * Stop the inactivity monitoring loop
    */
   private stopInactivityMonitor(): void {
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
+    if (this.inactivityCheckId !== null) {
+      clearInterval(this.inactivityCheckId);
+      this.inactivityCheckId = null;
     }
   }
 

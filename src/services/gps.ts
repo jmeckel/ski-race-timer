@@ -2,10 +2,12 @@ import { store } from '../store';
 import { logger } from '../utils/logger';
 
 // GPS configuration
+// maximumAge: 10s allows reuse of cached position, reducing GPS chip wake-ups
+// while still providing fresh-enough timestamps for race timing
 const GPS_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 10000,
-  maximumAge: 1000
+  maximumAge: 10000
 };
 
 // Accuracy thresholds (in meters)
