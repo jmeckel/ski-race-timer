@@ -35,19 +35,28 @@ npm run test:coverage
 
 ```
 tests/
-├── setup.js                 # Test setup, mocks, utilities
+├── setup.js                          # Test setup, mocks, utilities
 ├── unit/
-│   ├── utils.test.js        # Utility function tests
-│   └── validation.test.js   # Validation function tests
+│   ├── utils.test.js                 # Utility function tests
+│   ├── validation.test.js            # Validation function tests
+│   └── store.test.ts                 # State management and persistence tests
 ├── api/
-│   ├── sync.test.js         # Sync API endpoint tests
-│   └── faults-role.test.js  # Faults role-based access control tests
+│   ├── sync.test.js                  # Sync API endpoint tests
+│   ├── faults-role.test.js           # Faults role-based access control tests
+│   ├── pin-hashing.test.js           # PBKDF2 PIN hashing and verification tests
+│   └── voice-auth.test.js            # Voice API fail-closed auth tests
 ├── integration/
-│   └── (future)             # Integration tests
+│   └── (future)                      # Integration tests
 └── e2e/
-    ├── timer.spec.js        # Timer view E2E tests
-    ├── results.spec.js      # Results view E2E tests
-    └── settings.spec.js     # Settings view E2E tests
+    ├── helpers.js                    # Shared E2E test utilities
+    ├── timer.spec.js                 # Timer view E2E tests
+    ├── results.spec.js               # Results view E2E tests
+    ├── settings.spec.js              # Settings view E2E tests
+    ├── offline.spec.js               # Offline functionality E2E tests
+    ├── race-management.spec.js       # Race management E2E tests
+    ├── power-optimization.spec.js    # Battery power saver E2E tests
+    ├── persistence-optimization.spec.js # Dirty-slice persistence E2E tests
+    └── security-hardening.spec.js    # CSP, PIN security E2E tests
 ```
 
 ## Running Tests
@@ -117,6 +126,14 @@ Unit tests cover isolated functions from the application.
 | `getPointColor()` | Timing point colors | 4 tests |
 | `t()` | Translation helper | 3 tests |
 
+### Store (`tests/unit/store.test.ts`)
+
+| Function | Description | Test Count |
+|----------|-------------|------------|
+| State management | State updates and subscriptions | 12+ tests |
+| Persistence | Dirty-slice tracking, localStorage save | 6+ tests |
+| Dirty-slice isolation | Entries don't trigger settings save and vice versa | 2 tests |
+
 ### Validation Functions (`tests/unit/validation.test.js`)
 
 | Function | Description | Test Count |
@@ -151,6 +168,32 @@ API tests verify the `/api/v1/*` endpoint behavior. All API endpoints use v1 ver
 ### OPTIONS /api/v1/sync
 
 - Returns CORS preflight response
+
+### PIN Hashing (`tests/api/pin-hashing.test.js`)
+
+Tests for PBKDF2 PIN hashing and verification.
+
+| Test | Description |
+|------|-------------|
+| hashPin produces PBKDF2 format | Output contains `pbkdf2$` prefix with salt and hash |
+| hashPin generates unique salts | Same PIN produces different hashes each time |
+| verifyPin validates correct PIN | Correct PIN returns true |
+| verifyPin rejects wrong PIN | Wrong PIN returns false |
+| Legacy SHA-256 migration | Old SHA-256 hashes are still accepted for migration |
+| Malformed hash handling | Returns false for invalid hash format |
+| Empty PIN handling | Empty input handled gracefully |
+| PIN upgrade path | Legacy hash verified, new PBKDF2 hash can replace it |
+
+### Voice API Auth (`tests/api/voice-auth.test.js`)
+
+Tests for fail-closed authentication on the voice API endpoint.
+
+| Test | Description |
+|------|-------------|
+| Source code fail-closed pattern | `voice.js` denies access when Redis is unavailable |
+| No skip-auth pattern | Source code does not contain patterns that skip auth |
+| Auth required for requests | Unauthenticated requests return 401 |
+| Valid token accepted | Authenticated requests proceed normally |
 
 ### Faults Role Validation (`tests/api/faults-role.test.js`)
 
@@ -210,6 +253,38 @@ End-to-end tests verify complete user flows using Playwright.
 - Backup/restore
 - Toggle independence
 - Keyboard accessibility
+
+### Power Optimization (`tests/e2e/power-optimization.spec.js`)
+
+- Battery API integration: `.power-saver` class on normal, low, and critical battery levels
+- Power saver not applied when charging (even at low battery)
+- Dynamic battery level changes toggle power-saver in real time
+- CSS animation disabling: breathe glow and snowflake spinner paused in power-saver mode
+- Clock continues updating at low and critical battery (frame skipping)
+- Timestamp recording works in power-saver mode
+- Graceful degradation when Battery API is unavailable
+- All views accessible without Battery API
+
+### Persistence Optimization (`tests/e2e/persistence-optimization.spec.js`)
+
+- Entries persist after recording timestamps
+- Settings changes are independent from entries (dirty-slice isolation)
+- Both entries and settings persist correctly
+- Language changes persist independently
+- Rapid settings changes do not cause data loss
+- Selected run persists across settings changes
+
+### Security Hardening (`tests/e2e/security-hardening.spec.js`)
+
+- App loads without CSP `unsafe-inline` (no inline scripts)
+- No JavaScript errors on initial load
+- All views render without CSP violations
+- Dynamic content rendering works without inline scripts
+- No auto-authentication on first load (no default PIN)
+- No default PIN stored automatically
+- PIN status shows "not set" without pre-existing PIN
+- PIN input uses numeric keypad (type=tel) with 4-digit limit
+- Auth token not exposed in localStorage entries
 
 ## UI Testing Strategy
 

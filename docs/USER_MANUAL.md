@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.16.0 | Last Updated: February 2026
+Version 5.18.0 | Last Updated: February 2026
 
 ---
 
@@ -59,6 +59,7 @@ Ski Race Timer is a professional timing app for ski races. It works as a Progres
 - **Two-run support** for slalom and giant slalom races
 - **Voice Mode** for hands-free voice commands during timing
 - **Ambient Mode** to save battery by dimming the screen during inactivity
+- **Battery Power Saver** - automatic animation reduction on low battery for extended outdoor timing
 - **FLT status** for U8/U10 categories (finished with fault penalty)
 - **Offline-first** - works without internet, syncs when connected
 - **Photo capture** - optional documentation for each timestamp
@@ -395,6 +396,16 @@ Choose your role:
 - **Voice Mode** - Enable hands-free voice commands for timing operations. Requires an internet connection and microphone permission.
 - **Photo Capture** - Capture a photo with each timestamp for documentation
 
+### Battery Power Saver
+
+The app automatically detects low battery conditions using the Battery Status API and reduces power consumption:
+
+- **Low battery (below 20%)** - Decorative animations (glow effects, spinners) are paused to save battery
+- **Critical battery (below 10%)** - Additional frame rate reduction for the clock display
+- **Charging** - Power saver deactivates when the device is plugged in, even at low battery
+
+This is fully automatic and requires no configuration. The clock and timing functions continue to work normally in power-saver mode. If your device does not support the Battery API, the app runs with all animations enabled as usual.
+
 ### Language
 
 Toggle between **DE** (Deutsch) and **EN** (English). All UI text, labels, and accessibility descriptions update immediately.
@@ -638,7 +649,7 @@ Ski Race Timer supports full keyboard and USB numpad navigation for desktop use 
 
 **Report Issues:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.16.0
+**Version:** 5.18.0
 
 ---
 

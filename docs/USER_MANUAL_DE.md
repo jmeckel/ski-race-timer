@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.16.0 | Stand: Februar 2026
+Version 5.18.0 | Stand: Februar 2026
 
 ---
 
@@ -58,6 +58,7 @@ Ski Race Timer ist eine professionelle Zeitmessungs-App für Skirennen. Sie funk
 - **Obmann-Modus** zur Fehlerübersicht, Strafberechnung und Löschgenehmigung
 - **Sprachsteuerung** für freihändige Bedienung am Hang
 - **Ruhemodus** zum Schutz vor versehentlichen Zeitstempeln bei Inaktivität
+- **Batterieschoner** - automatische Reduzierung von Animationen bei niedrigem Akkustand für längere Akkulaufzeit
 - **STR-Status** (Strafzeit) für U8/U10-Kategorien
 - **Zwei-Lauf-Unterstützung** für Slalom und Riesenslalom
 - **Offline-First** - funktioniert ohne Internet, synchronisiert bei Verbindung
@@ -414,6 +415,16 @@ Wählen Sie Ihre Rolle:
 | Sprachsteuerung | Freihändige Sprachbefehle für die Bedienung am Hang (Internetverbindung erforderlich) |
 | Foto aufnehmen | Bei jedem Zeitstempel automatisch ein Foto aufnehmen |
 
+### Batterieschoner
+
+Die App erkennt automatisch niedrige Akkustände über die Battery Status API und reduziert den Stromverbrauch:
+
+- **Niedriger Akku (unter 20%)** - Dekorative Animationen (Leuchteffekte, Spinner) werden pausiert
+- **Kritischer Akku (unter 10%)** - Zusätzliche Reduzierung der Bildwiederholrate der Uhranzeige
+- **Beim Laden** - Der Batterieschoner deaktiviert sich, wenn das Gerät angeschlossen ist, auch bei niedrigem Akku
+
+Dies geschieht vollautomatisch und erfordert keine Konfiguration. Uhr und Zeiterfassung funktionieren im Energiesparmodus normal weiter. Falls Ihr Gerät die Battery API nicht unterstützt, läuft die App mit allen Animationen wie gewohnt.
+
 ### Fotoaufnahme
 
 Wenn aktiviert, wird bei jedem Zeitstempel ein Foto aufgenommen. Nützlich für:
@@ -662,7 +673,7 @@ Druckbarer Text im Format einer offiziellen Torrichterkarte:
 
 **Probleme melden:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.16.0
+**Version:** 5.18.0
 
 ---
 

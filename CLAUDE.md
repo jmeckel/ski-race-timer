@@ -705,7 +705,12 @@ These patterns emerged from comprehensive code reviews. Organized by category fo
 | **Escape all innerHTML** | Always use `escapeHtml()` for content, `escapeAttr()` for attributes. Even "safe" data like bib numbers should be escaped (defense in depth). |
 | **Escape data attributes** | `data-*` attributes with user data need `escapeAttr()`: `setAttribute('data-id', escapeAttr(id))` |
 | **Fail closed on errors** | Rate limiting, auth, and security features must deny access when backing services fail. Grep for `allowed: true` in catch blocks. |
+| **Fail closed on missing deps** | If auth requires Redis/DB and it's unavailable, return 503—never skip auth. Pattern: `if (!client) return sendServiceUnavailable()` not `if (client) { checkAuth() }`. |
 | **Remove deprecated auth** | Don't mark legacy auth as deprecated—remove it entirely. Old paths create vulnerabilities. |
+| **No hardcoded default PINs** | Never auto-authenticate with a default PIN constant. If no PIN exists, require user to set one explicitly. |
+| **PBKDF2 for PIN hashing** | Use PBKDF2 (100k+ iterations, random salt) not SHA-256 for PINs. Format: `salt:hash` (hex). Legacy detection: `storedHash.includes(':')`. |
+| **Timing-safe PIN comparison** | Always use `crypto.timingSafeEqual()` for PIN verification, even with PBKDF2. |
+| **CSP: no unsafe-inline** | Verify no inline `<script>` tags exist before removing `'unsafe-inline'` from `script-src`. Vite injects module scripts via `src=` attributes, not inline. |
 | **Secrets in body, not headers** | Headers are logged by proxies/CDNs. Send PINs, API keys in request body over HTTPS. |
 | **Security headers** | Add `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` in vercel.json. |
 
@@ -767,6 +772,7 @@ These patterns emerged from comprehensive code reviews. Organized by category fo
 | **Show loading states** | Spinner/text before async ops, results/errors after |
 | **Wrap init chains in try-catch** | One failure shouldn't prevent other init steps |
 | **Always add .catch()** | Even fire-and-forget promises need `.catch(err => logger.error(err))` |
+| **Browser API init needs .catch()** | `batteryService.initialize().then(...)` MUST have `.catch(() => { /* fallback */ })`. Battery API, Wake Lock, etc. may reject. |
 | **Defensive BroadcastChannel** | Use `event.data || {}`, wrap in try-catch |
 | **Return result objects** | `{ success: true }` or `{ success: false, error }` not void/throw |
 
@@ -786,6 +792,24 @@ These patterns emerged from comprehensive code reviews. Organized by category fo
 |------|-------------|
 | **Separate RAF IDs per animation type** | `spinAnimationId`, `snapBackAnimationId`—cancel both on new interaction |
 | **Check RAF ID before recovery** | `if (animationId === null)` before scheduling to prevent duplicate loops |
+| **RAF over setInterval for display** | Use `requestAnimationFrame` for clock/UI updates, not `setInterval(fn, 16)`. RAF pauses when tab hidden (saves battery), aligns with vsync. |
+| **Battery-aware frame skipping** | Subscribe to battery service; skip frames on low battery (e.g., `frameSkip=1` for 30fps, `frameSkip=3` for 15fps). |
+| **Pause RAF on hidden** | Add `visibilitychange` listener to cancel RAF when `document.hidden`, restart when visible. |
+
+### Performance
+
+| Rule | Description |
+|------|-------------|
+| **Cache DOM queries used per-frame** | Store `querySelectorAll` results in arrays/Maps during init, not in animation loops. `cachedNumberSpans[]` vs `querySelectorAll('.dial-number span')` per frame. |
+| **Dirty-slice persistence** | Track which state slices changed with a `Set<string>`. Only serialize dirty slices to localStorage. Add early return: `if (dirty.size === 0) return`. |
+| **Suspend idle AudioContext** | Call `audioContext.suspend()` after 30s idle. Resume before playing: `if (ctx.state === 'suspended') ctx.resume()`. Saves power on mobile. |
+
+### Power Optimization
+
+| Rule | Description |
+|------|-------------|
+| **CSS .power-saver class** | Toggle `document.body.classList.toggle('power-saver', lowBattery)` to disable CSS infinite animations (`animation: none !important`). |
+| **Battery service subscription** | Use `batteryService.initialize().then(() => subscribe(...)).catch(() => {})` for graceful degradation. |
 
 ### Code Quality
 
@@ -797,6 +821,16 @@ These patterns emerged from comprehensive code reviews. Organized by category fo
 | **Use data structures over DOM queries** | Component's Map is O(1); `querySelectorAll` is expensive |
 | **Semantic HTML** | `<dl>/<dt>/<dd>` for label-value pairs conveys meaning to screen readers |
 | **Version history completeness** | `extractVersionData()` must include ALL editable fields |
+
+### Testing
+
+| Rule | Description |
+|------|-------------|
+| **Test real crypto, not mocks** | Existing `auth-token.test.js` mocks `hashPin` with SHA-256. New crypto tests in `pin-hashing.test.js` test the real PBKDF2 implementation. Always test actual crypto functions. |
+| **Test migration paths** | When changing data formats (SHA-256 → PBKDF2), test that both old and new formats work: `verifyPin(pin, legacyHash)` AND `verifyPin(pin, pbkdf2Hash)`. |
+| **Test fail-closed patterns** | Security auth tests must verify the **absence** of access when deps are down, not just presence of auth when deps are up. |
+| **Test dirty-slice isolation** | When optimizing persistence, verify that changing slice A does NOT trigger serialization of slice B. Check `localStorage.setItem` call arguments. |
+| **Source code assertion tests** | When full handler integration tests are impractical (complex deps), read source with `fs.readFileSync` and assert patterns: `expect(source).toContain('failClosedPattern')`. |
 
 ## Animation Patterns
 
