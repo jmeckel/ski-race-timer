@@ -469,13 +469,13 @@ describe('Sync Service', () => {
       // Initial fetch: 1 entry fetch + 1 fault fetch = 2 calls
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      // Advance timer past poll interval (5 seconds)
-      await vi.advanceTimersByTimeAsync(5000);
+      // Advance timer past poll interval (15 seconds)
+      await vi.advanceTimersByTimeAsync(15000);
       // Poll 1: entry fetch + fault fetch = 2 more calls, total 4
       expect(mockFetch).toHaveBeenCalledTimes(4);
 
       // Another interval
-      await vi.advanceTimersByTimeAsync(5000);
+      await vi.advanceTimersByTimeAsync(15000);
       // Poll 2: entry fetch + fault fetch = 2 more calls, total 6
       expect(mockFetch).toHaveBeenCalledTimes(6);
     });

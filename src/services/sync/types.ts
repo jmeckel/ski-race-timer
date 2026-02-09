@@ -8,7 +8,7 @@ export const API_BASE = '/api/v1/sync';
 export const FAULTS_API_BASE = '/api/v1/faults';
 
 // Sync configuration
-export const POLL_INTERVAL_NORMAL = 5000; // 5 seconds - fast polling when active
+export const POLL_INTERVAL_NORMAL = 15000; // 15 seconds - balanced polling when active
 export const POLL_INTERVAL_ERROR = 30000; // 30 seconds on error
 export const MAX_RETRIES = 5;
 export const RETRY_BACKOFF_BASE = 2000; // 2 seconds
@@ -17,19 +17,19 @@ export const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
 
 // Adaptive polling configuration
 // Gradually increases interval when no changes detected to save battery
-export const POLL_INTERVALS_IDLE = [5000, 10000, 15000, 20000, 30000]; // Gradual increase
+export const POLL_INTERVALS_IDLE = [15000, 20000, 30000, 45000, 60000]; // Gradual increase
 export const IDLE_THRESHOLD = 6; // Number of no-change polls before starting to throttle
 
 // Battery-aware polling configuration
 // More aggressive throttling when battery is low
-export const POLL_INTERVALS_LOW_BATTERY = [10000, 20000, 30000, 45000, 60000]; // Low battery: slower
-export const POLL_INTERVALS_CRITICAL = [30000, 45000, 60000]; // Critical: much slower
+export const POLL_INTERVALS_LOW_BATTERY = [30000, 45000, 60000, 90000, 120000]; // Low battery: slower
+export const POLL_INTERVALS_CRITICAL = [30000, 60000]; // Critical: much slower
 export const IDLE_THRESHOLD_LOW_BATTERY = 3; // Start throttling sooner on low battery
 
 // Network-aware polling configuration
 // Reduce sync frequency on metered connections (cellular) to save data
-export const POLL_INTERVALS_METERED = [10000, 15000, 20000, 30000]; // Metered: slower to save data
-export const POLL_INTERVAL_METERED_BASE = 10000; // 10s base when on metered connection
+export const POLL_INTERVALS_METERED = [15000, 20000, 30000, 45000, 60000]; // Metered: slower to save data
+export const POLL_INTERVAL_METERED_BASE = 15000; // 15s base when on metered connection
 
 /**
  * Network Information API type definition

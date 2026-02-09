@@ -108,7 +108,7 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_CRITICAL,
         threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_CRITICAL[0] // 30s even when active
+        baseInterval: POLL_INTERVALS_CRITICAL[0] // 30s when active
       };
     }
     // Metered network uses reduced intervals to save data
@@ -116,7 +116,7 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_METERED,
         threshold: IDLE_THRESHOLD,
-        baseInterval: POLL_INTERVAL_METERED_BASE // 10s when on cellular
+        baseInterval: POLL_INTERVAL_METERED_BASE // 15s when on cellular
       };
     }
     // Low battery uses slower intervals
@@ -124,14 +124,14 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_LOW_BATTERY,
         threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_LOW_BATTERY[0] // 10s when active
+        baseInterval: POLL_INTERVALS_LOW_BATTERY[0] // 30s when active
       };
     }
     // Normal mode
     return {
       intervals: POLL_INTERVALS_IDLE,
       threshold: IDLE_THRESHOLD,
-      baseInterval: POLL_INTERVAL_NORMAL // 5s when active
+      baseInterval: POLL_INTERVAL_NORMAL // 15s when active
     };
   }
 
