@@ -335,9 +335,10 @@ export function initFaultConfirmationOverlay(): void {
     addNoteBtn.addEventListener('click', () => {
       feedbackTap();
 
-      // Get the fault ID from the overlay
+      // Get the fault ID from the overlay (WeakMap context or data attribute fallback)
       const faultId = overlay
-        ? getModalContext<{ faultId: string }>(overlay)?.faultId
+        ? (getModalContext<{ faultId: string }>(overlay)?.faultId ||
+            overlay.getAttribute('data-fault-id'))
         : undefined;
 
       // Hide the confirmation overlay
