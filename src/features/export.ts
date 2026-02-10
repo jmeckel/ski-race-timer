@@ -171,7 +171,7 @@ export function exportResults(): void {
       const point = getExportPointLabel(entry.point);
       const time = formatTimeForRaceHorology(entry.timestamp);
       const device = escapeCSVField(entry.deviceName || entry.deviceId);
-      const datum = formatDateForExport(entry.timestamp);
+      const datum = escapeCSVField(formatDateForExport(entry.timestamp));
 
       // Get faults for this bib/run (only on Finish entries)
       const entryFaults =

@@ -1,5 +1,5 @@
 /* ===== Layer Order Declaration ===== */
-@layer base, components, utilities;
+@layer base, components;
 
 /* ===== CSS Variables ===== */
 /* Alpine-inspired color scheme for ski racing */
@@ -38,6 +38,9 @@
   --gps-active: #10b981;
   --gps-searching: #fbbf24;
   --gps-inactive: #ef4444;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.1);
 
   /* Layout */
   --safe-top: env(safe-area-inset-top);

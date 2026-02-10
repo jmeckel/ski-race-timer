@@ -1,4 +1,4 @@
-import { showToast, type ToastAction } from './components';
+import { clearToasts, showToast, type ToastAction } from './components';
 import { initFaultEditModal, updateInlineFaultsList } from './features/faults';
 import {
   closeAllModalsAnimated,
@@ -308,6 +308,9 @@ async function handleConfirmDelete(): Promise<void> {
     }
 
     const lang = state.currentLang;
+    // Dismiss any previous undo toasts to prevent LIFO mismatch
+    // (store.undo() pops the most recent deletion, not a specific one)
+    clearToasts();
     const undoAction: ToastAction = {
       label: t('undoAction', lang),
       callback: () => {

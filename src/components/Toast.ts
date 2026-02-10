@@ -1,3 +1,6 @@
+import { t } from '../i18n/translations';
+import { store } from '../store';
+
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 export interface ToastAction {
@@ -168,6 +171,7 @@ export class Toast {
     if (action) {
       const actionBtn = document.createElement('button');
       actionBtn.textContent = action.label;
+      actionBtn.setAttribute('aria-label', action.label);
       actionBtn.style.cssText = `
         background: none;
         border: 1px solid ${colors[type]};
@@ -222,7 +226,7 @@ export class Toast {
 
       if (shouldShowNotification) {
         // Show a brief "copied" feedback - use a shorter duration
-        this.show('Copied to clipboard', { type: 'success', duration: 1500 });
+        this.show(t('copied', store.getState().currentLang), { type: 'success', duration: 1500 });
       }
     } catch {
       // Clipboard API not available or failed - silent fail
@@ -283,6 +287,13 @@ export function showToast(
   options?: { action?: ToastAction },
 ): void {
   getToast().show(message, { type, duration, action: options?.action });
+}
+
+/**
+ * Clear all active and queued toasts
+ */
+export function clearToasts(): void {
+  getToast().clear();
 }
 
 /**

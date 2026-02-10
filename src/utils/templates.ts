@@ -144,7 +144,7 @@ export function faultBadge(opts: {
       ? `${faults.length}\u00D7 ${t('flt', lang)}`
       : `T${faults[0]?.gateNumber || '?'}`;
 
-  return `<span class="result-fault-badge" title="${escapeAttr(detailTitle)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">${label}</span>`;
+  return `<span class="result-fault-badge" title="${escapeAttr(detailTitle)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">${escapeHtml(label)}</span>`;
 }
 
 /**

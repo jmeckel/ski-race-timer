@@ -579,12 +579,12 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-stats-point.start {
-  background: rgba(74, 222, 128, 0.2);
+  background: rgba(249, 115, 22, 0.2);
   color: var(--start-color);
 }
 
 .radial-stats-point.finish {
-  background: rgba(251, 146, 60, 0.2);
+  background: rgba(16, 185, 129, 0.2);
   color: var(--finish-color);
 }
 
