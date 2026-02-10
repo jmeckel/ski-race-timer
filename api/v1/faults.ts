@@ -18,6 +18,7 @@ import {
   safeJsonParse
 } from '../lib/response.js';
 import { isValidRaceId, checkRateLimit, VALID_FAULT_TYPES, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
+import { apiLogger, getRequestId } from '../lib/apiLogger.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
@@ -311,7 +312,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -340,6 +341,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (!authResult.valid) {
     return sendAuthRequired(res, authResult.error, authResult.expired || false);
   }
+
+  const reqId = getRequestId(req.headers);
+  const log = apiLogger.withRequestId(reqId);
 
   try {
     if (req.method === 'GET') {
@@ -458,7 +462,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Only users with 'chiefJudge' role can delete faults
       const userRole = authResult.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
-        console.log(`[AUDIT] Fault deletion DENIED: role=${userRole}, expected=chiefJudge, ip=${clientIP}`);
+        log.warn('Fault deletion DENIED', { role: userRole, expected: 'chiefJudge', ip: clientIP });
         return sendError(res, 'Fault deletion requires Chief Judge role', 403);
       }
 
@@ -474,7 +478,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const sanitizedApprovedBy = sanitizeString(approvedBy, MAX_DEVICE_NAME_LENGTH);
 
       // Audit log for deletion
-      console.log(`[AUDIT] Fault deletion: race=${normalizedRaceId}, faultId=${faultIdStr}, deviceId=${sanitizedDeviceId}, deviceName=${sanitizedDeviceName}, approvedBy=${sanitizedApprovedBy}, ip=${clientIP}`);
+      log.info('Fault deletion', { race: normalizedRaceId, faultId: faultIdStr, deviceId: sanitizedDeviceId, deviceName: sanitizedDeviceName, approvedBy: sanitizedApprovedBy, ip: clientIP });
 
       const deleteResult = await atomicDeleteFault(client, faultsKey, faultIdStr, sanitizedDeviceId);
 
@@ -498,7 +502,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return sendMethodNotAllowed(res);
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Faults API error:', err.message);
+    log.error('Faults API error', { error: err.message });
 
     if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
       return sendServiceUnavailable(res, 'Database connection failed. Please try again.');

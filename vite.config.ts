@@ -68,6 +68,24 @@ export default defineConfig({
               cacheName: 'gstatic-fonts-cache',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 }
             }
+          },
+          {
+            // Stale-while-revalidate for sync API GET requests
+            // Returns cached response immediately while fetching fresh data in background
+            // Enables offline-first reads for race data on slow/spotty cellular connections
+            urlPattern: /\/api\/v1\/sync\?.*$/i,
+            handler: 'StaleWhileRevalidate',
+            method: 'GET',
+            options: {
+              cacheName: 'api-sync-cache',
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 5 // Short TTL: cached data is only valid for 5 seconds
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }

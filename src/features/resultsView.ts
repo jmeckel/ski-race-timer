@@ -244,13 +244,35 @@ export function updateStats(): void {
       .map((e) => e.bib),
   ).size;
 
+  // Count cross-device duplicates: same bib+point+run from different devices
+  const pointDeviceMap = new Map<string, Set<string>>();
+  for (const entry of entries) {
+    const key = `${entry.bib}-${entry.point}-${entry.run ?? 1}`;
+    if (!pointDeviceMap.has(key)) {
+      pointDeviceMap.set(key, new Set());
+    }
+    pointDeviceMap.get(key)!.add(entry.deviceId);
+  }
+  let duplicateCount = 0;
+  for (const devices of pointDeviceMap.values()) {
+    if (devices.size > 1) {
+      duplicateCount++;
+    }
+  }
+
   const totalEl = getElement('stat-total');
   const racersEl = getElement('stat-racers');
   const finishedEl = getElement('stat-finished');
+  const duplicatesEl = getElement('stat-duplicates');
+  const duplicatesItem = getElement('stat-duplicates-item');
 
   if (totalEl) totalEl.textContent = String(total);
   if (racersEl) racersEl.textContent = String(racers);
   if (finishedEl) finishedEl.textContent = String(finished);
+  if (duplicatesEl) duplicatesEl.textContent = String(duplicateCount);
+  if (duplicatesItem) {
+    duplicatesItem.style.display = duplicateCount > 0 ? '' : 'none';
+  }
 }
 
 /**

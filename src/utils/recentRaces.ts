@@ -6,7 +6,7 @@
 import { logger } from './logger';
 
 const STORAGE_KEY = 'skiTimerRecentRaces';
-const MAX_RACES = 10;
+const MAX_RACES = 50;
 
 export interface RecentRace {
   raceId: string;

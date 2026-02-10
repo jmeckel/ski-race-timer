@@ -104,6 +104,8 @@ export function updateSyncStatusIndicator(): void {
     indicator.style.display = state.settings.sync ? 'flex' : 'none';
   }
 
+  const lang = state.currentLang;
+
   if (dot) {
     dot.classList.remove('connected', 'error', 'offline', 'syncing');
     if (state.syncStatus === 'connected') {
@@ -115,17 +117,31 @@ export function updateSyncStatusIndicator(): void {
     } else if (state.syncStatus === 'offline') {
       dot.classList.add('offline');
     }
+    // Set aria-label for the dot based on sync status
+    const syncLabel = state.syncStatus === 'connected'
+      ? t('syncOnline', lang)
+      : state.syncStatus === 'error'
+        ? t('syncError', lang)
+        : state.syncStatus === 'offline'
+          ? t('syncOffline', lang)
+          : t('syncing', lang);
+    dot.setAttribute('aria-label', syncLabel);
   }
 
   if (text) {
-    text.textContent = t(state.syncStatus, state.currentLang);
+    text.textContent = t(state.syncStatus, lang);
   }
 
   // Show device count when connected
   if (deviceCountEl) {
     if (state.syncStatus === 'connected' && state.cloudDeviceCount > 0) {
-      deviceCountEl.textContent = `(${state.cloudDeviceCount})`;
+      deviceCountEl.textContent = `${state.cloudDeviceCount} ${t('devices', lang)}`;
       deviceCountEl.style.display = 'inline';
+      deviceCountEl.classList.add('status-active');
+    } else if (state.syncStatus === 'error' || state.syncStatus === 'offline') {
+      deviceCountEl.textContent = t('syncOffline', lang);
+      deviceCountEl.style.display = 'inline';
+      deviceCountEl.classList.remove('status-active');
     } else {
       deviceCountEl.style.display = 'none';
     }
@@ -157,11 +173,30 @@ export function updateGpsIndicator(): void {
       dot.classList.add('paused');
     }
     // 'inactive' status = no class = red (GPS not working or permission denied)
+    const lang = state.currentLang;
+    const ariaKey = state.gpsStatus === 'active' || state.gpsStatus === 'paused'
+      ? 'gpsActive'
+      : state.gpsStatus === 'searching'
+        ? 'gpsSearching'
+        : 'gpsInactive';
+    dot.setAttribute('aria-label', t(ariaKey, lang));
   }
 
   if (text) {
-    const lang = store.getState().currentLang;
-    text.textContent = t('gps', lang);
+    const lang = state.currentLang;
+    if (state.gpsStatus === 'active' || state.gpsStatus === 'paused') {
+      text.textContent = t('gpsActive', lang);
+      text.classList.add('status-active');
+      text.classList.remove('status-inactive', 'status-searching');
+    } else if (state.gpsStatus === 'searching') {
+      text.textContent = t('gpsSearching', lang);
+      text.classList.add('status-searching');
+      text.classList.remove('status-active', 'status-inactive');
+    } else {
+      text.textContent = t('gpsInactive', lang);
+      text.classList.add('status-inactive');
+      text.classList.remove('status-active', 'status-searching');
+    }
   }
 }
 

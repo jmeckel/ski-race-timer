@@ -11,6 +11,7 @@ import {
   sendServiceUnavailable,
   sendAuthRequired
 } from '../../lib/response.js';
+import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
@@ -105,7 +106,7 @@ async function listRaces(client: Redis): Promise<RaceListItem[]> {
         }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
-        console.error('Error parsing race data:', key, message);
+        apiLogger.error('Error parsing race data', { key, error: message });
       }
     }
   } while (cursor !== '0');
@@ -198,7 +199,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -213,6 +214,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return sendAuthRequired(res, auth.error || 'Unauthorized', auth.expired || false);
   }
 
+  const reqId = getRequestId(req.headers);
+  const log = apiLogger.withRequestId(reqId);
+
   try {
     if (req.method === 'GET') {
       // List all races
@@ -224,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Race deletion requires chiefJudge role for security
       const userRole = auth.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
-        console.log(`[AUDIT] Race deletion DENIED: role=${userRole}, expected=chiefJudge`);
+        log.warn('Race deletion DENIED', { role: userRole, expected: 'chiefJudge' });
         return sendError(res, 'Race deletion requires Chief Judge role', 403);
       }
 
@@ -268,7 +272,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return sendMethodNotAllowed(res);
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Admin API error:', err.message);
+    log.error('Admin API error', { error: err.message });
 
     if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
       return sendServiceUnavailable(res, 'Database connection failed. Please try again.');

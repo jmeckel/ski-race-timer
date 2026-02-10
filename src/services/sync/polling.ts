@@ -10,11 +10,15 @@ import {
 } from '../battery';
 import { networkMonitor } from './networkMonitor';
 import {
+  type ConnectionQuality,
   IDLE_THRESHOLD,
   IDLE_THRESHOLD_LOW_BATTERY,
   POLL_INTERVAL_ERROR,
+  POLL_INTERVAL_HIDDEN,
   POLL_INTERVAL_METERED_BASE,
   POLL_INTERVAL_NORMAL,
+  POLL_INTERVAL_OFFLINE,
+  POLL_INTERVAL_SLOW,
   POLL_INTERVALS_CRITICAL,
   POLL_INTERVALS_IDLE,
   POLL_INTERVALS_LOW_BATTERY,
@@ -31,8 +35,11 @@ class PollingManager {
   private consecutiveNoChanges = 0;
   private currentIdleLevel = 0;
   private currentBatteryLevel: BatteryLevel = 'normal';
+  private currentConnectionQuality: ConnectionQuality = 'good';
+  private isTabHidden = false;
   private batteryUnsubscribe: (() => void) | null = null;
   private meteredUnsubscribe: (() => void) | null = null;
+  private qualityUnsubscribe: (() => void) | null = null;
   private isAdjustingInterval = false;
   private currentPollingIntervalMs = 0;
   private pollCallback: (() => void) | null = null;
@@ -62,6 +69,20 @@ class PollingManager {
         this.applyBatteryAwarePolling();
       }
     });
+
+    // Subscribe to connection quality changes (online/offline/slow)
+    this.currentConnectionQuality = networkMonitor.getConnectionQuality();
+    this.qualityUnsubscribe = networkMonitor.onQualityChange(
+      (quality: ConnectionQuality) => {
+        const previousQuality = this.currentConnectionQuality;
+        this.currentConnectionQuality = quality;
+
+        // Adjust polling if quality changed and we're actively polling
+        if (previousQuality !== quality && this.pollInterval) {
+          this.applyBatteryAwarePolling();
+        }
+      },
+    );
   }
 
   /**
@@ -105,12 +126,31 @@ class PollingManager {
   }
 
   /**
-   * Get all polling configuration based on battery level and network state
+   * Get all polling configuration based on battery level, network state,
+   * connection quality, and tab visibility
    */
   getPollingConfig(): PollingConfig {
     const isMetered = networkMonitor.isMeteredConnection();
 
-    // Battery critical takes highest priority
+    // Offline: use long interval just to check if back online
+    if (this.currentConnectionQuality === 'offline') {
+      return {
+        intervals: [POLL_INTERVAL_OFFLINE],
+        threshold: 1,
+        baseInterval: POLL_INTERVAL_OFFLINE,
+      };
+    }
+
+    // Tab hidden: use reduced polling to save battery/data
+    if (this.isTabHidden) {
+      return {
+        intervals: [POLL_INTERVAL_HIDDEN],
+        threshold: 1,
+        baseInterval: POLL_INTERVAL_HIDDEN,
+      };
+    }
+
+    // Battery critical takes highest priority (after offline/hidden)
     if (this.currentBatteryLevel === 'critical') {
       return {
         intervals: POLL_INTERVALS_CRITICAL,
@@ -118,6 +158,16 @@ class PollingManager {
         baseInterval: POLL_INTERVALS_CRITICAL[0], // 30s when active
       };
     }
+
+    // Slow connection (2g, slow-2g, saveData) uses longer intervals
+    if (this.currentConnectionQuality === 'slow') {
+      return {
+        intervals: POLL_INTERVALS_METERED,
+        threshold: IDLE_THRESHOLD,
+        baseInterval: POLL_INTERVAL_SLOW, // 15s when on slow connection
+      };
+    }
+
     // Metered network uses reduced intervals to save data
     if (isMetered) {
       return {
@@ -276,6 +326,29 @@ class PollingManager {
   }
 
   /**
+   * Notify the polling manager that the tab visibility has changed.
+   * When hidden, polling slows to POLL_INTERVAL_HIDDEN.
+   * When visible, an immediate poll is triggered and the normal interval is restored.
+   */
+  setTabHidden(hidden: boolean): void {
+    if (this.isTabHidden === hidden) return;
+    this.isTabHidden = hidden;
+
+    if (!this.pollInterval) return;
+
+    if (hidden) {
+      // Tab hidden: slow down polling
+      this.applyBatteryAwarePolling();
+    } else {
+      // Tab visible: immediately poll and restore normal interval
+      if (this.pollCallback) {
+        this.pollCallback();
+      }
+      this.applyBatteryAwarePolling();
+    }
+  }
+
+  /**
    * Cleanup resources
    */
   cleanup(): void {
@@ -291,10 +364,17 @@ class PollingManager {
       this.meteredUnsubscribe = null;
     }
 
+    if (this.qualityUnsubscribe) {
+      this.qualityUnsubscribe();
+      this.qualityUnsubscribe = null;
+    }
+
     this.pollCallback = null;
     this.consecutiveErrors = 0;
     this.consecutiveNoChanges = 0;
     this.currentIdleLevel = 0;
+    this.isTabHidden = false;
+    this.currentConnectionQuality = 'good';
   }
 }
 

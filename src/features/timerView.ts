@@ -18,7 +18,6 @@ import {
 import { store } from '../store';
 import type { Entry, TimingPoint, VoiceIntent } from '../types';
 import {
-  generateEntryId,
   getElement,
   getPointLabel,
   getRunColor,
@@ -30,10 +29,17 @@ import {
   getPointColor,
 } from '../utils/format';
 import { logger } from '../utils/logger';
+import { ListenerManager } from '../utils/listenerManager';
+import {
+  createTimestampEntry,
+  isDuplicateEntry,
+} from '../utils/timestampRecorder';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Module state
 let clock: Clock | null = null;
-let timerKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 const timerTimeoutIds: Set<number> = new Set();
 
 /**
@@ -82,7 +88,7 @@ export function initTabs(): void {
     ) as HTMLElement[];
 
   tabBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
+    listeners.add(btn, 'click', () => {
       const view = btn.getAttribute('data-view') as
         | 'timer'
         | 'results'
@@ -99,7 +105,7 @@ export function initTabs(): void {
     });
 
     // Keyboard navigation for tabs (WCAG 2.1 compliant)
-    btn.addEventListener('keydown', (e: Event) => {
+    listeners.add(btn, 'keydown', (e: Event) => {
       const event = e as KeyboardEvent;
       const tabs = visibleTabs();
       const currentIndex = tabs.indexOf(btn as HTMLElement);
@@ -147,7 +153,7 @@ export function initNumberPad(): void {
   // Bib display click toggles numpad collapsed/expanded
   if (bibDisplay && numPad) {
     bibDisplay.setAttribute('aria-expanded', 'true');
-    bibDisplay.addEventListener('click', () => {
+    listeners.add(bibDisplay, 'click', () => {
       const isCollapsed = numPad.classList.toggle('collapsed');
       bibDisplay.classList.toggle('expanded', !isCollapsed);
       bibDisplay.setAttribute('aria-expanded', String(!isCollapsed));
@@ -157,7 +163,7 @@ export function initNumberPad(): void {
 
   if (!numPad) return;
 
-  numPad.addEventListener('click', (e) => {
+  listeners.add(numPad, 'click', (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.num-btn');
     if (!btn) return;
@@ -189,7 +195,7 @@ export function initTimingPoints(): void {
   const container = getElement('timing-points');
   if (!container) return;
 
-  container.addEventListener('click', (e) => {
+  listeners.add(container, 'click', (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.timing-point-btn');
     if (!btn) return;
@@ -213,13 +219,13 @@ export function initRunSelector(): void {
   const container = getElement('run-selector');
   if (!container) return;
 
-  container.addEventListener('click', (e) => {
+  listeners.add(container, 'click', (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.run-btn');
     if (!btn) return;
 
     const runStr = btn.getAttribute('data-run');
-    const run = runStr ? (parseInt(runStr, 10) as 1 | 2) : 1;
+    const run = runStr ? parseInt(runStr, 10) : 1;
     store.setSelectedRun(run);
     feedbackTap();
     // Update ARIA states for accessibility
@@ -236,7 +242,7 @@ export function initTimestampButton(): void {
   const btn = getElement('timestamp-btn');
   if (!btn) return;
 
-  btn.addEventListener('click', async () => {
+  listeners.add(btn, 'click', async () => {
     // First tap in ambient mode exits without recording
     if (ambientModeService.isActive()) {
       ambientModeService.exitAmbientMode();
@@ -246,14 +252,8 @@ export function initTimestampButton(): void {
     await recordTimestamp();
   });
 
-  // Remove existing handler if re-initializing
-  if (timerKeydownHandler) {
-    document.removeEventListener('keydown', timerKeydownHandler);
-    timerKeydownHandler = null;
-  }
-
   // Comprehensive keyboard navigation for timer view
-  timerKeydownHandler = (e: KeyboardEvent) => {
+  listeners.add(document, 'keydown', ((e: KeyboardEvent) => {
     const activeTag = document.activeElement?.tagName;
     const state = store.getState();
 
@@ -350,19 +350,14 @@ export function initTimestampButton(): void {
       recordTimestamp();
       return;
     }
-  };
-
-  document.addEventListener('keydown', timerKeydownHandler);
+  }) as EventListener);
 }
 
 /**
  * Cleanup timer view resources (for re-initialization or unmount)
  */
 export function cleanupTimerView(): void {
-  if (timerKeydownHandler) {
-    document.removeEventListener('keydown', timerKeydownHandler);
-    timerKeydownHandler = null;
-  }
+  listeners.removeAll();
 
   // Clear all tracked timeouts
   for (const id of timerTimeoutIds) {
@@ -379,26 +374,20 @@ export async function recordTimestamp(): Promise<void> {
 
   if (state.isRecording) return;
 
-  // CRITICAL: Capture timestamp IMMEDIATELY before any async operations
-  const preciseTimestamp = new Date().toISOString();
-  const gpsCoords = gpsService.getCoordinates();
+  // CRITICAL: Create entry IMMEDIATELY before any async operations
+  // Uses GPS offset if available for more accurate timing
+  const { entry } = createTimestampEntry({
+    bib: state.bibInput,
+    point: state.selectedPoint,
+    run: state.selectedRun,
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gpsService,
+  });
 
   store.setRecording(true);
 
   try {
-    // Create entry with precise timestamp (captured before photo)
-    const entry: Entry = {
-      id: generateEntryId(state.deviceId),
-      bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
-      point: state.selectedPoint,
-      run: state.selectedRun,
-      timestamp: preciseTimestamp,
-      status: 'ok',
-      deviceId: state.deviceId,
-      deviceName: state.deviceName,
-      gpsCoords,
-    };
-
     // Capture photo asynchronously - don't block timestamp recording
     if (state.settings.photoCapture) {
       const entryId = entry.id;
@@ -451,14 +440,7 @@ export async function recordTimestamp(): Promise<void> {
     }
 
     // Check for duplicate
-    const isDuplicate =
-      entry.bib &&
-      state.entries.some(
-        (e) =>
-          e.bib === entry.bib &&
-          e.point === entry.point &&
-          (e.run ?? 1) === entry.run,
-      );
+    const isDuplicate = isDuplicateEntry(entry, state.entries);
 
     // Check for zero bib
     const hasZeroBib = isZeroBib(entry.bib);

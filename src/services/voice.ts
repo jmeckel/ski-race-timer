@@ -243,7 +243,7 @@ class VoiceModeService {
   /**
    * Get active bibs for gate judge (racers currently on course)
    */
-  private getActiveBibs(run: 1 | 2): string[] {
+  private getActiveBibs(run: number): string[] {
     const state = store.getState();
     // Get bibs that have a start time but no finish time for this run
     const startedBibs = new Set<string>();

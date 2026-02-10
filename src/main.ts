@@ -13,9 +13,13 @@ import { initApp } from './app';
 import { getToast } from './components/Toast';
 import { batteryService } from './services/battery';
 import { initGlobalErrorHandlers } from './utils/errorBoundary';
+import { logStorageUsage } from './utils/storageQuota';
 
 // Initialize global error handlers first (catches errors during init)
 initGlobalErrorHandlers();
+
+// Log storage usage on startup
+logStorageUsage();
 
 // Initialize toast system
 getToast();

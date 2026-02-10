@@ -5,7 +5,7 @@
  */
 
 import { t } from '../i18n/translations';
-import { feedbackTap } from '../services';
+import { feedbackDialDetent, feedbackDialTap } from '../services';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
@@ -20,13 +20,11 @@ export class RadialDial {
   private container: HTMLElement;
   private dialNumbers: HTMLElement | null = null;
   private dialRing: HTMLElement | null = null;
-  private gestureArea: HTMLElement | null = null;
   private options: Required<RadialDialOptions>;
 
   // State
   private rotation = 0;
   private velocity = 0;
-  private isSpinning = false;
   private isDragging = false;
   private lastAngle = 0;
   private lastDragTime = 0;
@@ -63,8 +61,6 @@ export class RadialDial {
   private init(): void {
     this.dialNumbers = this.container.querySelector('.dial-numbers');
     this.dialRing = this.container.querySelector('.dial-ring');
-    this.gestureArea = this.container.querySelector('.dial-gesture-area');
-
     if (!this.dialNumbers) {
       logger.warn('[RadialDial] Required elements not found');
       return;
@@ -144,7 +140,7 @@ export class RadialDial {
     if (this.bibValue.length < 3) {
       this.bibValue += String(num);
       this.options.onChange(this.bibValue);
-      feedbackTap();
+      feedbackDialTap();
 
       el.classList.add('pressed');
       const timeoutId = window.setTimeout(() => {
@@ -235,7 +231,7 @@ export class RadialDial {
       cancelAnimationFrame(this.spinAnimationId);
       this.spinAnimationId = null;
     }
-    this.isSpinning = false;
+
 
     this.lastAngle = this.getAngle(clientX, clientY, rect);
     this.lastDragTime = Date.now();
@@ -365,7 +361,7 @@ export class RadialDial {
 
     // Continue with momentum
     if (Math.abs(this.velocity) > 0.5) {
-      this.isSpinning = true;
+
       this.spinWithMomentum();
     } else {
       this.dialNumbers?.classList.remove('momentum');
@@ -375,7 +371,7 @@ export class RadialDial {
 
   private spinWithMomentum = (): void => {
     if (Math.abs(this.velocity) < 0.2) {
-      this.isSpinning = false;
+  
       this.velocity = 0;
       this.dialNumbers?.classList.remove('momentum');
       this.scheduleSnapBack();
@@ -422,7 +418,7 @@ export class RadialDial {
       this.updateDialRotation();
       // Clean up state when snap-back completes
       this.snapBackAnimationId = null;
-      this.isSpinning = false;
+  
       this.dialNumbers?.classList.remove('momentum');
       return;
     }
@@ -440,7 +436,7 @@ export class RadialDial {
     if (num > 999) num = 999;
     this.bibValue = String(num);
     this.options.onChange(this.bibValue);
-    feedbackTap();
+    feedbackDialDetent();
 
     // Flash corresponding digit (uses cached map for O(1) lookup)
     const lastDigit = String(num % 10);

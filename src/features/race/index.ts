@@ -3,6 +3,7 @@
  * Re-exports all public APIs and provides the main init function
  */
 
+import { ListenerManager } from '../../utils/listenerManager';
 import {
   cancelRaceJoinPinVerify,
   handleRaceJoinPinVerify,
@@ -11,6 +12,9 @@ import {
 } from './pinManagement';
 import { handleAdminPinVerify, initRaceAdmin } from './raceAdmin';
 import { initRaceDialogs } from './raceDialogs';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // PIN Management
 export {
@@ -46,7 +50,7 @@ export function initRaceManagement(): void {
   // Admin PIN modal verify button - routes between race join and admin flows
   const adminPinVerifyBtn = document.getElementById('admin-pin-verify-btn');
   if (adminPinVerifyBtn) {
-    adminPinVerifyBtn.addEventListener('click', () => {
+    listeners.add(adminPinVerifyBtn, 'click', () => {
       if (hasPendingPinVerification()) {
         handleRaceJoinPinVerify();
       } else {
@@ -60,7 +64,7 @@ export function initRaceManagement(): void {
     'admin-pin-verify-input',
   ) as HTMLInputElement;
   if (adminPinVerifyInput) {
-    adminPinVerifyInput.addEventListener('keydown', (e) => {
+    listeners.add(adminPinVerifyInput, 'keydown', ((e: KeyboardEvent) => {
       if (e.key === 'Enter') {
         if (hasPendingPinVerification()) {
           handleRaceJoinPinVerify();
@@ -68,13 +72,13 @@ export function initRaceManagement(): void {
           handleAdminPinVerify();
         }
       }
-    });
+    }) as EventListener);
   }
 
   // Admin PIN modal cancel - handle race join cancellation
   const adminPinModal = document.getElementById('admin-pin-modal');
   if (adminPinModal) {
-    adminPinModal.addEventListener('click', (e) => {
+    listeners.add(adminPinModal, 'click', (e) => {
       if (e.target === adminPinModal && hasPendingPinVerification()) {
         cancelRaceJoinPinVerify();
       }

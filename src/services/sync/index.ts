@@ -44,14 +44,13 @@ export {
 } from '../auth';
 
 // Re-export types
-export type { BroadcastMessage, PollingConfig } from './types';
+export type { BroadcastMessage, ConnectionQuality, PollingConfig } from './types';
 
 /**
  * SyncService facade - coordinates all sync modules
  */
 class SyncService {
   private visibilityHandler: (() => void) | null = null;
-  private wasPollingBeforeHidden = false;
   private wasQueueProcessingBeforeHidden = false;
 
   /**
@@ -94,20 +93,20 @@ class SyncService {
       logger.error('Failed to push local faults during sync init:', error);
     }
 
-    // Add visibility change handler to pause/resume polling for battery optimization
+    // Add visibility change handler: slow down polling when hidden, restore when visible
     if (!this.visibilityHandler) {
       this.visibilityHandler = () => {
         if (document.hidden) {
-          // Page is hidden - stop polling to save battery
-          this.wasPollingBeforeHidden = pollingManager.isPolling();
+          // Page is hidden - slow down polling instead of stopping entirely
+          // This keeps data flowing at a reduced rate while saving battery
+          pollingManager.setTabHidden(true);
+          // Stop queue processing to save battery (not time-sensitive)
           this.wasQueueProcessingBeforeHidden = queueProcessor.isProcessing();
-          pollingManager.stop();
           queueProcessor.stop();
         } else {
-          // Page is visible again - resume polling if it was active before
-          if (this.wasPollingBeforeHidden) {
-            pollingManager.start();
-          }
+          // Page is visible - restore normal polling (triggers immediate poll)
+          pollingManager.setTabHidden(false);
+          // Resume queue processing if it was active
           if (this.wasQueueProcessingBeforeHidden) {
             queueProcessor.start();
           }
@@ -215,7 +214,6 @@ class SyncService {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
-    this.wasPollingBeforeHidden = false;
     this.wasQueueProcessingBeforeHidden = false;
 
     // Cleanup module state

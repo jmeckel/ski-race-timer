@@ -10,9 +10,13 @@ import { getAuthHeaders } from '../../services/auth';
 import { store } from '../../store';
 import type { Language, RaceInfo } from '../../types';
 import { fetchWithTimeout, logError } from '../../utils';
+import { ListenerManager } from '../../utils/listenerManager';
 import { logger } from '../../utils/logger';
 import { closeModal, openModal } from '../modals';
 import { authenticateWithPin } from './pinManagement';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Admin API configuration
 const ADMIN_API_BASE = '/api/v1/admin/races';
@@ -273,13 +277,13 @@ export function initRaceAdmin(): void {
   // Manage races button
   const manageRacesBtn = document.getElementById('manage-races-btn');
   if (manageRacesBtn) {
-    manageRacesBtn.addEventListener('click', handleManageRacesClick);
+    listeners.add(manageRacesBtn, 'click', handleManageRacesClick);
   }
 
   // Refresh races button
   const refreshRacesBtn = document.getElementById('refresh-races-btn');
   if (refreshRacesBtn) {
-    refreshRacesBtn.addEventListener('click', loadRaceList);
+    listeners.add(refreshRacesBtn, 'click', loadRaceList);
   }
 
   // Confirm delete race button
@@ -287,6 +291,6 @@ export function initRaceAdmin(): void {
     'confirm-delete-race-btn',
   );
   if (confirmDeleteRaceBtn) {
-    confirmDeleteRaceBtn.addEventListener('click', handleConfirmDeleteRace);
+    listeners.add(confirmDeleteRaceBtn, 'click', handleConfirmDeleteRace);
   }
 }

@@ -1,12 +1,12 @@
 /* ===== Radial Dial Timer ===== */
 /* Alternative timer view with iPod-style dial input */
 
-/* Radial dial color scheme (ski racing signals: green=go, red=stop) */
+/* Radial dial color scheme - aligned with timer view (orange=start, green=finish) */
 :root {
-  --radial-start-color: #22c55e;
-  --radial-start-color-dark: #16a34a;
-  --radial-finish-color: #ef4444;
-  --radial-finish-color-dark: #dc2626;
+  --radial-start-color: #f97316;
+  --radial-start-color-dark: #ea580c;
+  --radial-finish-color: #10b981;
+  --radial-finish-color-dark: #059669;
   --radial-clear-color: #991b1b;
   --radial-clear-color-dark: #7f1d1d;
   --radial-clear-border: #b91c1c;
@@ -132,8 +132,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-clear-btn {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   background: linear-gradient(
     135deg,
@@ -459,8 +461,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-point-btn {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface-elevated);
@@ -508,8 +512,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-run-btn {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface-elevated);
@@ -897,8 +903,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   }
 
   .radial-clear-btn {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     font-size: 16px;
   }
 
@@ -987,8 +995,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
   .radial-point-btn,
   .radial-run-btn {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     font-size: 13px;
   }
 
@@ -1048,8 +1058,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
   .radial-point-btn,
   .radial-run-btn {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     font-size: 11px;
   }
 
@@ -1067,8 +1079,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   }
 
   .radial-clear-btn {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     font-size: 14px;
   }
 

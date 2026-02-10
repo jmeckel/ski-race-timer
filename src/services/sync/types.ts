@@ -31,6 +31,19 @@ export const IDLE_THRESHOLD_LOW_BATTERY = 3; // Start throttling sooner on low b
 export const POLL_INTERVALS_METERED = [15000, 20000, 30000, 45000, 60000]; // Metered: slower to save data
 export const POLL_INTERVAL_METERED_BASE = 15000; // 15s base when on metered connection
 
+// Connection quality-aware polling configuration
+// Slow connections (2g, slow-2g, saveData) use longer intervals
+export const POLL_INTERVAL_SLOW = 15000; // 15s base when on slow connection
+// Offline uses long interval just to check if back online
+export const POLL_INTERVAL_OFFLINE = 60000; // 60s when offline
+// Hidden tab uses reduced polling to save battery/data
+export const POLL_INTERVAL_HIDDEN = 30000; // 30s when tab is hidden
+
+/**
+ * Connection quality levels for adaptive polling
+ */
+export type ConnectionQuality = 'good' | 'slow' | 'offline';
+
 /**
  * Network Information API type definition
  */

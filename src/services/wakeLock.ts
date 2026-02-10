@@ -9,10 +9,18 @@ import { t } from '../i18n/translations';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
+// Idle timeout: 30 minutes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+// Check interval: 60 seconds
+const IDLE_CHECK_INTERVAL_MS = 60 * 1000;
+
 class WakeLockService {
   private wakeLock: WakeLockSentinel | null = null;
   private isEnabled = false;
   private visibilityHandler: (() => void) | null = null;
+  private lastInteraction: number = Date.now();
+  private idleCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private interactionHandler: (() => void) | null = null;
 
   /**
    * Check if Wake Lock API is supported
@@ -35,6 +43,7 @@ class WakeLockService {
     }
 
     this.isEnabled = true;
+    this.lastInteraction = Date.now();
 
     // Add visibility handler to re-acquire wake lock when page becomes visible
     if (!this.visibilityHandler) {
@@ -45,6 +54,9 @@ class WakeLockService {
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
     }
+
+    // Start idle timeout tracking
+    this.startIdleTracking();
 
     return this.requestWakeLock();
   }
@@ -62,7 +74,74 @@ class WakeLockService {
       this.visibilityHandler = null;
     }
 
+    // Stop idle tracking
+    this.stopIdleTracking();
+
     await this.releaseWakeLock();
+  }
+
+  /**
+   * Reset idle timer - call on user interaction.
+   * Re-acquires wake lock if it was released due to idle timeout.
+   */
+  resetIdleTimer(): void {
+    this.lastInteraction = Date.now();
+
+    // Re-acquire wake lock if it was released due to idle and still enabled
+    if (this.isEnabled && !this.wakeLock) {
+      this.requestWakeLock();
+    }
+  }
+
+  /**
+   * Start tracking user idle state
+   */
+  private startIdleTracking(): void {
+    // Register global interaction listener
+    if (!this.interactionHandler) {
+      this.interactionHandler = () => this.resetIdleTimer();
+      document.addEventListener('touchstart', this.interactionHandler, { passive: true });
+      document.addEventListener('mousedown', this.interactionHandler);
+      document.addEventListener('keydown', this.interactionHandler);
+    }
+
+    // Start periodic idle check
+    if (this.idleCheckInterval === null) {
+      this.idleCheckInterval = setInterval(() => this.checkIdle(), IDLE_CHECK_INTERVAL_MS);
+    }
+  }
+
+  /**
+   * Stop tracking user idle state
+   */
+  private stopIdleTracking(): void {
+    if (this.interactionHandler) {
+      document.removeEventListener('touchstart', this.interactionHandler);
+      document.removeEventListener('mousedown', this.interactionHandler);
+      document.removeEventListener('keydown', this.interactionHandler);
+      this.interactionHandler = null;
+    }
+
+    if (this.idleCheckInterval !== null) {
+      clearInterval(this.idleCheckInterval);
+      this.idleCheckInterval = null;
+    }
+  }
+
+  /**
+   * Check if user has been idle and release wake lock if so
+   */
+  private checkIdle(): void {
+    if (!this.isEnabled) return;
+
+    const idleTime = Date.now() - this.lastInteraction;
+    if (idleTime >= IDLE_TIMEOUT_MS && this.wakeLock) {
+      logger.debug('[WakeLock] Idle timeout reached, releasing wake lock');
+      this.releaseWakeLock();
+
+      const lang = store.getState().currentLang;
+      showToast(t('wakeLockIdleTimeout', lang), 'warning', 5000);
+    }
   }
 
   /**

@@ -6,12 +6,14 @@ import {
   initVoiceMode,
 } from './appEventListeners';
 import { initModals } from './appModalHandlers';
+import { closeModal, isAnyModalOpen, openModal } from './features/modals';
 // Extracted app modules
 import { handleStateChange } from './appStateHandlers';
 import { updateUI } from './appUiUpdates';
 import { showToast } from './components';
 import { initChiefJudgeToggle } from './features/chiefJudgeView';
 import { initGateJudgeView } from './features/gateJudgeView';
+import { initOfflineBanner } from './features/offlineBanner';
 import {
   handleAuthExpired,
   handleRaceDeleted,
@@ -135,6 +137,7 @@ export function initApp(): void {
   initModals();
   initRaceManagement();
   initRippleEffects();
+  initOfflineBanner();
 
   // Subscribe to state changes
   store.subscribe(handleStateChange);
@@ -247,4 +250,34 @@ export function initApp(): void {
       }
     });
   }
+
+  // Keyboard shortcuts modal
+  const shortcutsModal = document.getElementById('keyboard-shortcuts-modal');
+  const showShortcutsBtn = document.getElementById('show-shortcuts-btn');
+  const shortcutsCloseBtn = document.getElementById('shortcuts-close-btn');
+  const shortcutsDoneBtn = document.getElementById('shortcuts-done-btn');
+
+  if (showShortcutsBtn && shortcutsModal) {
+    showShortcutsBtn.addEventListener('click', () => {
+      openModal(shortcutsModal);
+      feedbackTap();
+    });
+  }
+  if (shortcutsCloseBtn && shortcutsModal) {
+    shortcutsCloseBtn.addEventListener('click', () => closeModal(shortcutsModal));
+  }
+  if (shortcutsDoneBtn && shortcutsModal) {
+    shortcutsDoneBtn.addEventListener('click', () => closeModal(shortcutsModal));
+  }
+
+  // Global ? key to open keyboard shortcuts
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === '?' && !isAnyModalOpen()) {
+      // Don't trigger when typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+      e.preventDefault();
+      if (shortcutsModal) openModal(shortcutsModal);
+    }
+  });
 }

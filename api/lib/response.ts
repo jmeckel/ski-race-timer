@@ -166,7 +166,8 @@ export function safeJsonParse<T>(str: string | null | undefined, defaultValue: T
     return JSON.parse(str) as T;
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    console.error('JSON parse error:', message);
+    // Intentionally using console.error directly here to avoid circular import with apiLogger
+    console.error(JSON.stringify({ level: 'error', ts: new Date().toISOString(), msg: 'JSON parse error', error: message }));
     return defaultValue;
   }
 }

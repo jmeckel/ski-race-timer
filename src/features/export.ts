@@ -80,6 +80,18 @@ export function escapeCSVField(field: string): string {
 }
 
 /**
+ * Extract date from ISO timestamp as YYYY-MM-DD
+ * Useful for multi-day races where entries span different dates
+ */
+export function formatDateForExport(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Get timing point label for export
  * Returns "ST" for Start, "FT" for Finish (Race Horology format)
  */
@@ -148,9 +160,10 @@ export function exportResults(): void {
 
     // Build CSV content
     // Extended header with fault columns when faults exist
+    // "Datum" added at end for multi-day race support (YYYY-MM-DD)
     const header = hasFaults
-      ? 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler'
-      : 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
+      ? 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler;Datum'
+      : 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Datum';
 
     const rows = sortedEntries.map((entry) => {
       const bib = escapeCSVField(entry.bib);
@@ -158,6 +171,7 @@ export function exportResults(): void {
       const point = getExportPointLabel(entry.point);
       const time = formatTimeForRaceHorology(entry.timestamp);
       const device = escapeCSVField(entry.deviceName || entry.deviceId);
+      const datum = formatDateForExport(entry.timestamp);
 
       // Get faults for this bib/run (only on Finish entries)
       const entryFaults =
@@ -184,9 +198,9 @@ export function exportResults(): void {
             : 0;
         const faultStr = formatFaultsForCSV(entryFaults);
 
-        return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr}`;
+        return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr};${datum}`;
       } else {
-        return `${bib};${run};${point};${time};${status};${device}`;
+        return `${bib};${run};${point};${time};${status};${device};${datum}`;
       }
     });
 

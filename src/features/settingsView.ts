@@ -26,6 +26,7 @@ import {
   attachRecentRaceItemHandlers,
   renderRecentRaceItems,
 } from '../utils/recentRacesUi';
+import { ListenerManager } from '../utils/listenerManager';
 import { isValidRaceId } from '../utils/validation';
 import { getVersionInfo } from '../version';
 import { exportResults } from './export';
@@ -34,15 +35,13 @@ import { openModal } from './modals';
 import { verifyPinForRaceJoin } from './race';
 
 // Module state
+const listeners = new ListenerManager();
 let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let raceCheckRequestId = 0;
-let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
-  null;
 let lastRaceExistsState: { exists: boolean | null; entryCount: number } = {
   exists: null,
   entryCount: 0,
 };
-let updateRoleToggleHandler: (() => void) | null = null;
 
 // Promise-based event helpers for async operations
 type PhotoSyncWarningResolve = () => void;
@@ -110,7 +109,7 @@ export function initSettingsView(): void {
   // Simple mode toggle
   const simpleModeToggle = getElement<HTMLInputElement>('simple-mode-toggle');
   if (simpleModeToggle) {
-    simpleModeToggle.addEventListener('change', () => {
+    listeners.add(simpleModeToggle, 'change', () => {
       store.updateSettings({ simple: simpleModeToggle.checked });
       applySettings();
       const adminSection = getElement('admin-section');
@@ -123,7 +122,7 @@ export function initSettingsView(): void {
   // GPS toggle
   const gpsToggle = getElement<HTMLInputElement>('gps-toggle');
   if (gpsToggle) {
-    gpsToggle.addEventListener('change', () => {
+    listeners.add(gpsToggle, 'change', () => {
       store.updateSettings({ gps: gpsToggle.checked });
     });
   }
@@ -132,7 +131,7 @@ export function initSettingsView(): void {
   const syncToggle = getElement<HTMLInputElement>('sync-toggle');
   let syncTogglePending = false;
   if (syncToggle) {
-    syncToggle.addEventListener('change', async () => {
+    listeners.add(syncToggle, 'change', async () => {
       // RACE CONDITION FIX: Guard against concurrent invocations
       if (syncTogglePending) {
         syncToggle.checked = !syncToggle.checked; // Revert toggle
@@ -181,7 +180,7 @@ export function initSettingsView(): void {
   // Sync photos toggle
   const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');
   if (syncPhotosToggle) {
-    syncPhotosToggle.addEventListener('change', async (e) => {
+    listeners.add(syncPhotosToggle, 'change', async (e) => {
       const target = e.target as HTMLInputElement;
 
       if (target.checked) {
@@ -199,7 +198,7 @@ export function initSettingsView(): void {
   // Auto-increment toggle
   const autoToggle = getElement<HTMLInputElement>('auto-toggle');
   if (autoToggle) {
-    autoToggle.addEventListener('change', () => {
+    listeners.add(autoToggle, 'change', () => {
       store.updateSettings({ auto: autoToggle.checked });
     });
   }
@@ -207,7 +206,7 @@ export function initSettingsView(): void {
   // Haptic toggle
   const hapticToggle = getElement<HTMLInputElement>('haptic-toggle');
   if (hapticToggle) {
-    hapticToggle.addEventListener('change', () => {
+    listeners.add(hapticToggle, 'change', () => {
       store.updateSettings({ haptic: hapticToggle.checked });
     });
   }
@@ -215,7 +214,7 @@ export function initSettingsView(): void {
   // Sound toggle
   const soundToggle = getElement<HTMLInputElement>('sound-toggle');
   if (soundToggle) {
-    soundToggle.addEventListener('change', () => {
+    listeners.add(soundToggle, 'change', () => {
       store.updateSettings({ sound: soundToggle.checked });
     });
   }
@@ -223,7 +222,7 @@ export function initSettingsView(): void {
   // Ambient mode toggle
   const ambientModeToggle = getElement<HTMLInputElement>('ambient-mode-toggle');
   if (ambientModeToggle) {
-    ambientModeToggle.addEventListener('change', () => {
+    listeners.add(ambientModeToggle, 'change', () => {
       store.updateSettings({ ambientMode: ambientModeToggle.checked });
     });
   }
@@ -234,7 +233,7 @@ export function initSettingsView(): void {
   // Photo capture toggle
   const photoToggle = getElement<HTMLInputElement>('photo-toggle');
   if (photoToggle) {
-    photoToggle.addEventListener('change', () => {
+    listeners.add(photoToggle, 'change', () => {
       store.updateSettings({ photoCapture: photoToggle.checked });
     });
   }
@@ -250,7 +249,7 @@ export function initSettingsView(): void {
       }
     };
 
-    langToggle.addEventListener('click', (e) => {
+    listeners.add(langToggle, 'click', (e) => {
       const target = e.target as HTMLElement;
       const lang = target.getAttribute('data-lang') as 'de' | 'en';
       selectLanguage(lang);
@@ -258,7 +257,7 @@ export function initSettingsView(): void {
 
     // Keyboard support for language options
     langToggle.querySelectorAll('.lang-option').forEach((opt) => {
-      opt.addEventListener('keydown', (e) => {
+      listeners.add(opt, 'keydown', (e) => {
         const event = e as KeyboardEvent;
         const lang = (opt as HTMLElement).getAttribute('data-lang') as
           | 'de'
@@ -294,7 +293,7 @@ export function initSettingsView(): void {
   let raceIdChangePending = false;
   if (raceIdInput) {
     // Debounced race exists check on input
-    raceIdInput.addEventListener('input', () => {
+    listeners.add(raceIdInput, 'input', () => {
       if (raceCheckTimeout) clearTimeout(raceCheckTimeout);
       const raceId = raceIdInput.value.trim();
       if (raceId) {
@@ -304,7 +303,7 @@ export function initSettingsView(): void {
       }
     });
 
-    raceIdInput.addEventListener('change', async () => {
+    listeners.add(raceIdInput, 'change', async () => {
       // RACE CONDITION FIX: Guard against concurrent invocations
       if (raceIdChangePending) {
         return; // Ignore if already processing
@@ -402,7 +401,7 @@ export function initSettingsView(): void {
     'settings-recent-races-dropdown',
   );
   if (settingsRecentRacesBtn && settingsRecentRacesDropdown) {
-    settingsRecentRacesBtn.addEventListener('click', () => {
+    listeners.add(settingsRecentRacesBtn, 'click', () => {
       feedbackTap();
       if (settingsRecentRacesDropdown.style.display === 'none') {
         showSettingsRecentRacesDropdown(settingsRecentRacesDropdown);
@@ -414,25 +413,22 @@ export function initSettingsView(): void {
     });
 
     // Close dropdown when clicking outside
-    if (!settingsRecentRacesDocumentHandler) {
-      settingsRecentRacesDocumentHandler = (e) => {
-        const target = e.target as Node;
-        if (
-          !settingsRecentRacesBtn.contains(target) &&
-          !settingsRecentRacesDropdown.contains(target)
-        ) {
-          settingsRecentRacesDropdown.style.display = 'none';
-          settingsRecentRacesBtn.setAttribute('aria-expanded', 'false');
-        }
-      };
-      document.addEventListener('click', settingsRecentRacesDocumentHandler);
-    }
+    listeners.add(document, 'click', (e) => {
+      const target = e.target as Node;
+      if (
+        !settingsRecentRacesBtn.contains(target) &&
+        !settingsRecentRacesDropdown.contains(target)
+      ) {
+        settingsRecentRacesDropdown.style.display = 'none';
+        settingsRecentRacesBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   // Device name input
   const deviceNameInput = getElement<HTMLInputElement>('device-name-input');
   if (deviceNameInput) {
-    deviceNameInput.addEventListener('change', () => {
+    listeners.add(deviceNameInput, 'change', () => {
       store.setDeviceName(deviceNameInput.value.trim());
     });
   }
@@ -441,10 +437,7 @@ export function initSettingsView(): void {
   initRoleToggle();
 
   // Listen for update-role-toggle events from gateJudgeView
-  if (!updateRoleToggleHandler) {
-    updateRoleToggleHandler = () => updateRoleToggle();
-    window.addEventListener('update-role-toggle', updateRoleToggleHandler);
-  }
+  listeners.add(window, 'update-role-toggle', () => updateRoleToggle());
 
   // Advanced settings collapsible toggle
   initAdvancedSettingsToggle();
@@ -464,7 +457,7 @@ function initAdvancedSettingsToggle(): void {
     'aria-expanded',
     section.classList.contains('expanded') ? 'true' : 'false',
   );
-  toggle.addEventListener('click', () => {
+  listeners.add(toggle, 'click', () => {
     const isExpanded = section.classList.toggle('expanded');
     toggle.setAttribute('aria-expanded', String(isExpanded));
     feedbackTap();
@@ -478,7 +471,7 @@ export function initRoleToggle(): void {
   const roleToggle = getElement('role-toggle');
   if (!roleToggle) return;
 
-  roleToggle.addEventListener('click', (e) => {
+  listeners.add(roleToggle, 'click', (e) => {
     const target = e.target as HTMLElement;
     const card = target.closest('.role-card-setting');
     if (!card) return;
@@ -606,7 +599,7 @@ function initVoiceModeToggle(): void {
   // Set initial state from voice service
   voiceModeToggle.checked = voiceModeService.isActive();
 
-  voiceModeToggle.addEventListener('change', async () => {
+  listeners.add(voiceModeToggle, 'change', async () => {
     const lang = store.getState().currentLang;
 
     if (voiceModeToggle.checked) {
@@ -905,13 +898,5 @@ export function cleanupSettingsTimeouts(): void {
     raceCheckTimeout = null;
   }
 
-  if (settingsRecentRacesDocumentHandler) {
-    document.removeEventListener('click', settingsRecentRacesDocumentHandler);
-    settingsRecentRacesDocumentHandler = null;
-  }
-
-  if (updateRoleToggleHandler) {
-    window.removeEventListener('update-role-toggle', updateRoleToggleHandler);
-    updateRoleToggleHandler = null;
-  }
+  listeners.removeAll();
 }

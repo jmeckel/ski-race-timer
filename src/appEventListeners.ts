@@ -230,8 +230,8 @@ export function handleStorageError(
   const lang = store.getState().currentLang;
 
   if (isQuotaError) {
-    // Storage quota exceeded - this is critical
-    showToast(t('storageQuotaError', lang), 'error', TOAST_DURATION.CRITICAL);
+    // Storage quota exceeded - show actionable message
+    showToast(t('storageNearlyFull', lang), 'error', TOAST_DURATION.CRITICAL);
   } else {
     // General storage error
     showToast(t('storageError', lang), 'error', TOAST_DURATION.ERROR);
@@ -268,11 +268,11 @@ export function handleStorageWarning(
       TOAST_DURATION.CRITICAL,
     );
   } else {
-    // Warning: show once per session at 75%+
+    // Warning: show once per session at 80%+
     const warningShown = sessionStorage.getItem('storage-warning-shown');
     if (!warningShown) {
       showToast(
-        `${t('storageWarning', lang)} (${percent}%)`,
+        t('storageNearlyFull', lang),
         'warning',
         TOAST_DURATION.WARNING,
       );

@@ -9,12 +9,25 @@ import { feedbackDelete, feedbackSuccess, feedbackTap } from '../services';
 import { deleteFaultFromCloud, syncFault, syncService } from '../services/sync';
 import { store } from '../store';
 import type { FaultEntry, Language, Run } from '../types';
-import { escapeAttr, escapeHtml, getFaultTypeLabel } from '../utils';
+import {
+  escapeAttr,
+  escapeHtml,
+  getFaultTypeLabel,
+  iconCheck,
+  iconEdit,
+  iconTrash,
+  iconTrashDetailed,
+  iconX,
+} from '../utils';
+import { ListenerManager } from '../utils/listenerManager';
 import {
   exportChiefSummary,
   exportFaultSummaryWhatsApp,
   exportResults,
 } from './export';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Module-level store subscription cleanup
 let unsubscribeChiefJudge: (() => void) | null = null;
@@ -94,7 +107,7 @@ export function initChiefJudgeToggle(): void {
   const toggleBtn = document.getElementById('chief-judge-toggle-btn');
   if (!toggleBtn) return;
 
-  toggleBtn.addEventListener('click', async () => {
+  listeners.add(toggleBtn, 'click', async () => {
     const state = store.getState();
     const lang = state.currentLang;
 
@@ -188,7 +201,7 @@ export function initChiefJudgeToggle(): void {
 function initChiefExportHandlers(): void {
   const csvBtn = document.getElementById('export-csv-btn');
   if (csvBtn) {
-    csvBtn.addEventListener('click', () => {
+    listeners.add(csvBtn, 'click', () => {
       feedbackTap();
       exportResults();
     });
@@ -196,7 +209,7 @@ function initChiefExportHandlers(): void {
 
   const summaryBtn = document.getElementById('export-summary-btn');
   if (summaryBtn) {
-    summaryBtn.addEventListener('click', () => {
+    listeners.add(summaryBtn, 'click', () => {
       feedbackTap();
       exportChiefSummary();
     });
@@ -204,7 +217,7 @@ function initChiefExportHandlers(): void {
 
   const whatsappBtn = document.getElementById('export-whatsapp-btn');
   if (whatsappBtn) {
-    whatsappBtn.addEventListener('click', () => {
+    listeners.add(whatsappBtn, 'click', () => {
       feedbackTap();
       exportFaultSummaryWhatsApp();
     });
@@ -217,7 +230,7 @@ function initChiefExportHandlers(): void {
 function initPenaltyConfig(): void {
   const modeToggle = document.getElementById('penalty-mode-toggle');
   if (modeToggle) {
-    modeToggle.addEventListener('click', (e) => {
+    listeners.add(modeToggle, 'click', (e) => {
       const btn = (e.target as HTMLElement).closest('.penalty-mode-btn');
       if (!btn) return;
 
@@ -233,7 +246,7 @@ function initPenaltyConfig(): void {
 
   const secondsSelector = document.getElementById('penalty-seconds-selector');
   if (secondsSelector) {
-    secondsSelector.addEventListener('click', (e) => {
+    listeners.add(secondsSelector, 'click', (e) => {
       const btn = (e.target as HTMLElement).closest('.penalty-adj-btn');
       if (!btn) return;
 
@@ -449,19 +462,10 @@ export function updateFaultSummaryPanel(): void {
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">
             <button class="fault-row-btn edit-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('edit', lang))}" ${isMarkedForDeletion ? 'disabled' : ''}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
+              ${iconEdit(14)}
             </button>
             <button class="fault-row-btn delete-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}">
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                ${
-                  isMarkedForDeletion
-                    ? '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/>'
-                    : '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'
-                }
-              </svg>
+              ${isMarkedForDeletion ? iconTrashDetailed(14) : iconTrash(14)}
             </button>
           </div>
         </div>
@@ -471,15 +475,11 @@ export function updateFaultSummaryPanel(): void {
 
     const actionHtml = isFinalized
       ? `<div class="finalized-badge">
-           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-             <path d="M20 6L9 17l-5-5"/>
-           </svg>
+           ${iconCheck(16, 2.5)}
            ${t('finalized', lang)}
          </div>`
       : `<button class="finalize-btn" data-bib="${escapeAttr(bib)}" data-run="${escapeAttr(String(run))}">
-           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-             <path d="M20 6L9 17l-5-5"/>
-           </svg>
+           ${iconCheck(16)}
            ${t('finalize', lang)}
          </button>`;
 
@@ -643,14 +643,10 @@ export function updatePendingDeletionsPanel(): void {
         </div>
         <div class="pending-deletion-actions">
           <button class="pending-deletion-btn approve" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('approveDeletion', lang))}">
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
+            ${iconCheck(16, 2.5)}
           </button>
           <button class="pending-deletion-btn reject" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('rejectDeletion', lang))}">
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
+            ${iconX(16)}
           </button>
         </div>
       </div>
@@ -718,4 +714,5 @@ export function cleanupChiefJudgeView(): void {
     unsubscribeChiefJudge();
     unsubscribeChiefJudge = null;
   }
+  listeners.removeAll();
 }

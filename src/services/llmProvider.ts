@@ -38,7 +38,7 @@ Return ONLY valid JSON (no markdown, no explanation):
     "gate": number,
     "faultType": "MG" | "STR" | "BR",
     "point": "S" | "F",
-    "run": 1 | 2
+    "run": number (positive integer, typically 1 or 2)
   },
   "confirmationNeeded": boolean,
   "confirmationPrompt": "string (spoken confirmation request in user's language)"

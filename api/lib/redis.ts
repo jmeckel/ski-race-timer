@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { apiLogger } from './apiLogger.js';
 
 /**
  * Shared Redis connection module with consistent error handling and reconnection logic
@@ -27,7 +28,7 @@ export function getRedis(): Redis {
   if (redisError && redis) {
     const timeSinceError: number = Date.now() - lastErrorTime;
     if (timeSinceError > RECONNECT_DELAY) {
-      console.log('Attempting Redis reconnection after error...');
+      apiLogger.info('Attempting Redis reconnection after error');
       try {
         redis.disconnect();
       } catch (e) {
@@ -63,22 +64,22 @@ export function getRedis(): Redis {
 
     // Handle Redis connection events
     redis.on('error', (err: Error) => {
-      console.error('Redis connection error:', err.message);
+      apiLogger.error('Redis connection error', { error: err.message });
       redisError = err;
       lastErrorTime = Date.now();
     });
 
     redis.on('connect', () => {
-      console.log('Redis connected successfully');
+      apiLogger.info('Redis connected successfully');
       redisError = null;
     });
 
     redis.on('close', () => {
-      console.log('Redis connection closed');
+      apiLogger.info('Redis connection closed');
     });
 
     redis.on('reconnecting', () => {
-      console.log('Redis reconnecting...');
+      apiLogger.info('Redis reconnecting');
     });
   }
 

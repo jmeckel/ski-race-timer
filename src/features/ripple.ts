@@ -3,6 +3,11 @@
  * Material Design-style ripple synced with haptic feedback
  */
 
+import { ListenerManager } from '../utils/listenerManager';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
+
 // Track active ripple timeouts for cleanup
 const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
@@ -68,12 +73,13 @@ export function initRippleEffects(): void {
   // Number pad buttons
   document.querySelectorAll('.num-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener(
+    listeners.add(
+      btn,
       'touchstart',
       (e) => createRipple(e as TouchEvent, btn as HTMLElement),
       { passive: true },
     );
-    btn.addEventListener('mousedown', (e) =>
+    listeners.add(btn, 'mousedown', (e) =>
       createRipple(e as MouseEvent, btn as HTMLElement),
     );
   });
@@ -82,13 +88,14 @@ export function initRippleEffects(): void {
   const timestampBtn = document.querySelector('.timestamp-btn');
   if (timestampBtn) {
     timestampBtn.classList.add('ripple-container');
-    timestampBtn.addEventListener(
+    listeners.add(
+      timestampBtn,
       'touchstart',
       (e) =>
         createRipple(e as TouchEvent, timestampBtn as HTMLElement, 'primary'),
       { passive: true },
     );
-    timestampBtn.addEventListener('mousedown', (e) =>
+    listeners.add(timestampBtn, 'mousedown', (e) =>
       createRipple(e as MouseEvent, timestampBtn as HTMLElement, 'primary'),
     );
   }
@@ -97,7 +104,8 @@ export function initRippleEffects(): void {
   document.querySelectorAll('.timing-point-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
     const isStart = btn.getAttribute('data-point') === 'S';
-    btn.addEventListener(
+    listeners.add(
+      btn,
       'touchstart',
       (e) =>
         createRipple(
@@ -107,7 +115,7 @@ export function initRippleEffects(): void {
         ),
       { passive: true },
     );
-    btn.addEventListener('mousedown', (e) =>
+    listeners.add(btn, 'mousedown', (e) =>
       createRipple(
         e as MouseEvent,
         btn as HTMLElement,
@@ -119,12 +127,13 @@ export function initRippleEffects(): void {
   // Tab buttons
   document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener(
+    listeners.add(
+      btn,
       'touchstart',
       (e) => createRipple(e as TouchEvent, btn as HTMLElement, 'primary'),
       { passive: true },
     );
-    btn.addEventListener('mousedown', (e) =>
+    listeners.add(btn, 'mousedown', (e) =>
       createRipple(e as MouseEvent, btn as HTMLElement, 'primary'),
     );
   });
@@ -132,12 +141,13 @@ export function initRippleEffects(): void {
   // Action buttons in results view
   document.querySelectorAll('.action-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener(
+    listeners.add(
+      btn,
       'touchstart',
       (e) => createRipple(e as TouchEvent, btn as HTMLElement),
       { passive: true },
     );
-    btn.addEventListener('mousedown', (e) =>
+    listeners.add(btn, 'mousedown', (e) =>
       createRipple(e as MouseEvent, btn as HTMLElement),
     );
   });
@@ -148,12 +158,13 @@ export function initRippleEffects(): void {
     const isPrimary = btn.classList.contains('primary');
     const isDanger = btn.classList.contains('danger');
     const variant = isPrimary ? 'primary' : isDanger ? 'secondary' : undefined;
-    btn.addEventListener(
+    listeners.add(
+      btn,
       'touchstart',
       (e) => createRipple(e as TouchEvent, btn as HTMLElement, variant),
       { passive: true },
     );
-    btn.addEventListener('mousedown', (e) =>
+    listeners.add(btn, 'mousedown', (e) =>
       createRipple(e as MouseEvent, btn as HTMLElement, variant),
     );
   });
@@ -163,6 +174,7 @@ export function initRippleEffects(): void {
  * Cleanup ripple timeouts (for page unload)
  */
 export function cleanupRippleEffects(): void {
+  listeners.removeAll();
   activeRippleTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
   activeRippleTimeouts.clear();
 }

@@ -4,6 +4,27 @@
   padding: 16px;
 }
 
+/* Settings Groups */
+.settings-group {
+  margin-bottom: var(--space-lg, 16px);
+}
+
+.settings-group-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-sm, 8px) 0;
+  padding-left: 4px;
+}
+
+/* Version section at bottom */
+.settings-version-section {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
 .settings-section {
   margin-bottom: 24px;
 }

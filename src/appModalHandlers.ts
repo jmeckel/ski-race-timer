@@ -1,4 +1,4 @@
-import { showToast } from './components';
+import { showToast, type ToastAction } from './components';
 import { initFaultEditModal, updateInlineFaultsList } from './features/faults';
 import {
   closeAllModalsAnimated,
@@ -17,7 +17,7 @@ import {
   photoStorage,
   syncService,
 } from './services';
-import { deleteFaultFromCloud } from './services/sync';
+import { deleteFaultFromCloud, syncEntry } from './services/sync';
 import { store } from './store';
 import type { Entry } from './types';
 import {
@@ -307,7 +307,25 @@ async function handleConfirmDelete(): Promise<void> {
       );
     }
 
-    showToast(t('deleted', state.currentLang), 'success');
+    const lang = state.currentLang;
+    const undoAction: ToastAction = {
+      label: t('undoAction', lang),
+      callback: () => {
+        if (store.canUndo()) {
+          const result = store.undo();
+          feedbackUndo();
+
+          // Re-sync entry to cloud if needed
+          if (result && result.type === 'DELETE_ENTRY') {
+            const restoredEntry = result.data as Entry;
+            syncEntry(restoredEntry).catch(() => {
+              // Sync failure handled by queue
+            });
+          }
+        }
+      },
+    };
+    showToast(t('entryDeleted', lang), 'success', 5000, { action: undoAction });
   }
 
   feedbackDelete();
@@ -331,7 +349,7 @@ function handleSaveEdit(): void {
   const statusSelect = document.getElementById(
     'edit-status-select',
   ) as HTMLSelectElement;
-  const run = (ctx?.entryRun ?? 1) as 1 | 2;
+  const run = ctx?.entryRun ?? 1;
 
   store.updateEntry(entryId, {
     bib: bibInput?.value.padStart(3, '0') || '',

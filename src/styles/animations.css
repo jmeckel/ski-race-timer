@@ -253,6 +253,14 @@
 
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .breathe-glow,
   .breathe-glow-success,
   .breathe-glow-danger,
@@ -379,4 +387,76 @@
 .power-saver .snowflake-burst .flake {
   animation: none;
   display: none;
+}
+
+/* Power saver: disable all backdrop-filter effects to save GPU */
+.power-saver .glass-surface-1,
+.power-saver .glass-surface-2,
+.power-saver .glass-surface-3,
+.power-saver .glass-frosted,
+.power-saver .glass-frosted-top,
+.power-saver .glass-backdrop {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.power-saver .glass-surface-1 {
+  background: var(--surface-elevated);
+}
+
+.power-saver .glass-surface-2 {
+  background: var(--surface-elevated);
+}
+
+.power-saver .glass-surface-3 {
+  background: var(--surface);
+}
+
+.power-saver .glass-frosted,
+.power-saver .glass-frosted-top {
+  background: var(--surface);
+}
+
+.power-saver .glass-backdrop {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* Power saver: disable direct backdrop-filter usage in modals */
+.power-saver .modal-overlay,
+.power-saver .modal-content,
+.power-saver .confirmation-overlay,
+.power-saver .confirmation-content,
+.power-saver .fault-confirmation-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.power-saver .modal-content {
+  background: rgba(20, 20, 20, 0.98);
+}
+
+.power-saver .confirmation-content {
+  background: rgba(10, 10, 10, 0.98);
+}
+
+/* Power saver: disable direct backdrop-filter in main.css glass enhancements */
+.power-saver .entry-count-badge,
+.power-saver .header.glass-frosted-top,
+.power-saver .tab-bar.glass-frosted,
+.power-saver .num-btn.glass-surface-3,
+.power-saver .modal-content.glass-surface-1,
+.power-saver .confirmation-overlay.glass-surface-1 .confirmation-content,
+.power-saver .timing-point-btn.glass-surface-3,
+.power-saver .run-btn.glass-surface-3,
+.power-saver .results-header.glass-frosted-top,
+.power-saver .results-actions.glass-frosted,
+.power-saver .bib-display.glass-surface-2 {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Power saver: disable backdrop-filter on radial time button */
+.power-saver .radial-time-btn {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }

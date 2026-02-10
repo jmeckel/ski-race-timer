@@ -104,6 +104,13 @@ export const translations = {
     gpsInactive: 'GPS Inactive',
     gpsAccuracy: 'Accuracy',
 
+    // Settings groups
+    settingsRaceSetup: 'Race Setup',
+    settingsTimingGroup: 'Timing',
+    settingsSyncGroup: 'Sync',
+    settingsFeedbackGroup: 'Feedback',
+    settingsDisplayGroup: 'Display',
+
     // Settings
     simpleMode: 'Simple Mode',
     fullMode: 'Full Mode',
@@ -224,6 +231,7 @@ export const translations = {
     storageError: 'Failed to save data - check storage',
     storageQuotaError: 'Storage full! Export data immediately',
     storageWarning: 'Storage almost full',
+    storageNearlyFull: 'Storage nearly full. Export data and clear old entries.',
 
     // Network errors
     networkError: 'Network error - check connection',
@@ -247,6 +255,7 @@ export const translations = {
 
     // Wake Lock errors
     wakeLockFailed: 'Screen may dim during timing',
+    wakeLockIdleTimeout: 'Screen will dim to save battery. Tap to keep awake.',
 
     // Generic errors
     unknownError: 'Unknown error',
@@ -476,9 +485,55 @@ export const translations = {
     noteTextLabel: 'Note text',
     recordVoiceNoteLabel: 'Record voice note',
 
+    // Indicator labels
+    syncOnline: 'Sync online',
+    syncOffline: 'Offline',
+
     // Auth
     sessionExpired: 'Session expired. Please re-enter your PIN.',
     authSuccess: 'Authentication successful',
+
+    // Keyboard Shortcuts
+    keyboardShortcuts: 'Keyboard Shortcuts',
+    keyboardShortcutsDesc: 'Show all keyboard shortcuts',
+    shortcutSection_timer: 'Timer',
+    shortcutSection_gateJudge: 'Gate Judge',
+    shortcutSection_results: 'Results',
+    shortcutSection_global: 'Global',
+    shortcut_enterDigit: 'Enter bib digit',
+    shortcut_selectStart: 'Select Start',
+    shortcut_selectFinish: 'Select Finish',
+    shortcut_selectRun1: 'Select Run 1',
+    shortcut_selectRun2: 'Select Run 2',
+    shortcut_recordTime: 'Record timestamp',
+    shortcut_clearBib: 'Clear bib',
+    shortcut_deleteLastDigit: 'Delete last digit',
+    shortcut_missedGate: 'Missed Gate',
+    shortcut_straddled: 'Straddled',
+    shortcut_broken: 'Broken gate',
+    shortcut_selectGate: 'Select gate',
+    shortcut_navigateBtns: 'Navigate buttons',
+    shortcut_confirmSelection: 'Confirm selection',
+    shortcut_navigateItems: 'Navigate items',
+    shortcut_editItem: 'Edit item',
+    shortcut_deleteItem: 'Delete item',
+    shortcut_moveTab: 'Move between tabs',
+    shortcut_closeModal: 'Close modal',
+    shortcut_navigateInComponent: 'Navigate in component',
+    shortcut_showShortcuts: 'Show shortcuts',
+
+    // Offline/online banner
+    offlineBanner: 'You are offline. Times will be saved locally.',
+    onlineRestored: 'Back online',
+
+    // Undo toast
+    entryDeleted: 'Entry deleted',
+    undoAction: 'Undo',
+
+    // Multi-device duplicates
+    multiDeviceDuplicate: 'Multi-device',
+    duplicateDevices: '{count} devices',
+    duplicateCount: '{count} duplicates',
   },
 
   de: {
@@ -583,6 +638,13 @@ export const translations = {
     gpsSearching: 'GPS wird gesucht...',
     gpsInactive: 'GPS Inaktiv',
     gpsAccuracy: 'Genauigkeit',
+
+    // Settings groups
+    settingsRaceSetup: 'Rennen einrichten',
+    settingsTimingGroup: 'Zeitmessung',
+    settingsSyncGroup: 'Synchronisation',
+    settingsFeedbackGroup: 'Rückmeldung',
+    settingsDisplayGroup: 'Anzeige',
 
     // Settings
     simpleMode: 'Einfacher Modus',
@@ -707,6 +769,7 @@ export const translations = {
     storageError: 'Speichern fehlgeschlagen - Speicher prüfen',
     storageQuotaError: 'Speicher voll! Daten sofort exportieren',
     storageWarning: 'Speicher fast voll',
+    storageNearlyFull: 'Speicher fast voll. Daten exportieren und alte Einträge löschen.',
 
     // Network errors
     networkError: 'Netzwerkfehler - Verbindung prüfen',
@@ -730,6 +793,7 @@ export const translations = {
 
     // Wake Lock errors
     wakeLockFailed: 'Bildschirm kann während Zeitmessung abdunkeln',
+    wakeLockIdleTimeout: 'Bildschirm wird gedimmt um Akku zu sparen. Tippen zum Wachhalten.',
 
     // Generic errors
     unknownError: 'Unbekannter Fehler',
@@ -964,9 +1028,55 @@ export const translations = {
     noteTextLabel: 'Notiztext',
     recordVoiceNoteLabel: 'Sprachnotiz aufnehmen',
 
+    // Indicator labels
+    syncOnline: 'Sync online',
+    syncOffline: 'Offline',
+
     // Auth
     sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',
     authSuccess: 'Authentifizierung erfolgreich',
+
+    // Keyboard Shortcuts
+    keyboardShortcuts: 'Tastenkürzel',
+    keyboardShortcutsDesc: 'Alle Tastenkürzel anzeigen',
+    shortcutSection_timer: 'Timer',
+    shortcutSection_gateJudge: 'Torrichter',
+    shortcutSection_results: 'Ergebnisse',
+    shortcutSection_global: 'Allgemein',
+    shortcut_enterDigit: 'Startnr.-Ziffer eingeben',
+    shortcut_selectStart: 'Start wählen',
+    shortcut_selectFinish: 'Ziel wählen',
+    shortcut_selectRun1: 'Lauf 1 wählen',
+    shortcut_selectRun2: 'Lauf 2 wählen',
+    shortcut_recordTime: 'Zeitstempel erfassen',
+    shortcut_clearBib: 'Startnr. löschen',
+    shortcut_deleteLastDigit: 'Letzte Ziffer löschen',
+    shortcut_missedGate: 'Tor ausgelassen',
+    shortcut_straddled: 'Einfädler',
+    shortcut_broken: 'Bindung offen',
+    shortcut_selectGate: 'Tor wählen',
+    shortcut_navigateBtns: 'Buttons navigieren',
+    shortcut_confirmSelection: 'Auswahl bestätigen',
+    shortcut_navigateItems: 'Einträge navigieren',
+    shortcut_editItem: 'Eintrag bearbeiten',
+    shortcut_deleteItem: 'Eintrag löschen',
+    shortcut_moveTab: 'Zwischen Tabs wechseln',
+    shortcut_closeModal: 'Dialog schließen',
+    shortcut_navigateInComponent: 'In Komponente navigieren',
+    shortcut_showShortcuts: 'Tastenkürzel anzeigen',
+
+    // Offline/online banner
+    offlineBanner: 'Offline. Zeiten werden lokal gespeichert.',
+    onlineRestored: 'Wieder online',
+
+    // Undo toast
+    entryDeleted: 'Eintrag gelöscht',
+    undoAction: 'Rückgängig',
+
+    // Multi-device duplicates
+    multiDeviceDuplicate: 'Mehrere Geräte',
+    duplicateDevices: '{count} Geräte',
+    duplicateCount: '{count} Duplikate',
   },
 } satisfies Record<Language, Translations>;
 

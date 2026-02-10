@@ -1,8 +1,14 @@
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+export interface ToastAction {
+  label: string;
+  callback: () => void;
+}
+
 interface ToastOptions {
   duration?: number;
   type?: ToastType;
+  action?: ToastAction;
 }
 
 const DEFAULT_DURATION = 3000;
@@ -82,7 +88,7 @@ export class Toast {
     const duration = options.duration || DEFAULT_DURATION;
     const type = options.type || 'info';
 
-    const toast = this.createToast(message, type);
+    const toast = this.createToast(message, type, options.action);
     this.container.appendChild(toast);
 
     // Animate in
@@ -91,22 +97,30 @@ export class Toast {
       toast.style.transform = 'translateY(0)';
     });
 
-    // Auto dismiss
-    setTimeout(() => {
+    // Track dismiss state to prevent double-dismiss
+    let dismissed = false;
+    const dismissToast = () => {
+      if (dismissed) return;
+      dismissed = true;
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(10px)';
-
       setTimeout(() => {
         toast.remove();
         this.processQueue();
       }, 200);
-    }, duration);
+    };
+
+    // Store dismiss function for action button use
+    (toast as unknown as Record<string, () => void>)._dismiss = dismissToast;
+
+    // Auto dismiss
+    setTimeout(dismissToast, duration);
   }
 
   /**
    * Create toast element
    */
-  private createToast(message: string, type: ToastType): HTMLElement {
+  private createToast(message: string, type: ToastType, action?: ToastAction): HTMLElement {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
 
@@ -150,12 +164,39 @@ export class Toast {
       <span>${this.escapeHtml(message)}</span>
     `;
 
-    // Add click handler to copy message and prevent event propagation
-    toast.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      this.copyToClipboard(message);
-    });
+    // Add action button if provided
+    if (action) {
+      const actionBtn = document.createElement('button');
+      actionBtn.textContent = action.label;
+      actionBtn.style.cssText = `
+        background: none;
+        border: 1px solid ${colors[type]};
+        color: ${colors[type]};
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 4px;
+        white-space: nowrap;
+      `;
+      actionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        action.callback();
+        // Dismiss toast immediately after action
+        const dismiss = (toast as unknown as Record<string, () => void>)._dismiss;
+        if (dismiss) dismiss();
+      });
+      toast.appendChild(actionBtn);
+    } else {
+      // Add click handler to copy message only when no action button
+      toast.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        this.copyToClipboard(message);
+      });
+    }
 
     // Also block mousedown/touchstart to prevent any underlying click handlers
     toast.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -239,8 +280,9 @@ export function showToast(
   message: string,
   type: ToastType = 'info',
   duration?: number,
+  options?: { action?: ToastAction },
 ): void {
-  getToast().show(message, { type, duration });
+  getToast().show(message, { type, duration, action: options?.action });
 }
 
 /**

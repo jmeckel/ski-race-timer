@@ -15,8 +15,12 @@ import {
 import { store } from '../../store';
 import type { Language } from '../../types';
 import { logWarning, makeNumericInput } from '../../utils';
+import { ListenerManager } from '../../utils/listenerManager';
 import { logger } from '../../utils/logger';
 import { closeModal, openModal } from '../modals';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // PIN verification context - consolidates resolver and type into single object
 interface PinVerificationContext {
@@ -482,13 +486,13 @@ export function initPinManagement(): void {
   // Change PIN button
   const changePinBtn = document.getElementById('change-pin-btn');
   if (changePinBtn) {
-    changePinBtn.addEventListener('click', handleChangePinClick);
+    listeners.add(changePinBtn, 'click', handleChangePinClick);
   }
 
   // Save PIN button
   const savePinBtn = document.getElementById('save-pin-btn');
   if (savePinBtn) {
-    savePinBtn.addEventListener('click', handleSavePin);
+    listeners.add(savePinBtn, 'click', handleSavePin);
   }
 
   // Filter numeric input for all PIN fields

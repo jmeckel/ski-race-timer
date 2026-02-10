@@ -10,6 +10,7 @@ import {
   sendAuthRequired,
   sendError
 } from '../../lib/response.js';
+import { apiLogger } from '../../lib/apiLogger.js';
 
 interface ChangePinRequestBody {
   currentPin?: string;
@@ -37,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -98,14 +99,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const newPinHash = hashPin(newPin);
       await client.set(CLIENT_PIN_KEY, newPinHash);
 
-      console.log('PIN changed successfully via admin/pin API');
+      apiLogger.info('PIN changed successfully via admin/pin API');
       return sendSuccess(res, { success: true });
     }
 
     return sendMethodNotAllowed(res);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Admin PIN API error:', message);
+    apiLogger.error('Admin PIN API error', { error: message });
     return sendError(res, 'Internal server error', 500);
   }
 }

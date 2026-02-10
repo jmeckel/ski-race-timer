@@ -16,7 +16,12 @@ import { generateDeviceName } from './id';
 const VALID_POINTS: TimingPoint[] = ['S', 'F'];
 const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq', 'flt'];
 const VALID_FAULT_TYPES: FaultType[] = ['MG', 'STR', 'BR'];
-const VALID_RUNS: Run[] = [1, 2];
+/**
+ * Validate that a run number is a positive integer
+ */
+function isValidRun(run: unknown): run is Run {
+  return typeof run === 'number' && Number.isInteger(run) && run >= 1;
+}
 const VALID_CHANGE_TYPES = ['create', 'edit', 'restore'] as const;
 
 /**
@@ -77,6 +82,14 @@ export function isValidEntry(entry: unknown): entry is Entry {
 
   // Photo is optional but must be string if present
   if (e.photo !== undefined && typeof e.photo !== 'string') return false;
+
+  // TimeSource is optional but must be valid if present
+  if (e.timeSource !== undefined && e.timeSource !== 'gps' && e.timeSource !== 'system') return false;
+
+  // GpsTimestamp is optional but must be a finite number if present
+  if (e.gpsTimestamp !== undefined) {
+    if (typeof e.gpsTimestamp !== 'number' || !Number.isFinite(e.gpsTimestamp)) return false;
+  }
 
   // GpsCoords is optional but must have valid structure if present
   if (e.gpsCoords !== undefined) {
@@ -146,7 +159,7 @@ export function isValidFaultVersion(version: unknown): version is FaultVersion {
   // Validate core fault data fields
   if (typeof data.id !== 'string') return false;
   if (typeof data.bib !== 'string' || data.bib.length > 10) return false;
-  if (!VALID_RUNS.includes(data.run as Run)) return false;
+  if (!isValidRun(data.run)) return false;
   if (
     typeof data.gateNumber !== 'number' ||
     !Number.isInteger(data.gateNumber) ||
@@ -211,7 +224,7 @@ export function isValidFaultEntry(fault: unknown): fault is FaultEntry {
     return false;
 
   // Run must be valid
-  if (!VALID_RUNS.includes(f.run as Run)) return false;
+  if (!isValidRun(f.run)) return false;
 
   // Gate number must be valid
   if (

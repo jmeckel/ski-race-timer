@@ -2,7 +2,8 @@
 export type TimingPoint = 'S' | 'F';
 
 // Run types (for multi-run races)
-export type Run = 1 | 2;
+// Generalized to support 3+ run races (e.g. training, special formats)
+export type Run = number;
 
 // Entry status types
 // 'flt' = finished with fault penalty (U8/U10 age categories)
@@ -37,12 +38,15 @@ export type SyncStatus =
 // Language types
 export type Language = 'en' | 'de';
 
+// Time source for timing entries
+export type TimeSource = 'gps' | 'system';
+
 // Entry interface - core timing data
 export interface Entry {
   id: string;
   bib: string;
   point: TimingPoint;
-  run: Run; // Run number (1 or 2), defaults to 1 for backwards compat
+  run: Run; // Run number (1, 2, 3, ...), defaults to 1 for backwards compat
   timestamp: string;
   status: EntryStatus;
   deviceId: string;
@@ -54,6 +58,8 @@ export interface Entry {
     longitude: number;
     accuracy: number;
   };
+  timeSource?: TimeSource; // Which clock was used for the timestamp
+  gpsTimestamp?: number; // Raw GPS timestamp if available
 }
 
 // Fault version for audit trail
@@ -81,7 +87,7 @@ export interface FaultVersion {
 export interface FaultEntry {
   id: string; // Unique ID
   bib: string; // Racer bib number (Startnummer)
-  run: Run; // Run 1 or 2 (Lauf)
+  run: Run; // Run number (Lauf)
   gateNumber: number; // Gate where fault occurred (Tornummer)
   faultType: FaultType; // Type of fault (Fehlerart)
   timestamp: string; // When recorded (ISO)
@@ -177,7 +183,7 @@ export interface AppState {
   currentLang: Language;
   bibInput: string;
   selectedPoint: TimingPoint;
-  selectedRun: Run; // Current run selection (1 or 2)
+  selectedRun: Run; // Current run selection
   selectMode: boolean;
   selectedEntries: Set<string>;
   isRecording: boolean;

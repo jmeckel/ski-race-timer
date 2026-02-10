@@ -24,6 +24,7 @@ import { SCHEMA_VERSION } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { logger } from '../utils/logger';
 import { isValidEntry, migrateSchema } from '../utils/validation';
+import { checkLocalStorageQuota } from '../utils/storageQuota';
 
 // Import slices
 import * as entriesSlice from './slices/entriesSlice';
@@ -434,6 +435,20 @@ class Store {
         localStorage.setItem(
           STORAGE_KEYS.SCHEMA_VERSION,
           String(SCHEMA_VERSION),
+        );
+      }
+      // Check localStorage quota after save
+      const quotaCheck = checkLocalStorageQuota();
+      if (quotaCheck.warning) {
+        window.dispatchEvent(
+          new CustomEvent('storage-warning', {
+            detail: {
+              usage: quotaCheck.usageBytes,
+              quota: quotaCheck.estimatedQuota,
+              percent: quotaCheck.usagePercent,
+              critical: quotaCheck.usagePercent > 90,
+            },
+          }),
         );
       }
     } catch (e) {

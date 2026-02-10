@@ -18,6 +18,7 @@ import {
   safeJsonParse
 } from '../lib/response.js';
 import { isValidRaceId, checkRateLimit, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
+import { apiLogger, getRequestId } from '../lib/apiLogger.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
@@ -52,6 +53,8 @@ interface RaceEntry {
   photo?: string;
   gpsCoords?: GpsCoords;
   syncedAt?: number;
+  timeSource?: 'gps' | 'system';
+  gpsTimestamp?: number;
 }
 
 interface RaceData {
@@ -134,7 +137,7 @@ async function checkPhotoRateLimit(client: Redis, raceId: string, deviceId: stri
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Photo rate limit check error:', message);
+    apiLogger.error('Photo rate limit check error', { error: message });
     // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
     // Prevents memory exhaustion if Redis is unavailable
     return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX, error: 'Rate limiting unavailable' };
@@ -242,7 +245,7 @@ async function updateHighestBib(client: Redis, normalizedRaceId: string, bib: st
     }
     // WATCH detected change, retry
   }
-  console.warn('updateHighestBib: max retries exceeded');
+  apiLogger.warn('updateHighestBib: max retries exceeded');
   return { success: false, error: 'Max retries exceeded updating highest bib' };
 }
 
@@ -379,7 +382,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -387,6 +390,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
+
+  const reqId = getRequestId(req.headers);
+  const log = apiLogger.withRequestId(reqId);
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
@@ -532,11 +538,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             enrichedEntry.photo = entry.photo;
           } else {
             photoRateLimited = true;
-            console.log(`Photo rate limited: race=${normalizedRaceId}, device=${sanitizedDeviceId}, count=${photoRateLimit.count}/${photoRateLimit.limit}`);
+            log.warn('Photo rate limited', { race: normalizedRaceId, device: sanitizedDeviceId, count: photoRateLimit.count, limit: photoRateLimit.limit });
           }
         } else {
           photoSkipped = true;
         }
+      }
+
+      // Include run if present
+      if (entry.run === 1 || entry.run === 2) {
+        enrichedEntry.run = entry.run;
+      }
+
+      // Include GPS timing metadata if present
+      if (entry.timeSource === 'gps' || entry.timeSource === 'system') {
+        enrichedEntry.timeSource = entry.timeSource;
+      }
+      if (typeof entry.gpsTimestamp === 'number' && Number.isFinite(entry.gpsTimestamp)) {
+        enrichedEntry.gpsTimestamp = entry.gpsTimestamp;
       }
 
       // Include GPS coords if present
@@ -627,7 +646,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return sendMethodNotAllowed(res);
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Sync API error:', err.message);
+    log.error('Sync API error', { error: err.message });
 
     // Don't expose internal error details to client
     if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {

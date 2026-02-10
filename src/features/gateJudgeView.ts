@@ -76,7 +76,7 @@ export function initGateJudgeView(): void {
       if (!btn) return;
 
       const runStr = btn.getAttribute('data-run');
-      const run = runStr ? (parseInt(runStr, 10) as 1 | 2) : 1;
+      const run = runStr ? parseInt(runStr, 10) : 1;
       store.setSelectedRun(run);
       feedbackTap();
 

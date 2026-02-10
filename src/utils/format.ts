@@ -92,22 +92,17 @@ export function getPointLabel(
  * Get display label for run
  */
 export function getRunLabel(run: Run, lang: Language = 'de'): string {
-  const labels: Record<Language, Record<Run, string>> = {
-    en: { 1: 'R1', 2: 'R2' },
-    de: { 1: 'L1', 2: 'L2' },
-  };
-  return labels[lang][run];
+  const prefix = lang === 'de' ? 'L' : 'R';
+  return `${prefix}${run}`;
 }
 
 /**
  * Get color for run
  */
 export function getRunColor(run: Run): string {
-  const colors: Record<Run, string> = {
-    1: 'var(--primary)',
-    2: 'var(--warning)',
-  };
-  return colors[run] || 'var(--text-secondary)';
+  if (run === 1) return 'var(--primary)';
+  if (run === 2) return 'var(--warning)';
+  return 'var(--text-secondary)';
 }
 
 /**

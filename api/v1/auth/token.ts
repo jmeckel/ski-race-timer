@@ -13,6 +13,7 @@ import {
   setRateLimitHeaders,
   getClientIP
 } from '../../lib/response.js';
+import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
 
 // Rate limiting configuration (per IP)
 // Stricter limit to prevent brute-force on 4-digit PINs
@@ -53,7 +54,7 @@ async function checkRateLimit(client: Redis, ip: string): Promise<RateLimitResul
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Rate limit check error:', message);
+    apiLogger.error('Rate limit check error', { error: message });
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return {
       allowed: false,
@@ -79,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -87,6 +88,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
+
+  const reqId = getRequestId(req.headers);
+  const log = apiLogger.withRequestId(reqId);
 
   try {
     // Apply rate limiting before PIN processing
@@ -219,7 +223,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Token API error:', message);
+    log.error('Token API error', { error: message });
     return sendError(res, 'Internal server error', 500);
   }
 }

@@ -79,7 +79,8 @@ export async function checkRateLimit(client: Redis, ip: string, method: string, 
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Rate limit check error:', message);
+    // Use structured format inline (avoid importing apiLogger into shared validation)
+    console.error(JSON.stringify({ level: 'error', ts: new Date().toISOString(), msg: 'Rate limit check error', error: message }));
     // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
     return { allowed: false, remaining: 0, reset: windowStart + config.window, limit, error: 'Rate limiting unavailable' };
   }

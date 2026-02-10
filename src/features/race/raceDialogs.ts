@@ -9,9 +9,13 @@ import { feedbackSuccess, feedbackWarning, syncService } from '../../services';
 import { store } from '../../store';
 import type { Language } from '../../types';
 import { formatFileSize } from '../../utils/format';
+import { ListenerManager } from '../../utils/listenerManager';
 import { logger } from '../../utils/logger';
 import { closeModal, openModal } from '../modals';
 import { verifyPinForRaceJoin } from './pinManagement';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 /**
  * Show race change dialog
@@ -191,13 +195,13 @@ function setupPhotoSyncModal(): void {
   const confirmBtn = document.getElementById('photo-sync-confirm-btn');
 
   if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      if (modal) modal.classList.remove('show');
+    listeners.add(cancelBtn, 'click', () => {
+      closeModal(modal);
     });
   }
 
   if (confirmBtn) {
-    confirmBtn.addEventListener('click', () => {
+    listeners.add(confirmBtn, 'click', () => {
       // Enable photo sync
       store.updateSettings({ syncPhotos: true });
 
@@ -208,7 +212,7 @@ function setupPhotoSyncModal(): void {
       if (syncPhotosToggle) syncPhotosToggle.checked = true;
 
       // Close modal
-      if (modal) modal.classList.remove('show');
+      closeModal(modal);
 
       // Force a sync to start transferring photos
       const state = store.getState();
@@ -222,9 +226,9 @@ function setupPhotoSyncModal(): void {
 
   // Close on overlay click
   if (modal) {
-    modal.addEventListener('click', (e) => {
+    listeners.add(modal, 'click', (e) => {
       if (e.target === modal) {
-        modal.classList.remove('show');
+        closeModal(modal);
       }
     });
   }
@@ -237,7 +241,7 @@ export function initRaceDialogs(): void {
   // Race deleted modal OK button
   const raceDeletedOkBtn = document.getElementById('race-deleted-ok-btn');
   if (raceDeletedOkBtn) {
-    raceDeletedOkBtn.addEventListener('click', () => {
+    listeners.add(raceDeletedOkBtn, 'click', () => {
       const modal = document.getElementById('race-deleted-modal');
       closeModal(modal);
     });

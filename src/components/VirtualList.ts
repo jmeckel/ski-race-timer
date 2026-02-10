@@ -2,7 +2,6 @@ import { t } from '../i18n/translations';
 import { store } from '../store';
 import type { Entry, FaultEntry, Run } from '../types';
 import {
-  escapeAttr,
   escapeHtml,
   formatBib,
   formatTime,
@@ -11,6 +10,17 @@ import {
   getPointLabel,
   getRunColor,
   getRunLabel,
+  // Template helpers
+  deleteButton,
+  deletionPendingBadge,
+  duplicateBadge,
+  editButton,
+  faultBadge,
+  iconChevron,
+  photoButton,
+  pointBadge,
+  runBadge,
+  statusBadge,
 } from '../utils';
 import { logger } from '../utils/logger';
 
@@ -23,6 +33,7 @@ interface DisplayGroup {
   faults: FaultEntry[]; // Fault entries
   isMultiItem: boolean; // Has more than 1 item total
   latestTimestamp: string;
+  crossDeviceDuplicateCount: number; // Number of entries with same bib+point+run from different devices
 }
 
 // Virtual list configuration
@@ -238,6 +249,7 @@ export class VirtualList {
           faults: [],
           isMultiItem: false,
           latestTimestamp: entry.timestamp,
+          crossDeviceDuplicateCount: 0,
         });
       }
 
@@ -287,6 +299,7 @@ export class VirtualList {
           faults: [],
           isMultiItem: false,
           latestTimestamp: fault.timestamp,
+          crossDeviceDuplicateCount: 0,
         });
       }
 
@@ -297,10 +310,27 @@ export class VirtualList {
       }
     }
 
-    // Calculate isMultiItem for each group
+    // Calculate isMultiItem and cross-device duplicates for each group
     for (const group of groupMap.values()) {
       const totalItems = group.entries.length + group.faults.length;
       group.isMultiItem = totalItems > 1;
+
+      // Detect cross-device duplicates: same bib+point+run from different deviceIds
+      const pointDeviceMap = new Map<string, Set<string>>();
+      for (const entry of group.entries) {
+        const pointKey = entry.point;
+        if (!pointDeviceMap.has(pointKey)) {
+          pointDeviceMap.set(pointKey, new Set());
+        }
+        pointDeviceMap.get(pointKey)!.add(entry.deviceId);
+      }
+      let dupCount = 0;
+      for (const devices of pointDeviceMap.values()) {
+        if (devices.size > 1) {
+          dupCount++;
+        }
+      }
+      group.crossDeviceDuplicateCount = dupCount;
     }
 
     // Sort groups by bib number descending
@@ -419,7 +449,6 @@ export class VirtualList {
       emptyState.remove();
     }
 
-    const _state = store.getState();
     const visibleIds = new Set<string>();
     const viewportTop = this.scrollTop;
     const viewportBottom = this.scrollTop + this.containerHeight;
@@ -478,7 +507,7 @@ export class VirtualList {
 
     if (!item) {
       if (group.entries.length > 0) {
-        item = this.createEntryItem(group.entries[0], group.faults, itemId);
+        item = this.createEntryItem(group.entries[0], group.faults, itemId, group.crossDeviceDuplicateCount);
       } else if (group.faults.length > 0) {
         item = this.createFaultOnlyItem(group, itemId);
       } else {
@@ -628,32 +657,24 @@ export class VirtualList {
     }
     const summaryText = summaryParts.join(', ');
 
-    // Chevron icon
-    const chevronSvg = `
-      <svg class="group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="flex-shrink: 0; transition: transform 0.2s; ${isExpanded ? 'transform: rotate(90deg);' : ''}">
-        <path d="M9 18l6-6-6-6"/>
-      </svg>
-    `;
-
     header.innerHTML = `
-      ${chevronSvg}
+      ${iconChevron(16, isExpanded)}
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
       <div style="min-width: 48px;"></div>
-      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      ${runBadge(runLabel, runColor)}
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
           ${escapeHtml(summaryText)}
         </div>
       </div>
+      ${group.crossDeviceDuplicateCount > 0 ? duplicateBadge(lang) : ''}
       ${
         hasFaults
-          ? `
-        <span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-          ${faultCount}× ${t('flt', lang)}
-        </span>
-      `
+          ? `<span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+          ${faultCount}\u00D7 ${t('flt', lang)}
+        </span>`
           : ''
       }
     `;
@@ -714,6 +735,7 @@ export class VirtualList {
     entry: Entry,
     faults: FaultEntry[],
     itemId: string,
+    crossDeviceDuplicateCount = 0,
   ): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-item';
@@ -746,13 +768,12 @@ export class VirtualList {
     const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
 
-    const hasFaults = faults.length > 0;
-    const faultBadgeHtml = hasFaults
-      ? `
-      <span class="result-fault-badge" title="${escapeAttr(faults.map((f) => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-        ${faults.length > 1 ? `${faults.length}× ${t('flt', lang)}` : `T${faults[0]?.gateNumber || '?'}`}
-      </span>
-    `
+    const faultBadgeHtml = faults.length > 0
+      ? faultBadge({ faults, lang })
+      : '';
+
+    const duplicateBadgeHtml = crossDeviceDuplicateCount > 0
+      ? duplicateBadge(lang)
       : '';
 
     item.innerHTML = `
@@ -760,10 +781,8 @@ export class VirtualList {
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 48px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
-        ${escapeHtml(pointLabel)}
-      </div>
-      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      ${pointBadge(pointLabel, pointColor)}
+      ${runBadge(runLabel, runColor)}
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}
@@ -778,39 +797,12 @@ export class VirtualList {
             : ''
         }
       </div>
+      ${duplicateBadgeHtml}
       ${faultBadgeHtml}
-      ${
-        entry.status !== 'ok'
-          ? `
-        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
-          ${escapeHtml(entry.status.toUpperCase())}
-        </span>
-      `
-          : ''
-      }
-      ${
-        entry.photo
-          ? `
-        <button class="result-photo-btn" aria-label="${t('viewPhotoLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
-            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-          </svg>
-        </button>
-      `
-          : ''
-      }
-      <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      </button>
-      <button class="result-delete" aria-label="${t('deleteEntryLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
+      ${entry.status !== 'ok' ? statusBadge(entry.status.toUpperCase()) : ''}
+      ${entry.photo ? photoButton(t('viewPhotoLabel', lang)) : ''}
+      ${editButton({ ariaLabel: t('editEntryLabel', lang) })}
+      ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang) })}
     `;
 
     // Track all event listeners for cleanup
@@ -949,27 +941,16 @@ export class VirtualList {
       )
       .join(', ');
 
-    const faultBadgeHtml = `
-      <span class="result-fault-badge" title="${escapeAttr(faultDetails)}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-        ${faults.length > 1 ? `${faults.length}× ${t('flt', lang)}` : `T${faults[0]?.gateNumber || '?'}`}
-      </span>
-    `;
+    const faultBadgeHtml = faultBadge({ faults, lang });
 
     const statusLabel = state.usePenaltyMode ? t('flt', lang) : t('dsq', lang);
     const statusColor = state.usePenaltyMode
       ? 'var(--warning)'
       : 'var(--error)';
+    const statusTextColor = statusColor === 'var(--warning)' ? '#000' : 'white';
 
-    const deletionPendingBadge = hasMarkedForDeletion
-      ? `
-      <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M12 9v4M12 17h.01"/>
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
-        DEL
-      </span>
-    `
+    const deletionPendingHtml = hasMarkedForDeletion
+      ? deletionPendingBadge()
       : '';
 
     item.innerHTML = `
@@ -977,10 +958,8 @@ export class VirtualList {
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 48px; text-align: center; background: var(--warning)20; color: var(--warning);">
-        ${t('gate', lang)}
-      </div>
-      <span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>
+      ${pointBadge(t('gate', lang), 'var(--warning)')}
+      ${runBadge(runLabel, runColor)}
       <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
@@ -995,28 +974,11 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${deletionPendingBadge}
+      ${deletionPendingHtml}
       ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
-      ${
-        !hasMarkedForDeletion
-          ? `
-        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
-          ${escapeHtml(statusLabel)}
-        </span>
-      `
-          : ''
-      }
-      <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      </button>
-      <button class="result-delete fault-delete-btn" aria-label="${t('deleteFaultLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
+      ${!hasMarkedForDeletion ? statusBadge(statusLabel, statusColor, statusTextColor) : ''}
+      ${editButton({ ariaLabel: t('editFaultLabel', lang) })}
+      ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), className: 'result-delete fault-delete-btn' })}
     `;
 
     // Track all event listeners for cleanup
@@ -1167,9 +1129,7 @@ export class VirtualList {
     item.innerHTML = `
       <div style="width: 16px; flex-shrink: 0;"></div>
       <div style="min-width: 44px;"></div>
-      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 48px; text-align: center; background: ${pointColor}20; color: ${pointColor};">
-        ${escapeHtml(pointLabel)}
-      </div>
+      ${pointBadge(pointLabel, pointColor, '48px', '0.7rem')}
       <div style="min-width: 36px;"></div>
       <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
@@ -1185,26 +1145,9 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${
-        entry.status !== 'ok'
-          ? `
-        <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
-          ${escapeHtml(entry.status.toUpperCase())}
-        </span>
-      `
-          : ''
-      }
-      <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      </button>
-      <button class="result-delete" aria-label="${t('deleteEntryLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
+      ${entry.status !== 'ok' ? statusBadge(entry.status.toUpperCase(), 'var(--error)', 'white', '0.65rem') : ''}
+      ${editButton({ ariaLabel: t('editEntryLabel', lang), size: 16 })}
+      ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang), size: 16 })}
     `;
 
     // Track all event listeners for cleanup
@@ -1318,9 +1261,7 @@ export class VirtualList {
     item.innerHTML = `
       <div style="width: 16px; flex-shrink: 0;"></div>
       <div style="min-width: 44px;"></div>
-      <div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; min-width: 48px; text-align: center; background: var(--warning)20; color: var(--warning);">
-        T${fault.gateNumber}
-      </div>
+      ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)', '48px', '0.7rem')}
       <div style="min-width: 36px; display: flex; align-items: center; justify-content: center;">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex};" title="${gateColor}"></div>
       </div>
@@ -1338,26 +1279,9 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${
-        hasMarkedForDeletion
-          ? `
-        <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
-          DEL
-        </span>
-      `
-          : ''
-      }
-      <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      </button>
-      <button class="result-delete fault-delete-btn" aria-label="${t('deleteFaultLabel', lang)}" style="background: none; border: none; color: var(--error); padding: 6px; cursor: pointer; opacity: 0.7;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
+      ${hasMarkedForDeletion ? deletionPendingBadge('0.65rem') : ''}
+      ${editButton({ ariaLabel: t('editFaultLabel', lang), size: 16 })}
+      ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), size: 16, className: 'result-delete fault-delete-btn' })}
     `;
 
     // Track all event listeners for cleanup

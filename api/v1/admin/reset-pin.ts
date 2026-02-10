@@ -12,6 +12,7 @@ import {
   setCorsHeaders,
   setSecurityHeaders
 } from '../../lib/response.js';
+import { apiLogger } from '../../lib/apiLogger.js';
 
 // Rate limiting for PIN reset (critical security endpoint)
 const RATE_LIMIT_WINDOW = 60; // 1 minute
@@ -44,7 +45,7 @@ async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimi
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Rate limit check failed:', message);
+    apiLogger.error('Rate limit check failed', { error: message });
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
   }
@@ -77,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (!serverPin) {
     // Don't expose internal configuration details
-    console.error('SERVER_API_PIN not configured');
+    apiLogger.error('SERVER_API_PIN not configured');
     return sendError(res, 'Service configuration error', 500);
   }
 
@@ -90,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     client = getRedis();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Redis initialization error:', message);
+    apiLogger.error('Redis initialization error', { error: message });
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -107,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const rateLimit = await checkRateLimit(client, clientIP);
   if (!rateLimit.allowed) {
-    console.log(`[RATE_LIMIT] PIN reset rate limit exceeded: ip=${clientIP}`);
+    apiLogger.warn('PIN reset rate limit exceeded', { ip: clientIP });
     if (rateLimit.error) {
       return sendServiceUnavailable(res, 'Rate limiting unavailable');
     }
@@ -136,7 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     await client.del(CLIENT_PIN_KEY);
     await client.del(CHIEF_JUDGE_PIN_KEY);
 
-    console.log('Client PIN and Chief Judge PIN have been reset');
+    apiLogger.info('Client PIN and Chief Judge PIN have been reset');
 
     return sendSuccess(res, {
       success: true,
@@ -144,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Reset PIN error:', message);
+    apiLogger.error('Reset PIN error', { error: message });
     return sendError(res, 'Internal server error', 500);
   }
 }

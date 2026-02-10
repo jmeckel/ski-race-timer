@@ -10,8 +10,12 @@ import { syncFault } from '../../services/sync';
 import { store } from '../../store';
 import type { FaultEntry, FaultType, Run } from '../../types';
 import { escapeHtml, getFaultTypeLabel, makeNumericInput } from '../../utils';
+import { ListenerManager } from '../../utils/listenerManager';
 import { setModalContext } from '../../utils/modalContext';
 import { closeModal, openModal } from '../modals';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Module state
 let editingFaultId: string | null = null;
@@ -87,13 +91,13 @@ export function initFaultEditModal(): void {
   // Save fault edit button
   const saveFaultEditBtn = document.getElementById('save-fault-edit-btn');
   if (saveFaultEditBtn) {
-    saveFaultEditBtn.addEventListener('click', handleSaveFaultEdit);
+    listeners.add(saveFaultEditBtn, 'click', handleSaveFaultEdit);
   }
 
   // Restore version button
   const restoreVersionBtn = document.getElementById('restore-version-btn');
   if (restoreVersionBtn) {
-    restoreVersionBtn.addEventListener('click', handleRestoreFaultVersion);
+    listeners.add(restoreVersionBtn, 'click', handleRestoreFaultVersion);
   }
 
   // Fault edit bib input - numeric only validation
@@ -109,7 +113,7 @@ export function initFaultEditModal(): void {
     'fault-edit-run-selector',
   );
   if (faultEditRunSelector) {
-    faultEditRunSelector.addEventListener('click', (e) => {
+    listeners.add(faultEditRunSelector, 'click', (e) => {
       const target = e.target as HTMLElement;
       const btn = target.closest('.edit-run-btn');
       if (!btn) return;
@@ -127,7 +131,7 @@ export function initFaultEditModal(): void {
   ) as HTMLTextAreaElement;
   const notesCharCount = document.getElementById('fault-edit-notes-char-count');
   if (notesTextarea && notesCharCount) {
-    notesTextarea.addEventListener('input', () => {
+    listeners.add(notesTextarea, 'input', () => {
       const count = notesTextarea.value.length;
       notesCharCount.textContent = `${count}/500`;
       notesCharCount.classList.toggle('near-limit', count > 450);
@@ -137,7 +141,7 @@ export function initFaultEditModal(): void {
   // Notes mic button (dispatches event for voiceNoteUI to handle)
   const micBtn = document.getElementById('fault-edit-mic-btn');
   if (micBtn) {
-    micBtn.addEventListener('click', () => {
+    listeners.add(micBtn, 'click', () => {
       // Dispatch custom event for voice note recording in edit modal
       window.dispatchEvent(
         new CustomEvent('fault-edit-mic-click', {
@@ -152,7 +156,11 @@ export function initFaultEditModal(): void {
     'confirm-mark-deletion-btn',
   );
   if (confirmMarkDeletionBtn) {
-    confirmMarkDeletionBtn.addEventListener('click', handleConfirmMarkDeletion);
+    listeners.add(
+      confirmMarkDeletionBtn,
+      'click',
+      handleConfirmMarkDeletion,
+    );
   }
 }
 

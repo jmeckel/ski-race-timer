@@ -13,21 +13,22 @@ import {
   escapeAttr,
   escapeHtml,
   getFaultTypeLabel,
+  iconTrash,
   makeNumericInput,
 } from '../../utils';
 import { formatTime as formatTimeDisplay } from '../../utils/format';
+import { ListenerManager } from '../../utils/listenerManager';
 import { setModalContext } from '../../utils/modalContext';
 import { openModal } from '../modals';
 import { createAndSyncFault } from './faultOperations';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Module state
 let inlineSelectedBib = '';
 let inlineSelectedGate = 0;
 let inlineSelectedFaultType: FaultType | null = null;
-
-// Track event listeners for cleanup (M7 fixes)
-let inlineFaultTypeClickListener: EventListener | null = null;
-let inlineFaultTypeKeydownListener: EventListener | null = null;
 
 /**
  * Update active bibs list in Gate Judge view
@@ -170,11 +171,7 @@ export function updateInlineFaultsList(): void {
         </div>
       </div>
       <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18"/>
-          <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
-          <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
+        ${iconTrash(18)}
       </button>
     `;
 
@@ -454,13 +451,16 @@ function autoSelectMostRecentBib(): void {
  * Initialize inline fault entry handlers
  */
 export function initInlineFaultEntry(): void {
+  // Clean up old listeners before adding new ones (re-init safe)
+  listeners.removeAll();
+
   // Bib manual input
   const bibInput = document.getElementById(
     'inline-bib-input',
   ) as HTMLInputElement;
   if (bibInput) {
     makeNumericInput(bibInput, 3);
-    bibInput.addEventListener('input', () => {
+    listeners.add(bibInput, 'input', () => {
       if (bibInput.value) {
         inlineSelectedBib = bibInput.value.padStart(3, '0');
         updateInlineSaveButtonState();
@@ -471,7 +471,7 @@ export function initInlineFaultEntry(): void {
   // Fault detail panel close button
   const closeBtn = document.getElementById('fault-detail-close');
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
+    listeners.add(closeBtn, 'click', () => {
       inlineSelectedGate = 0;
       inlineSelectedFaultType = null;
       closeFaultDetailPanel();
@@ -493,24 +493,9 @@ export function initInlineFaultEntry(): void {
     });
   }
 
-  // Clean up old listeners before adding new ones (M7 fix)
+  // Fault type buttons
   const faultTypeContainer = document.getElementById('inline-fault-types');
   if (faultTypeContainer) {
-    if (inlineFaultTypeClickListener) {
-      faultTypeContainer.removeEventListener(
-        'click',
-        inlineFaultTypeClickListener,
-      );
-      inlineFaultTypeClickListener = null;
-    }
-    if (inlineFaultTypeKeydownListener) {
-      faultTypeContainer.removeEventListener(
-        'keydown',
-        inlineFaultTypeKeydownListener,
-      );
-      inlineFaultTypeKeydownListener = null;
-    }
-
     // Helper to select a fault type button
     const selectFaultTypeBtn = (btn: Element) => {
       feedbackTap();
@@ -528,16 +513,15 @@ export function initInlineFaultEntry(): void {
       updateInlineSaveButtonState();
     };
 
-    inlineFaultTypeClickListener = (e: Event) => {
+    listeners.add(faultTypeContainer, 'click', (e: Event) => {
       const target = e.target as HTMLElement;
       const btn = target.closest('.inline-fault-type-btn');
       if (!btn) return;
       selectFaultTypeBtn(btn);
-    };
-    faultTypeContainer.addEventListener('click', inlineFaultTypeClickListener);
+    });
 
     // Keyboard support: Space/Enter to select, M/G/T/B shortcuts
-    inlineFaultTypeKeydownListener = (e: Event) => {
+    listeners.add(faultTypeContainer, 'keydown', (e: Event) => {
       const event = e as KeyboardEvent;
       const target = event.target as HTMLElement;
       const btn = target.closest('.inline-fault-type-btn');
@@ -577,16 +561,14 @@ export function initInlineFaultEntry(): void {
           (faultBtn as HTMLElement).focus();
         }
       }
-    };
-    faultTypeContainer.addEventListener(
-      'keydown',
-      inlineFaultTypeKeydownListener,
-    );
+    });
   }
 
   // Save fault button
   const saveBtn = document.getElementById('inline-save-fault-btn');
-  saveBtn?.addEventListener('click', saveInlineFault);
+  if (saveBtn) {
+    listeners.add(saveBtn, 'click', saveInlineFault);
+  }
 }
 
 /**

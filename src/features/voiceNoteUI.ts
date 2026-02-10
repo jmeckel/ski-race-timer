@@ -10,8 +10,12 @@ import { syncFault } from '../services/sync';
 import { voiceModeService } from '../services/voice';
 import { voiceNoteService } from '../services/voiceNote';
 import { store } from '../store';
+import { ListenerManager } from '../utils/listenerManager';
 import { getModalContext } from '../utils/modalContext';
 import { closeModal, isAnyModalOpen, openModal } from './modals';
+
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
 
 // Module state
 let currentFaultId: string | null = null;
@@ -21,7 +25,6 @@ let unsubscribeTranscript: (() => void) | null = null;
 
 // References for cleanup
 let faultEditObserver: MutationObserver | null = null;
-let overlayKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 // Max note length
 const MAX_NOTE_LENGTH = 500;
@@ -276,36 +279,46 @@ export function initVoiceNoteModal(): void {
 
   // Mic button
   const micBtn = document.getElementById('voice-note-mic-btn');
-  micBtn?.addEventListener('click', toggleVoiceRecording);
+  if (micBtn) {
+    listeners.add(micBtn, 'click', toggleVoiceRecording);
+  }
 
   // Save button
   const saveBtn = document.getElementById('voice-note-save-btn');
-  saveBtn?.addEventListener('click', saveVoiceNote);
+  if (saveBtn) {
+    listeners.add(saveBtn, 'click', saveVoiceNote);
+  }
 
   // Cancel and close buttons both dismiss the modal
   const cancelBtn = document.getElementById('voice-note-cancel-btn');
-  cancelBtn?.addEventListener('click', closeVoiceNoteModal);
+  if (cancelBtn) {
+    listeners.add(cancelBtn, 'click', closeVoiceNoteModal);
+  }
 
   const closeBtn = document.getElementById('voice-note-close-btn');
-  closeBtn?.addEventListener('click', closeVoiceNoteModal);
+  if (closeBtn) {
+    listeners.add(closeBtn, 'click', closeVoiceNoteModal);
+  }
 
   // Textarea input handler for char count
   const textarea = document.getElementById(
     'voice-note-textarea',
   ) as HTMLTextAreaElement;
-  textarea?.addEventListener('input', updateCharCount);
+  if (textarea) {
+    listeners.add(textarea, 'input', updateCharCount);
+  }
 
   if (modal) {
     // Close on Escape key
-    modal.addEventListener('keydown', (e) => {
+    listeners.add(modal, 'keydown', ((e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeVoiceNoteModal();
       }
-    });
+    }) as EventListener);
 
     // Close on click outside modal content (on backdrop)
-    modal.addEventListener('click', (e) => {
+    listeners.add(modal, 'click', (e) => {
       if (e.target === modal) {
         closeVoiceNoteModal();
       }
@@ -332,7 +345,7 @@ export function initFaultConfirmationOverlay(): void {
 
   const addNoteBtn = document.getElementById('fault-confirmation-add-note-btn');
   if (addNoteBtn) {
-    addNoteBtn.addEventListener('click', () => {
+    listeners.add(addNoteBtn, 'click', () => {
       feedbackTap();
 
       // Get the fault ID from the overlay (WeakMap context or data attribute fallback)
@@ -353,7 +366,7 @@ export function initFaultConfirmationOverlay(): void {
 
   const doneBtn = document.getElementById('fault-confirmation-done-btn');
   if (doneBtn) {
-    doneBtn.addEventListener('click', () => {
+    listeners.add(doneBtn, 'click', () => {
       feedbackTap();
       dismissFaultConfirmation();
     });
@@ -361,7 +374,7 @@ export function initFaultConfirmationOverlay(): void {
 
   // Dismiss on click outside content (on backdrop)
   if (overlay && content) {
-    overlay.addEventListener('click', (e) => {
+    listeners.add(overlay, 'click', (e) => {
       // Only dismiss if clicking on the backdrop, not the content
       if (e.target === overlay) {
         feedbackTap();
@@ -373,7 +386,7 @@ export function initFaultConfirmationOverlay(): void {
   // Dismiss on Escape key
   if (overlay) {
     // Use document-level listener to catch ESC even without focus
-    overlayKeydownHandler = (e: KeyboardEvent) => {
+    listeners.add(document, 'keydown', ((e: KeyboardEvent) => {
       // Only dismiss if overlay is visible AND no other modal is open
       // (modals take precedence over the confirmation overlay)
       if (
@@ -384,8 +397,7 @@ export function initFaultConfirmationOverlay(): void {
         e.preventDefault();
         dismissFaultConfirmation();
       }
-    };
-    document.addEventListener('keydown', overlayKeydownHandler);
+    }) as EventListener);
   }
 }
 
@@ -409,7 +421,7 @@ function initFaultEditMicHandler(): void {
     }
   };
 
-  window.addEventListener('fault-edit-mic-click', () => {
+  listeners.add(window, 'fault-edit-mic-click', () => {
     const lang = store.getState().currentLang;
     const micBtn = document.getElementById('fault-edit-mic-btn');
     const textarea = document.getElementById(
@@ -514,10 +526,7 @@ export function cleanupVoiceNoteUI(): void {
     faultEditObserver.disconnect();
     faultEditObserver = null;
   }
-  if (overlayKeydownHandler) {
-    document.removeEventListener('keydown', overlayKeydownHandler);
-    overlayKeydownHandler = null;
-  }
+  listeners.removeAll();
   cleanupSubscriptions();
 }
 

@@ -23,6 +23,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       de: 'Verbesserungen unter der Haube. Stärkere serverseitige Eingabevalidierung und verbesserte Codequalität.',
     },
   },
+  '5.20': {
+    name: 'Baklava Falcon',
+    description: {
+      en: 'Offline banner, undo for deletions, reorganized settings, and standardized event cleanup across the app.',
+      de: 'Offline-Banner, Rückgängig-Funktion für Löschungen, neu organisierte Einstellungen und standardisierte Ereignisbereinigung.',
+    },
+  },
 };
 
 export function getVersionInfo(

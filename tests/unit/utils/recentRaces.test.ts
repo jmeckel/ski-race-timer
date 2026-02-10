@@ -71,14 +71,14 @@ describe('Recent Races Utility', () => {
       expect(races[1].raceId).toBe('OLD-RACE');
     });
 
-    it('should limit to 10 races', () => {
+    it('should limit to 50 races', () => {
       const now = Date.now();
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 55; i++) {
         addRecentRace(`RACE-${i}`, now - i * 1000, i);
       }
 
       const races = getRecentRaces();
-      expect(races.length).toBe(10);
+      expect(races.length).toBe(50);
     });
 
     it('should set createdAt for new races', () => {

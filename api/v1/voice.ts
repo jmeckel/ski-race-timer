@@ -26,6 +26,7 @@ import {
   sanitizeString
 } from '../lib/response.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
+import { apiLogger } from '../lib/apiLogger.js';
 
 // Configuration
 const MAX_TOKENS = 256;
@@ -96,7 +97,7 @@ async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
   const client = await getRedis();
   if (!client || hasRedisError()) {
     // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
-    console.error('Rate limiting unavailable - denying voice request');
+    apiLogger.error('Rate limiting unavailable - denying voice request');
     return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
   }
 
@@ -117,7 +118,7 @@ async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Rate limit check failed:', message);
+    apiLogger.error('Rate limit check failed', { error: message });
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
   }
@@ -277,7 +278,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, providerName:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`${providerName} API error:`, response.status, errorText);
+      apiLogger.error(`${providerName} API error`, { status: response.status, body: errorText });
       throw new Error(`${providerName} API error: ${response.status}`);
     }
 
@@ -372,7 +373,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const rateLimit = await checkRateLimit(clientIP);
   if (!rateLimit.allowed) {
-    console.log(`[RATE_LIMIT] Voice API rate limit exceeded: ip=${clientIP}`);
+    apiLogger.warn('Voice API rate limit exceeded', { ip: clientIP });
     if (rateLimit.error) {
       return sendServiceUnavailable(res, 'Rate limiting unavailable');
     }
@@ -397,7 +398,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
 
   if (!PROVIDERS[provider]) {
-    console.error('Invalid VOICE_LLM_PROVIDER:', provider);
+    apiLogger.error('Invalid VOICE_LLM_PROVIDER', { provider });
     return sendServiceUnavailable(res, 'Invalid voice provider configuration');
   }
 
@@ -405,7 +406,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const apiKey = process.env[PROVIDERS[provider].envKey];
   if (!apiKey) {
     // Log internally but don't expose which API key is missing
-    console.error('Voice API key not configured');
+    apiLogger.error('Voice API key not configured', { provider });
     return sendServiceUnavailable(res, 'Voice service temporarily unavailable');
   }
 
@@ -438,7 +439,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Voice processing error:', message);
+    apiLogger.error('Voice processing error', { error: message, provider });
 
     // Return unknown intent on error (graceful degradation)
     return sendSuccess(res, {

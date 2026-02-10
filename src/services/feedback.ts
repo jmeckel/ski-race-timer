@@ -140,6 +140,20 @@ export function feedbackTap(): void {
 }
 
 /**
+ * Light dial tap feedback (number tap on radial dial)
+ */
+export function feedbackDialTap(): void {
+  vibrate(10);
+}
+
+/**
+ * Medium dial detent feedback (spin detent on radial dial)
+ */
+export function feedbackDialDetent(): void {
+  vibrate(20);
+}
+
+/**
  * Medium tap feedback (selection)
  */
 export function feedbackSelect(): void {

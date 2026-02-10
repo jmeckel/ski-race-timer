@@ -19,13 +19,17 @@ import { store } from '../store';
 import type { Entry, Run, TimingPoint } from '../types';
 import {
   escapeHtml,
-  generateEntryId,
   getElement,
   getPointLabel,
   logWarning,
 } from '../utils';
 import { formatTime } from '../utils/format';
+import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
+import {
+  createTimestampEntry,
+  isDuplicateEntry,
+} from '../utils/timestampRecorder';
 
 // Battery-aware frame throttling (mirrors Clock.ts pattern)
 const FRAME_SKIP_NORMAL = 0;
@@ -38,6 +42,9 @@ const FRAME_SKIP_BY_LEVEL: Record<string, number> = {
   critical: FRAME_SKIP_CRITICAL,
 };
 
+// Module-level listener manager for lifecycle cleanup
+const listeners = new ListenerManager();
+
 // Module state
 let radialDial: RadialDial | null = null;
 let clockAnimationId: number | null = null;
@@ -45,10 +52,8 @@ let clockFrameSkip = FRAME_SKIP_NORMAL;
 let clockCurrentFrame = 0;
 let frozenTime: string | null = null;
 let isInitialized = false;
-let radialKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let storeUnsubscribe: (() => void) | null = null;
 let batteryUnsubscribe: (() => void) | null = null;
-let visibilityHandler: (() => void) | null = null;
 
 /**
  * Initialize the radial timer view
@@ -163,7 +168,7 @@ function initRadialClock(): void {
     });
 
   // Pause when page is hidden, resume when visible
-  visibilityHandler = () => {
+  listeners.add(document, 'visibilitychange', () => {
     if (document.hidden) {
       if (clockAnimationId !== null) {
         cancelAnimationFrame(clockAnimationId);
@@ -174,8 +179,7 @@ function initRadialClock(): void {
         clockAnimationId = requestAnimationFrame(tick);
       }
     }
-  };
-  document.addEventListener('visibilitychange', visibilityHandler);
+  });
 
   updateClock();
   clockAnimationId = requestAnimationFrame(tick);
@@ -237,7 +241,7 @@ function initRadialTimingPoints(): void {
   const container = getElement('radial-timing-point');
   if (!container) return;
 
-  container.addEventListener('click', (e) => {
+  listeners.add(container, 'click', (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.radial-point-btn');
     if (!btn) return;
@@ -273,7 +277,7 @@ function initRadialRunSelector(): void {
   const container = getElement('radial-run-selector');
   if (!container) return;
 
-  container.addEventListener('click', (e) => {
+  listeners.add(container, 'click', (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest('.radial-run-btn');
     if (!btn) return;
@@ -311,7 +315,7 @@ function initRadialTimeButton(): void {
   const btn = getElement('radial-time-btn');
   if (!btn) return;
 
-  btn.addEventListener('click', recordRadialTimestamp);
+  listeners.add(btn, 'click', recordRadialTimestamp);
 }
 
 /**
@@ -321,7 +325,7 @@ function initRadialClearButton(): void {
   const btn = getElement('radial-clear-btn');
   if (!btn) return;
 
-  btn.addEventListener('click', () => {
+  listeners.add(btn, 'click', () => {
     radialDial?.clear();
     store.setBibInput('');
     updateRadialBibDisplay('');
@@ -337,13 +341,7 @@ function initRadialClearButton(): void {
  * Initialize keyboard shortcuts
  */
 function initRadialKeyboard(): void {
-  // Remove existing handler if re-initializing
-  if (radialKeydownHandler) {
-    document.removeEventListener('keydown', radialKeydownHandler);
-    radialKeydownHandler = null;
-  }
-
-  radialKeydownHandler = (e: KeyboardEvent) => {
+  listeners.add(document, 'keydown', ((e: KeyboardEvent) => {
     const activeTag = document.activeElement?.tagName;
     const state = store.getState();
 
@@ -414,7 +412,7 @@ function initRadialKeyboard(): void {
     if (e.altKey && (e.key === '1' || e.key === '2')) {
       e.preventDefault();
       const run = e.key === '1' ? 1 : 2;
-      store.setSelectedRun(run as 1 | 2);
+      store.setSelectedRun(run);
       feedbackTap();
       updateRadialRunSelection();
       return;
@@ -426,9 +424,7 @@ function initRadialKeyboard(): void {
       recordRadialTimestamp();
       return;
     }
-  };
-
-  document.addEventListener('keydown', radialKeydownHandler);
+  }) as EventListener);
 }
 
 /**
@@ -438,25 +434,19 @@ async function recordRadialTimestamp(): Promise<void> {
   const state = store.getState();
   if (state.isRecording) return;
 
-  // Capture timestamp immediately
-  const preciseTimestamp = new Date().toISOString();
-  const gpsCoords = gpsService.getCoordinates();
+  // Create entry immediately using shared utility (captures GPS-corrected timestamp)
+  const { entry } = createTimestampEntry({
+    bib: state.bibInput,
+    point: state.selectedPoint,
+    run: state.selectedRun,
+    deviceId: state.deviceId,
+    deviceName: state.deviceName,
+    gpsService,
+  });
 
   store.setRecording(true);
 
   try {
-    const entry: Entry = {
-      id: generateEntryId(state.deviceId),
-      bib: state.bibInput ? state.bibInput.padStart(3, '0') : '',
-      point: state.selectedPoint,
-      run: state.selectedRun,
-      timestamp: preciseTimestamp,
-      status: 'ok',
-      deviceId: state.deviceId,
-      deviceName: state.deviceName,
-      gpsCoords,
-    };
-
     // Photo capture (async, non-blocking)
     if (state.settings.photoCapture) {
       captureTimingPhoto()
@@ -478,15 +468,7 @@ async function recordRadialTimestamp(): Promise<void> {
     }
 
     // Check for duplicate
-    const isDuplicate = !!(
-      entry.bib &&
-      state.entries.some(
-        (e) =>
-          e.bib === entry.bib &&
-          e.point === entry.point &&
-          (e.run ?? 1) === entry.run,
-      )
-    );
+    const isDuplicate = isDuplicateEntry(entry, state.entries);
 
     // Add entry
     store.addEntry(entry);
@@ -699,15 +681,7 @@ export function destroyRadialTimerView(): void {
     batteryUnsubscribe = null;
   }
 
-  if (visibilityHandler) {
-    document.removeEventListener('visibilitychange', visibilityHandler);
-    visibilityHandler = null;
-  }
-
-  if (radialKeydownHandler) {
-    document.removeEventListener('keydown', radialKeydownHandler);
-    radialKeydownHandler = null;
-  }
+  listeners.removeAll();
 
   if (radialDial) {
     radialDial.destroy();

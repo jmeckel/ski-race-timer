@@ -1,5 +1,6 @@
 import type Redis from 'ioredis';
 import { safeJsonParse } from './response.js';
+import { apiLogger } from './apiLogger.js';
 
 // Shared constants
 export const CACHE_EXPIRY_SECONDS: number = 86400; // 24 hours
@@ -74,7 +75,7 @@ export async function atomicUpdate<TData, TResult>(
       return outcome.result;
     }
 
-    console.log(`${operationName}: retry ${retry + 1}/${MAX_ATOMIC_RETRIES} due to concurrent modification`);
+    apiLogger.warn(`${operationName}: retry due to concurrent modification`, { retry: retry + 1, maxRetries: MAX_ATOMIC_RETRIES });
   }
 
   return {

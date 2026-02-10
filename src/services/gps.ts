@@ -29,6 +29,7 @@ class GpsService {
   private wasActiveBeforeHidden = false;
   private batteryUnsubscribe: (() => void) | null = null;
   private usingLowPowerMode = false;
+  private timeOffset: number | null = null; // GPS time - system time (ms)
 
   /**
    * Get GPS options based on current battery level
@@ -169,6 +170,7 @@ class GpsService {
     }
 
     this.lastPosition = null;
+    this.timeOffset = null;
     store.setGpsStatus('inactive');
   }
 
@@ -177,6 +179,19 @@ class GpsService {
    */
   private handlePosition(position: GeolocationPosition): void {
     this.lastPosition = position;
+
+    // Calculate offset between GPS time and system time
+    // offset = gpsTimestamp - Date.now() (at time of position receipt)
+    const newOffset = position.timestamp - Date.now();
+
+    // Warn if clock drift exceeds 500ms - significant for race timing
+    if (Math.abs(newOffset) > 500) {
+      logger.warn(
+        `[GPS] Clock offset ${newOffset}ms - system clock may be inaccurate`,
+      );
+    }
+
+    this.timeOffset = newOffset;
 
     const accuracy = position.coords.accuracy;
     store.setGpsStatus('active', accuracy);
@@ -229,6 +244,15 @@ class GpsService {
    */
   getTimestamp(): number | null {
     return this.lastPosition?.timestamp ?? null;
+  }
+
+  /**
+   * Get the offset between GPS time and system time (in milliseconds).
+   * Returns null if no GPS fix is available.
+   * Usage: `const preciseTime = Date.now() + offset` gives GPS-corrected time.
+   */
+  getTimeOffset(): number | null {
+    return this.timeOffset;
   }
 
   /**
