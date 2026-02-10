@@ -217,13 +217,13 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   margin: 0;
 }
 
-/* Dial Container - Constrained to parent width and available height */
+/* Dial Container - Constrained to parent width and available height.
+   Width drives the size; aspect-ratio: 1 derives height.
+   On short screens, the media query caps width to fit vertically. */
 .dial-container {
   position: relative;
-  width: 100%;
-  max-width: min(100vw, 430px);
+  width: min(100vw, 430px);
   aspect-ratio: 1;
-  flex-shrink: 1;
   container-type: inline-size;
 }
 
@@ -302,13 +302,13 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
 .dial-number {
   position: absolute;
-  width: 64px;
-  height: 64px;
+  width: min(64px, 15cqi);
+  height: min(64px, 15cqi);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "JetBrains Mono", monospace;
-  font-size: 30px;
+  font-size: min(30px, 7cqi);
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
@@ -760,14 +760,14 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     font-size: 32px;
   }
 
-  .dial-number {
-    font-size: 24px;
-  }
 }
 
-@media (max-height: 700px) {
-  .radial-center-area {
-    min-height: 250px;
+@media (max-height: 700px) and (orientation: portrait) {
+  /* Cap dial size so it doesn't overflow on short portrait screens.
+     Non-dial chrome: header(39) + topRow(117) + bottomRow(116) + tabBar(49) ≈ 321px
+     Use 330px deduction for breathing room */
+  .dial-container {
+    width: min(100vw, 430px, calc(100dvh - 330px), calc(100vh - 330px));
   }
 
   .radial-timing-point {
