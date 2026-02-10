@@ -1021,6 +1021,7 @@ body {
 /* Version info button */
 .version-info-btn {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -1036,6 +1037,21 @@ body {
 .version-info-btn:hover,
 .version-info-btn:active {
   color: var(--text-secondary);
+}
+
+.version-name {
+  color: var(--primary);
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.version-description {
+  width: 100%;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .settings-section-title {

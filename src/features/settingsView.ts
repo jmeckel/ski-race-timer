@@ -12,6 +12,7 @@ import { fetchWithTimeout, getElement } from '../utils';
 import { logger } from '../utils/logger';
 import { AUTH_TOKEN_KEY, hasAuthToken } from '../services/sync';
 import { getTodaysRecentRaces, addRecentRace, type RecentRace } from '../utils/recentRaces';
+import { getVersionInfo } from '../version';
 import { attachRecentRaceItemHandlers, renderRecentRaceItems } from '../utils/recentRacesUi';
 import { openModal } from './modals';
 import { updateGateJudgeTabVisibility } from './gateJudgeView';
@@ -609,6 +610,13 @@ export function updateTranslations(): void {
 
   // Update dynamically set text that depends on language
   updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
+
+  // Update version description for new language
+  const versionDescEl = document.getElementById('app-version-description');
+  if (versionDescEl) {
+    const vInfo = getVersionInfo(__APP_VERSION__);
+    versionDescEl.textContent = vInfo?.description ?? '';
+  }
 }
 
 /**

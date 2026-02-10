@@ -11,6 +11,7 @@ import { isValidRaceId, makeNumericInput } from './utils/validation';
 import { getElement } from './utils/domCache';
 import { t } from './i18n/translations';
 import { applyViewServices } from './utils/viewServices';
+import { getVersionInfo } from './version';
 
 import { OnboardingController } from './onboarding';
 import type { Entry, FaultEntry, TimingPoint, Language, FaultType, DeviceRole, Run, VoiceStatus } from './types';
@@ -68,13 +69,26 @@ export function initApp(): void {
   const versionEl = document.getElementById('app-version');
   if (versionEl) versionEl.textContent = __APP_VERSION__;
 
+  // Set version name and description
+  const versionInfo = getVersionInfo(__APP_VERSION__);
+  const versionNameEl = document.getElementById('app-version-name');
+  const versionDescEl = document.getElementById('app-version-description');
+  if (versionInfo && versionNameEl) {
+    versionNameEl.textContent = `"${versionInfo.name}"`;
+  }
+  if (versionInfo && versionDescEl) {
+    versionDescEl.textContent = versionInfo.description;
+  }
+
   // Version info button - copy debug info to clipboard
   const versionInfoBtn = document.getElementById('version-info-btn');
   if (versionInfoBtn) {
     versionInfoBtn.addEventListener('click', async () => {
       const state = store.getState();
+      const vInfo = getVersionInfo(__APP_VERSION__);
+      const versionLabel = vInfo ? `Ski Race Timer v${__APP_VERSION__} "${vInfo.name}"` : `Ski Race Timer v${__APP_VERSION__}`;
       const debugInfo = [
-        `Ski Race Timer v${__APP_VERSION__}`,
+        versionLabel,
         `Device: ${state.deviceName || 'Unknown'}`,
         `Role: ${state.deviceRole}`,
         `Race ID: ${state.raceId || 'None'}`,
