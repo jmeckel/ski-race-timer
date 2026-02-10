@@ -225,7 +225,12 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     await enterBib(page, 1);
-    await page.locator('#radial-time-btn').waitFor({ state: 'visible' });
+    // Dismiss any toast (e.g. GPS warning) that may overlay the record button
+    const toast = page.locator('.toast');
+    if (await toast.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await toast.click({ timeout: 2000 }).catch(() => {});
+      await toast.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+    }
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
