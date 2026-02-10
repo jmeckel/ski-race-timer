@@ -28,6 +28,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
+      manifestFilename: 'manifest.json',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'Ski Race Timer',
