@@ -16,13 +16,21 @@ import type { Entry, Language, FaultEntry, FaultType } from '../types';
  */
 export function formatTimeForRaceHorology(isoTimestamp: string): string {
   const date = new Date(isoTimestamp);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  // Convert milliseconds to hundredths and round
-  const hundredths = Math.round(date.getMilliseconds() / 10).toString().padStart(2, '0');
+  let h = date.getHours();
+  let m = date.getMinutes();
+  let s = date.getSeconds();
+  let cs = Math.round(date.getMilliseconds() / 10);
 
-  return `${hours}:${minutes}:${seconds},${hundredths}`;
+  // Handle carry-over: 995-999ms rounds to 100 hundredths
+  if (cs >= 100) {
+    cs = 0;
+    s++;
+    if (s >= 60) { s = 0; m++; }
+    if (m >= 60) { m = 0; h++; }
+    if (h >= 24) { h = 0; }
+  }
+
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(cs).padStart(2, '0')}`;
 }
 
 /**

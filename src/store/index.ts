@@ -321,7 +321,7 @@ class Store {
     if (dirty.size === 0) return;
 
     try {
-      this.checkStorageQuota();
+      void this.checkStorageQuota();
 
       // Only serialize slices that actually changed
       if (dirty.has('entries')) {

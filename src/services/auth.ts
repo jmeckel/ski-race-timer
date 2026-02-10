@@ -19,10 +19,25 @@ export function getAuthHeaders(): HeadersInit {
 }
 
 /**
- * Check if we have a valid auth token
+ * Check if we have a valid (non-expired) auth token
  */
 export function hasAuthToken(): boolean {
-  return !!localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (!token) return false;
+
+  // Check JWT expiry if token is parseable
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return false;
+      }
+    }
+  } catch {
+    // Can't parse - let server decide validity
+  }
+  return true;
 }
 
 /**

@@ -253,7 +253,7 @@ body {
 }
 
 .judges-ready-count {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -276,7 +276,7 @@ body {
   gap: 4px;
   padding: 3px 8px;
   border-radius: var(--radius);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   background: rgba(0, 0, 0, 0.3);
   white-space: nowrap;
@@ -1562,7 +1562,7 @@ body {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
+  padding: 12px;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
@@ -2097,12 +2097,14 @@ body {
 
   .timer-view .timing-point-btn {
     max-width: 60px;
+    min-height: 44px;
     padding: 5px 8px;
     font-size: 0.75rem;
   }
 
   .timer-view .run-btn {
-    max-width: 38px;
+    max-width: 44px;
+    min-height: 44px;
     padding: 4px 6px;
     font-size: 0.7rem;
   }
@@ -2175,8 +2177,9 @@ body {
   }
 
   .tab-btn {
-    padding: 4px 12px 2px;
-    font-size: 0.65rem;
+    padding: 6px 12px 4px;
+    font-size: 0.7rem;
+    min-height: 40px;
   }
 
   .tab-btn svg {
@@ -2230,14 +2233,16 @@ body {
 
   .timer-view .timing-point-btn {
     padding: 3px 6px;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     max-width: 50px;
+    min-height: 44px;
   }
 
   .timer-view .run-btn {
     padding: 2px 4px;
-    font-size: 0.6rem;
-    max-width: 32px;
+    font-size: 0.65rem;
+    max-width: 44px;
+    min-height: 44px;
   }
 
   .timer-view .number-pad {
@@ -2272,8 +2277,9 @@ body {
   }
 
   .tab-btn {
-    padding: 4px 10px 2px;
+    padding: 6px 10px 4px;
     font-size: 0.7rem;
+    min-height: 40px;
     gap: 1px;
   }
 
@@ -3317,12 +3323,12 @@ body {
 }
 
 .gate-change-btn {
-  padding: 6px 12px;
+  padding: 10px 16px;
   border: 1px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface-elevated);
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3472,7 +3478,7 @@ body {
   padding: 0 5px;
   background: var(--warning);
   color: var(--background);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   border-radius: 9px;
   display: flex;
@@ -3505,7 +3511,7 @@ body {
 }
 
 .fault-detail-close {
-  padding: 4px;
+  padding: 12px;
   background: transparent;
   border: none;
   color: var(--text-tertiary);
@@ -3654,7 +3660,7 @@ body {
 }
 
 .gate-judge-fault-delete {
-  padding: 6px;
+  padding: 12px;
   background: transparent;
   border: none;
   color: var(--text-tertiary);
@@ -3690,7 +3696,7 @@ body {
   align-items: center;
   justify-content: center;
   min-width: 44px;
-  height: 36px;
+  height: 44px;
   padding: 0 10px;
   background: var(--surface-elevated);
   border: 2px solid transparent;
@@ -3761,7 +3767,7 @@ body {
 }
 
 .inline-fault-type-btn .fault-type-long {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   text-align: center;
   line-height: 1.2;
@@ -4757,8 +4763,8 @@ body {
   }
 
   .inline-bib-btn {
-    min-width: 36px;
-    height: 32px;
+    min-width: 40px;
+    height: 40px;
     font-size: 0.8rem;
     padding: 0 6px;
   }

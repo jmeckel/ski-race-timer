@@ -668,6 +668,11 @@ export function destroyRadialTimerView(): void {
     visibilityHandler = null;
   }
 
+  if (radialKeydownHandler) {
+    document.removeEventListener('keydown', radialKeydownHandler);
+    radialKeydownHandler = null;
+  }
+
   if (radialDial) {
     radialDial.destroy();
     radialDial = null;

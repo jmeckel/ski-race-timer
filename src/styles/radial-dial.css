@@ -943,19 +943,19 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
   .radial-point-btn,
   .radial-run-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 13px;
   }
 
   .radial-timing-point {
     left: 8px;
-    gap: 6px;
+    gap: 4px;
   }
 
   .radial-run-selector {
     right: 8px;
-    gap: 6px;
+    gap: 4px;
   }
 
   .dial-number {
@@ -997,16 +997,16 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   }
 
   .dial-number {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
   }
 
   .radial-point-btn,
   .radial-run-btn {
-    width: 26px;
-    height: 26px;
-    font-size: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 11px;
   }
 
   .radial-time-btn {

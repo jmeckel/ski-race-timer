@@ -69,8 +69,9 @@ function showUpdateNotification(): void {
 
 // Toggle power-saver CSS class based on battery level
 // Stops infinite GPU animations when battery is low to save power
+let batteryUnsubscribe: (() => void) | null = null;
 batteryService.initialize().then(() => {
-  batteryService.subscribe((status) => {
+  batteryUnsubscribe = batteryService.subscribe((status) => {
     document.body.classList.toggle('power-saver', status.batteryLevel !== 'normal');
   });
 }).catch(() => {
@@ -83,5 +84,9 @@ window.addEventListener('beforeunload', () => {
   if (swUpdateIntervalId !== null) {
     clearInterval(swUpdateIntervalId);
     swUpdateIntervalId = null;
+  }
+  if (batteryUnsubscribe) {
+    batteryUnsubscribe();
+    batteryUnsubscribe = null;
   }
 });

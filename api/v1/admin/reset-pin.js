@@ -62,7 +62,6 @@ export default async function handler(req, res) {
   // Parse request body
   const { serverPin: providedPin } = req.body || {};
 
-  // Verify SERVER_API_PIN with timing-safe comparison
   const serverPin = process.env.SERVER_API_PIN;
 
   if (!serverPin) {
@@ -72,23 +71,6 @@ export default async function handler(req, res) {
   }
 
   if (!providedPin) {
-    return sendError(res, 'Authorization required', 401);
-  }
-
-  // Use timing-safe comparison to prevent timing attacks
-  let pinValid = false;
-  try {
-    const serverPinBuffer = Buffer.from(serverPin, 'utf8');
-    const providedPinBuffer = Buffer.from(providedPin, 'utf8');
-    // Only compare if lengths match (timingSafeEqual requires equal lengths)
-    if (serverPinBuffer.length === providedPinBuffer.length) {
-      pinValid = crypto.timingSafeEqual(serverPinBuffer, providedPinBuffer);
-    }
-  } catch {
-    pinValid = false;
-  }
-
-  if (!pinValid) {
     return sendError(res, 'Authorization required', 401);
   }
 
@@ -105,7 +87,7 @@ export default async function handler(req, res) {
     return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
   }
 
-  // Rate limiting (critical security endpoint)
+  // Rate limiting BEFORE PIN verification to prevent brute-force
   const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
                    req.headers['x-real-ip'] ||
                    req.socket?.remoteAddress ||
@@ -118,6 +100,23 @@ export default async function handler(req, res) {
       return sendServiceUnavailable(res, 'Rate limiting unavailable');
     }
     return sendRateLimitExceeded(res, RATE_LIMIT_WINDOW);
+  }
+
+  // Verify SERVER_API_PIN with timing-safe comparison (after rate limit)
+  let pinValid = false;
+  try {
+    const serverPinBuffer = Buffer.from(serverPin, 'utf8');
+    const providedPinBuffer = Buffer.from(providedPin, 'utf8');
+    // Only compare if lengths match (timingSafeEqual requires equal lengths)
+    if (serverPinBuffer.length === providedPinBuffer.length) {
+      pinValid = crypto.timingSafeEqual(serverPinBuffer, providedPinBuffer);
+    }
+  } catch {
+    pinValid = false;
+  }
+
+  if (!pinValid) {
+    return sendError(res, 'Authorization required', 401);
   }
 
   try {

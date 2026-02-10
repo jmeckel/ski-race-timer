@@ -52,14 +52,24 @@ export function setDeviceName(name: string): Partial<SyncState> {
   return { deviceName: name };
 }
 
+// Devices not seen for 2 minutes are considered stale
+const DEVICE_STALE_MS = 120_000;
+
 /**
- * Add connected device
+ * Add connected device and prune stale entries
  */
 export function addConnectedDevice(
   device: DeviceInfo,
   currentDevices: Map<string, DeviceInfo>
 ): Partial<SyncState> {
-  const connectedDevices = new Map(currentDevices);
+  const now = Date.now();
+  const connectedDevices = new Map<string, DeviceInfo>();
+  // Copy non-stale devices
+  for (const [id, d] of currentDevices) {
+    if (now - d.lastSeen < DEVICE_STALE_MS) {
+      connectedDevices.set(id, d);
+    }
+  }
   connectedDevices.set(device.id, device);
   return { connectedDevices };
 }

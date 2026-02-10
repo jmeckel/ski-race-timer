@@ -30,6 +30,7 @@ export class Clock {
   private currentFrame = 0;
   private batteryUnsubscribe: (() => void) | null = null;
   private isDestroyed = false;
+  private cachedDigits: HTMLSpanElement[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -42,6 +43,9 @@ export class Clock {
 
     this.container.appendChild(this.timeElement);
     this.container.appendChild(this.dateRow);
+
+    // Cache digit elements for O(1) access in RAF loop
+    this.cachedDigits = Array.from(this.timeElement.querySelectorAll('.clock-digit')) as HTMLSpanElement[];
 
     // Move timing points into the date row
     this.moveTimingPointsToDateRow();
@@ -257,10 +261,8 @@ export class Clock {
    * Update only changed digits
    */
   private updateDigits(timeStr: string): void {
-    const digits = this.timeElement.querySelectorAll('.clock-digit');
-
-    for (let i = 0; i < timeStr.length && i < digits.length; i++) {
-      const digit = digits[i] as HTMLSpanElement;
+    for (let i = 0; i < timeStr.length && i < this.cachedDigits.length; i++) {
+      const digit = this.cachedDigits[i];
       const newChar = timeStr[i];
 
       if (digit.textContent !== newChar) {

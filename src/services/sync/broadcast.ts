@@ -48,7 +48,7 @@ class BroadcastManager {
           } else if (type === 'fault-deleted') {
             const faultId = data as string;
             if (faultId) {
-              store.deleteFaultEntry(faultId);
+              store.markFaultForDeletion(faultId);
             }
           }
         } catch (error) {

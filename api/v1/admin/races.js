@@ -53,8 +53,9 @@ async function listRaces(client) {
     cursor = nextCursor;
 
     for (const key of keys) {
-      // Skip auxiliary keys (devices, highestBib, deleted)
-      if (key.includes(':devices') || key.includes(':highestBib') || key.includes(':deleted')) {
+      // Skip auxiliary keys (devices, highestBib, deleted*, faults, gate_assignments)
+      if (key.includes(':devices') || key.includes(':highestBib') || key.includes(':deleted') ||
+          key.includes(':faults') || key.includes(':gate_assignments')) {
         continue;
       }
 
@@ -118,6 +119,10 @@ async function deleteRace(client, raceId) {
 
   const devicesKey = `race:${actualRaceId}:devices`;
   const highestBibKey = `race:${actualRaceId}:highestBib`;
+  const faultsKey = `race:${actualRaceId}:faults`;
+  const deletedEntriesKey = `race:${actualRaceId}:deleted_entries`;
+  const deletedFaultsKey = `race:${actualRaceId}:deleted_faults`;
+  const gateAssignmentsKey = `race:${actualRaceId}:gate_assignments`;
 
   // Set tombstone with expiry (use lowercase for tombstone for consistency)
   await client.set(
@@ -130,14 +135,27 @@ async function deleteRace(client, raceId) {
     TOMBSTONE_EXPIRY_SECONDS
   );
 
-  // Delete all race data
-  await client.del(raceKey, devicesKey, highestBibKey);
+  // Delete all race data including auxiliary keys
+  await client.del(
+    raceKey, devicesKey, highestBibKey,
+    faultsKey, deletedEntriesKey, deletedFaultsKey, gateAssignmentsKey
+  );
 
   // Also try to delete any leftover keys with different casing
   if (actualRaceId !== normalizedRaceId) {
-    await client.del(normalizedKey, `race:${normalizedRaceId}:devices`, `race:${normalizedRaceId}:highestBib`);
+    await client.del(
+      normalizedKey,
+      `race:${normalizedRaceId}:devices`, `race:${normalizedRaceId}:highestBib`,
+      `race:${normalizedRaceId}:faults`, `race:${normalizedRaceId}:deleted_entries`,
+      `race:${normalizedRaceId}:deleted_faults`, `race:${normalizedRaceId}:gate_assignments`
+    );
   } else if (raceId !== normalizedRaceId) {
-    await client.del(originalKey, `race:${raceId}:devices`, `race:${raceId}:highestBib`);
+    await client.del(
+      originalKey,
+      `race:${raceId}:devices`, `race:${raceId}:highestBib`,
+      `race:${raceId}:faults`, `race:${raceId}:deleted_entries`,
+      `race:${raceId}:deleted_faults`, `race:${raceId}:gate_assignments`
+    );
   }
 
   return { success: true, raceId: actualRaceId };
@@ -203,6 +221,11 @@ export default async function handler(req, res) {
 
       if (!raceId) {
         return sendBadRequest(res, 'raceId is required (or use deleteAll=true)');
+      }
+
+      // Validate raceId format
+      if (typeof raceId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(raceId) || raceId.length > 100) {
+        return sendBadRequest(res, 'Invalid race ID format');
       }
 
       const result = await deleteRace(client, raceId);
