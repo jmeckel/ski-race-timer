@@ -224,9 +224,12 @@ test.describe('GPS Timestamp Recording', () => {
 
     // Record entry
     await navigateTo(page, 'timer');
+    // Remove any GPS warning toasts that overlay the dial and record button
+    await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
     await enterBib(page, 1);
-    // Force click to bypass any toast overlay (GPS warning) that may intercept pointer events
-    await page.click('#radial-time-btn', { force: true });
+    // Remove toasts again in case new ones appeared during bib entry
+    await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+    await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Verify entry recorded
