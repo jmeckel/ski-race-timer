@@ -1,16 +1,22 @@
-import { store } from './store';
-import { syncService } from './services';
-import { exchangePinForToken, hasAuthToken } from './services/sync';
-import { feedbackSuccess, feedbackTap } from './services';
 import { showToast } from './components';
+import { closeModal, openModal } from './features/modals';
 import { t } from './i18n/translations';
-import { generateDeviceName } from './utils/id';
-import { getTodaysRecentRaces, addRecentRace, type RecentRace } from './utils/recentRaces';
-import { attachRecentRaceItemHandlers, renderRecentRaceItems } from './utils/recentRacesUi';
+import { feedbackSuccess, feedbackTap, syncService } from './services';
+import { exchangePinForToken, hasAuthToken } from './services/sync';
+import { store } from './store';
+import type { DeviceRole, Language, RaceInfo } from './types';
 import { fetchWithTimeout } from './utils/errors';
-import { openModal, closeModal } from './features/modals';
+import { generateDeviceName } from './utils/id';
 import { logger } from './utils/logger';
-import type { Language, RaceInfo, DeviceRole } from './types';
+import {
+  addRecentRace,
+  getTodaysRecentRaces,
+  type RecentRace,
+} from './utils/recentRaces';
+import {
+  attachRecentRaceItemHandlers,
+  renderRecentRaceItems,
+} from './utils/recentRacesUi';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
 
@@ -19,7 +25,7 @@ const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
  */
 function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
@@ -37,7 +43,8 @@ export class OnboardingController {
   private totalSteps = 6;
   private selectedRole: DeviceRole = 'timer';
   private updateTranslationsCallback: (() => void) | null = null;
-  private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
+  private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
+    null;
 
   constructor() {
     this.modal = document.getElementById('onboarding-modal');
@@ -75,10 +82,14 @@ export class OnboardingController {
     });
 
     // Reset form fields
-    const raceIdInput = document.getElementById('onboarding-race-id') as HTMLInputElement;
+    const raceIdInput = document.getElementById(
+      'onboarding-race-id',
+    ) as HTMLInputElement;
     if (raceIdInput) raceIdInput.value = '';
 
-    const pinInput = document.getElementById('onboarding-pin') as HTMLInputElement;
+    const pinInput = document.getElementById(
+      'onboarding-pin',
+    ) as HTMLInputElement;
     if (pinInput) {
       pinInput.value = '';
       pinInput.style.display = 'none';
@@ -90,22 +101,30 @@ export class OnboardingController {
       raceStatus.className = 'race-status';
     }
 
-    const syncToggle = document.getElementById('onboarding-sync-toggle') as HTMLInputElement;
+    const syncToggle = document.getElementById(
+      'onboarding-sync-toggle',
+    ) as HTMLInputElement;
     if (syncToggle) syncToggle.checked = true;
 
-    const photoToggle = document.getElementById('onboarding-photo-toggle') as HTMLInputElement;
+    const photoToggle = document.getElementById(
+      'onboarding-photo-toggle',
+    ) as HTMLInputElement;
     if (photoToggle) photoToggle.checked = false;
 
     // Reset role selection
-    this.modal.querySelectorAll('.role-card').forEach(card => {
+    this.modal.querySelectorAll('.role-card').forEach((card) => {
       const isTimer = card.getAttribute('data-role') === 'timer';
       card.classList.toggle('selected', isTimer);
       card.setAttribute('aria-checked', String(isTimer));
     });
 
     // Reset gate inputs
-    const gateStart = document.getElementById('onboarding-gate-start') as HTMLInputElement;
-    const gateEnd = document.getElementById('onboarding-gate-end') as HTMLInputElement;
+    const gateStart = document.getElementById(
+      'onboarding-gate-start',
+    ) as HTMLInputElement;
+    const gateEnd = document.getElementById(
+      'onboarding-gate-end',
+    ) as HTMLInputElement;
     if (gateStart) gateStart.value = '1';
     if (gateEnd) gateEnd.value = '10';
 
@@ -113,14 +132,16 @@ export class OnboardingController {
     openModal(this.modal);
 
     // Pre-fill device name with current value
-    const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+    const deviceNameInput = document.getElementById(
+      'onboarding-device-name',
+    ) as HTMLInputElement;
     if (deviceNameInput) {
       deviceNameInput.value = store.getState().deviceName;
     }
 
     // Set current language button as selected
     const currentLang = store.getState().currentLang;
-    this.modal.querySelectorAll('.lang-btn').forEach(btn => {
+    this.modal.querySelectorAll('.lang-btn').forEach((btn) => {
       const lang = (btn as HTMLElement).dataset.lang;
       btn.classList.toggle('selected', lang === currentLang);
     });
@@ -147,13 +168,15 @@ export class OnboardingController {
     });
 
     // Language selection
-    this.modal.querySelectorAll('.lang-btn').forEach(btn => {
+    this.modal.querySelectorAll('.lang-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget as HTMLElement;
         const lang = target.dataset.lang as Language;
         if (lang) {
           store.setLanguage(lang);
-          this.modal!.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+          this.modal!.querySelectorAll('.lang-btn').forEach((b) =>
+            b.classList.remove('selected'),
+          );
           target.classList.add('selected');
           feedbackTap();
 
@@ -168,7 +191,7 @@ export class OnboardingController {
     });
 
     // Action buttons (next, skip, finish)
-    this.modal.querySelectorAll('[data-action]').forEach(btn => {
+    this.modal.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         const target = e.currentTarget as HTMLElement;
         const action = target.dataset.action;
@@ -183,7 +206,9 @@ export class OnboardingController {
     const regenerateBtn = document.getElementById('onboarding-regenerate-name');
     if (regenerateBtn) {
       regenerateBtn.addEventListener('click', () => {
-        const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+        const deviceNameInput = document.getElementById(
+          'onboarding-device-name',
+        ) as HTMLInputElement;
         if (deviceNameInput) {
           deviceNameInput.value = generateDeviceName();
           feedbackTap();
@@ -192,12 +217,12 @@ export class OnboardingController {
     }
 
     // Role selection
-    this.modal.querySelectorAll('.role-card').forEach(card => {
+    this.modal.querySelectorAll('.role-card').forEach((card) => {
       card.addEventListener('click', () => {
         const role = card.getAttribute('data-role') as DeviceRole;
         if (role) {
           this.selectedRole = role;
-          this.modal!.querySelectorAll('.role-card').forEach(c => {
+          this.modal!.querySelectorAll('.role-card').forEach((c) => {
             const isSelected = c === card;
             c.classList.toggle('selected', isSelected);
             c.setAttribute('aria-checked', String(isSelected));
@@ -208,14 +233,18 @@ export class OnboardingController {
     });
 
     // Race ID input - check existence with debounce
-    const raceIdInput = document.getElementById('onboarding-race-id') as HTMLInputElement;
+    const raceIdInput = document.getElementById(
+      'onboarding-race-id',
+    ) as HTMLInputElement;
     if (raceIdInput) {
       const debouncedCheck = debounce(() => this.checkRaceExists(), 500);
 
       raceIdInput.addEventListener('input', () => {
         debouncedCheck();
         // Show/hide PIN field based on race ID input
-        const pinInput = document.getElementById('onboarding-pin') as HTMLInputElement;
+        const pinInput = document.getElementById(
+          'onboarding-pin',
+        ) as HTMLInputElement;
         if (pinInput) {
           pinInput.style.display = raceIdInput.value.trim() ? 'block' : 'none';
         }
@@ -223,13 +252,20 @@ export class OnboardingController {
     }
 
     // Recent races button
-    const recentRacesBtn = document.getElementById('onboarding-recent-races-btn');
-    const recentRacesDropdown = document.getElementById('onboarding-recent-races-dropdown');
+    const recentRacesBtn = document.getElementById(
+      'onboarding-recent-races-btn',
+    );
+    const recentRacesDropdown = document.getElementById(
+      'onboarding-recent-races-dropdown',
+    );
     if (recentRacesBtn && recentRacesDropdown) {
       recentRacesBtn.addEventListener('click', () => {
         feedbackTap();
         if (recentRacesDropdown.style.display === 'none') {
-          this.showRecentRacesDropdown(recentRacesDropdown, 'onboarding-race-id');
+          this.showRecentRacesDropdown(
+            recentRacesDropdown,
+            'onboarding-race-id',
+          );
           recentRacesBtn.setAttribute('aria-expanded', 'true');
         } else {
           recentRacesDropdown.style.display = 'none';
@@ -241,7 +277,10 @@ export class OnboardingController {
       if (!this.recentRacesDocumentHandler) {
         this.recentRacesDocumentHandler = (e) => {
           const target = e.target as Node;
-          if (!recentRacesBtn.contains(target) && !recentRacesDropdown.contains(target)) {
+          if (
+            !recentRacesBtn.contains(target) &&
+            !recentRacesDropdown.contains(target)
+          ) {
             recentRacesDropdown.style.display = 'none';
             recentRacesBtn.setAttribute('aria-expanded', 'false');
           }
@@ -255,7 +294,10 @@ export class OnboardingController {
    * Show recent races dropdown and populate with today's races
    * Fetches from API if authenticated, falls back to localStorage
    */
-  private async showRecentRacesDropdown(dropdown: HTMLElement, inputId: string): Promise<void> {
+  private async showRecentRacesDropdown(
+    dropdown: HTMLElement,
+    inputId: string,
+  ): Promise<void> {
     const lang = store.getState().currentLang;
 
     // Show loading state
@@ -298,9 +340,13 @@ export class OnboardingController {
       return [];
     }
 
-    const response = await fetchWithTimeout('/api/v1/admin/races', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }, 5000);
+    const response = await fetchWithTimeout(
+      '/api/v1/admin/races',
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+      5000,
+    );
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
@@ -315,17 +361,17 @@ export class OnboardingController {
     const todayStart = today.getTime();
 
     const todaysRaces = raceInfos
-      .filter(race => race.lastUpdated && race.lastUpdated >= todayStart)
-      .map(race => ({
+      .filter((race) => race.lastUpdated && race.lastUpdated >= todayStart)
+      .map((race) => ({
         raceId: race.raceId,
         createdAt: race.lastUpdated || Date.now(),
         lastUpdated: race.lastUpdated || Date.now(),
-        entryCount: race.entryCount
+        entryCount: race.entryCount,
       }))
       .slice(0, 5);
 
     // Also update localStorage with fetched races for future use
-    todaysRaces.forEach(race => {
+    todaysRaces.forEach((race) => {
       addRecentRace(race.raceId, race.lastUpdated, race.entryCount);
     });
 
@@ -335,7 +381,11 @@ export class OnboardingController {
   /**
    * Select a recent race and fill the input
    */
-  private selectRecentRace(race: RecentRace, inputId: string, dropdown: HTMLElement): void {
+  private selectRecentRace(
+    race: RecentRace,
+    inputId: string,
+    dropdown: HTMLElement,
+  ): void {
     const input = document.getElementById(inputId) as HTMLInputElement;
     if (input) {
       input.value = race.raceId;
@@ -353,7 +403,7 @@ export class OnboardingController {
 
     const lang = store.getState().currentLang;
 
-    this.modal.querySelectorAll('[data-i18n]').forEach(el => {
+    this.modal.querySelectorAll('[data-i18n]').forEach((el) => {
       const key = el.getAttribute('data-i18n');
       if (key) {
         el.textContent = t(key, lang);
@@ -425,7 +475,9 @@ export class OnboardingController {
    */
   private dismiss(): void {
     // Save any settings that were configured during onboarding
-    const deviceNameInput = document.getElementById('onboarding-device-name') as HTMLInputElement;
+    const deviceNameInput = document.getElementById(
+      'onboarding-device-name',
+    ) as HTMLInputElement;
     if (deviceNameInput?.value.trim()) {
       store.setDeviceName(deviceNameInput.value.trim());
     }
@@ -441,30 +493,42 @@ export class OnboardingController {
     const lang = store.getState().currentLang;
 
     switch (this.currentStep) {
-      case 2: { // Role selection - always valid (defaults to timer)
+      case 2: {
+        // Role selection - always valid (defaults to timer)
         return true;
       }
-      case 3: { // Device name
-        const deviceName = (document.getElementById('onboarding-device-name') as HTMLInputElement)?.value.trim();
+      case 3: {
+        // Device name
+        const deviceName = (
+          document.getElementById('onboarding-device-name') as HTMLInputElement
+        )?.value.trim();
         if (!deviceName) {
           showToast(t('deviceName', lang), 'warning');
           return false;
         }
         return true;
       }
-      case 4: { // Photo capture (timer) or Gate assignment (judge) - no validation needed
+      case 4: {
+        // Photo capture (timer) or Gate assignment (judge) - no validation needed
         return true;
       }
-      case 5: { // Race setup
-        const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
-        const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
+      case 5: {
+        // Race setup
+        const raceId = (
+          document.getElementById('onboarding-race-id') as HTMLInputElement
+        )?.value.trim();
+        const syncEnabled = (
+          document.getElementById('onboarding-sync-toggle') as HTMLInputElement
+        )?.checked;
 
         if (!raceId || !syncEnabled) {
           // No race ID or sync disabled - valid (skip mode)
           return true;
         }
 
-        const pin = (document.getElementById('onboarding-pin') as HTMLInputElement)?.value;
+        const pin = (
+          document.getElementById('onboarding-pin') as HTMLInputElement
+        )?.value;
         if (pin.length !== 4) {
           showToast(t('invalidPin', lang), 'warning');
           return false;
@@ -483,33 +547,58 @@ export class OnboardingController {
    */
   private async saveCurrentStep(): Promise<void> {
     switch (this.currentStep) {
-      case 2: { // Save device role
+      case 2: {
+        // Save device role
         store.setDeviceRole(this.selectedRole);
         break;
       }
-      case 3: { // Save device name
-        const deviceName = (document.getElementById('onboarding-device-name') as HTMLInputElement)?.value.trim();
+      case 3: {
+        // Save device name
+        const deviceName = (
+          document.getElementById('onboarding-device-name') as HTMLInputElement
+        )?.value.trim();
         if (deviceName) {
           store.setDeviceName(deviceName);
         }
         break;
       }
-      case 4: { // Save photo capture (timer) or gate assignment (judge)
+      case 4: {
+        // Save photo capture (timer) or gate assignment (judge)
         if (this.selectedRole === 'gateJudge') {
-          const gateStart = parseInt((document.getElementById('onboarding-gate-start') as HTMLInputElement)?.value || '1', 10);
-          const gateEnd = parseInt((document.getElementById('onboarding-gate-end') as HTMLInputElement)?.value || '10', 10);
+          const gateStart = parseInt(
+            (
+              document.getElementById(
+                'onboarding-gate-start',
+              ) as HTMLInputElement
+            )?.value || '1',
+            10,
+          );
+          const gateEnd = parseInt(
+            (document.getElementById('onboarding-gate-end') as HTMLInputElement)
+              ?.value || '10',
+            10,
+          );
           const validStart = Math.min(gateStart, gateEnd);
           const validEnd = Math.max(gateStart, gateEnd);
           store.setGateAssignment([validStart, validEnd]);
         } else {
-          const photoEnabled = (document.getElementById('onboarding-photo-toggle') as HTMLInputElement)?.checked;
+          const photoEnabled = (
+            document.getElementById(
+              'onboarding-photo-toggle',
+            ) as HTMLInputElement
+          )?.checked;
           store.updateSettings({ photoCapture: photoEnabled });
         }
         break;
       }
-      case 5: { // Save race settings
-        const raceId = (document.getElementById('onboarding-race-id') as HTMLInputElement)?.value.trim();
-        const syncEnabled = (document.getElementById('onboarding-sync-toggle') as HTMLInputElement)?.checked;
+      case 5: {
+        // Save race settings
+        const raceId = (
+          document.getElementById('onboarding-race-id') as HTMLInputElement
+        )?.value.trim();
+        const syncEnabled = (
+          document.getElementById('onboarding-sync-toggle') as HTMLInputElement
+        )?.checked;
 
         if (raceId) {
           store.setRaceId(raceId);
@@ -533,21 +622,27 @@ export class OnboardingController {
     if (!this.modal || step < 1 || step > this.totalSteps) return;
 
     // Hide current card (may be path-specific)
-    this.modal.querySelectorAll(`[data-step="${this.currentStep}"]`).forEach(card => {
-      (card as HTMLElement).style.display = 'none';
-    });
+    this.modal
+      .querySelectorAll(`[data-step="${this.currentStep}"]`)
+      .forEach((card) => {
+        (card as HTMLElement).style.display = 'none';
+      });
 
     // Show new card
     this.currentStep = step;
 
     // Step 4 has branching paths - show the correct one based on role
     if (step === 4) {
-      const pathCard = this.modal.querySelector(`[data-step="4"][data-path="${this.selectedRole}"]`) as HTMLElement;
+      const pathCard = this.modal.querySelector(
+        `[data-step="4"][data-path="${this.selectedRole}"]`,
+      ) as HTMLElement;
       if (pathCard) {
         pathCard.style.display = 'block';
       }
     } else {
-      const newCard = this.modal.querySelector(`[data-step="${step}"]:not([data-path])`) as HTMLElement;
+      const newCard = this.modal.querySelector(
+        `[data-step="${step}"]:not([data-path])`,
+      ) as HTMLElement;
       if (newCard) {
         newCard.style.display = 'block';
       }
@@ -617,9 +712,10 @@ export class OnboardingController {
     if (label) {
       const totalSteps = dots.length;
       const lang = store.getState().currentLang;
-      label.textContent = lang === 'de'
-        ? `Schritt ${this.currentStep} von ${totalSteps}`
-        : `Step ${this.currentStep} of ${totalSteps}`;
+      label.textContent =
+        lang === 'de'
+          ? `Schritt ${this.currentStep} von ${totalSteps}`
+          : `Step ${this.currentStep} of ${totalSteps}`;
     }
   }
 
@@ -642,24 +738,45 @@ export class OnboardingController {
     if (summary) {
       summary.innerHTML = '';
 
-      type SummaryRow = { label: string; value: string; badge?: 'enabled' | 'disabled' | 'role' };
+      type SummaryRow = {
+        label: string;
+        value: string;
+        badge?: 'enabled' | 'disabled' | 'role';
+      };
       const rows: SummaryRow[] = [];
 
       // Role
-      const roleLabel = this.selectedRole === 'gateJudge' ? t('roleJudgeTitle', lang) : t('roleTimerTitle', lang);
-      rows.push({ label: t('deviceRole', lang), value: roleLabel, badge: 'role' });
+      const roleLabel =
+        this.selectedRole === 'gateJudge'
+          ? t('roleJudgeTitle', lang)
+          : t('roleTimerTitle', lang);
+      rows.push({
+        label: t('deviceRole', lang),
+        value: roleLabel,
+        badge: 'role',
+      });
 
       // Device/Judge name
-      const nameLabel = this.selectedRole === 'gateJudge' ? t('onboardingDeviceNameJudge', lang) : t('deviceNameLabel', lang);
+      const nameLabel =
+        this.selectedRole === 'gateJudge'
+          ? t('onboardingDeviceNameJudge', lang)
+          : t('deviceNameLabel', lang);
       rows.push({ label: nameLabel, value: state.deviceName });
 
       // Role-specific row
       if (this.selectedRole === 'gateJudge') {
         const gateRange = state.gateAssignment;
-        rows.push({ label: t('gates', lang), value: gateRange ? `${gateRange[0]}–${gateRange[1]}` : '—' });
+        rows.push({
+          label: t('gates', lang),
+          value: gateRange ? `${gateRange[0]}–${gateRange[1]}` : '—',
+        });
       } else {
         const photoOn = state.settings.photoCapture;
-        rows.push({ label: t('photoCaptureLabel', lang), value: photoOn ? t('enabled', lang) : t('disabled', lang), badge: photoOn ? 'enabled' : 'disabled' });
+        rows.push({
+          label: t('photoCaptureLabel', lang),
+          value: photoOn ? t('enabled', lang) : t('disabled', lang),
+          badge: photoOn ? 'enabled' : 'disabled',
+        });
       }
 
       // Race ID
@@ -667,7 +784,11 @@ export class OnboardingController {
 
       // Sync
       const syncOn = state.settings.sync;
-      rows.push({ label: t('syncStatusLabel', lang), value: syncOn ? t('enabled', lang) : t('disabled', lang), badge: syncOn ? 'enabled' : 'disabled' });
+      rows.push({
+        label: t('syncStatusLabel', lang),
+        value: syncOn ? t('enabled', lang) : t('disabled', lang),
+        badge: syncOn ? 'enabled' : 'disabled',
+      });
 
       const container = document.createElement('div');
       container.className = 'onboarding-summary-list';
@@ -700,7 +821,9 @@ export class OnboardingController {
    * Check if the race exists in the cloud
    */
   private async checkRaceExists(): Promise<void> {
-    const raceIdInput = document.getElementById('onboarding-race-id') as HTMLInputElement;
+    const raceIdInput = document.getElementById(
+      'onboarding-race-id',
+    ) as HTMLInputElement;
     const statusEl = document.getElementById('onboarding-race-status');
 
     if (!raceIdInput || !statusEl) return;
@@ -721,7 +844,8 @@ export class OnboardingController {
     const result = await syncService.checkRaceExists(raceId);
 
     if (result.exists) {
-      const entryWord = result.entryCount === 1 ? t('entry', lang) : t('entries', lang);
+      const entryWord =
+        result.entryCount === 1 ? t('entry', lang) : t('entries', lang);
       statusEl.textContent = `✓ ${t('raceFound', lang)} (${result.entryCount} ${entryWord})`;
       statusEl.className = 'race-status found';
     } else {
@@ -740,7 +864,11 @@ export class OnboardingController {
     } catch {
       // If offline, accept any PIN but warn user it will validate when online
       const lang = store.getState().currentLang;
-      showToast(t('networkError', lang) + ' - ' + t('pinVerifyOnline', lang), 'warning', 5000);
+      showToast(
+        `${t('networkError', lang)} - ${t('pinVerifyOnline', lang)}`,
+        'warning',
+        5000,
+      );
       return true;
     }
   }

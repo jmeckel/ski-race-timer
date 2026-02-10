@@ -1,38 +1,56 @@
-import { store } from './store';
+import {
+  handleBeforeUnload,
+  handleStorageError,
+  handleStorageWarning,
+  initCustomEventListeners,
+  initVoiceMode,
+} from './appEventListeners';
+import { initModals } from './appModalHandlers';
+// Extracted app modules
+import { handleStateChange } from './appStateHandlers';
+import { updateUI } from './appUiUpdates';
 import { showToast } from './components';
-import { syncService, gpsService, wakeLockService, ambientModeService } from './services';
-import { hasAuthToken } from './services/sync';
-import { feedbackTap, resumeAudio } from './services';
-import { t } from './i18n/translations';
-import { applyViewServices } from './utils/viewServices';
-import { getVersionInfo } from './version';
-
-import { OnboardingController } from './onboarding';
-
+import { initChiefJudgeToggle } from './features/chiefJudgeView';
+import { initGateJudgeView } from './features/gateJudgeView';
+import {
+  handleAuthExpired,
+  handleRaceDeleted,
+  initRaceManagement,
+} from './features/race';
+import {
+  initRadialTimerView,
+  isRadialModeActive,
+} from './features/radialTimerView';
+import { initResultsView } from './features/resultsView';
 // Feature modules
 import { initRippleEffects } from './features/ripple';
 import {
-  initClock, initTabs, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton
-} from './features/timerView';
-import {
-  initRadialTimerView, isRadialModeActive
-} from './features/radialTimerView';
-import { initResultsView } from './features/resultsView';
-import {
-  initSettingsView, applySettings, updateTranslations
+  applySettings,
+  initSettingsView,
+  updateTranslations,
 } from './features/settingsView';
-import { initGateJudgeView } from './features/gateJudgeView';
-import { initChiefJudgeToggle } from './features/chiefJudgeView';
-import { initRaceManagement, handleRaceDeleted, handleAuthExpired } from './features/raceManagement';
-
-// Extracted app modules
-import { handleStateChange } from './appStateHandlers';
-import { initModals } from './appModalHandlers';
-import { updateUI } from './appUiUpdates';
 import {
-  initCustomEventListeners, initVoiceMode, handleBeforeUnload,
-  handleStorageError, handleStorageWarning
-} from './appEventListeners';
+  initClock,
+  initNumberPad,
+  initRunSelector,
+  initTabs,
+  initTimestampButton,
+  initTimingPoints,
+} from './features/timerView';
+import { t } from './i18n/translations';
+import { OnboardingController } from './onboarding';
+import {
+  ambientModeService,
+  feedbackTap,
+  gpsService,
+  resumeAudio,
+  syncService,
+  wakeLockService,
+} from './services';
+import { hasAuthToken } from './services/sync';
+import { store } from './store';
+import { applyViewServices } from './utils/viewServices';
+import { getVersionInfo } from './version';
 
 // DOM Elements cache
 let onboardingController: OnboardingController | null = null;
@@ -62,7 +80,9 @@ export function initApp(): void {
     versionInfoBtn.addEventListener('click', async () => {
       const state = store.getState();
       const vInfo = getVersionInfo(__APP_VERSION__);
-      const versionLabel = vInfo ? `Ski Race Timer v${__APP_VERSION__} "${vInfo.name}"` : `Ski Race Timer v${__APP_VERSION__}`;
+      const versionLabel = vInfo
+        ? `Ski Race Timer v${__APP_VERSION__} "${vInfo.name}"`
+        : `Ski Race Timer v${__APP_VERSION__}`;
       const debugInfo = [
         versionLabel,
         `Device: ${state.deviceName || 'Unknown'}`,
@@ -75,7 +95,7 @@ export function initApp(): void {
         `Screen: ${window.screen.width}x${window.screen.height}`,
         `Viewport: ${window.innerWidth}x${window.innerHeight}`,
         `Online: ${navigator.onLine}`,
-        `Timestamp: ${new Date().toISOString()}`
+        `Timestamp: ${new Date().toISOString()}`,
       ].join('\n');
 
       try {
@@ -130,7 +150,9 @@ export function initApp(): void {
     } else {
       // No token - disable sync, user must re-authenticate
       store.updateSettings({ sync: false });
-      const syncToggle = document.getElementById('sync-toggle') as HTMLInputElement;
+      const syncToggle = document.getElementById(
+        'sync-toggle',
+      ) as HTMLInputElement;
       if (syncToggle) syncToggle.checked = false;
       setTimeout(() => {
         const lang = store.getState().currentLang;
@@ -148,7 +170,10 @@ export function initApp(): void {
 
   // Listen for storage errors and warnings
   window.addEventListener('storage-error', handleStorageError as EventListener);
-  window.addEventListener('storage-warning', handleStorageWarning as EventListener);
+  window.addEventListener(
+    'storage-warning',
+    handleStorageWarning as EventListener,
+  );
 
   // Resume audio context on first interaction
   document.addEventListener('click', resumeAudio, { once: true });
@@ -202,7 +227,9 @@ export function initApp(): void {
 
   // Initialize onboarding for first-time users
   onboardingController = new OnboardingController();
-  onboardingController.setUpdateTranslationsCallback(() => updateTranslations());
+  onboardingController.setUpdateTranslationsCallback(() =>
+    updateTranslations(),
+  );
 
   // Show onboarding if first-time user
   if (onboardingController.shouldShow()) {
@@ -220,5 +247,4 @@ export function initApp(): void {
       }
     });
   }
-
 }

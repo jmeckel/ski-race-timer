@@ -5,7 +5,7 @@
 
 export * as entriesSlice from './entriesSlice';
 export * as faultsSlice from './faultsSlice';
-export * as uiSlice from './uiSlice';
 export * as gateJudgeSlice from './gateJudgeSlice';
-export * as syncSlice from './syncSlice';
 export * as settingsSlice from './settingsSlice';
+export * as syncSlice from './syncSlice';
+export * as uiSlice from './uiSlice';

@@ -1,27 +1,53 @@
+import {
+  openConfirmModal,
+  openEditModal,
+  promptDelete,
+} from './appModalHandlers';
+import { updateVoiceIndicator } from './appUiUpdates';
+import { destroyToast, showToast } from './components';
+import { resolvePinVerification } from './features/chiefJudgeView';
+import {
+  openFaultEditModal,
+  openMarkDeletionModal,
+  updateInlineBibSelector,
+  updateInlineFaultsList,
+  updateInlineGateSelector,
+} from './features/faults';
+import { handleGateJudgeVoiceIntent } from './features/gateJudgeView';
+import {
+  cleanupPinVerification,
+  handleAuthExpired,
+  handleRaceDeleted,
+  showPhotoSyncWarningModal,
+  showRaceChangeDialog,
+  verifyPinForChiefJudge,
+} from './features/race';
+import { destroyRadialTimerView } from './features/radialTimerView';
+import type { ConfirmModalAction } from './features/resultsView';
+import { cleanupSearchTimeout } from './features/resultsView';
+import { cleanupRippleEffects } from './features/ripple';
+import {
+  cleanupSettingsTimeouts,
+  resolvePhotoSyncWarning,
+  resolveRaceChangeDialog,
+  updateRoleToggle,
+} from './features/settingsView';
+import { destroyClock, handleTimerVoiceIntent } from './features/timerView';
+import { t } from './i18n/translations';
+import {
+  ambientModeService,
+  cameraService,
+  feedbackWarning,
+  gpsService,
+  syncService,
+  voiceModeService,
+  wakeLockService,
+} from './services';
 import { store } from './store';
-import { showToast, destroyToast } from './components';
-import { syncService, gpsService, cameraService, wakeLockService, ambientModeService, voiceModeService } from './services';
-import { feedbackWarning } from './services';
-import { logger } from './utils/logger';
+import type { Entry, FaultEntry, Language, VoiceStatus } from './types';
 import { TOAST_DURATION } from './utils';
 import { ListenerManager } from './utils/listenerManager';
-import { t } from './i18n/translations';
-import { cleanupRippleEffects } from './features/ripple';
-import { destroyClock } from './features/timerView';
-import { destroyRadialTimerView, isRadialModeActive } from './features/radialTimerView';
-import { handleTimerVoiceIntent } from './features/timerView';
-import { handleGateJudgeVoiceIntent } from './features/gateJudgeView';
-import { cleanupSearchTimeout } from './features/resultsView';
-import { cleanupSettingsTimeouts, resolvePhotoSyncWarning, resolveRaceChangeDialog } from './features/settingsView';
-import { updateRoleToggle } from './features/settingsView';
-import { cleanupPinVerification } from './features/raceManagement';
-import { handleRaceDeleted, handleAuthExpired, showPhotoSyncWarningModal, showRaceChangeDialog, verifyPinForChiefJudge } from './features/raceManagement';
-import { resolvePinVerification } from './features/chiefJudgeView';
-import { openFaultEditModal, openMarkDeletionModal, updateInlineFaultsList, updateInlineBibSelector, updateInlineGateSelector } from './features/faultEntry';
-import { openEditModal, openConfirmModal, promptDelete, closeAllModals } from './appModalHandlers';
-import { updateVoiceIndicator } from './appUiUpdates';
-import type { Entry, FaultEntry, Language, VoiceStatus } from './types';
-import type { ConfirmModalAction } from './features/resultsView';
+import { logger } from './utils/logger';
 
 // Custom event listener references (stored for cleanup in handleBeforeUnload)
 const customEventListeners = new ListenerManager();
@@ -29,7 +55,10 @@ const customEventListeners = new ListenerManager();
 /**
  * Register a custom event listener and store its reference for cleanup
  */
-function addCustomEventListener(eventName: string, handler: EventListener): void {
+function addCustomEventListener(
+  eventName: string,
+  handler: EventListener,
+): void {
   customEventListeners.add(window, eventName, handler);
 }
 
@@ -40,15 +69,21 @@ function addCustomEventListener(eventName: string, handler: EventListener): void
  */
 export function initCustomEventListeners(): void {
   // Results view events
-  addCustomEventListener('open-edit-modal', ((e: CustomEvent<{ entry: Entry }>) => {
+  addCustomEventListener('open-edit-modal', ((
+    e: CustomEvent<{ entry: Entry }>,
+  ) => {
     openEditModal(e.detail.entry);
   }) as EventListener);
 
-  addCustomEventListener('prompt-delete', ((e: CustomEvent<{ entry: Entry }>) => {
+  addCustomEventListener('prompt-delete', ((
+    e: CustomEvent<{ entry: Entry }>,
+  ) => {
     promptDelete(e.detail.entry);
   }) as EventListener);
 
-  addCustomEventListener('open-confirm-modal', ((e: CustomEvent<{ action: ConfirmModalAction }>) => {
+  addCustomEventListener('open-confirm-modal', ((
+    e: CustomEvent<{ action: ConfirmModalAction }>,
+  ) => {
     openConfirmModal(e.detail.action);
   }) as EventListener);
 
@@ -65,8 +100,14 @@ export function initCustomEventListeners(): void {
 
   addCustomEventListener('request-race-change-dialog', (async (e: Event) => {
     try {
-      const customEvent = e as CustomEvent<{ type: 'synced' | 'unsynced'; lang: Language }>;
-      const result = await showRaceChangeDialog(customEvent.detail.type, customEvent.detail.lang);
+      const customEvent = e as CustomEvent<{
+        type: 'synced' | 'unsynced';
+        lang: Language;
+      }>;
+      const result = await showRaceChangeDialog(
+        customEvent.detail.type,
+        customEvent.detail.lang,
+      );
       resolveRaceChangeDialog(result);
     } catch (err) {
       logger.error('Race change dialog failed:', err);
@@ -92,11 +133,15 @@ export function initCustomEventListeners(): void {
   }) as EventListener);
 
   // Chief judge view events - fault modal dispatchers
-  addCustomEventListener('open-fault-edit-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+  addCustomEventListener('open-fault-edit-modal', ((
+    e: CustomEvent<{ fault: FaultEntry }>,
+  ) => {
     openFaultEditModal(e.detail.fault);
   }) as EventListener);
 
-  addCustomEventListener('open-mark-deletion-modal', ((e: CustomEvent<{ fault: FaultEntry }>) => {
+  addCustomEventListener('open-mark-deletion-modal', ((
+    e: CustomEvent<{ fault: FaultEntry }>,
+  ) => {
     openMarkDeletionModal(e.detail.fault);
   }) as EventListener);
 
@@ -130,14 +175,17 @@ export function initVoiceMode(): void {
   const proxyEndpoint = '/api/v1/voice';
 
   // Check for custom config override (for development/testing)
-  const customConfig = (window as unknown as Record<string, unknown>).VOICE_LLM_CONFIG as {
-    endpoint?: string;
-    apiKey?: string;
-  } | undefined;
+  const customConfig = (window as unknown as Record<string, unknown>)
+    .VOICE_LLM_CONFIG as
+    | {
+        endpoint?: string;
+        apiKey?: string;
+      }
+    | undefined;
 
   const llmConfig = {
     endpoint: customConfig?.endpoint || proxyEndpoint,
-    apiKey: customConfig?.apiKey || 'proxy' // Proxy handles auth server-side
+    apiKey: customConfig?.apiKey || 'proxy', // Proxy handles auth server-side
   };
 
   // Initialize voice mode with LLM configuration
@@ -171,7 +219,13 @@ export function initVoiceMode(): void {
 /**
  * Handle storage error event - CRITICAL for data integrity
  */
-export function handleStorageError(event: CustomEvent<{ message: string; isQuotaError: boolean; entryCount: number }>): void {
+export function handleStorageError(
+  event: CustomEvent<{
+    message: string;
+    isQuotaError: boolean;
+    entryCount: number;
+  }>,
+): void {
   const { isQuotaError, entryCount } = event.detail;
   const lang = store.getState().currentLang;
 
@@ -186,21 +240,44 @@ export function handleStorageError(event: CustomEvent<{ message: string; isQuota
   // Also trigger haptic feedback to ensure user notices
   feedbackWarning();
 
-  logger.error('[Storage] saveEntries:', event.detail.message, { entryCount, isQuotaError });
+  logger.error('[Storage] saveEntries:', event.detail.message, {
+    entryCount,
+    isQuotaError,
+  });
 }
 
 /**
  * Handle storage warning event - storage is getting full
  */
-export function handleStorageWarning(event: CustomEvent<{ usage: number; quota: number; percent: number }>): void {
-  const { percent } = event.detail;
+export function handleStorageWarning(
+  event: CustomEvent<{
+    usage: number;
+    quota: number;
+    percent: number;
+    critical?: boolean;
+  }>,
+): void {
+  const { percent, critical } = event.detail;
   const lang = store.getState().currentLang;
 
-  // Only show warning once per session to avoid spam
-  const warningShown = sessionStorage.getItem('storage-warning-shown');
-  if (!warningShown) {
-    showToast(`${t('storageWarning', lang)} (${percent}%)`, 'warning', TOAST_DURATION.WARNING);
-    sessionStorage.setItem('storage-warning-shown', 'true');
+  if (critical) {
+    // Critical: always show at 90%+
+    showToast(
+      `${t('storageQuotaError', lang)} (${percent}%)`,
+      'error',
+      TOAST_DURATION.CRITICAL,
+    );
+  } else {
+    // Warning: show once per session at 75%+
+    const warningShown = sessionStorage.getItem('storage-warning-shown');
+    if (!warningShown) {
+      showToast(
+        `${t('storageWarning', lang)} (${percent}%)`,
+        'warning',
+        TOAST_DURATION.WARNING,
+      );
+      sessionStorage.setItem('storage-warning-shown', 'true');
+    }
   }
 }
 
@@ -228,10 +305,6 @@ export function handleBeforeUnload(): void {
   // Cleanup wake lock service
   wakeLockService.disable();
 
-  // DISABLED: Motion effects disabled to save battery
-  // // Cleanup motion service
-  // motionService.cleanup();
-
   // Cleanup ambient mode service
   ambientModeService.cleanup();
 
@@ -243,13 +316,25 @@ export function handleBeforeUnload(): void {
 
   // MEMORY LEAK FIX: Clear all pending ripple timeouts and remove orphaned ripples
   cleanupRippleEffects();
-  document.querySelectorAll('.ripple').forEach(ripple => ripple.remove());
+  document.querySelectorAll('.ripple').forEach((ripple) => ripple.remove());
 
   // MEMORY LEAK FIX: Remove global event listeners
-  window.removeEventListener('race-deleted', handleRaceDeleted as EventListener);
-  window.removeEventListener('auth-expired', handleAuthExpired as EventListener);
-  window.removeEventListener('storage-error', handleStorageError as EventListener);
-  window.removeEventListener('storage-warning', handleStorageWarning as EventListener);
+  window.removeEventListener(
+    'race-deleted',
+    handleRaceDeleted as EventListener,
+  );
+  window.removeEventListener(
+    'auth-expired',
+    handleAuthExpired as EventListener,
+  );
+  window.removeEventListener(
+    'storage-error',
+    handleStorageError as EventListener,
+  );
+  window.removeEventListener(
+    'storage-warning',
+    handleStorageWarning as EventListener,
+  );
 
   // MEMORY LEAK FIX: Remove all custom event listeners (stored by reference)
   customEventListeners.removeAll();

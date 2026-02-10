@@ -5,7 +5,9 @@
 function randomHex(length: number): string {
   const bytes = new Uint8Array(Math.ceil(length / 2));
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').slice(0, length);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, length);
 }
 
 /**
@@ -21,15 +23,57 @@ export function generateEntryId(deviceId: string): string {
 
 // Word lists for human-readable device IDs
 const ADJECTIVES = [
-  'swift', 'bold', 'cool', 'fast', 'keen', 'wild', 'calm', 'warm',
-  'bright', 'sharp', 'quick', 'brave', 'fresh', 'grand', 'prime', 'clear',
-  'snow', 'ice', 'frost', 'peak', 'alpine', 'polar', 'winter', 'crisp'
+  'swift',
+  'bold',
+  'cool',
+  'fast',
+  'keen',
+  'wild',
+  'calm',
+  'warm',
+  'bright',
+  'sharp',
+  'quick',
+  'brave',
+  'fresh',
+  'grand',
+  'prime',
+  'clear',
+  'snow',
+  'ice',
+  'frost',
+  'peak',
+  'alpine',
+  'polar',
+  'winter',
+  'crisp',
 ];
 
 const NOUNS = [
-  'fox', 'bear', 'wolf', 'hawk', 'eagle', 'tiger', 'lion', 'deer',
-  'pine', 'oak', 'cedar', 'birch', 'maple', 'spruce', 'aspen', 'willow',
-  'peak', 'ridge', 'slope', 'trail', 'summit', 'valley', 'glacier', 'cliff'
+  'fox',
+  'bear',
+  'wolf',
+  'hawk',
+  'eagle',
+  'tiger',
+  'lion',
+  'deer',
+  'pine',
+  'oak',
+  'cedar',
+  'birch',
+  'maple',
+  'spruce',
+  'aspen',
+  'willow',
+  'peak',
+  'ridge',
+  'slope',
+  'trail',
+  'summit',
+  'valley',
+  'glacier',
+  'cliff',
 ];
 
 /**
@@ -67,7 +111,9 @@ export function generateDeviceName(): string {
 /**
  * Parse entry ID to extract components
  */
-export function parseEntryId(id: string): { deviceId: string; timestamp: number; random: string } | null {
+export function parseEntryId(
+  id: string,
+): { deviceId: string; timestamp: number; random: string } | null {
   const parts = id.split('-');
   if (parts.length < 3) return null;
 
@@ -77,7 +123,7 @@ export function parseEntryId(id: string): { deviceId: string; timestamp: number;
   const deviceId = parts.join('-');
   const timestamp = parseInt(timestampStr, 10);
 
-  if (isNaN(timestamp)) return null;
+  if (Number.isNaN(timestamp)) return null;
 
   return { deviceId, timestamp, random };
 }
@@ -97,7 +143,8 @@ export function migrateId(oldId: number | string, deviceId: string): string {
     return oldId;
   }
 
-  const timestamp = typeof oldId === 'number' ? oldId : parseInt(String(oldId), 10);
+  const timestamp =
+    typeof oldId === 'number' ? oldId : parseInt(String(oldId), 10);
   const random = crypto.randomUUID?.().slice(0, 8) ?? randomHex(8);
   return `${deviceId}-${timestamp}-${random}`;
 }

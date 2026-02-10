@@ -3,19 +3,23 @@
  * Handles adaptive polling strategy with battery and network awareness
  */
 
-import { batteryService, type BatteryLevel, type BatteryStatus } from '../battery';
+import {
+  type BatteryLevel,
+  type BatteryStatus,
+  batteryService,
+} from '../battery';
 import { networkMonitor } from './networkMonitor';
 import {
-  POLL_INTERVAL_NORMAL,
-  POLL_INTERVAL_ERROR,
-  POLL_INTERVALS_IDLE,
-  POLL_INTERVALS_LOW_BATTERY,
-  POLL_INTERVALS_CRITICAL,
-  POLL_INTERVALS_METERED,
-  POLL_INTERVAL_METERED_BASE,
   IDLE_THRESHOLD,
   IDLE_THRESHOLD_LOW_BATTERY,
-  type PollingConfig
+  POLL_INTERVAL_ERROR,
+  POLL_INTERVAL_METERED_BASE,
+  POLL_INTERVAL_NORMAL,
+  POLL_INTERVALS_CRITICAL,
+  POLL_INTERVALS_IDLE,
+  POLL_INTERVALS_LOW_BATTERY,
+  POLL_INTERVALS_METERED,
+  type PollingConfig,
 } from './types';
 
 /**
@@ -40,15 +44,17 @@ class PollingManager {
     this.pollCallback = pollCallback;
 
     // Subscribe to battery level changes
-    this.batteryUnsubscribe = batteryService.subscribe((status: BatteryStatus) => {
-      const previousLevel = this.currentBatteryLevel;
-      this.currentBatteryLevel = status.batteryLevel;
+    this.batteryUnsubscribe = batteryService.subscribe(
+      (status: BatteryStatus) => {
+        const previousLevel = this.currentBatteryLevel;
+        this.currentBatteryLevel = status.batteryLevel;
 
-      // Adjust polling if battery level changed and we're actively polling
-      if (previousLevel !== status.batteryLevel && this.pollInterval) {
-        this.applyBatteryAwarePolling();
-      }
-    });
+        // Adjust polling if battery level changed and we're actively polling
+        if (previousLevel !== status.batteryLevel && this.pollInterval) {
+          this.applyBatteryAwarePolling();
+        }
+      },
+    );
 
     // Subscribe to network metered state changes
     this.meteredUnsubscribe = networkMonitor.onMeteredChange(() => {
@@ -75,7 +81,8 @@ class PollingManager {
     }
 
     // Set up polling using centralized method
-    const interval = this.consecutiveErrors > 2 ? POLL_INTERVAL_ERROR : POLL_INTERVAL_NORMAL;
+    const interval =
+      this.consecutiveErrors > 2 ? POLL_INTERVAL_ERROR : POLL_INTERVAL_NORMAL;
     this.setPollingInterval(interval);
   }
 
@@ -108,7 +115,7 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_CRITICAL,
         threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_CRITICAL[0] // 30s when active
+        baseInterval: POLL_INTERVALS_CRITICAL[0], // 30s when active
       };
     }
     // Metered network uses reduced intervals to save data
@@ -116,7 +123,7 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_METERED,
         threshold: IDLE_THRESHOLD,
-        baseInterval: POLL_INTERVAL_METERED_BASE // 15s when on cellular
+        baseInterval: POLL_INTERVAL_METERED_BASE, // 15s when on cellular
       };
     }
     // Low battery uses slower intervals
@@ -124,14 +131,14 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_LOW_BATTERY,
         threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_LOW_BATTERY[0] // 30s when active
+        baseInterval: POLL_INTERVALS_LOW_BATTERY[0], // 30s when active
       };
     }
     // Normal mode
     return {
       intervals: POLL_INTERVALS_IDLE,
       threshold: IDLE_THRESHOLD,
-      baseInterval: POLL_INTERVAL_NORMAL // 15s when active
+      baseInterval: POLL_INTERVAL_NORMAL, // 15s when active
     };
   }
 
@@ -175,13 +182,14 @@ class PollingManager {
       // Clamp idle level to new interval array bounds
       this.currentIdleLevel = Math.min(
         Math.max(0, this.currentIdleLevel),
-        config.intervals.length - 1
+        config.intervals.length - 1,
       );
 
       // Get appropriate interval
-      const newInterval = this.consecutiveNoChanges < config.threshold
-        ? config.baseInterval  // Active mode
-        : config.intervals[this.currentIdleLevel];  // Idle mode
+      const newInterval =
+        this.consecutiveNoChanges < config.threshold
+          ? config.baseInterval // Active mode
+          : config.intervals[this.currentIdleLevel]; // Idle mode
 
       this.setPollingInterval(newInterval);
     } finally {
@@ -237,7 +245,7 @@ class PollingManager {
         if (this.consecutiveNoChanges >= config.threshold) {
           const newIdleLevel = Math.min(
             Math.max(0, this.currentIdleLevel + 1),
-            config.intervals.length - 1
+            config.intervals.length - 1,
           );
 
           if (newIdleLevel !== this.currentIdleLevel) {

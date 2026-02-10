@@ -77,7 +77,8 @@ class VoiceNoteService {
       return false;
     }
 
-    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionClass =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognitionClass();
     this.recognition.continuous = true;
     this.recognition.interimResults = true;
@@ -203,7 +204,7 @@ class VoiceNoteService {
 
     try {
       this.recognition?.stop();
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
 
@@ -218,7 +219,7 @@ class VoiceNoteService {
 
     try {
       this.recognition?.abort();
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
 

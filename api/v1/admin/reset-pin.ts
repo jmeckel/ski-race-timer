@@ -1,3 +1,5 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type Redis from 'ioredis';
 import crypto from 'crypto';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
@@ -15,10 +17,20 @@ import {
 const RATE_LIMIT_WINDOW = 60; // 1 minute
 const RATE_LIMIT_MAX_ATTEMPTS = 3; // Only 3 attempts per minute per IP
 
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  error?: string;
+}
+
+interface ResetPinRequestBody {
+  serverPin?: string;
+}
+
 /**
  * Check rate limit for PIN reset attempts
  */
-async function checkRateLimit(client, clientIP) {
+async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimitResult> {
   const key = `reset-pin:rate:${clientIP}`;
 
   try {
@@ -30,8 +42,9 @@ async function checkRateLimit(client, clientIP) {
       allowed: current <= RATE_LIMIT_MAX_ATTEMPTS,
       remaining: Math.max(0, RATE_LIMIT_MAX_ATTEMPTS - current)
     };
-  } catch (error) {
-    console.error('Rate limit check failed:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Rate limit check failed:', message);
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
   }
@@ -41,14 +54,12 @@ async function checkRateLimit(client, clientIP) {
  * Reset PIN endpoint
  * Requires SERVER_API_PIN in request body (serverPin field) for authorization
  * Deletes the stored PIN hash, allowing the next PIN entry to become the new PIN
- *
- * @param {Object} req.body - Request body
- * @param {string} req.body.serverPin - The server API PIN for authorization
  */
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return handlePreflight(req, res, ['POST', 'OPTIONS']);
+    handlePreflight(req, res, ['POST', 'OPTIONS']);
+    return;
   }
 
   // Set headers for non-preflight requests
@@ -60,7 +71,7 @@ export default async function handler(req, res) {
   }
 
   // Parse request body
-  const { serverPin: providedPin } = req.body || {};
+  const { serverPin: providedPin } = (req.body || {}) as ResetPinRequestBody;
 
   const serverPin = process.env.SERVER_API_PIN;
 
@@ -74,11 +85,12 @@ export default async function handler(req, res) {
     return sendError(res, 'Authorization required', 401);
   }
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -88,8 +100,8 @@ export default async function handler(req, res) {
   }
 
   // Rate limiting BEFORE PIN verification to prevent brute-force
-  const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-                   req.headers['x-real-ip'] ||
+  const clientIP = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+                   (req.headers['x-real-ip'] as string | undefined) ||
                    req.socket?.remoteAddress ||
                    'unknown';
 
@@ -130,8 +142,9 @@ export default async function handler(req, res) {
       success: true,
       message: 'PINs have been reset. The next PINs entered will become the new PINs.'
     });
-  } catch (error) {
-    console.error('Reset PIN error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Reset PIN error:', message);
     return sendError(res, 'Internal server error', 500);
   }
 }

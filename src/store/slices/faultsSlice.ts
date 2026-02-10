@@ -4,8 +4,8 @@
  */
 
 import type { FaultEntry, FaultVersion, Run } from '../../types';
-import { sanitizeFaultEntry } from '../../utils/validation';
 import { logger } from '../../utils/logger';
+import { sanitizeFaultEntry } from '../../utils/validation';
 
 // Maximum version history entries to keep per fault (for performance)
 const MAX_VERSION_HISTORY = 50;
@@ -14,7 +14,12 @@ const MAX_VERSION_HISTORY = 50;
  * Extract version data fields from a fault entry
  */
 export function extractFaultVersionData(
-  fault: FaultEntry | Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>
+  fault:
+    | FaultEntry
+    | Omit<
+        FaultEntry,
+        'currentVersion' | 'versionHistory' | 'markedForDeletion'
+      >,
 ): FaultVersion['data'] {
   return {
     id: fault.id,
@@ -30,7 +35,7 @@ export function extractFaultVersionData(
     // Voice notes
     notes: fault.notes,
     notesSource: fault.notesSource,
-    notesTimestamp: fault.notesTimestamp
+    notesTimestamp: fault.notesTimestamp,
   };
 }
 
@@ -43,7 +48,7 @@ export function createFaultVersion(
   data: FaultVersion['data'],
   editedBy: string,
   editedByDeviceId: string,
-  changeDescription?: string
+  changeDescription?: string,
 ): FaultVersion {
   return {
     version,
@@ -52,7 +57,7 @@ export function createFaultVersion(
     editedByDeviceId,
     changeType,
     data,
-    changeDescription
+    changeDescription,
   };
 }
 
@@ -61,7 +66,7 @@ export function createFaultVersion(
  */
 export function appendToVersionHistory(
   existingHistory: FaultVersion[] | undefined,
-  newVersion: FaultVersion
+  newVersion: FaultVersion,
 ): FaultVersion[] {
   const history = [...(existingHistory || []), newVersion];
   return history.length > MAX_VERSION_HISTORY
@@ -74,21 +79,24 @@ export function appendToVersionHistory(
  */
 export function addFaultEntry(
   faultEntries: FaultEntry[],
-  fault: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>
+  fault: Omit<
+    FaultEntry,
+    'currentVersion' | 'versionHistory' | 'markedForDeletion'
+  >,
 ): FaultEntry[] {
   const initialVersion = createFaultVersion(
     1,
     'create',
     extractFaultVersionData(fault),
     fault.deviceName,
-    fault.deviceId
+    fault.deviceId,
   );
 
   const faultWithVersion: FaultEntry = {
     ...fault,
     currentVersion: 1,
     versionHistory: [initialVersion],
-    markedForDeletion: false
+    markedForDeletion: false,
   };
 
   return [...faultEntries, faultWithVersion];
@@ -97,8 +105,11 @@ export function addFaultEntry(
 /**
  * Delete a fault entry (hard delete)
  */
-export function deleteFaultEntry(faultEntries: FaultEntry[], id: string): FaultEntry[] {
-  return faultEntries.filter(f => f.id !== id);
+export function deleteFaultEntry(
+  faultEntries: FaultEntry[],
+  id: string,
+): FaultEntry[] {
+  return faultEntries.filter((f) => f.id !== id);
 }
 
 /**
@@ -107,9 +118,9 @@ export function deleteFaultEntry(faultEntries: FaultEntry[], id: string): FaultE
 export function updateFaultEntry(
   faultEntries: FaultEntry[],
   id: string,
-  updates: Partial<FaultEntry>
+  updates: Partial<FaultEntry>,
 ): FaultEntry[] | null {
-  const index = faultEntries.findIndex(f => f.id === id);
+  const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
   const newFaultEntries = [...faultEntries];
@@ -123,12 +134,23 @@ export function updateFaultEntry(
 export function updateFaultEntryWithHistory(
   faultEntries: FaultEntry[],
   id: string,
-  updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType' | 'notes' | 'notesSource' | 'notesTimestamp'>>,
+  updates: Partial<
+    Pick<
+      FaultEntry,
+      | 'bib'
+      | 'run'
+      | 'gateNumber'
+      | 'faultType'
+      | 'notes'
+      | 'notesSource'
+      | 'notesTimestamp'
+    >
+  >,
   deviceName: string,
   deviceId: string,
-  changeDescription?: string
+  changeDescription?: string,
 ): FaultEntry[] | null {
-  const index = faultEntries.findIndex(f => f.id === id);
+  const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
   const oldFault = faultEntries[index];
@@ -142,14 +164,17 @@ export function updateFaultEntryWithHistory(
     extractFaultVersionData(updatedFault),
     deviceName,
     deviceId,
-    changeDescription
+    changeDescription,
   );
 
   const newFaultEntries = [...faultEntries];
   newFaultEntries[index] = {
     ...updatedFault,
     currentVersion: newVersion,
-    versionHistory: appendToVersionHistory(oldFault.versionHistory, newVersionRecord)
+    versionHistory: appendToVersionHistory(
+      oldFault.versionHistory,
+      newVersionRecord,
+    ),
   };
   return newFaultEntries;
 }
@@ -162,15 +187,17 @@ export function restoreFaultVersion(
   id: string,
   versionNumber: number,
   deviceName: string,
-  deviceId: string
+  deviceId: string,
 ): FaultEntry[] | null {
-  const index = faultEntries.findIndex(f => f.id === id);
+  const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
   const oldFault = faultEntries[index];
   if (oldFault.markedForDeletion) return null;
 
-  const versionToRestore = oldFault.versionHistory?.find(v => v.version === versionNumber);
+  const versionToRestore = oldFault.versionHistory?.find(
+    (v) => v.version === versionNumber,
+  );
   if (!versionToRestore) return null;
 
   const newVersion = oldFault.currentVersion + 1;
@@ -180,7 +207,7 @@ export function restoreFaultVersion(
     { ...versionToRestore.data },
     deviceName,
     deviceId,
-    `Restored to version ${versionNumber}`
+    `Restored to version ${versionNumber}`,
   );
 
   const newFaultEntries = [...faultEntries];
@@ -195,7 +222,10 @@ export function restoreFaultVersion(
     notesSource: versionToRestore.data.notesSource,
     notesTimestamp: versionToRestore.data.notesTimestamp,
     currentVersion: newVersion,
-    versionHistory: appendToVersionHistory(oldFault.versionHistory, restoreVersionRecord)
+    versionHistory: appendToVersionHistory(
+      oldFault.versionHistory,
+      restoreVersionRecord,
+    ),
   };
   return newFaultEntries;
 }
@@ -207,9 +237,9 @@ export function markFaultForDeletion(
   faultEntries: FaultEntry[],
   id: string,
   deviceName: string,
-  deviceId: string
+  deviceId: string,
 ): FaultEntry[] | null {
-  const index = faultEntries.findIndex(f => f.id === id);
+  const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
   const newFaultEntries = [...faultEntries];
@@ -218,7 +248,7 @@ export function markFaultForDeletion(
     markedForDeletion: true,
     markedForDeletionAt: new Date().toISOString(),
     markedForDeletionBy: deviceName,
-    markedForDeletionByDeviceId: deviceId
+    markedForDeletionByDeviceId: deviceId,
   };
   return newFaultEntries;
 }
@@ -229,9 +259,9 @@ export function markFaultForDeletion(
 export function approveFaultDeletion(
   faultEntries: FaultEntry[],
   id: string,
-  deviceName: string
+  deviceName: string,
 ): { faultEntries: FaultEntry[]; approvedFault: FaultEntry | null } {
-  const fault = faultEntries.find(f => f.id === id);
+  const fault = faultEntries.find((f) => f.id === id);
   if (!fault || !fault.markedForDeletion) {
     return { faultEntries, approvedFault: null };
   }
@@ -239,12 +269,12 @@ export function approveFaultDeletion(
   const approvedFault: FaultEntry = {
     ...fault,
     deletionApprovedAt: new Date().toISOString(),
-    deletionApprovedBy: deviceName
+    deletionApprovedBy: deviceName,
   };
 
   return {
-    faultEntries: faultEntries.filter(f => f.id !== id),
-    approvedFault
+    faultEntries: faultEntries.filter((f) => f.id !== id),
+    approvedFault,
   };
 }
 
@@ -255,9 +285,9 @@ export function rejectFaultDeletion(
   faultEntries: FaultEntry[],
   id: string,
   deviceName: string,
-  deviceId: string
+  deviceId: string,
 ): FaultEntry[] | null {
-  const index = faultEntries.findIndex(f => f.id === id);
+  const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
   const oldFault = faultEntries[index];
@@ -268,7 +298,7 @@ export function rejectFaultDeletion(
     extractFaultVersionData(oldFault),
     deviceName,
     deviceId,
-    'Deletion rejected by Chief Judge'
+    'Deletion rejected by Chief Judge',
   );
 
   const newFaultEntries = [...faultEntries];
@@ -279,7 +309,10 @@ export function rejectFaultDeletion(
     markedForDeletionBy: undefined,
     markedForDeletionByDeviceId: undefined,
     currentVersion: newVersion,
-    versionHistory: appendToVersionHistory(oldFault.versionHistory, rejectionVersionRecord)
+    versionHistory: appendToVersionHistory(
+      oldFault.versionHistory,
+      rejectionVersionRecord,
+    ),
   };
   return newFaultEntries;
 }
@@ -288,21 +321,28 @@ export function rejectFaultDeletion(
  * Get faults pending deletion
  */
 export function getPendingDeletions(faultEntries: FaultEntry[]): FaultEntry[] {
-  return faultEntries.filter(f => f.markedForDeletion);
+  return faultEntries.filter((f) => f.markedForDeletion);
 }
 
 /**
  * Get faults for a specific bib and run
  */
-export function getFaultsForBib(faultEntries: FaultEntry[], bib: string, run: Run): FaultEntry[] {
-  return faultEntries.filter(f => f.bib === bib && f.run === run);
+export function getFaultsForBib(
+  faultEntries: FaultEntry[],
+  bib: string,
+  run: Run,
+): FaultEntry[] {
+  return faultEntries.filter((f) => f.bib === bib && f.run === run);
 }
 
 /**
  * Mark a fault as synced
  */
-export function markFaultSynced(faultEntries: FaultEntry[], faultId: string): FaultEntry[] {
-  const index = faultEntries.findIndex(f => f.id === faultId);
+export function markFaultSynced(
+  faultEntries: FaultEntry[],
+  faultId: string,
+): FaultEntry[] {
+  const index = faultEntries.findIndex((f) => f.id === faultId);
   if (index === -1) return faultEntries;
 
   const newFaultEntries = [...faultEntries];
@@ -317,12 +357,12 @@ export function mergeFaultsFromCloud(
   faultEntries: FaultEntry[],
   cloudFaults: unknown[],
   deletedIds: string[],
-  localDeviceId: string
+  localDeviceId: string,
 ): { faultEntries: FaultEntry[]; addedCount: number } {
   let addedCount = 0;
   let updatedCount = 0;
   const existingFaultsMap = new Map(
-    faultEntries.map(f => [`${f.id}-${f.deviceId}`, f])
+    faultEntries.map((f) => [`${f.id}-${f.deviceId}`, f]),
   );
   const deletedSet = new Set(deletedIds);
   const newFaults: FaultEntry[] = [];
@@ -351,8 +391,10 @@ export function mergeFaultsFromCloud(
       const cloudVersion = fault.currentVersion || 1;
       const localVersion = existingFault.currentVersion || 1;
 
-      if (cloudVersion > localVersion ||
-          fault.markedForDeletion !== existingFault.markedForDeletion) {
+      if (
+        cloudVersion > localVersion ||
+        fault.markedForDeletion !== existingFault.markedForDeletion
+      ) {
         updatedFaults.push(fault);
         updatedCount++;
       }
@@ -368,7 +410,7 @@ export function mergeFaultsFromCloud(
     // Update existing faults
     for (const updated of updatedFaults) {
       const key = `${updated.id}-${updated.deviceId}`;
-      const index = result.findIndex(f => `${f.id}-${f.deviceId}` === key);
+      const index = result.findIndex((f) => `${f.id}-${f.deviceId}` === key);
       if (index !== -1) {
         result[index] = updated;
       }
@@ -378,7 +420,10 @@ export function mergeFaultsFromCloud(
     result = [...result, ...newFaults];
 
     // Sort by timestamp
-    result.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    result.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
     return { faultEntries: result, addedCount: addedCount + updatedCount };
   }
 
@@ -390,12 +435,12 @@ export function mergeFaultsFromCloud(
  */
 export function removeDeletedCloudFaults(
   faultEntries: FaultEntry[],
-  deletedIds: string[]
+  deletedIds: string[],
 ): { faultEntries: FaultEntry[]; removedCount: number } {
   const deletedSet = new Set(deletedIds);
   let removedCount = 0;
 
-  const filtered = faultEntries.filter(fault => {
+  const filtered = faultEntries.filter((fault) => {
     const deleteKey = `${fault.id}:${fault.deviceId}`;
     const isDeleted = deletedSet.has(deleteKey) || deletedSet.has(fault.id);
 

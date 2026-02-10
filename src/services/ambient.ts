@@ -9,8 +9,8 @@
  * Exit: Any tap returns to full UI (first tap does NOT record timestamp)
  */
 
-import { batteryService } from './battery';
 import { logger } from '../utils/logger';
+import { batteryService } from './battery';
 
 export type AmbientTrigger = 'inactivity' | 'battery' | null;
 
@@ -23,7 +23,7 @@ type AmbientChangeCallback = (state: AmbientState) => void;
 
 class AmbientModeService {
   private isInitialized = false;
-  private isEnabled = false;  // Only active on timer view
+  private isEnabled = false; // Only active on timer view
   private isAmbientActive = false;
   private triggeredBy: AmbientTrigger = null;
   private lastActivityTimestamp = Date.now();
@@ -50,21 +50,33 @@ class AmbientModeService {
     // Subscribe to battery status changes
     this.batteryUnsubscribe = batteryService.subscribe((status) => {
       // If battery becomes critical while not charging, trigger ambient mode
-      if (status.batteryLevel === 'critical' && !status.charging && this.isEnabled) {
+      if (
+        status.batteryLevel === 'critical' &&
+        !status.charging &&
+        this.isEnabled
+      ) {
         this.enterAmbientMode('battery');
       }
 
       // If charging starts and we were triggered by battery, exit
-      if (status.charging && this.isAmbientActive && this.triggeredBy === 'battery') {
+      if (
+        status.charging &&
+        this.isAmbientActive &&
+        this.triggeredBy === 'battery'
+      ) {
         this.exitAmbientMode();
       }
     });
 
     // Set up activity listeners
     this.activityHandler = () => this.resetInactivityTimer();
-    document.addEventListener('touchstart', this.activityHandler, { passive: true });
+    document.addEventListener('touchstart', this.activityHandler, {
+      passive: true,
+    });
     document.addEventListener('click', this.activityHandler, { passive: true });
-    document.addEventListener('keydown', this.activityHandler, { passive: true });
+    document.addEventListener('keydown', this.activityHandler, {
+      passive: true,
+    });
   }
 
   /**
@@ -133,7 +145,7 @@ class AmbientModeService {
   getState(): AmbientState {
     return {
       isActive: this.isAmbientActive,
-      triggeredBy: this.triggeredBy
+      triggeredBy: this.triggeredBy,
     };
   }
 

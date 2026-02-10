@@ -1,5 +1,5 @@
-import type { AppState } from '../types';
 import { cameraService, gpsService } from '../services';
+import type { AppState } from '../types';
 
 /**
  * Apply view-specific service behavior to reduce battery drain.

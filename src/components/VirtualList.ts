@@ -1,16 +1,25 @@
-import type { Entry, FaultEntry, Run } from '../types';
-import { formatTime, formatBib, getPointColor, getPointLabel, getRunColor, getRunLabel, escapeHtml, escapeAttr } from '../utils';
-import { store } from '../store';
 import { t } from '../i18n/translations';
-import { getFaultTypeLabel } from '../features/chiefJudgeView';
+import { store } from '../store';
+import type { Entry, FaultEntry, Run } from '../types';
+import {
+  escapeAttr,
+  escapeHtml,
+  formatBib,
+  formatTime,
+  getFaultTypeLabel,
+  getPointColor,
+  getPointLabel,
+  getRunColor,
+  getRunLabel,
+} from '../utils';
 import { logger } from '../utils/logger';
 
 // Group of items for the same bib+run
 interface DisplayGroup {
-  id: string;           // bib-run
+  id: string; // bib-run
   bib: string;
   run: Run;
-  entries: Entry[];     // Timing entries (Start, Finish)
+  entries: Entry[]; // Timing entries (Start, Finish)
   faults: FaultEntry[]; // Fault entries
   isMultiItem: boolean; // Has more than 1 item total
   latestTimestamp: string;
@@ -106,7 +115,9 @@ export class VirtualList {
         }
       }, SCROLL_DEBOUNCE);
     };
-    this.scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true });
+    this.scrollContainer.addEventListener('scroll', this.scrollHandler, {
+      passive: true,
+    });
 
     // Set up resize observer with debounce for battery efficiency
     this.resizeObserver = new ResizeObserver(() => {
@@ -132,7 +143,11 @@ export class VirtualList {
 
     // Subscribe to store updates
     this.unsubscribe = store.subscribe((stateSnapshot, changedKeys) => {
-      if (changedKeys.includes('entries') || changedKeys.includes('selectedEntries') || changedKeys.includes('faultEntries')) {
+      if (
+        changedKeys.includes('entries') ||
+        changedKeys.includes('selectedEntries') ||
+        changedKeys.includes('faultEntries')
+      ) {
         this.setEntries(stateSnapshot.entries);
       }
     });
@@ -141,7 +156,10 @@ export class VirtualList {
     this.domRemovalObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const removedNode of mutation.removedNodes) {
-          if (removedNode === this.container || removedNode.contains?.(this.container)) {
+          if (
+            removedNode === this.container ||
+            removedNode.contains?.(this.container)
+          ) {
             this.destroy();
             return;
           }
@@ -150,7 +168,10 @@ export class VirtualList {
     });
     // Observe the parent of the container (or body as fallback)
     const observeTarget = this.container.parentElement || document.body;
-    this.domRemovalObserver.observe(observeTarget, { childList: true, subtree: true });
+    this.domRemovalObserver.observe(observeTarget, {
+      childList: true,
+      subtree: true,
+    });
 
     // Initial setup
     this.containerHeight = this.scrollContainer.clientHeight;
@@ -167,7 +188,11 @@ export class VirtualList {
   /**
    * Apply current filters and group items
    */
-  applyFilters(searchTerm?: string, pointFilter?: string, statusFilter?: string): void {
+  applyFilters(
+    searchTerm?: string,
+    pointFilter?: string,
+    statusFilter?: string,
+  ): void {
     // Cancel any pending scroll-triggered render to prevent double-render
     if (this.scrollDebounceTimeout !== null) {
       clearTimeout(this.scrollDebounceTimeout);
@@ -179,18 +204,21 @@ export class VirtualList {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filteredEntries = filteredEntries.filter(e =>
-        e.bib.toLowerCase().includes(term) ||
-        e.deviceName?.toLowerCase().includes(term)
+      filteredEntries = filteredEntries.filter(
+        (e) =>
+          e.bib.toLowerCase().includes(term) ||
+          e.deviceName?.toLowerCase().includes(term),
       );
     }
 
     if (pointFilter && pointFilter !== 'all') {
-      filteredEntries = filteredEntries.filter(e => e.point === pointFilter);
+      filteredEntries = filteredEntries.filter((e) => e.point === pointFilter);
     }
 
     if (statusFilter && statusFilter !== 'all') {
-      filteredEntries = filteredEntries.filter(e => e.status === statusFilter);
+      filteredEntries = filteredEntries.filter(
+        (e) => e.status === statusFilter,
+      );
     }
 
     // Group entries by bib+run
@@ -209,7 +237,7 @@ export class VirtualList {
           entries: [],
           faults: [],
           isMultiItem: false,
-          latestTimestamp: entry.timestamp
+          latestTimestamp: entry.timestamp,
         });
       }
 
@@ -227,8 +255,10 @@ export class VirtualList {
       // Apply search filter
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
-        if (!fault.bib.toLowerCase().includes(term) &&
-            !fault.deviceName?.toLowerCase().includes(term)) {
+        if (
+          !fault.bib.toLowerCase().includes(term) &&
+          !fault.deviceName?.toLowerCase().includes(term)
+        ) {
           continue;
         }
       }
@@ -239,7 +269,12 @@ export class VirtualList {
       }
 
       // For status filter, include faults when filtering for dsq/flt or all
-      if (statusFilter && statusFilter !== 'all' && statusFilter !== 'dsq' && statusFilter !== 'flt') {
+      if (
+        statusFilter &&
+        statusFilter !== 'all' &&
+        statusFilter !== 'dsq' &&
+        statusFilter !== 'flt'
+      ) {
         continue;
       }
 
@@ -251,7 +286,7 @@ export class VirtualList {
           entries: [],
           faults: [],
           isMultiItem: false,
-          latestTimestamp: fault.timestamp
+          latestTimestamp: fault.timestamp,
         });
       }
 
@@ -332,7 +367,7 @@ export class VirtualList {
       } else if (this.expandedGroups.has(group.id)) {
         // Expanded group - header + sub-items
         const subItemCount = group.entries.length + group.faults.length;
-        totalHeight += GROUP_HEADER_HEIGHT + (subItemCount * SUB_ITEM_HEIGHT);
+        totalHeight += GROUP_HEADER_HEIGHT + subItemCount * SUB_ITEM_HEIGHT;
       } else {
         // Collapsed group - just header
         totalHeight += GROUP_HEADER_HEIGHT;
@@ -340,19 +375,6 @@ export class VirtualList {
     }
 
     this.contentContainer.style.height = `${totalHeight}px`;
-  }
-
-  /**
-   * Get the Y position for a group by index
-   */
-  private getGroupPosition(index: number): number {
-    let position = 0;
-
-    for (let i = 0; i < index && i < this.groups.length; i++) {
-      position += this.getGroupHeight(this.groups[i]);
-    }
-
-    return position;
   }
 
   /**
@@ -364,7 +386,7 @@ export class VirtualList {
     }
     if (this.expandedGroups.has(group.id)) {
       const subItemCount = group.entries.length + group.faults.length;
-      return GROUP_HEADER_HEIGHT + (subItemCount * SUB_ITEM_HEIGHT);
+      return GROUP_HEADER_HEIGHT + subItemCount * SUB_ITEM_HEIGHT;
     }
     return GROUP_HEADER_HEIGHT;
   }
@@ -397,7 +419,7 @@ export class VirtualList {
       emptyState.remove();
     }
 
-    const state = store.getState();
+    const _state = store.getState();
     const visibleIds = new Set<string>();
     const viewportTop = this.scrollTop;
     const viewportBottom = this.scrollTop + this.containerHeight;
@@ -411,8 +433,9 @@ export class VirtualList {
       const groupBottom = currentY + groupHeight;
 
       // Check if group is in viewport (with buffer)
-      const inViewport = groupBottom >= viewportTop - (BUFFER_SIZE * ITEM_HEIGHT) &&
-                        currentY <= viewportBottom + (BUFFER_SIZE * ITEM_HEIGHT);
+      const inViewport =
+        groupBottom >= viewportTop - BUFFER_SIZE * ITEM_HEIGHT &&
+        currentY <= viewportBottom + BUFFER_SIZE * ITEM_HEIGHT;
 
       if (inViewport) {
         if (!group.isMultiItem) {
@@ -443,7 +466,11 @@ export class VirtualList {
   /**
    * Render a single-item group (flat format - current behavior)
    */
-  private renderSingleItem(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+  private renderSingleItem(
+    group: DisplayGroup,
+    yPosition: number,
+    visibleIds: Set<string>,
+  ): void {
     const itemId = `single-${group.id}`;
     visibleIds.add(itemId);
 
@@ -467,7 +494,11 @@ export class VirtualList {
   /**
    * Render a collapsed multi-item group (just header)
    */
-  private renderCollapsedGroup(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+  private renderCollapsedGroup(
+    group: DisplayGroup,
+    yPosition: number,
+    visibleIds: Set<string>,
+  ): void {
     const headerId = `header-${group.id}`;
     visibleIds.add(headerId);
 
@@ -485,7 +516,11 @@ export class VirtualList {
   /**
    * Render an expanded multi-item group (header + sub-items)
    */
-  private renderExpandedGroup(group: DisplayGroup, yPosition: number, visibleIds: Set<string>): void {
+  private renderExpandedGroup(
+    group: DisplayGroup,
+    yPosition: number,
+    visibleIds: Set<string>,
+  ): void {
     // Render header
     const headerId = `header-${group.id}`;
     visibleIds.add(headerId);
@@ -543,7 +578,10 @@ export class VirtualList {
   /**
    * Create group header element
    */
-  private createGroupHeader(group: DisplayGroup, isExpanded: boolean): HTMLElement {
+  private createGroupHeader(
+    group: DisplayGroup,
+    isExpanded: boolean,
+  ): HTMLElement {
     const header = document.createElement('div');
     header.className = `result-group-header ${isExpanded ? 'expanded' : ''}`;
     header.setAttribute('data-group-id', group.id);
@@ -579,10 +617,14 @@ export class VirtualList {
     // Summary text (localized)
     const summaryParts: string[] = [];
     if (entryCount > 0) {
-      summaryParts.push(`${entryCount} ${t(entryCount === 1 ? 'timeEntry' : 'timeEntries', lang)}`);
+      summaryParts.push(
+        `${entryCount} ${t(entryCount === 1 ? 'timeEntry' : 'timeEntries', lang)}`,
+      );
     }
     if (faultCount > 0) {
-      summaryParts.push(`${faultCount} ${t(faultCount === 1 ? 'faultEntry' : 'faultEntries', lang)}`);
+      summaryParts.push(
+        `${faultCount} ${t(faultCount === 1 ? 'faultEntry' : 'faultEntries', lang)}`,
+      );
     }
     const summaryText = summaryParts.join(', ');
 
@@ -605,11 +647,15 @@ export class VirtualList {
           ${escapeHtml(summaryText)}
         </div>
       </div>
-      ${hasFaults ? `
+      ${
+        hasFaults
+          ? `
         <span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
           ${faultCount}× ${t('flt', lang)}
         </span>
-      ` : ''}
+      `
+          : ''
+      }
     `;
 
     // Create and track event listeners for cleanup
@@ -646,7 +692,9 @@ export class VirtualList {
     listeners.touchstart = () => {
       header.style.background = 'var(--surface-elevated)';
     };
-    header.addEventListener('touchstart', listeners.touchstart, { passive: true });
+    header.addEventListener('touchstart', listeners.touchstart, {
+      passive: true,
+    });
 
     listeners.touchend = () => {
       header.style.background = 'var(--surface)';
@@ -662,7 +710,11 @@ export class VirtualList {
   /**
    * Create a timing entry item (for single-item groups)
    */
-  private createEntryItem(entry: Entry, faults: FaultEntry[], itemId: string): HTMLElement {
+  private createEntryItem(
+    entry: Entry,
+    faults: FaultEntry[],
+    itemId: string,
+  ): HTMLElement {
     const item = document.createElement('div');
     item.className = 'result-item';
     item.setAttribute('role', 'listitem');
@@ -695,11 +747,13 @@ export class VirtualList {
     const runLabel = getRunLabel(run, lang);
 
     const hasFaults = faults.length > 0;
-    const faultBadgeHtml = hasFaults ? `
-      <span class="result-fault-badge" title="${escapeAttr(faults.map(f => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+    const faultBadgeHtml = hasFaults
+      ? `
+      <span class="result-fault-badge" title="${escapeAttr(faults.map((f) => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})`).join(', '))}" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
         ${faults.length > 1 ? `${faults.length}× ${t('flt', lang)}` : `T${faults[0]?.gateNumber || '?'}`}
       </span>
-    ` : '';
+    `
+      : '';
 
     item.innerHTML = `
       <div style="width: 16px; flex-shrink: 0;"></div>
@@ -714,26 +768,38 @@ export class VirtualList {
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
           ${escapeHtml(timeStr)}
         </div>
-        ${entry.deviceName ? `
+        ${
+          entry.deviceName
+            ? `
           <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(entry.deviceName)}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       ${faultBadgeHtml}
-      ${entry.status !== 'ok' ? `
+      ${
+        entry.status !== 'ok'
+          ? `
         <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
           ${escapeHtml(entry.status.toUpperCase())}
         </span>
-      ` : ''}
-      ${entry.photo ? `
+      `
+          : ''
+      }
+      ${
+        entry.photo
+          ? `
         <button class="result-photo-btn" aria-label="${t('viewPhotoLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
             <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
           </svg>
         </button>
-      ` : ''}
+      `
+          : ''
+      }
       <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -769,7 +835,9 @@ export class VirtualList {
     deleteBtn.addEventListener('click', listeners.deleteClick);
 
     // Photo button (optional)
-    const photoBtn = item.querySelector('.result-photo-btn') as HTMLButtonElement | null;
+    const photoBtn = item.querySelector(
+      '.result-photo-btn',
+    ) as HTMLButtonElement | null;
     if (photoBtn) {
       listeners.photoBtn = photoBtn;
       listeners.photoClick = ((e: Event) => {
@@ -789,7 +857,9 @@ export class VirtualList {
     listeners.touchstart = (() => {
       item.style.background = 'var(--surface-elevated)';
     }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
+    item.addEventListener('touchstart', listeners.touchstart, {
+      passive: true,
+    });
 
     listeners.touchend = (() => {
       item.style.background = 'var(--surface)';
@@ -837,10 +907,13 @@ export class VirtualList {
   /**
    * Create a fault-only item (for single-item groups with only faults)
    */
-  private createFaultOnlyItem(group: DisplayGroup, itemId: string): HTMLElement {
+  private createFaultOnlyItem(
+    group: DisplayGroup,
+    itemId: string,
+  ): HTMLElement {
     const item = document.createElement('div');
     const faults = group.faults;
-    const hasMarkedForDeletion = faults.some(f => f.markedForDeletion);
+    const hasMarkedForDeletion = faults.some((f) => f.markedForDeletion);
 
     item.className = `result-item fault-only-item${hasMarkedForDeletion ? ' marked-for-deletion' : ''}`;
     item.setAttribute('role', 'listitem');
@@ -870,7 +943,10 @@ export class VirtualList {
 
     const faultDetails = faults
       .sort((a, b) => a.gateNumber - b.gateNumber)
-      .map(f => `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})${f.markedForDeletion ? ' ⚠' : ''}`)
+      .map(
+        (f) =>
+          `T${f.gateNumber} (${getFaultTypeLabel(f.faultType, lang)})${f.markedForDeletion ? ' ⚠' : ''}`,
+      )
       .join(', ');
 
     const faultBadgeHtml = `
@@ -880,9 +956,12 @@ export class VirtualList {
     `;
 
     const statusLabel = state.usePenaltyMode ? t('flt', lang) : t('dsq', lang);
-    const statusColor = state.usePenaltyMode ? 'var(--warning)' : 'var(--error)';
+    const statusColor = state.usePenaltyMode
+      ? 'var(--warning)'
+      : 'var(--error)';
 
-    const deletionPendingBadge = hasMarkedForDeletion ? `
+    const deletionPendingBadge = hasMarkedForDeletion
+      ? `
       <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--error); color: white;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 9v4M12 17h.01"/>
@@ -890,7 +969,8 @@ export class VirtualList {
         </svg>
         DEL
       </span>
-    ` : '';
+    `
+      : '';
 
     item.innerHTML = `
       <div style="width: 16px; flex-shrink: 0;"></div>
@@ -905,19 +985,27 @@ export class VirtualList {
         <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
-        ${faults[0]?.deviceName ? `
+        ${
+          faults[0]?.deviceName
+            ? `
           <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(faults[0].deviceName)}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       ${deletionPendingBadge}
       ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
-      ${!hasMarkedForDeletion ? `
+      ${
+        !hasMarkedForDeletion
+          ? `
         <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: ${statusColor}; color: ${statusColor === 'var(--warning)' ? '#000' : 'white'};">
           ${escapeHtml(statusLabel)}
         </span>
-      ` : ''}
+      `
+          : ''
+      }
       <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -942,7 +1030,7 @@ export class VirtualList {
         e.stopPropagation();
         const event = new CustomEvent('fault-edit-request', {
           bubbles: true,
-          detail: { fault: faults[0] }
+          detail: { fault: faults[0] },
         });
         item.dispatchEvent(event);
       }) as EventListener;
@@ -950,14 +1038,16 @@ export class VirtualList {
     }
 
     // Delete button
-    const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
+    const deleteBtn = item.querySelector(
+      '.fault-delete-btn',
+    ) as HTMLButtonElement;
     if (deleteBtn && faults.length > 0) {
       listeners.deleteBtn = deleteBtn;
       listeners.deleteClick = ((e: Event) => {
         e.stopPropagation();
         const event = new CustomEvent('fault-delete-request', {
           bubbles: true,
-          detail: { fault: faults[0] }
+          detail: { fault: faults[0] },
         });
         item.dispatchEvent(event);
       }) as EventListener;
@@ -967,12 +1057,16 @@ export class VirtualList {
     // Click opens edit modal for first fault
     listeners.click = ((e: Event) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.fault-delete-btn') || target.closest('.result-edit-btn')) return;
+      if (
+        target.closest('.fault-delete-btn') ||
+        target.closest('.result-edit-btn')
+      )
+        return;
 
       if (faults.length > 0) {
         const event = new CustomEvent('fault-edit-request', {
           bubbles: true,
-          detail: { fault: faults[0] }
+          detail: { fault: faults[0] },
         });
         item.dispatchEvent(event);
       }
@@ -983,7 +1077,9 @@ export class VirtualList {
     listeners.touchstart = (() => {
       item.style.background = 'var(--surface-elevated)';
     }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
+    item.addEventListener('touchstart', listeners.touchstart, {
+      passive: true,
+    });
 
     listeners.touchend = (() => {
       item.style.background = 'var(--surface)';
@@ -1002,7 +1098,7 @@ export class VirtualList {
           if (faults.length > 0) {
             const event = new CustomEvent('fault-edit-request', {
               bubbles: true,
-              detail: { fault: faults[0] }
+              detail: { fault: faults[0] },
             });
             item.dispatchEvent(event);
           }
@@ -1014,7 +1110,7 @@ export class VirtualList {
           if (faults.length > 0) {
             const event = new CustomEvent('fault-delete-request', {
               bubbles: true,
-              detail: { fault: faults[0] }
+              detail: { fault: faults[0] },
             });
             item.dispatchEvent(event);
           }
@@ -1079,17 +1175,25 @@ export class VirtualList {
         <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
           ${escapeHtml(timeStr)}
         </div>
-        ${entry.deviceName ? `
+        ${
+          entry.deviceName
+            ? `
           <div class="result-device" style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(entry.deviceName)}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
-      ${entry.status !== 'ok' ? `
+      ${
+        entry.status !== 'ok'
+          ? `
         <span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
           ${escapeHtml(entry.status.toUpperCase())}
         </span>
-      ` : ''}
+      `
+          : ''
+      }
       <button class="result-edit-btn" aria-label="${t('editEntryLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -1134,7 +1238,9 @@ export class VirtualList {
     listeners.touchstart = (() => {
       item.style.background = 'var(--surface)';
     }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
+    item.addEventListener('touchstart', listeners.touchstart, {
+      passive: true,
+    });
 
     listeners.touchend = (() => {
       item.style.background = 'var(--surface-elevated)';
@@ -1222,17 +1328,25 @@ export class VirtualList {
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
           ${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}
         </span>
-        ${fault.deviceName ? `
+        ${
+          fault.deviceName
+            ? `
           <span style="font-size: 0.65rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(fault.deviceName)}
           </span>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
-      ${hasMarkedForDeletion ? `
+      ${
+        hasMarkedForDeletion
+          ? `
         <span class="deletion-pending-status" style="display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--radius); font-size: 0.65rem; font-weight: 600; background: var(--error); color: white;">
           DEL
         </span>
-      ` : ''}
+      `
+          : ''
+      }
       <button class="result-edit-btn" aria-label="${t('editFaultLabel', lang)}" style="background: none; border: none; color: var(--primary); padding: 6px; cursor: pointer; opacity: 0.7;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -1256,20 +1370,22 @@ export class VirtualList {
       e.stopPropagation();
       const event = new CustomEvent('fault-edit-request', {
         bubbles: true,
-        detail: { fault }
+        detail: { fault },
       });
       item.dispatchEvent(event);
     }) as EventListener;
     editBtn.addEventListener('click', listeners.editClick);
 
     // Delete button
-    const deleteBtn = item.querySelector('.fault-delete-btn') as HTMLButtonElement;
+    const deleteBtn = item.querySelector(
+      '.fault-delete-btn',
+    ) as HTMLButtonElement;
     listeners.deleteBtn = deleteBtn;
     listeners.deleteClick = ((e: Event) => {
       e.stopPropagation();
       const event = new CustomEvent('fault-delete-request', {
         bubbles: true,
-        detail: { fault }
+        detail: { fault },
       });
       item.dispatchEvent(event);
     }) as EventListener;
@@ -1279,7 +1395,7 @@ export class VirtualList {
     listeners.click = (() => {
       const event = new CustomEvent('fault-edit-request', {
         bubbles: true,
-        detail: { fault }
+        detail: { fault },
       });
       item.dispatchEvent(event);
     }) as EventListener;
@@ -1289,7 +1405,9 @@ export class VirtualList {
     listeners.touchstart = (() => {
       item.style.background = 'var(--surface)';
     }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, { passive: true });
+    item.addEventListener('touchstart', listeners.touchstart, {
+      passive: true,
+    });
 
     listeners.touchend = (() => {
       item.style.background = 'var(--surface-elevated)';
@@ -1308,7 +1426,7 @@ export class VirtualList {
           {
             const event = new CustomEvent('fault-edit-request', {
               bubbles: true,
-              detail: { fault }
+              detail: { fault },
             });
             item.dispatchEvent(event);
           }
@@ -1320,7 +1438,7 @@ export class VirtualList {
           {
             const event = new CustomEvent('fault-delete-request', {
               bubbles: true,
-              detail: { fault }
+              detail: { fault },
             });
             item.dispatchEvent(event);
           }
@@ -1394,7 +1512,7 @@ export class VirtualList {
   scrollToEntry(entryId: string | number): void {
     // Find the group containing this entry
     const id = String(entryId);
-    const group = this.groups.find(g => g.entries.some(e => e.id === id));
+    const group = this.groups.find((g) => g.entries.some((e) => e.id === id));
     if (!group) return;
 
     // Calculate the position of the group
@@ -1486,9 +1604,12 @@ export class VirtualList {
     if (listeners) {
       // Main item listeners
       if (listeners.click) item.removeEventListener('click', listeners.click);
-      if (listeners.keydown) item.removeEventListener('keydown', listeners.keydown);
-      if (listeners.touchstart) item.removeEventListener('touchstart', listeners.touchstart);
-      if (listeners.touchend) item.removeEventListener('touchend', listeners.touchend);
+      if (listeners.keydown)
+        item.removeEventListener('keydown', listeners.keydown);
+      if (listeners.touchstart)
+        item.removeEventListener('touchstart', listeners.touchstart);
+      if (listeners.touchend)
+        item.removeEventListener('touchend', listeners.touchend);
       // Child button listeners
       if (listeners.editBtn && listeners.editClick) {
         listeners.editBtn.removeEventListener('click', listeners.editClick);

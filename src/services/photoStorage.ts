@@ -67,7 +67,9 @@ class PhotoStorageService {
 
         // Create photos store if it doesn't exist
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'entryId' });
+          const store = db.createObjectStore(STORE_NAME, {
+            keyPath: 'entryId',
+          });
           store.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
@@ -95,13 +97,16 @@ class PhotoStorageService {
    */
   private processQueue(): void {
     // Process items up to concurrency limit
-    while (this.saveQueue.length > 0 && this.activeSaves < MAX_CONCURRENT_SAVES) {
+    while (
+      this.saveQueue.length > 0 &&
+      this.activeSaves < MAX_CONCURRENT_SAVES
+    ) {
       const item = this.saveQueue.shift()!;
       this.activeSaves++;
 
       // Process with timeout
       this.doSavePhotoWithTimeout(item.entryId, item.photoBase64)
-        .then(success => {
+        .then((success) => {
           item.resolve(success);
         })
         .catch(() => {
@@ -118,19 +123,25 @@ class PhotoStorageService {
   /**
    * Save photo with timeout to prevent blocking
    */
-  private async doSavePhotoWithTimeout(entryId: string, photoBase64: string): Promise<boolean> {
+  private async doSavePhotoWithTimeout(
+    entryId: string,
+    photoBase64: string,
+  ): Promise<boolean> {
     return Promise.race([
       this.doSavePhoto(entryId, photoBase64),
       new Promise<boolean>((_, reject) =>
-        setTimeout(() => reject(new Error('Photo save timeout')), SAVE_TIMEOUT)
-      )
+        setTimeout(() => reject(new Error('Photo save timeout')), SAVE_TIMEOUT),
+      ),
     ]);
   }
 
   /**
    * Actually perform the photo save
    */
-  private async doSavePhoto(entryId: string, photoBase64: string): Promise<boolean> {
+  private async doSavePhoto(
+    entryId: string,
+    photoBase64: string,
+  ): Promise<boolean> {
     if (!this.db) {
       const initialized = await this.initialize();
       if (!initialized) return false;
@@ -149,7 +160,7 @@ class PhotoStorageService {
         const record: PhotoRecord = {
           entryId,
           photo: photoBase64,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         const request = store.put(record);
@@ -301,7 +312,7 @@ class PhotoStorageService {
         const estimate = await navigator.storage.estimate();
         return {
           used: estimate.usage || 0,
-          quota: estimate.quota || 0
+          quota: estimate.quota || 0,
         };
       } catch {
         return null;

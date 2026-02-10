@@ -19,7 +19,8 @@ class NetworkMonitor {
    * Get the browser's Network Information API connection object
    */
   private getConnection(): NetworkInformation | undefined {
-    return (navigator as Navigator & { connection?: NetworkInformation }).connection;
+    return (navigator as Navigator & { connection?: NetworkInformation })
+      .connection;
   }
 
   /**

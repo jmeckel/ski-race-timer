@@ -3,17 +3,17 @@
  * Handles entry cloud operations (fetch, send, delete)
  */
 
-import { store } from '../../store';
-import { isValidEntry } from '../../utils/validation';
-import { fetchWithTimeout } from '../../utils/errors';
-import { photoStorage } from '../photoStorage';
 import { t } from '../../i18n/translations';
-import { getPointLabel } from '../../utils/format';
-import { addRecentRace } from '../../utils/recentRaces';
-import { logger } from '../../utils/logger';
-import { getAuthHeaders, clearAuthToken, dispatchAuthExpired } from '../auth';
-import { API_BASE, FETCH_TIMEOUT } from './types';
+import { store } from '../../store';
 import type { Entry, SyncResponse } from '../../types';
+import { fetchWithTimeout } from '../../utils/errors';
+import { getPointLabel } from '../../utils/format';
+import { logger } from '../../utils/logger';
+import { addRecentRace } from '../../utils/recentRaces';
+import { isValidEntry } from '../../utils/validation';
+import { clearAuthToken, dispatchAuthExpired, getAuthHeaders } from '../auth';
+import { photoStorage } from '../photoStorage';
+import { API_BASE, FETCH_TIMEOUT } from './types';
 
 /**
  * Callbacks for entry sync operations
@@ -22,7 +22,11 @@ export interface EntrySyncCallbacks {
   onPollingAdjust: (success: boolean, hasChanges?: boolean) => void;
   onResetFastPolling: () => void;
   onCleanup: () => void;
-  showToast: (message: string, type?: 'success' | 'warning' | 'error', duration?: number) => void;
+  showToast: (
+    message: string,
+    type?: 'success' | 'warning' | 'error',
+    duration?: number,
+  ) => void;
   fetchFaults: () => Promise<void>;
 }
 
@@ -96,15 +100,19 @@ export async function fetchCloudEntries(): Promise<void> {
     const params = new URLSearchParams({
       raceId: state.raceId,
       deviceId: state.deviceId,
-      deviceName: state.deviceName
+      deviceName: state.deviceName,
     });
-    const response = await fetchWithTimeout(`${API_BASE}?${params}`, {
-      headers: getAuthHeaders()
-    }, FETCH_TIMEOUT);
+    const response = await fetchWithTimeout(
+      `${API_BASE}?${params}`,
+      {
+        headers: getAuthHeaders(),
+      },
+      FETCH_TIMEOUT,
+    );
 
     // Handle authentication errors specially
     if (response.status === 401) {
-      let data;
+      let data: Record<string, unknown> = {};
       try {
         data = await response.json();
       } catch {
@@ -118,7 +126,9 @@ export async function fetchCloudEntries(): Promise<void> {
         callbacks?.onCleanup();
         return;
       }
-      throw new Error(`HTTP ${response.status}: ${data.error || 'Unauthorized'}`);
+      throw new Error(
+        `HTTP ${response.status}: ${data.error || 'Unauthorized'}`,
+      );
     }
 
     if (!response.ok) {
@@ -139,20 +149,22 @@ export async function fetchCloudEntries(): Promise<void> {
 
     // Check if race was deleted by admin
     if (data.deleted) {
-      window.dispatchEvent(new CustomEvent('race-deleted', {
-        detail: {
-          raceId: state.raceId,
-          deletedAt: data.deletedAt,
-          message: data.message
-        }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('race-deleted', {
+          detail: {
+            raceId: state.raceId,
+            deletedAt: data.deletedAt,
+            message: data.message,
+          },
+        }),
+      );
       callbacks?.onCleanup();
       return;
     }
 
     // Validate and filter entries - only accept well-formed entries
     const rawEntries = Array.isArray(data.entries) ? data.entries : [];
-    const cloudEntries = rawEntries.filter(entry => {
+    const cloudEntries = rawEntries.filter((entry) => {
       if (!isValidEntry(entry)) {
         logger.warn('Skipping invalid entry from cloud:', entry);
         return false;
@@ -160,7 +172,9 @@ export async function fetchCloudEntries(): Promise<void> {
       return true;
     });
     const deletedIds = Array.isArray(data.deletedIds)
-      ? data.deletedIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      ? data.deletedIds.filter(
+          (id): id is string => typeof id === 'string' && id.length > 0,
+        )
       : [];
 
     // Update sync status
@@ -193,7 +207,9 @@ export async function fetchCloudEntries(): Promise<void> {
       if (added > 0) {
         hasChanges = true;
         const lang = store.getState().currentLang;
-        callbacks?.showToast(t('syncedEntriesFromCloud', lang).replace('{count}', String(added)));
+        callbacks?.showToast(
+          t('syncedEntriesFromCloud', lang).replace('{count}', String(added)),
+        );
       }
     }
 
@@ -211,14 +227,21 @@ export async function fetchCloudEntries(): Promise<void> {
   } catch (error) {
     logger.error('Cloud sync fetch error:', error);
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     const errorName = error instanceof Error ? error.name : '';
 
-    if (errorName === 'FetchTimeoutError' || errorMessage.includes('timed out')) {
+    if (
+      errorName === 'FetchTimeoutError' ||
+      errorMessage.includes('timed out')
+    ) {
       store.setSyncStatus('error');
     } else if (errorMessage.includes('500') || errorMessage.includes('503')) {
       store.setSyncStatus('error');
-    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+    } else if (
+      errorMessage.includes('Failed to fetch') ||
+      errorMessage.includes('NetworkError')
+    ) {
       store.setSyncStatus('offline');
     } else {
       store.setSyncStatus('error');
@@ -231,7 +254,10 @@ export async function fetchCloudEntries(): Promise<void> {
 /**
  * Delete entry from cloud
  */
-export async function deleteEntryFromCloud(entryId: string, entryDeviceId?: string): Promise<boolean> {
+export async function deleteEntryFromCloud(
+  entryId: string,
+  entryDeviceId?: string,
+): Promise<boolean> {
   const state = store.getState();
   if (!state.settings.sync || !state.raceId) return false;
 
@@ -244,10 +270,10 @@ export async function deleteEntryFromCloud(entryId: string, entryDeviceId?: stri
         body: JSON.stringify({
           entryId,
           deviceId: entryDeviceId || state.deviceId,
-          deviceName: state.deviceName
-        })
+          deviceName: state.deviceName,
+        }),
       },
-      FETCH_TIMEOUT
+      FETCH_TIMEOUT,
     );
 
     if (!response.ok) {
@@ -292,10 +318,10 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
         body: JSON.stringify({
           entry: entryToSync,
           deviceId: state.deviceId,
-          deviceName: state.deviceName
-        })
+          deviceName: state.deviceName,
+        }),
       },
-      FETCH_TIMEOUT
+      FETCH_TIMEOUT,
     );
 
     if (!response.ok) {
@@ -321,12 +347,14 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
             .replace('{point}', pointLabel)
             .replace('{device}', dup.deviceName),
           'warning',
-          5000
+          5000,
         );
         // Dispatch event for UI to show more prominent warning
-        window.dispatchEvent(new CustomEvent('cross-device-duplicate', {
-          detail: dup
-        }));
+        window.dispatchEvent(
+          new CustomEvent('cross-device-duplicate', {
+            detail: dup,
+          }),
+        );
       }
 
       // Update device count and highest bib from response

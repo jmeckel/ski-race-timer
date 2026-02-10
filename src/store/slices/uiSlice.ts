@@ -3,7 +3,7 @@
  * Handles view state, selections, and recording state
  */
 
-import type { TimingPoint, Run, Language } from '../../types';
+import type { Language, Run, TimingPoint } from '../../types';
 
 // UI State type
 export interface UiState {
@@ -20,9 +20,7 @@ export interface UiState {
 /**
  * Set current view
  */
-export function setView(
-  currentView: UiState['currentView']
-): Partial<UiState> {
+export function setView(currentView: UiState['currentView']): Partial<UiState> {
   return { currentView };
 }
 
@@ -60,11 +58,11 @@ export function setSelectedRun(run: Run): Partial<UiState> {
  */
 export function setSelectMode(
   enabled: boolean,
-  currentSelectedEntries: Set<string>
+  currentSelectedEntries: Set<string>,
 ): Partial<UiState> {
   return {
     selectMode: enabled,
-    selectedEntries: enabled ? currentSelectedEntries : new Set()
+    selectedEntries: enabled ? currentSelectedEntries : new Set(),
   };
 }
 
@@ -73,7 +71,7 @@ export function setSelectMode(
  */
 export function toggleEntrySelection(
   id: string,
-  currentSelectedEntries: Set<string>
+  currentSelectedEntries: Set<string>,
 ): Partial<UiState> {
   const selectedEntries = new Set(currentSelectedEntries);
   if (selectedEntries.has(id)) {
@@ -83,7 +81,7 @@ export function toggleEntrySelection(
   }
   return {
     selectedEntries,
-    selectMode: selectedEntries.size > 0
+    selectMode: selectedEntries.size > 0,
   };
 }
 
@@ -93,7 +91,7 @@ export function toggleEntrySelection(
 export function selectAllEntries(entryIds: string[]): Partial<UiState> {
   return {
     selectedEntries: new Set(entryIds),
-    selectMode: true
+    selectMode: true,
   };
 }
 
@@ -103,7 +101,7 @@ export function selectAllEntries(entryIds: string[]): Partial<UiState> {
 export function clearSelection(): Partial<UiState> {
   return {
     selectedEntries: new Set(),
-    selectMode: false
+    selectMode: false,
   };
 }
 

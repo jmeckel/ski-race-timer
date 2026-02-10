@@ -13,14 +13,18 @@ const activeRippleTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 export function createRipple(
   event: MouseEvent | TouchEvent,
   element: HTMLElement,
-  variant?: 'primary' | 'success' | 'secondary'
+  variant?: 'primary' | 'success' | 'secondary',
 ): void {
   // Get click/touch position
   const rect = element.getBoundingClientRect();
   let x: number, y: number;
 
   // Check for TouchEvent safely (not available in all browsers, e.g., desktop Safari)
-  if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent && event.touches.length > 0) {
+  if (
+    typeof TouchEvent !== 'undefined' &&
+    event instanceof TouchEvent &&
+    event.touches.length > 0
+  ) {
     x = event.touches[0].clientX - rect.left;
     y = event.touches[0].clientY - rect.top;
   } else if (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent) {
@@ -62,50 +66,96 @@ export function createRipple(
  */
 export function initRippleEffects(): void {
   // Number pad buttons
-  document.querySelectorAll('.num-btn').forEach(btn => {
+  document.querySelectorAll('.num-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
+    btn.addEventListener(
+      'touchstart',
+      (e) => createRipple(e as TouchEvent, btn as HTMLElement),
+      { passive: true },
+    );
+    btn.addEventListener('mousedown', (e) =>
+      createRipple(e as MouseEvent, btn as HTMLElement),
+    );
   });
 
   // Timestamp button - use primary color
   const timestampBtn = document.querySelector('.timestamp-btn');
   if (timestampBtn) {
     timestampBtn.classList.add('ripple-container');
-    timestampBtn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, timestampBtn as HTMLElement, 'primary'), { passive: true });
-    timestampBtn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, timestampBtn as HTMLElement, 'primary'));
+    timestampBtn.addEventListener(
+      'touchstart',
+      (e) =>
+        createRipple(e as TouchEvent, timestampBtn as HTMLElement, 'primary'),
+      { passive: true },
+    );
+    timestampBtn.addEventListener('mousedown', (e) =>
+      createRipple(e as MouseEvent, timestampBtn as HTMLElement, 'primary'),
+    );
   }
 
   // Timing point buttons
-  document.querySelectorAll('.timing-point-btn').forEach(btn => {
+  document.querySelectorAll('.timing-point-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
     const isStart = btn.getAttribute('data-point') === 'S';
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, isStart ? 'success' : 'secondary'));
+    btn.addEventListener(
+      'touchstart',
+      (e) =>
+        createRipple(
+          e as TouchEvent,
+          btn as HTMLElement,
+          isStart ? 'success' : 'secondary',
+        ),
+      { passive: true },
+    );
+    btn.addEventListener('mousedown', (e) =>
+      createRipple(
+        e as MouseEvent,
+        btn as HTMLElement,
+        isStart ? 'success' : 'secondary',
+      ),
+    );
   });
 
   // Tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, 'primary'), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, 'primary'));
+    btn.addEventListener(
+      'touchstart',
+      (e) => createRipple(e as TouchEvent, btn as HTMLElement, 'primary'),
+      { passive: true },
+    );
+    btn.addEventListener('mousedown', (e) =>
+      createRipple(e as MouseEvent, btn as HTMLElement, 'primary'),
+    );
   });
 
   // Action buttons in results view
-  document.querySelectorAll('.action-btn').forEach(btn => {
+  document.querySelectorAll('.action-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement));
+    btn.addEventListener(
+      'touchstart',
+      (e) => createRipple(e as TouchEvent, btn as HTMLElement),
+      { passive: true },
+    );
+    btn.addEventListener('mousedown', (e) =>
+      createRipple(e as MouseEvent, btn as HTMLElement),
+    );
   });
 
   // Modal buttons
-  document.querySelectorAll('.modal-btn').forEach(btn => {
+  document.querySelectorAll('.modal-btn').forEach((btn) => {
     btn.classList.add('ripple-container');
     const isPrimary = btn.classList.contains('primary');
     const isDanger = btn.classList.contains('danger');
     const variant = isPrimary ? 'primary' : isDanger ? 'secondary' : undefined;
-    btn.addEventListener('touchstart', (e) => createRipple(e as TouchEvent, btn as HTMLElement, variant), { passive: true });
-    btn.addEventListener('mousedown', (e) => createRipple(e as MouseEvent, btn as HTMLElement, variant));
+    btn.addEventListener(
+      'touchstart',
+      (e) => createRipple(e as TouchEvent, btn as HTMLElement, variant),
+      { passive: true },
+    );
+    btn.addEventListener('mousedown', (e) =>
+      createRipple(e as MouseEvent, btn as HTMLElement, variant),
+    );
   });
 }
 
@@ -113,6 +163,6 @@ export function initRippleEffects(): void {
  * Cleanup ripple timeouts (for page unload)
  */
 export function cleanupRippleEffects(): void {
-  activeRippleTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+  activeRippleTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
   activeRippleTimeouts.clear();
 }

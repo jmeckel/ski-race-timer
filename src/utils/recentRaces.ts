@@ -30,13 +30,19 @@ export function getRecentRaces(): RecentRace[] {
 /**
  * Add or update a race in the recent races list
  */
-export function addRecentRace(raceId: string, lastUpdated: number, entryCount?: number): void {
+export function addRecentRace(
+  raceId: string,
+  lastUpdated: number,
+  entryCount?: number,
+): void {
   try {
     const races = getRecentRaces();
     const normalizedId = raceId.toLowerCase();
 
     // Find existing or create new
-    const existingIndex = races.findIndex(r => r.raceId.toLowerCase() === normalizedId);
+    const existingIndex = races.findIndex(
+      (r) => r.raceId.toLowerCase() === normalizedId,
+    );
 
     if (existingIndex >= 0) {
       // Update existing
@@ -50,7 +56,7 @@ export function addRecentRace(raceId: string, lastUpdated: number, entryCount?: 
         raceId,
         createdAt: Date.now(),
         lastUpdated,
-        entryCount
+        entryCount,
       });
     }
 
@@ -75,7 +81,7 @@ export function getTodaysRecentRaces(limit = 5): RecentRace[] {
   const todayStart = today.getTime();
 
   return races
-    .filter(race => {
+    .filter((race) => {
       // Show if createdAt OR lastUpdated is today
       return race.createdAt >= todayStart || race.lastUpdated >= todayStart;
     })

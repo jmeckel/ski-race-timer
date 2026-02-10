@@ -4,9 +4,9 @@
  */
 
 import { store } from '../../store';
-import { isValidEntry } from '../../utils/validation';
+import type { DeviceInfo, Entry, FaultEntry } from '../../types';
 import { logger } from '../../utils/logger';
-import type { Entry, DeviceInfo, FaultEntry } from '../../types';
+import { isValidEntry } from '../../utils/validation';
 
 /**
  * BroadcastChannel manager for cross-tab sync
@@ -20,7 +20,9 @@ class BroadcastManager {
   initialize(raceId: string): void {
     // Check for BroadcastChannel support
     if (typeof BroadcastChannel === 'undefined') {
-      logger.info('BroadcastChannel not supported - cross-tab sync disabled (graceful degradation)');
+      logger.info(
+        'BroadcastChannel not supported - cross-tab sync disabled (graceful degradation)',
+      );
       return;
     }
 
@@ -42,7 +44,7 @@ class BroadcastManager {
             store.addConnectedDevice(deviceInfo);
           } else if (type === 'fault') {
             const fault = data as FaultEntry;
-            if (fault && fault.id) {
+            if (fault?.id) {
               store.mergeFaultsFromCloud([fault]);
             }
           } else if (type === 'fault-deleted') {
@@ -85,8 +87,8 @@ class BroadcastManager {
           data: {
             id: state.deviceId,
             name: state.deviceName,
-            lastSeen: Date.now()
-          }
+            lastSeen: Date.now(),
+          },
         });
       } catch (error) {
         logger.error('Presence broadcast error:', error);
@@ -113,7 +115,10 @@ class BroadcastManager {
   broadcastFaultDeletion(faultId: string): void {
     if (this.broadcastChannel) {
       try {
-        this.broadcastChannel.postMessage({ type: 'fault-deleted', data: faultId });
+        this.broadcastChannel.postMessage({
+          type: 'fault-deleted',
+          data: faultId,
+        });
       } catch (error) {
         logger.error('Fault deletion broadcast error:', error);
       }

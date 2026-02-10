@@ -1,25 +1,27 @@
-import { store } from './store';
-import { getElement } from './utils/domCache';
-import { t } from './i18n/translations';
+import { refreshInlineFaultUI, updateActiveBibsList } from './features/faults';
 import {
-  updateBibDisplay, updateTimingPointSelection, updateRunSelection
-} from './features/timerView';
-import {
-  isRadialModeActive, updateRadialBib
-} from './features/radialTimerView';
-import {
-  updateStats, updateEntryCountBadge
-} from './features/resultsView';
-import {
-  updateSettingsInputs, updateTranslations
-} from './features/settingsView';
-import {
-  updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection
+  updateGateJudgeRunSelection,
+  updateGateRangeDisplay,
+  updateJudgeReadyStatus,
 } from './features/gateJudgeView';
 import {
-  updateActiveBibsList, refreshInlineFaultUI
-} from './features/faultEntry';
+  isRadialModeActive,
+  updateRadialBib,
+} from './features/radialTimerView';
+import { updateEntryCountBadge, updateStats } from './features/resultsView';
+import {
+  updateSettingsInputs,
+  updateTranslations,
+} from './features/settingsView';
+import {
+  updateBibDisplay,
+  updateRunSelection,
+  updateTimingPointSelection,
+} from './features/timerView';
+import { t } from './i18n/translations';
+import { store } from './store';
 import type { VoiceStatus } from './types';
+import { getElement } from './utils/domCache';
 
 /**
  * Update UI elements
@@ -59,7 +61,7 @@ function toKebabCase(str: string): string {
  */
 export function updateViewVisibility(): void {
   const state = store.getState();
-  document.querySelectorAll('.view').forEach(view => {
+  document.querySelectorAll('.view').forEach((view) => {
     view.classList.remove('active');
   });
 
@@ -71,8 +73,11 @@ export function updateViewVisibility(): void {
   }
 
   // Update tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-view') === state.currentView);
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.classList.toggle(
+      'active',
+      btn.getAttribute('data-view') === state.currentView,
+    );
   });
 
   // Update Gate Judge view when switching to it
@@ -167,7 +172,9 @@ export function updatePhotoCaptureIndicator(): void {
   const state = store.getState();
   const cameraIndicator = getElement('camera-indicator');
   if (cameraIndicator) {
-    cameraIndicator.style.display = state.settings.photoCapture ? 'flex' : 'none';
+    cameraIndicator.style.display = state.settings.photoCapture
+      ? 'flex'
+      : 'none';
   }
 }
 
@@ -189,7 +196,13 @@ export function updateVoiceIndicator(status: VoiceStatus): void {
   indicator.style.display = 'flex';
 
   // Remove all status classes
-  indicator.classList.remove('listening', 'processing', 'confirming', 'offline', 'error');
+  indicator.classList.remove(
+    'listening',
+    'processing',
+    'confirming',
+    'offline',
+    'error',
+  );
 
   // Add current status class
   indicator.classList.add(status);

@@ -4,9 +4,13 @@
  */
 
 import { store } from '../../store';
-import { logger } from '../../utils/logger';
-import { QUEUE_PROCESS_INTERVAL, MAX_RETRIES, RETRY_BACKOFF_BASE } from './types';
 import type { Entry } from '../../types';
+import { logger } from '../../utils/logger';
+import {
+  MAX_RETRIES,
+  QUEUE_PROCESS_INTERVAL,
+  RETRY_BACKOFF_BASE,
+} from './types';
 
 /**
  * Callback type for sending entries to cloud
@@ -36,7 +40,10 @@ class QueueProcessor {
       clearInterval(this.queueInterval);
     }
 
-    this.queueInterval = setInterval(() => this.processQueue(), QUEUE_PROCESS_INTERVAL);
+    this.queueInterval = setInterval(
+      () => this.processQueue(),
+      QUEUE_PROCESS_INTERVAL,
+    );
   }
 
   /**
@@ -67,7 +74,11 @@ class QueueProcessor {
 
     try {
       const state = store.getState();
-      if (!state.settings.sync || !state.raceId || state.syncQueue.length === 0) {
+      if (
+        !state.settings.sync ||
+        !state.raceId ||
+        state.syncQueue.length === 0
+      ) {
         return;
       }
 
@@ -87,7 +98,7 @@ class QueueProcessor {
         }
 
         // Calculate backoff delay
-        const backoffDelay = RETRY_BACKOFF_BASE * Math.pow(2, item.retryCount);
+        const backoffDelay = RETRY_BACKOFF_BASE * 2 ** item.retryCount;
         if (now - item.lastAttempt < backoffDelay) {
           continue; // Not ready to retry yet
         }
@@ -99,7 +110,7 @@ class QueueProcessor {
           store.updateSyncQueueItem(item.entry.id, {
             retryCount: item.retryCount + 1,
             lastAttempt: now,
-            error: 'Failed to sync'
+            error: 'Failed to sync',
           });
         }
       }

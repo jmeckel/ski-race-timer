@@ -2,9 +2,9 @@
  * Pull-to-refresh component for mobile
  */
 
-import { logger } from '../utils/logger';
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 const PULL_THRESHOLD = 80; // Pixels to pull before triggering refresh
 const RESISTANCE = 2.5; // Pull resistance factor
@@ -33,7 +33,8 @@ export class PullToRefresh {
     this.container.insertBefore(this.indicator, this.container.firstChild);
 
     // Use provided scroll element, or find scrollable parent, or look for scrollable child
-    this.scrollableParent = options.scrollElement ??
+    this.scrollableParent =
+      options.scrollElement ??
       this.findScrollableParent(this.container) ??
       this.findScrollableChild(this.container);
 
@@ -125,9 +126,15 @@ export class PullToRefresh {
    * Bind touch events
    */
   private bindEvents(): void {
-    this.container.addEventListener('touchstart', this.onTouchStart, { passive: true });
-    this.container.addEventListener('touchmove', this.onTouchMove, { passive: false });
-    this.container.addEventListener('touchend', this.onTouchEnd, { passive: true });
+    this.container.addEventListener('touchstart', this.onTouchStart, {
+      passive: true,
+    });
+    this.container.addEventListener('touchmove', this.onTouchMove, {
+      passive: false,
+    });
+    this.container.addEventListener('touchend', this.onTouchEnd, {
+      passive: true,
+    });
   }
 
   /**
@@ -207,7 +214,8 @@ export class PullToRefresh {
 
     if (text) {
       const lang = store.getState().currentLang;
-      text.textContent = progress >= 1 ? t('releaseToRefresh', lang) : t('pullToRefresh', lang);
+      text.textContent =
+        progress >= 1 ? t('releaseToRefresh', lang) : t('pullToRefresh', lang);
     }
   }
 
@@ -216,8 +224,12 @@ export class PullToRefresh {
    * Note: isRefreshing is set by onTouchEnd before calling this method
    */
   private async triggerRefresh(): Promise<void> {
-    const content = this.indicator.querySelector('.pull-indicator-content') as HTMLElement;
-    const spinner = this.indicator.querySelector('.pull-spinner') as HTMLElement;
+    const content = this.indicator.querySelector(
+      '.pull-indicator-content',
+    ) as HTMLElement;
+    const spinner = this.indicator.querySelector(
+      '.pull-spinner',
+    ) as HTMLElement;
 
     if (content) content.style.display = 'none';
     if (spinner) spinner.style.display = 'flex';

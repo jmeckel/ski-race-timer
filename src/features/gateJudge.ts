@@ -3,10 +3,9 @@
  * Handles Gate Judge specific UI and functionality
  */
 
-import type { AppState, FaultEntry, FaultType } from '../types';
-import { escapeHtml } from '../utils/format';
 import { t } from '../i18n/translations';
-import { getFaultTypeLabel } from './chiefJudgeView';
+import type { AppState, FaultEntry, FaultType } from '../types';
+import { escapeHtml, getFaultTypeLabel } from '../utils/format';
 
 // Module state
 let inlineSelectedBib = '';
@@ -20,11 +19,26 @@ export interface GateJudgeDependencies {
   getFaultsForBib: (bib: string, run: number) => FaultEntry[];
   getGateColor: (gateNumber: number) => string;
   feedbackTap: () => void;
-  showToast: (message: string, type: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;
+  showToast: (
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info',
+    duration?: number,
+  ) => void;
   formatTimeDisplay: (date: Date) => string;
   openFaultRecordingModal: (bib: string) => void;
   openFaultDeleteConfirmation: (fault: FaultEntry) => void;
-  addFaultEntry: (fault: Omit<FaultEntry, 'id' | 'timestamp' | 'deviceId' | 'deviceName' | 'currentVersion' | 'versionHistory' | 'markedForDeletion'>) => FaultEntry;
+  addFaultEntry: (
+    fault: Omit<
+      FaultEntry,
+      | 'id'
+      | 'timestamp'
+      | 'deviceId'
+      | 'deviceName'
+      | 'currentVersion'
+      | 'versionHistory'
+      | 'markedForDeletion'
+    >,
+  ) => FaultEntry;
   syncFaultToCloud: (fault: FaultEntry) => void;
 }
 
@@ -44,7 +58,7 @@ export function getInlineSelectionState() {
   return {
     bib: inlineSelectedBib,
     gate: inlineSelectedGate,
-    faultType: inlineSelectedFaultType
+    faultType: inlineSelectedFaultType,
   };
 }
 
@@ -61,9 +75,8 @@ export function updateInlineFaultsList(): void {
 
   const state = deps.getState();
   const lang = state.currentLang;
-  const faults = state.faultEntries.filter(f =>
-    f.run === state.selectedRun &&
-    !f.markedForDeletion
+  const faults = state.faultEntries.filter(
+    (f) => f.run === state.selectedRun && !f.markedForDeletion,
   );
 
   // Update count badge
@@ -73,7 +86,9 @@ export function updateInlineFaultsList(): void {
   }
 
   // Clear existing fault items (keep empty state)
-  listContainer.querySelectorAll('.gate-judge-fault-item').forEach(item => item.remove());
+  listContainer
+    .querySelectorAll('.gate-judge-fault-item')
+    .forEach((item) => item.remove());
 
   if (faults.length === 0) {
     if (emptyState) emptyState.style.display = '';
@@ -83,11 +98,11 @@ export function updateInlineFaultsList(): void {
   if (emptyState) emptyState.style.display = 'none';
 
   // Sort by timestamp (most recent first)
-  const sortedFaults = [...faults].sort((a, b) =>
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  const sortedFaults = [...faults].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 
-  sortedFaults.forEach(fault => {
+  sortedFaults.forEach((fault) => {
     const gateColor = deps!.getGateColor(fault.gateNumber);
     const item = document.createElement('div');
     item.className = 'gate-judge-fault-item';
@@ -138,7 +153,9 @@ export function updateInlineBibSelector(): void {
     inlineSelectedBib = activeBibs[0];
   }
 
-  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  const bibInput = document.getElementById(
+    'inline-bib-input',
+  ) as HTMLInputElement;
   if (bibInput && inlineSelectedBib) {
     bibInput.value = inlineSelectedBib;
   }
@@ -152,7 +169,9 @@ export function updateInlineBibSelector(): void {
 export function selectInlineBib(bib: string): void {
   inlineSelectedBib = bib;
 
-  const bibInput = document.getElementById('inline-bib-input') as HTMLInputElement;
+  const bibInput = document.getElementById(
+    'inline-bib-input',
+  ) as HTMLInputElement;
   if (bibInput) {
     bibInput.value = bib;
   }
@@ -207,8 +226,11 @@ export function selectInlineGate(gate: number): void {
   inlineSelectedGate = gate;
 
   // Update button styles
-  document.querySelectorAll('.inline-gate-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-gate') === String(gate));
+  document.querySelectorAll('.inline-gate-btn').forEach((btn) => {
+    btn.classList.toggle(
+      'selected',
+      btn.getAttribute('data-gate') === String(gate),
+    );
   });
 
   updateInlineSaveButtonState();
@@ -221,8 +243,11 @@ export function selectInlineFaultType(faultType: FaultType): void {
   inlineSelectedFaultType = faultType;
 
   // Update button styles
-  document.querySelectorAll('.inline-fault-type-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-fault-type') === faultType);
+  document.querySelectorAll('.inline-fault-type-btn').forEach((btn) => {
+    btn.classList.toggle(
+      'selected',
+      btn.getAttribute('data-fault-type') === faultType,
+    );
   });
 
   updateInlineSaveButtonState();
@@ -235,7 +260,7 @@ export function initInlineFaultEntry(): void {
   if (!deps) return;
 
   // Fault type buttons
-  document.querySelectorAll('.inline-fault-type-btn').forEach(btn => {
+  document.querySelectorAll('.inline-fault-type-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const faultType = btn.getAttribute('data-fault-type') as FaultType;
       deps!.feedbackTap();
@@ -265,7 +290,8 @@ export function updateInlineSaveButtonState(): void {
   const saveBtn = document.getElementById('inline-save-fault-btn');
   if (!saveBtn) return;
 
-  const canSave = inlineSelectedBib && inlineSelectedGate > 0 && inlineSelectedFaultType;
+  const canSave =
+    inlineSelectedBib && inlineSelectedGate > 0 && inlineSelectedFaultType;
   (saveBtn as HTMLButtonElement).disabled = !canSave;
 }
 
@@ -296,7 +322,7 @@ export function saveInlineFault(): void {
     run: state.selectedRun,
     gateNumber: inlineSelectedGate,
     faultType: inlineSelectedFaultType,
-    gateRange: [gateStart, gateEnd]
+    gateRange: [gateStart, gateEnd],
   });
 
   // Sync to cloud
@@ -305,7 +331,7 @@ export function saveInlineFault(): void {
   // Show confirmation
   deps.showToast(
     `${t('faultRecorded', state.currentLang)}: #${inlineSelectedBib} T${inlineSelectedGate} (${inlineSelectedFaultType})`,
-    'success'
+    'success',
   );
 
   // Reset selections (keep gate range, clear bib and fault type)
@@ -318,7 +344,7 @@ export function saveInlineFault(): void {
   updateInlineSaveButtonState();
 
   // Clear fault type selection
-  document.querySelectorAll('.inline-fault-type-btn').forEach(btn => {
+  document.querySelectorAll('.inline-fault-type-btn').forEach((btn) => {
     btn.classList.remove('selected');
   });
 }
@@ -356,7 +382,7 @@ export function updateActiveBibsList(): void {
   const activeBibs = deps.getActiveBibs(state.selectedRun);
 
   // Clear existing bib cards (keep empty state)
-  list.querySelectorAll('.active-bib-card').forEach(card => card.remove());
+  list.querySelectorAll('.active-bib-card').forEach((card) => card.remove());
 
   if (activeBibs.length === 0) {
     if (emptyState) emptyState.style.display = '';
@@ -367,7 +393,7 @@ export function updateActiveBibsList(): void {
 
   // Get start times for each bib
   const startTimes = new Map<string, Date>();
-  state.entries.forEach(entry => {
+  state.entries.forEach((entry) => {
     if (entry.point === 'S' && entry.run === state.selectedRun) {
       startTimes.set(entry.bib, new Date(entry.timestamp));
     }
@@ -381,7 +407,7 @@ export function updateActiveBibsList(): void {
   });
 
   // Build bib cards
-  sortedBibs.forEach(bib => {
+  sortedBibs.forEach((bib) => {
     const startTime = startTimes.get(bib);
     const faults = deps!.getFaultsForBib(bib, state.selectedRun);
     const hasFault = faults.length > 0;

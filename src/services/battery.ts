@@ -7,8 +7,8 @@
 import { logger } from '../utils/logger';
 
 // Battery thresholds
-const BATTERY_LOW = 0.20; // 20%
-const BATTERY_CRITICAL = 0.10; // 10%
+const BATTERY_LOW = 0.2; // 20%
+const BATTERY_CRITICAL = 0.1; // 10%
 
 export type BatteryLevel = 'normal' | 'low' | 'critical';
 
@@ -27,7 +27,7 @@ class BatteryService {
   private currentStatus: BatteryStatus = {
     level: 1.0,
     charging: true, // Assume charging (plugged in) by default
-    batteryLevel: 'normal'
+    batteryLevel: 'normal',
   };
   // Store event handler references for proper cleanup
   private levelChangeHandler: (() => void) | null = null;
@@ -63,7 +63,10 @@ class BatteryService {
       this.levelChangeHandler = () => this.updateStatus();
       this.chargingChangeHandler = () => this.updateStatus();
       this.battery.addEventListener('levelchange', this.levelChangeHandler);
-      this.battery.addEventListener('chargingchange', this.chargingChangeHandler);
+      this.battery.addEventListener(
+        'chargingchange',
+        this.chargingChangeHandler,
+      );
 
       return true;
     } catch (error) {
@@ -94,7 +97,7 @@ class BatteryService {
     const newStatus: BatteryStatus = {
       level,
       charging,
-      batteryLevel
+      batteryLevel,
     };
 
     // Check if status changed
@@ -149,8 +152,10 @@ class BatteryService {
    * Check if battery is low (not charging and below threshold)
    */
   isLowBattery(): boolean {
-    return this.currentStatus.batteryLevel === 'low' ||
-           this.currentStatus.batteryLevel === 'critical';
+    return (
+      this.currentStatus.batteryLevel === 'low' ||
+      this.currentStatus.batteryLevel === 'critical'
+    );
   }
 
   /**
@@ -181,11 +186,17 @@ class BatteryService {
     if (this.battery) {
       // Remove event listeners before clearing reference
       if (this.levelChangeHandler) {
-        this.battery.removeEventListener('levelchange', this.levelChangeHandler);
+        this.battery.removeEventListener(
+          'levelchange',
+          this.levelChangeHandler,
+        );
         this.levelChangeHandler = null;
       }
       if (this.chargingChangeHandler) {
-        this.battery.removeEventListener('chargingchange', this.chargingChangeHandler);
+        this.battery.removeEventListener(
+          'chargingchange',
+          this.chargingChangeHandler,
+        );
         this.chargingChangeHandler = null;
       }
       this.battery = null;
@@ -201,8 +212,14 @@ interface BatteryManager extends EventTarget {
   level: number;
   chargingTime: number;
   dischargingTime: number;
-  addEventListener(type: 'levelchange' | 'chargingchange', listener: () => void): void;
-  removeEventListener(type: 'levelchange' | 'chargingchange', listener: () => void): void;
+  addEventListener(
+    type: 'levelchange' | 'chargingchange',
+    listener: () => void,
+  ): void;
+  removeEventListener(
+    type: 'levelchange' | 'chargingchange',
+    listener: () => void,
+  ): void;
 }
 
 interface NavigatorWithBattery extends Navigator {

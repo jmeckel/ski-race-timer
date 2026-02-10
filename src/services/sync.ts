@@ -5,14 +5,14 @@
 
 // Re-export everything from the sync module
 export {
-  syncService,
-  syncEntry,
-  syncFault,
-  deleteFaultFromCloud,
   // Auth re-exports for backwards compatibility
   AUTH_TOKEN_KEY,
+  clearAuthToken,
+  deleteFaultFromCloud,
+  exchangePinForToken,
   hasAuthToken,
   setAuthToken,
-  clearAuthToken,
-  exchangePinForToken
+  syncEntry,
+  syncFault,
+  syncService,
 } from './sync/index';

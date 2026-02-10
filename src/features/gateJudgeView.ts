@@ -3,28 +3,25 @@
  * Handles gate judge UI, gate assignment, judge ready status, and run selection
  */
 
-import { store } from '../store';
-import { syncService } from '../services';
-import { feedbackTap, feedbackSuccess } from '../services';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
-import { escapeHtml, escapeAttr, getElement } from '../utils';
-import { openModal, closeModal } from './modals';
+import { feedbackSuccess, feedbackTap, syncService } from '../services';
+import { store } from '../store';
+import type { GateAssignment, GateColor, VoiceIntent } from '../types';
+import { escapeAttr, escapeHtml, getElement } from '../utils';
+import { ListenerManager } from '../utils/listenerManager';
+import { logger } from '../utils/logger';
 import {
   initFaultRecordingModal,
-  initInlineFaultEntry, refreshInlineFaultUI, updateActiveBibsList,
-  recordFaultFromVoice
-} from './faultEntry';
+  initInlineFaultEntry,
+  recordFaultFromVoice,
+  refreshInlineFaultUI,
+  updateActiveBibsList,
+} from './faults';
+import { closeModal, openModal } from './modals';
 import { initVoiceNoteUI } from './voiceNoteUI';
-import { logger } from '../utils/logger';
-import type { GateAssignment, GateColor, VoiceIntent } from '../types';
 
-// Track event listeners for cleanup
-let gateChangeBtnListener: EventListener | null = null;
-let gateJudgeRunSelectorListener: EventListener | null = null;
-let readyToggleBtnListener: EventListener | null = null;
-let colorSelectorListener: EventListener | null = null;
-let saveBtnListener: EventListener | null = null;
+const listeners = new ListenerManager();
 
 /**
  * Update tab visibility based on device role
@@ -54,6 +51,9 @@ export function updateGateJudgeTabVisibility(): void {
  * Initialize Gate Judge view
  */
 export function initGateJudgeView(): void {
+  // Clean up previous initialization
+  listeners.removeAll();
+
   // Request role toggle update via CustomEvent (settingsView listens for this)
   window.dispatchEvent(new CustomEvent('update-role-toggle'));
   updateGateJudgeTabVisibility();
@@ -61,28 +61,27 @@ export function initGateJudgeView(): void {
   // Gate assignment change button
   const gateChangeBtn = getElement('gate-change-btn');
   if (gateChangeBtn) {
-    gateChangeBtnListener = () => {
+    listeners.add(gateChangeBtn, 'click', () => {
       feedbackTap();
       openGateAssignmentModal();
-    };
-    gateChangeBtn.addEventListener('click', gateChangeBtnListener);
+    });
   }
 
   // Gate Judge run selector
   const gateJudgeRunSelector = getElement('gate-judge-run-selector');
   if (gateJudgeRunSelector) {
-    gateJudgeRunSelectorListener = ((e: Event) => {
+    listeners.add(gateJudgeRunSelector, 'click', ((e: Event) => {
       const target = (e as MouseEvent).target as HTMLElement;
       const btn = target.closest('.run-btn');
       if (!btn) return;
 
       const runStr = btn.getAttribute('data-run');
-      const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
+      const run = runStr ? (parseInt(runStr, 10) as 1 | 2) : 1;
       store.setSelectedRun(run);
       feedbackTap();
 
       // Update ARIA states
-      gateJudgeRunSelector.querySelectorAll('.run-btn').forEach(b => {
+      gateJudgeRunSelector.querySelectorAll('.run-btn').forEach((b) => {
         b.classList.toggle('active', b === btn);
         b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
       });
@@ -90,14 +89,13 @@ export function initGateJudgeView(): void {
       // Refresh active bibs list and inline fault UI
       updateActiveBibsList();
       refreshInlineFaultUI();
-    }) as EventListener;
-    gateJudgeRunSelector.addEventListener('click', gateJudgeRunSelectorListener);
+    }) as EventListener);
   }
 
   // Ready toggle button
   const readyToggleBtn = getElement('ready-toggle-btn');
   if (readyToggleBtn) {
-    readyToggleBtnListener = () => {
+    listeners.add(readyToggleBtn, 'click', () => {
       const state = store.getState();
       const newReadyState = !state.isJudgeReady;
       store.setJudgeReady(newReadyState);
@@ -105,9 +103,11 @@ export function initGateJudgeView(): void {
       updateReadyButtonState();
       // Show confirmation
       const lang = state.currentLang;
-      showToast(newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang), 'success');
-    };
-    readyToggleBtn.addEventListener('click', readyToggleBtnListener);
+      showToast(
+        newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang),
+        'success',
+      );
+    });
     // Set initial state
     updateReadyButtonState();
   }
@@ -150,7 +150,7 @@ export function openGateAssignmentModal(): void {
   // Set gate color selector to current value
   const colorSelector = getElement('gate-color-selector');
   if (colorSelector) {
-    colorSelector.querySelectorAll('.gate-color-btn').forEach(btn => {
+    colorSelector.querySelectorAll('.gate-color-btn').forEach((btn) => {
       const color = btn.getAttribute('data-color');
       const isActive = color === state.firstGateColor;
       btn.classList.toggle('active', isActive);
@@ -168,24 +168,25 @@ export function initGateAssignmentModal(): void {
   // Gate color selector toggle
   const colorSelector = getElement('gate-color-selector');
   if (colorSelector) {
-    colorSelectorListener = ((e: Event) => {
-      const btn = ((e as MouseEvent).target as HTMLElement).closest('.gate-color-btn');
+    listeners.add(colorSelector, 'click', ((e: Event) => {
+      const btn = ((e as MouseEvent).target as HTMLElement).closest(
+        '.gate-color-btn',
+      );
       if (!btn) return;
 
-      colorSelector.querySelectorAll('.gate-color-btn').forEach(b => {
+      colorSelector.querySelectorAll('.gate-color-btn').forEach((b) => {
         b.classList.remove('active');
         b.setAttribute('aria-checked', 'false');
       });
       btn.classList.add('active');
       btn.setAttribute('aria-checked', 'true');
       feedbackTap();
-    }) as EventListener;
-    colorSelector.addEventListener('click', colorSelectorListener);
+    }) as EventListener);
   }
 
   const saveBtn = getElement('save-gate-assignment-btn');
   if (saveBtn) {
-    saveBtnListener = () => {
+    listeners.add(saveBtn, 'click', () => {
       const startInput = getElement<HTMLInputElement>('gate-start-input');
       const endInput = getElement<HTMLInputElement>('gate-end-input');
       if (!startInput || !endInput) return;
@@ -198,8 +199,11 @@ export function initGateAssignmentModal(): void {
       const validEnd = Math.max(start, end);
 
       // Get selected gate color
-      const selectedColorBtn = document.querySelector('#gate-color-selector .gate-color-btn.active');
-      const selectedColor = (selectedColorBtn?.getAttribute('data-color') || 'red') as GateColor;
+      const selectedColorBtn = document.querySelector(
+        '#gate-color-selector .gate-color-btn.active',
+      );
+      const selectedColor = (selectedColorBtn?.getAttribute('data-color') ||
+        'red') as GateColor;
 
       store.setGateAssignment([validStart, validEnd]);
       store.setFirstGateColor(selectedColor);
@@ -209,8 +213,7 @@ export function initGateAssignmentModal(): void {
 
       const lang = store.getState().currentLang;
       showToast(t('saved', lang), 'success');
-    };
-    saveBtn.addEventListener('click', saveBtnListener);
+    });
   }
 }
 
@@ -265,13 +268,17 @@ export function updateOtherJudgesCoverage(): void {
 
   coverageContainer.style.display = 'flex';
   const lang = store.getState().currentLang;
-  coverageList.innerHTML = otherAssignments.map(a => `
+  coverageList.innerHTML = otherAssignments
+    .map(
+      (a) => `
     <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? t('readySuffix', lang) : ''}">
       ${a.isReady ? '<span class="ready-check" aria-hidden="true">✓</span>' : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
     </div>
-  `).join('');
+  `,
+    )
+    .join('');
 
   // Update judges ready indicator in header
   updateJudgesReadyIndicator(otherAssignments);
@@ -295,7 +302,9 @@ export function updateReadyButtonState(): void {
 /**
  * Update judges ready indicator in header (visible to all devices)
  */
-export function updateJudgesReadyIndicator(assignments?: GateAssignment[]): void {
+export function updateJudgesReadyIndicator(
+  assignments?: GateAssignment[],
+): void {
   const indicator = getElement('judges-ready-indicator');
   const countEl = getElement('judges-ready-count');
   if (!indicator || !countEl) return;
@@ -311,7 +320,7 @@ export function updateJudgesReadyIndicator(assignments?: GateAssignment[]): void
 
   // Count total judges (including this device if gate judge)
   let totalJudges = judgeAssignments.length;
-  let readyJudges = judgeAssignments.filter(a => a.isReady).length;
+  let readyJudges = judgeAssignments.filter((a) => a.isReady).length;
 
   // Include this device if it's a gate judge with assignment
   if (state.deviceRole === 'gateJudge' && state.gateAssignment) {
@@ -328,7 +337,10 @@ export function updateJudgesReadyIndicator(assignments?: GateAssignment[]): void
   countEl.textContent = `${readyJudges}/${totalJudges}`;
 
   // Add highlight when all are ready
-  indicator.classList.toggle('all-ready', readyJudges === totalJudges && totalJudges > 0);
+  indicator.classList.toggle(
+    'all-ready',
+    readyJudges === totalJudges && totalJudges > 0,
+  );
 }
 
 /**
@@ -349,7 +361,8 @@ export function updateJudgeReadyStatus(): void {
   // In gate judge mode: hide GPS, show judge ready indicator
   // In timer mode: show GPS (if enabled), hide judge ready indicator
   if (gpsIndicator) {
-    gpsIndicator.style.display = (!isGateJudge && state.settings.gps) ? 'flex' : 'none';
+    gpsIndicator.style.display =
+      !isGateJudge && state.settings.gps ? 'flex' : 'none';
   }
 
   if (!isGateJudge) {
@@ -363,7 +376,7 @@ export function updateJudgeReadyStatus(): void {
   // Calculate ready status from all judges
   const otherAssignments = syncService.getOtherGateAssignments();
   let totalJudges = otherAssignments.length;
-  let readyJudges = otherAssignments.filter(a => a.isReady).length;
+  let readyJudges = otherAssignments.filter((a) => a.isReady).length;
 
   // Include this device if it has a gate assignment
   if (state.gateAssignment) {
@@ -390,8 +403,9 @@ export function updateGateJudgeRunSelection(): void {
   const state = store.getState();
   const gateJudgeRunSelector = getElement('gate-judge-run-selector');
   if (gateJudgeRunSelector) {
-    gateJudgeRunSelector.querySelectorAll('.run-btn').forEach(btn => {
-      const isActive = btn.getAttribute('data-run') === String(state.selectedRun);
+    gateJudgeRunSelector.querySelectorAll('.run-btn').forEach((btn) => {
+      const isActive =
+        btn.getAttribute('data-run') === String(state.selectedRun);
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-checked', String(isActive));
     });
@@ -407,11 +421,15 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
 
   switch (intent.action) {
     case 'record_fault':
-      if (intent.params?.bib && intent.params?.gate !== undefined && intent.params?.faultType) {
+      if (
+        intent.params?.bib &&
+        intent.params?.gate !== undefined &&
+        intent.params?.faultType
+      ) {
         recordFaultFromVoice(
           intent.params.bib,
           intent.params.gate,
-          intent.params.faultType
+          intent.params.faultType,
         );
       }
       break;
@@ -424,7 +442,10 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
       updateReadyButtonState();
       // Show confirmation
       const lang = state.currentLang;
-      showToast(newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang), 'success');
+      showToast(
+        newReadyState ? t('judgeReady', lang) : t('judgeNotReady', lang),
+        'success',
+      );
       break;
     }
 
@@ -447,33 +468,5 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
  * Clean up event listeners added by initGateJudgeView
  */
 export function cleanupGateJudgeView(): void {
-  const gateChangeBtn = getElement('gate-change-btn');
-  if (gateChangeBtn && gateChangeBtnListener) {
-    gateChangeBtn.removeEventListener('click', gateChangeBtnListener);
-    gateChangeBtnListener = null;
-  }
-
-  const gateJudgeRunSelector = getElement('gate-judge-run-selector');
-  if (gateJudgeRunSelector && gateJudgeRunSelectorListener) {
-    gateJudgeRunSelector.removeEventListener('click', gateJudgeRunSelectorListener);
-    gateJudgeRunSelectorListener = null;
-  }
-
-  const readyToggleBtn = getElement('ready-toggle-btn');
-  if (readyToggleBtn && readyToggleBtnListener) {
-    readyToggleBtn.removeEventListener('click', readyToggleBtnListener);
-    readyToggleBtnListener = null;
-  }
-
-  const colorSelector = getElement('gate-color-selector');
-  if (colorSelector && colorSelectorListener) {
-    colorSelector.removeEventListener('click', colorSelectorListener);
-    colorSelectorListener = null;
-  }
-
-  const saveBtn = getElement('save-gate-assignment-btn');
-  if (saveBtn && saveBtnListener) {
-    saveBtn.removeEventListener('click', saveBtnListener);
-    saveBtnListener = null;
-  }
+  listeners.removeAll();
 }

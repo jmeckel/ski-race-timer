@@ -1,3 +1,5 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type Redis from 'ioredis';
 import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
@@ -18,7 +20,21 @@ import {
 const RATE_LIMIT_WINDOW = 60; // 1 minute window
 const RATE_LIMIT_MAX_REQUESTS = 5; // Max PIN exchanges per minute per IP
 
-async function checkRateLimit(client, ip) {
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  reset: number;
+  error?: string;
+}
+
+interface TokenRequestBody {
+  pin?: string;
+  role?: string;
+}
+
+type UserRole = 'timer' | 'gateJudge' | 'chiefJudge';
+
+async function checkRateLimit(client: Redis, ip: string): Promise<RateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - (now % RATE_LIMIT_WINDOW);
   const key = `ratelimit:auth:${ip}:${windowStart}`;
@@ -28,15 +44,16 @@ async function checkRateLimit(client, ip) {
     multi.incr(key);
     multi.expire(key, RATE_LIMIT_WINDOW + 10);
     const results = await multi.exec();
-    const count = results?.[0]?.[1] ?? 0;
+    const count = (results?.[0]?.[1] as number) ?? 0;
 
     return {
       allowed: count <= RATE_LIMIT_MAX_REQUESTS,
       remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - count),
       reset: windowStart + RATE_LIMIT_WINDOW
     };
-  } catch (error) {
-    console.error('Rate limit check error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Rate limit check error:', message);
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return {
       allowed: false,
@@ -47,7 +64,7 @@ async function checkRateLimit(client, ip) {
   }
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
     return;
@@ -57,11 +74,12 @@ export default async function handler(req, res) {
     return sendMethodNotAllowed(res);
   }
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -85,7 +103,7 @@ export default async function handler(req, res) {
       return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
     }
 
-    const { pin, role } = req.body || {};
+    const { pin, role } = (req.body || {}) as TokenRequestBody;
 
     if (!pin || typeof pin !== 'string') {
       return sendBadRequest(res, 'PIN is required');
@@ -97,8 +115,8 @@ export default async function handler(req, res) {
     }
 
     // Validate role if provided
-    const validRoles = ['timer', 'gateJudge', 'chiefJudge'];
-    const userRole = role && validRoles.includes(role) ? role : 'timer';
+    const validRoles: UserRole[] = ['timer', 'gateJudge', 'chiefJudge'];
+    const userRole: UserRole = role && validRoles.includes(role as UserRole) ? (role as UserRole) : 'timer';
 
     // For chiefJudge role, use separate PIN validation
     if (userRole === 'chiefJudge') {
@@ -199,8 +217,9 @@ export default async function handler(req, res) {
       role: userRole
     });
 
-  } catch (error) {
-    console.error('Token API error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Token API error:', message);
     return sendError(res, 'Internal server error', 500);
   }
 }

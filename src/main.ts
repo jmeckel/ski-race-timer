@@ -9,12 +9,10 @@ import './styles/onboarding.css';
 import './styles/glass.css';
 import './styles/animations.css';
 import './styles/radial-dial.css';
-// DISABLED: Motion effects disabled to save battery
-// import './styles/motion.css';
 import { initApp } from './app';
 import { getToast } from './components/Toast';
-import { initGlobalErrorHandlers } from './utils/errorBoundary';
 import { batteryService } from './services/battery';
+import { initGlobalErrorHandlers } from './utils/errorBoundary';
 
 // Initialize global error handlers first (catches errors during init)
 initGlobalErrorHandlers();
@@ -32,13 +30,19 @@ if (document.readyState === 'loading') {
 // Toggle power-saver CSS class based on battery level
 // Stops infinite GPU animations when battery is low to save power
 let batteryUnsubscribe: (() => void) | null = null;
-batteryService.initialize().then(() => {
-  batteryUnsubscribe = batteryService.subscribe((status) => {
-    document.body.classList.toggle('power-saver', status.batteryLevel !== 'normal');
+batteryService
+  .initialize()
+  .then(() => {
+    batteryUnsubscribe = batteryService.subscribe((status) => {
+      document.body.classList.toggle(
+        'power-saver',
+        status.batteryLevel !== 'normal',
+      );
+    });
+  })
+  .catch(() => {
+    // Battery API unavailable - animations stay enabled
   });
-}).catch(() => {
-  // Battery API unavailable - animations stay enabled
-});
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {

@@ -16,10 +16,23 @@ export type DeviceRole = 'timer' | 'gateJudge';
 export type FaultType = 'MG' | 'STR' | 'BR';
 
 // Age category for penalty calculation
-export type AgeCategory = 'U6' | 'U8' | 'U10' | 'U12' | 'U14' | 'U16' | 'masters';
+export type AgeCategory =
+  | 'U6'
+  | 'U8'
+  | 'U10'
+  | 'U12'
+  | 'U14'
+  | 'U16'
+  | 'masters';
 
 // Sync status types
-export type SyncStatus = 'disconnected' | 'connecting' | 'connected' | 'syncing' | 'error' | 'offline';
+export type SyncStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'syncing'
+  | 'error'
+  | 'offline';
 
 // Language types
 export type Language = 'en' | 'de';
@@ -29,7 +42,7 @@ export interface Entry {
   id: string;
   bib: string;
   point: TimingPoint;
-  run: Run;             // Run number (1 or 2), defaults to 1 for backwards compat
+  run: Run; // Run number (1 or 2), defaults to 1 for backwards compat
   timestamp: string;
   status: EntryStatus;
   deviceId: string;
@@ -45,44 +58,54 @@ export interface Entry {
 
 // Fault version for audit trail
 export interface FaultVersion {
-  version: number;              // Incrementing version number
-  timestamp: string;            // When this version was created (ISO)
-  editedBy: string;             // Device name of who made the change
-  editedByDeviceId: string;     // Device ID for audit
-  changeType: 'create' | 'edit' | 'restore';  // Type of change
-  data: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion' | 'markedForDeletionAt' | 'markedForDeletionBy' | 'markedForDeletionByDeviceId' | 'deletionApprovedAt' | 'deletionApprovedBy'>;  // Complete fault data at this version (without meta fields)
-  changeDescription?: string;   // Optional: what changed
+  version: number; // Incrementing version number
+  timestamp: string; // When this version was created (ISO)
+  editedBy: string; // Device name of who made the change
+  editedByDeviceId: string; // Device ID for audit
+  changeType: 'create' | 'edit' | 'restore'; // Type of change
+  data: Omit<
+    FaultEntry,
+    | 'currentVersion'
+    | 'versionHistory'
+    | 'markedForDeletion'
+    | 'markedForDeletionAt'
+    | 'markedForDeletionBy'
+    | 'markedForDeletionByDeviceId'
+    | 'deletionApprovedAt'
+    | 'deletionApprovedBy'
+  >; // Complete fault data at this version (without meta fields)
+  changeDescription?: string; // Optional: what changed
 }
 
 // Fault entry - linked to timing entries by bib+run
 export interface FaultEntry {
-  id: string;                    // Unique ID
-  bib: string;                   // Racer bib number (Startnummer)
-  run: Run;                      // Run 1 or 2 (Lauf)
-  gateNumber: number;            // Gate where fault occurred (Tornummer)
-  faultType: FaultType;          // Type of fault (Fehlerart)
-  timestamp: string;             // When recorded (ISO)
-  deviceId: string;              // Judge's device
-  deviceName: string;            // Judge name (Torrichter)
-  gateRange: [number, number];   // Gates this judge watches (e.g., [4, 12] = gates 4-12)
+  id: string; // Unique ID
+  bib: string; // Racer bib number (Startnummer)
+  run: Run; // Run 1 or 2 (Lauf)
+  gateNumber: number; // Gate where fault occurred (Tornummer)
+  faultType: FaultType; // Type of fault (Fehlerart)
+  timestamp: string; // When recorded (ISO)
+  deviceId: string; // Judge's device
+  deviceName: string; // Judge name (Torrichter)
+  gateRange: [number, number]; // Gates this judge watches (e.g., [4, 12] = gates 4-12)
   syncedAt?: number;
 
   // Voice notes - optional details about the fault
-  notes?: string;                    // Transcribed/typed text (max 500 chars)
-  notesSource?: 'voice' | 'manual';  // How note was created
-  notesTimestamp?: string;           // When note was recorded (ISO)
+  notes?: string; // Transcribed/typed text (max 500 chars)
+  notesSource?: 'voice' | 'manual'; // How note was created
+  notesTimestamp?: string; // When note was recorded (ISO)
 
   // Version tracking
-  currentVersion: number;       // Current version number (starts at 1)
+  currentVersion: number; // Current version number (starts at 1)
   versionHistory: FaultVersion[]; // All previous versions
 
   // Deletion workflow
-  markedForDeletion: boolean;   // True if marked for deletion
+  markedForDeletion: boolean; // True if marked for deletion
   markedForDeletionAt?: string; // When marked (ISO timestamp)
   markedForDeletionBy?: string; // Who marked it (device name)
   markedForDeletionByDeviceId?: string; // Device ID
-  deletionApprovedAt?: string;  // When approved (ISO timestamp)
-  deletionApprovedBy?: string;  // Chief judge who approved
+  deletionApprovedAt?: string; // When approved (ISO timestamp)
+  deletionApprovedBy?: string; // Chief judge who approved
 }
 
 // Gate color type (alternating colors in ski racing)
@@ -95,25 +118,25 @@ export interface GateAssignment {
   gateStart: number;
   gateEnd: number;
   lastSeen: number;
-  isReady?: boolean;  // Judge signals ready for race/run
-  firstGateColor?: GateColor;  // Color of the first gate in range
+  isReady?: boolean; // Judge signals ready for race/run
+  firstGateColor?: GateColor; // Color of the first gate in range
 }
 
 // Settings interface
 export interface Settings {
-  auto: boolean;        // Auto-increment bib
-  haptic: boolean;      // Haptic feedback
-  sound: boolean;       // Sound feedback
-  sync: boolean;        // Cloud sync enabled
-  syncPhotos: boolean;  // Sync photos to cloud
-  gps: boolean;         // GPS enabled
-  simple: boolean;      // Simple mode
+  auto: boolean; // Auto-increment bib
+  haptic: boolean; // Haptic feedback
+  sound: boolean; // Sound feedback
+  sync: boolean; // Cloud sync enabled
+  syncPhotos: boolean; // Sync photos to cloud
+  gps: boolean; // GPS enabled
+  simple: boolean; // Simple mode
   photoCapture: boolean; // Photo capture on timestamp
   // Liquid Glass UI settings
-  motionEffects: boolean;  // Enable accelerometer-reactive effects
-  glassEffects: boolean;   // Enable glass/blur effects
-  outdoorMode: boolean;    // High contrast mode for outdoor readability
-  ambientMode: boolean;    // Auto-dim after inactivity on timer view
+  motionEffects: boolean; // Enable accelerometer-reactive effects
+  glassEffects: boolean; // Enable glass/blur effects
+  outdoorMode: boolean; // High contrast mode for outdoor readability
+  ambientMode: boolean; // Auto-dim after inactivity on timer view
 }
 
 // Device info for multi-device sync
@@ -143,7 +166,7 @@ export type ActionType =
 export interface Action {
   type: ActionType;
   data: Entry | Entry[];
-  newData?: Entry;  // For UPDATE_ENTRY redo support
+  newData?: Entry; // For UPDATE_ENTRY redo support
   timestamp: number;
 }
 
@@ -154,7 +177,7 @@ export interface AppState {
   currentLang: Language;
   bibInput: string;
   selectedPoint: TimingPoint;
-  selectedRun: Run;       // Current run selection (1 or 2)
+  selectedRun: Run; // Current run selection (1 or 2)
   selectMode: boolean;
   selectedEntries: Set<string>;
   isRecording: boolean;
@@ -165,19 +188,19 @@ export interface AppState {
 
   // Gate Judge State
   deviceRole: DeviceRole;
-  gateAssignment: [number, number] | null;  // [start, end] gate range
-  firstGateColor: GateColor;  // Color of first gate (gates alternate red/blue)
+  gateAssignment: [number, number] | null; // [start, end] gate range
+  firstGateColor: GateColor; // Color of first gate (gates alternate red/blue)
   faultEntries: FaultEntry[];
-  selectedFaultBib: string;  // Currently selected bib for fault entry
-  isJudgeReady: boolean;  // Whether this judge has signaled ready
+  selectedFaultBib: string; // Currently selected bib for fault entry
+  isJudgeReady: boolean; // Whether this judge has signaled ready
 
   // Chief Judge View State
-  isChiefJudgeView: boolean;  // Show chief judge panel in Results view
-  finalizedRacers: Set<string>;  // Set of "bib-run" keys for finalized racers
+  isChiefJudgeView: boolean; // Show chief judge panel in Results view
+  finalizedRacers: Set<string>; // Set of "bib-run" keys for finalized racers
 
   // Race penalty configuration
-  penaltySeconds: number;  // Seconds per fault (default: 5 for youth)
-  usePenaltyMode: boolean;  // true = penalty time, false = DSQ
+  penaltySeconds: number; // Seconds per fault (default: 5 for youth)
+  usePenaltyMode: boolean; // true = penalty time, false = DSQ
 
   // Undo/Redo
   undoStack: Action[];
@@ -327,7 +350,13 @@ export interface DataSchema {
 // ===== Voice Mode Types =====
 
 // Voice mode status indicators
-export type VoiceStatus = 'inactive' | 'listening' | 'processing' | 'confirming' | 'offline' | 'error';
+export type VoiceStatus =
+  | 'inactive'
+  | 'listening'
+  | 'processing'
+  | 'confirming'
+  | 'offline'
+  | 'error';
 
 // Voice intent actions
 // Note: 'record_time' removed - voice latency too high for precise timing
@@ -362,7 +391,7 @@ export interface VoiceContext {
   role: DeviceRole;
   language: Language;
   currentRun: Run;
-  activeBibs?: string[];        // For gate judge - racers on course
+  activeBibs?: string[]; // For gate judge - racers on course
   gateRange?: [number, number]; // For gate judge - assigned gates
   pendingConfirmation?: VoiceIntent; // Awaiting yes/no response
 }

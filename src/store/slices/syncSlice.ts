@@ -3,7 +3,7 @@
  * Handles sync status, device info, and cloud state
  */
 
-import type { SyncStatus, DeviceInfo } from '../../types';
+import type { DeviceInfo, SyncStatus } from '../../types';
 
 // Sync State type
 export interface SyncState {
@@ -30,11 +30,11 @@ export function setSyncStatus(status: SyncStatus): Partial<SyncState> {
  */
 export function setRaceId(
   raceId: string,
-  currentRaceId: string
+  currentRaceId: string,
 ): { raceId: string; clearUndoRedo: boolean } {
   return {
     raceId,
-    clearUndoRedo: raceId !== currentRaceId
+    clearUndoRedo: raceId !== currentRaceId,
   };
 }
 
@@ -60,7 +60,7 @@ const DEVICE_STALE_MS = 120_000;
  */
 export function addConnectedDevice(
   device: DeviceInfo,
-  currentDevices: Map<string, DeviceInfo>
+  currentDevices: Map<string, DeviceInfo>,
 ): Partial<SyncState> {
   const now = Date.now();
   const connectedDevices = new Map<string, DeviceInfo>();
@@ -79,7 +79,7 @@ export function addConnectedDevice(
  */
 export function removeConnectedDevice(
   deviceId: string,
-  currentDevices: Map<string, DeviceInfo>
+  currentDevices: Map<string, DeviceInfo>,
 ): Partial<SyncState> {
   const connectedDevices = new Map(currentDevices);
   connectedDevices.delete(deviceId);
@@ -103,6 +103,8 @@ export function setCloudHighestBib(bib: number): Partial<SyncState> {
 /**
  * Set race exists in cloud flag
  */
-export function setRaceExistsInCloud(exists: boolean | null): Partial<SyncState> {
+export function setRaceExistsInCloud(
+  exists: boolean | null,
+): Partial<SyncState> {
   return { raceExistsInCloud: exists };
 }

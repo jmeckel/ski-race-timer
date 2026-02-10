@@ -3,8 +3,8 @@
  * Handles settings state management and UI updates
  */
 
-import type { AppState, Settings, Language } from '../types';
 import { t } from '../i18n/translations';
+import type { AppState, Language, Settings } from '../types';
 
 // Dependencies interface
 export interface SettingsDependencies {
@@ -92,13 +92,17 @@ export function updateSettingsInputs(): void {
   }
 
   // Race ID
-  const raceIdInput = document.getElementById('race-id-input') as HTMLInputElement;
+  const raceIdInput = document.getElementById(
+    'race-id-input',
+  ) as HTMLInputElement;
   if (raceIdInput && state.raceId) {
     raceIdInput.value = state.raceId;
   }
 
   // Device name
-  const deviceNameInput = document.getElementById('device-name-input') as HTMLInputElement;
+  const deviceNameInput = document.getElementById(
+    'device-name-input',
+  ) as HTMLInputElement;
   if (deviceNameInput && state.deviceName) {
     deviceNameInput.value = state.deviceName;
   }
@@ -116,7 +120,7 @@ export function updateLangToggle(): void {
   const lang = deps.getState().currentLang;
   const buttons = langToggle.querySelectorAll('[data-lang]');
 
-  buttons.forEach(btn => {
+  buttons.forEach((btn) => {
     const btnLang = btn.getAttribute('data-lang');
     btn.classList.toggle('active', btnLang === lang);
   });
@@ -164,7 +168,7 @@ export function applyGlassEffectSettings(): void {
 
   // Update glass elements
   const glassElements = document.querySelectorAll('.glass-panel, .glass-card');
-  glassElements.forEach(el => {
+  glassElements.forEach((el) => {
     el.classList.toggle('glass-disabled', !glassEnabled);
   });
 }

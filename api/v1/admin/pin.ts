@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateAuth, hashPin, verifyPin } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
 import {
@@ -10,6 +11,11 @@ import {
   sendError
 } from '../../lib/response.js';
 
+interface ChangePinRequestBody {
+  currentPin?: string;
+  newPin?: string;
+}
+
 /**
  * Admin PIN Status API
  *
@@ -20,7 +26,7 @@ import {
  * - Offline brute-force attacks (4-digit = only 10,000 possibilities)
  * - Hash replay attacks via legacy authentication path
  */
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'OPTIONS'])) {
     return;
@@ -29,8 +35,9 @@ export default async function handler(req, res) {
   let client;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -58,7 +65,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Change PIN - requires current PIN verification
-      const { currentPin, newPin } = req.body || {};
+      const { currentPin, newPin } = (req.body || {}) as ChangePinRequestBody;
 
       // Validate inputs
       if (!currentPin || !newPin) {
@@ -96,8 +103,9 @@ export default async function handler(req, res) {
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error) {
-    console.error('Admin PIN API error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Admin PIN API error:', message);
     return sendError(res, 'Internal server error', 500);
   }
 }

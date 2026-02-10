@@ -1,7 +1,7 @@
-import { formatTime, formatDate } from '../utils';
-import { store } from '../store';
 import { t } from '../i18n/translations';
-import { gpsService, batteryService, type BatteryLevel } from '../services';
+import { type BatteryLevel, batteryService, gpsService } from '../services';
+import { store } from '../store';
+import { formatDate, formatTime } from '../utils';
 import { logger } from '../utils/logger';
 
 // Frame throttling for battery optimization
@@ -45,7 +45,9 @@ export class Clock {
     this.container.appendChild(this.dateRow);
 
     // Cache digit elements for O(1) access in RAF loop
-    this.cachedDigits = Array.from(this.timeElement.querySelectorAll('.clock-digit')) as HTMLSpanElement[];
+    this.cachedDigits = Array.from(
+      this.timeElement.querySelectorAll('.clock-digit'),
+    ) as HTMLSpanElement[];
 
     // Move timing points into the date row
     this.moveTimingPointsToDateRow();
@@ -155,11 +157,14 @@ export class Clock {
 
     // Subscribe to battery changes for adaptive frame rate
     if (!this.batteryUnsubscribe) {
-      batteryService.initialize().then(() => {
-        this.batteryUnsubscribe = batteryService.subscribe((status) => {
-          this.updateFrameSkipFromBattery(status.batteryLevel);
-        });
-      }).catch(err => logger.debug('Battery API unavailable:', err));
+      batteryService
+        .initialize()
+        .then(() => {
+          this.batteryUnsubscribe = batteryService.subscribe((status) => {
+            this.updateFrameSkipFromBattery(status.batteryLevel);
+          });
+        })
+        .catch((err) => logger.debug('Battery API unavailable:', err));
     }
   }
 
@@ -214,7 +219,9 @@ export class Clock {
       // Frame skipping for battery optimization
       // Always schedule next frame first, then decide whether to update display
       this.currentFrame++;
-      const shouldUpdate = this.frameSkipCount === 0 || (this.currentFrame % (this.frameSkipCount + 1)) === 0;
+      const shouldUpdate =
+        this.frameSkipCount === 0 ||
+        this.currentFrame % (this.frameSkipCount + 1) === 0;
 
       if (shouldUpdate) {
         // Always use Date.now() for display - GPS timestamp is only for recording entries

@@ -3,15 +3,15 @@
  * Handles the voice note modal, confirmation overlay buttons, and edit modal integration
  */
 
-import { store } from '../store';
-import { voiceNoteService } from '../services/voiceNote';
-import { voiceModeService } from '../services/voice';
-import { syncFault } from '../services/sync';
 import { showToast } from '../components';
-import { feedbackTap, feedbackSuccess } from '../services';
 import { t } from '../i18n/translations';
-import { openModal, closeModal, isAnyModalOpen } from './modals';
+import { feedbackSuccess, feedbackTap } from '../services';
+import { syncFault } from '../services/sync';
+import { voiceModeService } from '../services/voice';
+import { voiceNoteService } from '../services/voiceNote';
+import { store } from '../store';
 import { getModalContext } from '../utils/modalContext';
+import { closeModal, isAnyModalOpen, openModal } from './modals';
 
 // Module state
 let currentFaultId: string | null = null;
@@ -37,10 +37,12 @@ export function openVoiceNoteModal(faultId: string): void {
   accumulatedTranscript = '';
 
   const state = store.getState();
-  const fault = state.faultEntries.find(f => f.id === faultId);
+  const fault = state.faultEntries.find((f) => f.id === faultId);
 
   // Pre-populate with existing notes if any
-  const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
+  const textarea = document.getElementById(
+    'voice-note-textarea',
+  ) as HTMLTextAreaElement;
   if (textarea) {
     textarea.value = fault?.notes || '';
     updateCharCount();
@@ -86,11 +88,13 @@ export function closeVoiceNoteModal(): void {
 export function saveVoiceNote(): void {
   if (!currentFaultId) return;
 
-  const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
+  const textarea = document.getElementById(
+    'voice-note-textarea',
+  ) as HTMLTextAreaElement;
   const notes = textarea?.value.trim().slice(0, MAX_NOTE_LENGTH) || '';
 
   const state = store.getState();
-  const fault = state.faultEntries.find(f => f.id === currentFaultId);
+  const fault = state.faultEntries.find((f) => f.id === currentFaultId);
   if (!fault) return;
 
   // Determine notes source based on whether transcript was used
@@ -101,15 +105,21 @@ export function saveVoiceNote(): void {
     ? `notes: ${notes.slice(0, 30)}${notes.length > 30 ? '...' : ''}`
     : 'notes removed';
 
-  const success = store.updateFaultEntryWithHistory(currentFaultId, {
-    notes: notes || undefined,
-    notesSource: notes ? notesSource : undefined,
-    notesTimestamp: notes ? new Date().toISOString() : undefined
-  }, changeDescription);
+  const success = store.updateFaultEntryWithHistory(
+    currentFaultId,
+    {
+      notes: notes || undefined,
+      notesSource: notes ? notesSource : undefined,
+      notesTimestamp: notes ? new Date().toISOString() : undefined,
+    },
+    changeDescription,
+  );
 
   if (success) {
     // Sync updated fault to cloud
-    const updatedFault = store.getState().faultEntries.find(f => f.id === currentFaultId);
+    const updatedFault = store
+      .getState()
+      .faultEntries.find((f) => f.id === currentFaultId);
     if (updatedFault) {
       syncFault(updatedFault);
     }
@@ -155,23 +165,28 @@ export function startVoiceRecording(): void {
     }
   });
 
-  unsubscribeTranscript = voiceNoteService.onTranscript((transcript, isFinal) => {
-    const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
-    if (!textarea) return;
+  unsubscribeTranscript = voiceNoteService.onTranscript(
+    (transcript, isFinal) => {
+      const textarea = document.getElementById(
+        'voice-note-textarea',
+      ) as HTMLTextAreaElement;
+      if (!textarea) return;
 
-    if (isFinal) {
-      // Append final transcript to accumulated
-      accumulatedTranscript += (accumulatedTranscript ? ' ' : '') + transcript;
+      if (isFinal) {
+        // Append final transcript to accumulated
+        accumulatedTranscript +=
+          (accumulatedTranscript ? ' ' : '') + transcript;
 
-      // Update textarea with accumulated transcript
-      const currentText = textarea.value;
-      const newText = currentText
-        ? currentText + ' ' + transcript
-        : transcript;
-      textarea.value = newText.slice(0, MAX_NOTE_LENGTH);
-      updateCharCount();
-    }
-  });
+        // Update textarea with accumulated transcript
+        const currentText = textarea.value;
+        const newText = currentText
+          ? `${currentText} ${transcript}`
+          : transcript;
+        textarea.value = newText.slice(0, MAX_NOTE_LENGTH);
+        updateCharCount();
+      }
+    },
+  );
 
   const started = voiceNoteService.start();
   if (started) {
@@ -227,7 +242,9 @@ function updateListeningIndicator(isListening: boolean): void {
  * Update character count display
  */
 function updateCharCount(): void {
-  const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
+  const textarea = document.getElementById(
+    'voice-note-textarea',
+  ) as HTMLTextAreaElement;
   const charCount = document.getElementById('voice-note-char-count');
 
   if (textarea && charCount) {
@@ -273,7 +290,9 @@ export function initVoiceNoteModal(): void {
   closeBtn?.addEventListener('click', closeVoiceNoteModal);
 
   // Textarea input handler for char count
-  const textarea = document.getElementById('voice-note-textarea') as HTMLTextAreaElement;
+  const textarea = document.getElementById(
+    'voice-note-textarea',
+  ) as HTMLTextAreaElement;
   textarea?.addEventListener('input', updateCharCount);
 
   if (modal) {
@@ -317,7 +336,9 @@ export function initFaultConfirmationOverlay(): void {
       feedbackTap();
 
       // Get the fault ID from the overlay
-      const faultId = overlay ? getModalContext<{ faultId: string }>(overlay)?.faultId : undefined;
+      const faultId = overlay
+        ? getModalContext<{ faultId: string }>(overlay)?.faultId
+        : undefined;
 
       // Hide the confirmation overlay
       dismissFaultConfirmation();
@@ -354,7 +375,11 @@ export function initFaultConfirmationOverlay(): void {
     overlayKeydownHandler = (e: KeyboardEvent) => {
       // Only dismiss if overlay is visible AND no other modal is open
       // (modals take precedence over the confirmation overlay)
-      if (e.key === 'Escape' && overlay.classList.contains('show') && !isAnyModalOpen()) {
+      if (
+        e.key === 'Escape' &&
+        overlay.classList.contains('show') &&
+        !isAnyModalOpen()
+      ) {
         e.preventDefault();
         dismissFaultConfirmation();
       }
@@ -386,7 +411,9 @@ function initFaultEditMicHandler(): void {
   window.addEventListener('fault-edit-mic-click', () => {
     const lang = store.getState().currentLang;
     const micBtn = document.getElementById('fault-edit-mic-btn');
-    const textarea = document.getElementById('fault-edit-notes') as HTMLTextAreaElement;
+    const textarea = document.getElementById(
+      'fault-edit-notes',
+    ) as HTMLTextAreaElement;
     const charCount = document.getElementById('fault-edit-notes-char-count');
 
     if (!voiceNoteService.isSupported()) {
@@ -420,22 +447,24 @@ function initFaultEditMicHandler(): void {
       }
     });
 
-    editUnsubscribeTranscript = voiceNoteService.onTranscript((transcript, isFinal) => {
-      if (isFinal && textarea) {
-        const currentText = textarea.value;
-        const newText = currentText
-          ? currentText + ' ' + transcript
-          : transcript;
-        textarea.value = newText.slice(0, 500);
+    editUnsubscribeTranscript = voiceNoteService.onTranscript(
+      (transcript, isFinal) => {
+        if (isFinal && textarea) {
+          const currentText = textarea.value;
+          const newText = currentText
+            ? `${currentText} ${transcript}`
+            : transcript;
+          textarea.value = newText.slice(0, 500);
 
-        // Update char count
-        if (charCount) {
-          const count = textarea.value.length;
-          charCount.textContent = `${count}/500`;
-          charCount.classList.toggle('near-limit', count > 450);
+          // Update char count
+          if (charCount) {
+            const count = textarea.value.length;
+            charCount.textContent = `${count}/500`;
+            charCount.classList.toggle('near-limit', count > 450);
+          }
         }
-      }
-    });
+      },
+    );
 
     const started = voiceNoteService.start();
     if (started) {
@@ -453,9 +482,13 @@ function initFaultEditMicHandler(): void {
   if (faultEditModal) {
     faultEditObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-          const isVisible = faultEditModal.classList.contains('show') ||
-                           faultEditModal.style.display !== 'none';
+        if (
+          mutation.type === 'attributes' &&
+          mutation.attributeName === 'class'
+        ) {
+          const isVisible =
+            faultEditModal.classList.contains('show') ||
+            faultEditModal.style.display !== 'none';
           if (!isVisible && isEditRecording) {
             voiceNoteService.stop();
             cleanupEditSubscriptions();

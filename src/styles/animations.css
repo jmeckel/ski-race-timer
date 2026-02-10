@@ -5,7 +5,8 @@
 
 /* Primary breathing cycle - 8 second slow pulse */
 @keyframes breatheGlow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 20px rgba(59, 130, 246, 0.2),
       0 0 40px rgba(59, 130, 246, 0.1);
@@ -18,7 +19,8 @@
 }
 
 @keyframes breatheGlowSuccess {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 20px rgba(74, 222, 128, 0.2),
       0 0 40px rgba(74, 222, 128, 0.1);
@@ -31,7 +33,8 @@
 }
 
 @keyframes breatheGlowDanger {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 20px rgba(227, 24, 55, 0.2),
       0 0 40px rgba(227, 24, 55, 0.1);
@@ -45,7 +48,8 @@
 
 /* Scale breathing */
 @keyframes breatheScale {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -55,7 +59,8 @@
 
 /* Opacity breathing */
 @keyframes breatheOpacity {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.7;
   }
   50% {
@@ -65,7 +70,8 @@
 
 /* Subtle border glow */
 @keyframes breatheBorder {
-  0%, 100% {
+  0%,
+  100% {
     border-color: rgba(255, 255, 255, 0.1);
   }
   50% {
@@ -75,7 +81,8 @@
 
 /* Active tab pulse */
 @keyframes tabPulse {
-  0%, 100% {
+  0%,
+  100% {
     background: rgba(59, 130, 246, 0.15);
   }
   50% {
@@ -119,18 +126,42 @@
 /* ===== Staggered Animation Delays ===== */
 /* For wave effects across grid elements */
 
-.breathe-delay-1 { animation-delay: 0s; }
-.breathe-delay-2 { animation-delay: 0.5s; }
-.breathe-delay-3 { animation-delay: 1s; }
-.breathe-delay-4 { animation-delay: 1.5s; }
-.breathe-delay-5 { animation-delay: 2s; }
-.breathe-delay-6 { animation-delay: 2.5s; }
-.breathe-delay-7 { animation-delay: 3s; }
-.breathe-delay-8 { animation-delay: 3.5s; }
-.breathe-delay-9 { animation-delay: 4s; }
-.breathe-delay-10 { animation-delay: 4.5s; }
-.breathe-delay-11 { animation-delay: 5s; }
-.breathe-delay-12 { animation-delay: 5.5s; }
+.breathe-delay-1 {
+  animation-delay: 0s;
+}
+.breathe-delay-2 {
+  animation-delay: 0.5s;
+}
+.breathe-delay-3 {
+  animation-delay: 1s;
+}
+.breathe-delay-4 {
+  animation-delay: 1.5s;
+}
+.breathe-delay-5 {
+  animation-delay: 2s;
+}
+.breathe-delay-6 {
+  animation-delay: 2.5s;
+}
+.breathe-delay-7 {
+  animation-delay: 3s;
+}
+.breathe-delay-8 {
+  animation-delay: 3.5s;
+}
+.breathe-delay-9 {
+  animation-delay: 4s;
+}
+.breathe-delay-10 {
+  animation-delay: 4.5s;
+}
+.breathe-delay-11 {
+  animation-delay: 5s;
+}
+.breathe-delay-12 {
+  animation-delay: 5.5s;
+}
 
 /* ===== Spring Entrance Animation ===== */
 @keyframes springIn {
@@ -183,7 +214,9 @@
 
 /* ===== Press Effect ===== */
 .press-effect {
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
 }
 
 .press-effect:active {
@@ -206,11 +239,15 @@
 
 /* ===== Selection Glow ===== */
 .selection-glow {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .selection-glow.selected {
-  box-shadow: 0 0 0 2px var(--primary), 0 0 20px rgba(59, 130, 246, 0.4);
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 0 20px rgba(59, 130, 246, 0.4);
   border-color: var(--primary);
 }
 
@@ -252,8 +289,15 @@
 
 /* Snowflake spinner for loading states */
 @keyframes snowflakePulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Snowflake burst for success confirmations */
@@ -263,7 +307,8 @@
     opacity: 1;
   }
   100% {
-    transform: translate(var(--burst-x, 50px), var(--burst-y, -60px)) scale(0) rotate(var(--burst-rot, 360deg));
+    transform: translate(var(--burst-x, 50px), var(--burst-y, -60px)) scale(0)
+      rotate(var(--burst-rot, 360deg));
     opacity: 0;
   }
 }

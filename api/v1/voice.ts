@@ -13,6 +13,7 @@
  * - ANTHROPIC_API_KEY: Required if using Anthropic
  */
 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateAuth } from '../lib/jwt.js';
 import {
   handlePreflight,
@@ -33,11 +34,65 @@ const MAX_TOKENS = 256;
 const RATE_LIMIT_WINDOW = 60; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 voice requests per minute per IP
 
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  error?: string;
+}
+
+interface VoiceContext {
+  role: 'timer' | 'gateJudge';
+  language: 'de' | 'en';
+  currentRun?: number;
+  activeBibs?: string[];
+  gateRange?: [number, number];
+  pendingConfirmation?: {
+    action: string;
+    params: Record<string, unknown>;
+  } | null;
+}
+
+interface VoiceRequestBody {
+  transcript?: string;
+  context?: VoiceContext;
+}
+
+interface VoiceIntent {
+  action: string;
+  confidence: number;
+  params?: Record<string, unknown>;
+  confirmationNeeded?: boolean;
+  confirmationPrompt?: string;
+  error?: string;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+interface ProviderConfig {
+  url: string;
+  model: string;
+  envKey: string;
+}
+
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
+interface AnthropicResponse {
+  content?: Array<{ text?: string }> | string;
+}
+
 /**
  * Check rate limit for voice API
- * @returns {Promise<{allowed: boolean, remaining: number}>}
  */
-async function checkRateLimit(clientIP) {
+async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
   const client = await getRedis();
   if (!client || hasRedisError()) {
     // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
@@ -60,8 +115,9 @@ async function checkRateLimit(clientIP) {
       allowed: current <= RATE_LIMIT_MAX_REQUESTS,
       remaining
     };
-  } catch (error) {
-    console.error('Rate limit check failed:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Rate limit check failed:', message);
     // SECURITY: Fail closed if rate limiting cannot be enforced
     return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
   }
@@ -70,7 +126,7 @@ const MAX_TRANSCRIPT_LENGTH = 500;
 const REQUEST_TIMEOUT_MS = 10000;
 
 // Provider configurations
-const PROVIDERS = {
+const PROVIDERS: Record<string, ProviderConfig> = {
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o-mini',
@@ -131,12 +187,13 @@ IMPORTANT:
 /**
  * Validate the request body
  */
-function validateRequest(body) {
+function validateRequest(body: unknown): ValidationResult {
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Invalid request body' };
   }
 
-  const { transcript, context } = body;
+  const b = body as Record<string, unknown>;
+  const { transcript, context } = b;
 
   if (!transcript || typeof transcript !== 'string') {
     return { valid: false, error: 'Missing or invalid transcript' };
@@ -150,11 +207,13 @@ function validateRequest(body) {
     return { valid: false, error: 'Missing or invalid context' };
   }
 
-  if (!['timer', 'gateJudge'].includes(context.role)) {
+  const ctx = context as Record<string, unknown>;
+
+  if (!['timer', 'gateJudge'].includes(ctx.role as string)) {
     return { valid: false, error: 'Invalid role in context' };
   }
 
-  if (!['de', 'en'].includes(context.language)) {
+  if (!['de', 'en'].includes(ctx.language as string)) {
     return { valid: false, error: 'Invalid language in context' };
   }
 
@@ -164,7 +223,7 @@ function validateRequest(body) {
 /**
  * Build user message from transcript and context
  */
-function buildUserMessage(transcript, context) {
+function buildUserMessage(transcript: string, context: VoiceContext): string {
   const contextJson = JSON.stringify({
     role: context.role,
     language: context.language,
@@ -183,7 +242,7 @@ function buildUserMessage(transcript, context) {
 /**
  * Parse LLM response content to extract intent
  */
-function parseIntentFromContent(content) {
+function parseIntentFromContent(content: string | null | undefined): VoiceIntent {
   if (!content) {
     throw new Error('Empty response from LLM');
   }
@@ -194,7 +253,7 @@ function parseIntentFromContent(content) {
     jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
   }
 
-  const intent = JSON.parse(jsonContent);
+  const intent: VoiceIntent = JSON.parse(jsonContent);
 
   // Validate required fields
   if (!intent.action || typeof intent.confidence !== 'number') {
@@ -208,7 +267,7 @@ function parseIntentFromContent(content) {
  * Fetch with timeout and abort handling
  * Shared by both LLM provider implementations
  */
-async function fetchWithTimeout(url, options, providerName) {
+async function fetchWithTimeout(url: string, options: RequestInit, providerName: string): Promise<unknown> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -223,9 +282,9 @@ async function fetchWithTimeout(url, options, providerName) {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout');
     }
     throw error;
@@ -235,7 +294,7 @@ async function fetchWithTimeout(url, options, providerName) {
 /**
  * Call OpenAI API
  */
-async function callOpenAI(transcript, context, apiKey) {
+async function callOpenAI(transcript: string, context: VoiceContext, apiKey: string): Promise<VoiceIntent> {
   const userMessage = buildUserMessage(transcript, context);
 
   const result = await fetchWithTimeout(PROVIDERS.openai.url, {
@@ -253,7 +312,7 @@ async function callOpenAI(transcript, context, apiKey) {
         { role: 'user', content: userMessage }
       ]
     })
-  }, 'OpenAI');
+  }, 'OpenAI') as OpenAIResponse;
 
   const content = result.choices?.[0]?.message?.content || '';
   return parseIntentFromContent(content);
@@ -262,7 +321,7 @@ async function callOpenAI(transcript, context, apiKey) {
 /**
  * Call Anthropic API
  */
-async function callAnthropic(transcript, context, apiKey) {
+async function callAnthropic(transcript: string, context: VoiceContext, apiKey: string): Promise<VoiceIntent> {
   const userMessage = buildUserMessage(transcript, context);
 
   const result = await fetchWithTimeout(PROVIDERS.anthropic.url, {
@@ -278,7 +337,7 @@ async function callAnthropic(transcript, context, apiKey) {
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }]
     })
-  }, 'Anthropic');
+  }, 'Anthropic') as AnthropicResponse;
 
   // Extract content from Anthropic response format
   let content = '';
@@ -294,7 +353,7 @@ async function callAnthropic(transcript, context, apiKey) {
 /**
  * Main handler
  */
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
     return;
@@ -306,8 +365,8 @@ export default async function handler(req, res) {
   }
 
   // Rate limiting (voice API is expensive - protect against economic DoS)
-  const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-                   req.headers['x-real-ip'] ||
+  const clientIP = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+                   (req.headers['x-real-ip'] as string | undefined) ||
                    req.socket?.remoteAddress ||
                    'unknown';
 
@@ -351,25 +410,25 @@ export default async function handler(req, res) {
   }
 
   // Parse and validate request body
-  let body;
+  let body: unknown;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (e) {
+  } catch (e: unknown) {
     return sendBadRequest(res, 'Invalid JSON body');
   }
 
   const validation = validateRequest(body);
   if (!validation.valid) {
-    return sendBadRequest(res, validation.error);
+    return sendBadRequest(res, validation.error!);
   }
 
-  const { transcript, context } = body;
+  const { transcript, context } = body as VoiceRequestBody;
 
   try {
     // Call appropriate provider
-    const intent = provider === 'openai'
-      ? await callOpenAI(transcript, context, apiKey)
-      : await callAnthropic(transcript, context, apiKey);
+    const intent: VoiceIntent = provider === 'openai'
+      ? await callOpenAI(transcript!, context!, apiKey)
+      : await callAnthropic(transcript!, context!, apiKey);
 
     return sendSuccess(res, {
       success: true,
@@ -377,8 +436,9 @@ export default async function handler(req, res) {
       provider // Include provider in response for debugging
     });
 
-  } catch (error) {
-    console.error('Voice processing error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Voice processing error:', message);
 
     // Return unknown intent on error (graceful degradation)
     return sendSuccess(res, {
@@ -387,7 +447,7 @@ export default async function handler(req, res) {
         action: 'unknown',
         confidence: 0,
         confirmationNeeded: false,
-        error: error.message
+        error: message
       },
       provider
     });

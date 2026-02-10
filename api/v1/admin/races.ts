@@ -1,3 +1,5 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type Redis from 'ioredis';
 import { validateAuth } from '../../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import {
@@ -16,8 +18,31 @@ const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to p
 // Device stale threshold (same as sync.js)
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds
 
+interface DeviceData {
+  lastSeen: number;
+  name?: string;
+}
+
+interface RaceData {
+  entries?: unknown[];
+  lastUpdated?: number | null;
+}
+
+interface RaceListItem {
+  raceId: string;
+  entryCount: number;
+  deviceCount: number;
+  lastUpdated: number | null;
+}
+
+interface DeleteRaceResult {
+  success: boolean;
+  error?: string;
+  raceId?: string;
+}
+
 // Get active device count for a race
-async function getActiveDeviceCount(client, normalizedRaceId) {
+async function getActiveDeviceCount(client: Redis, normalizedRaceId: string): Promise<number> {
   const devicesKey = `race:${normalizedRaceId}:devices`;
   const devices = await client.hgetall(devicesKey);
 
@@ -30,7 +55,7 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
 
   for (const [, deviceJson] of Object.entries(devices)) {
     try {
-      const device = JSON.parse(deviceJson);
+      const device: DeviceData = JSON.parse(deviceJson);
       if (now - device.lastSeen <= DEVICE_STALE_THRESHOLD) {
         activeCount++;
       }
@@ -43,9 +68,9 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
 }
 
 // List all races using SCAN
-async function listRaces(client) {
-  const races = [];
-  const seenRaceIds = new Set();
+async function listRaces(client: Redis): Promise<RaceListItem[]> {
+  const races: RaceListItem[] = [];
+  const seenRaceIds = new Set<string>();
   let cursor = '0';
 
   do {
@@ -67,7 +92,7 @@ async function listRaces(client) {
       try {
         const data = await client.get(key);
         if (data) {
-          const parsed = JSON.parse(data);
+          const parsed: RaceData = JSON.parse(data);
           const entryCount = Array.isArray(parsed.entries) ? parsed.entries.length : 0;
           const deviceCount = await getActiveDeviceCount(client, raceId);
 
@@ -78,8 +103,9 @@ async function listRaces(client) {
             lastUpdated: parsed.lastUpdated || null
           });
         }
-      } catch (e) {
-        console.error('Error parsing race data:', key, e.message);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        console.error('Error parsing race data:', key, message);
       }
     }
   } while (cursor !== '0');
@@ -91,7 +117,7 @@ async function listRaces(client) {
 }
 
 // Delete a race and set tombstone
-async function deleteRace(client, raceId) {
+async function deleteRace(client: Redis, raceId: string): Promise<DeleteRaceResult> {
   // Validate raceId before proceeding (defensive: check type and non-empty)
   if (!raceId || typeof raceId !== 'string' || raceId.trim() === '') {
     return { success: false, error: 'Invalid race ID' };
@@ -161,17 +187,18 @@ async function deleteRace(client, raceId) {
   return { success: true, raceId: actualRaceId };
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'DELETE', 'OPTIONS'])) {
     return;
   }
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -195,7 +222,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'DELETE') {
       // Race deletion requires chiefJudge role for security
-      const userRole = auth.payload?.role;
+      const userRole = auth.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
         console.log(`[AUDIT] Race deletion DENIED: role=${userRole}, expected=chiefJudge`);
         return sendError(res, 'Race deletion requires Chief Judge role', 403);
@@ -206,7 +233,7 @@ export default async function handler(req, res) {
       // Batch delete all races
       if (deleteAll === 'true') {
         const races = await listRaces(client);
-        const results = [];
+        const results: Array<{ raceId: string } & DeleteRaceResult> = [];
         for (const race of races) {
           const result = await deleteRace(client, race.raceId);
           results.push({ raceId: race.raceId, ...result });
@@ -224,24 +251,26 @@ export default async function handler(req, res) {
       }
 
       // Validate raceId format
-      if (typeof raceId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(raceId) || raceId.length > 100) {
+      const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
+      if (!/^[a-zA-Z0-9_-]+$/.test(raceIdStr) || raceIdStr.length > 100) {
         return sendBadRequest(res, 'Invalid race ID format');
       }
 
-      const result = await deleteRace(client, raceId);
+      const result = await deleteRace(client, raceIdStr);
 
       if (!result.success) {
-        return sendError(res, result.error, 404);
+        return sendError(res, result.error!, 404);
       }
 
-      return sendSuccess(res, result);
+      return sendSuccess(res, { ...result });
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error) {
-    console.error('Admin API error:', error.message);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Admin API error:', err.message);
 
-    if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+    if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
       return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 

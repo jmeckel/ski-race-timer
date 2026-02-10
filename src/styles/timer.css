@@ -7,11 +7,21 @@
 }
 
 /* Portrait mode element ordering */
-.timer-view .clock-container { order: 1; }
-.timer-view .timing-controls { order: 2; }
-.timer-view .timestamp-btn { order: 3; }
-.timer-view .bib-entry-section { order: 4; }
-.timer-view .number-pad { order: 5; }
+.timer-view .clock-container {
+  order: 1;
+}
+.timer-view .timing-controls {
+  order: 2;
+}
+.timer-view .timestamp-btn {
+  order: 3;
+}
+.timer-view .bib-entry-section {
+  order: 4;
+}
+.timer-view .number-pad {
+  order: 5;
+}
 
 .clock-container {
   text-align: center;
@@ -37,7 +47,9 @@
   border-radius: var(--radius);
   border: 1px solid var(--surface-elevated);
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
   position: relative;
 }
 
@@ -52,7 +64,7 @@
 
 /* Expand indicator */
 .bib-display::after {
-  content: '';
+  content: "";
   position: absolute;
   right: 16px;
   width: 8px;
@@ -74,7 +86,7 @@
 }
 
 .bib-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 2.5rem;
   font-weight: 800;
   min-width: 100px;
@@ -99,7 +111,7 @@
 }
 
 .last-recorded-inline .bib {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -122,7 +134,7 @@
 }
 
 .last-recorded-inline .time {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: var(--text-secondary);
 }
 
@@ -203,7 +215,11 @@
 /* Active state with gradient and glow */
 .timing-point-btn.active {
   border-color: var(--point-color);
-  background: linear-gradient(135deg, var(--point-color) 0%, var(--point-color-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--point-color) 0%,
+    var(--point-color-dark) 100%
+  );
   color: white;
   box-shadow:
     0 0 20px color-mix(in srgb, var(--point-color) 40%, transparent),
@@ -213,11 +229,19 @@
 
 /* Inactive state hint color */
 .timing-point-btn:not(.active) {
-  border-color: color-mix(in srgb, var(--point-color) 30%, var(--surface-elevated));
+  border-color: color-mix(
+    in srgb,
+    var(--point-color) 30%,
+    var(--surface-elevated)
+  );
 }
 
 .timing-point-btn:not(.active):hover {
-  border-color: color-mix(in srgb, var(--point-color) 50%, var(--surface-elevated));
+  border-color: color-mix(
+    in srgb,
+    var(--point-color) 50%,
+    var(--surface-elevated)
+  );
   background: color-mix(in srgb, var(--point-color) 8%, var(--surface));
 }
 
@@ -234,7 +258,8 @@
   flex: 1;
   max-width: 48px;
   padding: 12px 6px;
-  border: 2px solid color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
+  border: 2px solid
+    color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
   border-radius: var(--radius);
   background: var(--surface-elevated);
   color: var(--text-primary);
@@ -251,7 +276,7 @@
 .run-btn.active {
   border-color: var(--primary);
   color: #fff;
-  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
@@ -264,7 +289,8 @@
 .edit-run-btn {
   flex: 1;
   padding: 10px 16px;
-  border: 2px solid color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
+  border: 2px solid
+    color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
   border-radius: var(--radius);
   background: var(--surface-elevated);
   color: var(--text-primary);
@@ -277,7 +303,7 @@
 .edit-run-btn.active {
   border-color: var(--primary);
   color: #fff;
-  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
@@ -301,7 +327,10 @@
   min-height: 0;
   max-height: 500px;
   overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    padding 0.3s ease;
 }
 
 .number-pad.collapsed {
@@ -316,11 +345,14 @@
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-primary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
   min-height: 44px;
   min-width: 44px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -348,13 +380,20 @@
   padding: 28px 24px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
   color: white;
   font-size: 2rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease-out, background 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s ease-out,
+    background 0.2s ease;
   box-shadow:
     0 0 30px rgba(14, 165, 233, 0.4),
     0 0 60px rgba(14, 165, 233, 0.2),
@@ -368,13 +407,17 @@
 
 /* Inner glow highlight */
 .timestamp-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 100%
+  );
   border-radius: 9999px 9999px 0 0;
   pointer-events: none;
 }
@@ -394,18 +437,25 @@
 /* Flash animation when time is recorded */
 @keyframes recordFlash {
   0% {
-    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary-light) 0%,
+      var(--primary) 100%
+    );
     box-shadow:
       0 0 50px rgba(56, 189, 248, 0.8),
       0 0 100px rgba(56, 189, 248, 0.4),
       0 8px 24px rgba(0, 0, 0, 0.3);
   }
   100% {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    );
   }
 }
 
 .timestamp-btn.flash {
   animation: recordFlash 0.4s ease-out;
 }
-

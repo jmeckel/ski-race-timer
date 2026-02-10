@@ -3,7 +3,7 @@
  * Handles Entry CRUD operations, undo/redo, and cloud sync queue
  */
 
-import type { Entry, Action, SyncQueueItem } from '../../types';
+import type { Action, Entry, SyncQueueItem } from '../../types';
 import { isValidEntry } from '../../utils/validation';
 
 // Maximum undo stack size
@@ -16,13 +16,13 @@ export function addEntry(
   entries: Entry[],
   entry: Entry,
   undoStack: Action[],
-  _redoStack: Action[]
+  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } {
   const newEntries = [...entries, entry];
   const newUndoStack = pushUndo(undoStack, {
     type: 'ADD_ENTRY',
     data: entry,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
   return { entries: newEntries, undoStack: newUndoStack, redoStack: [] };
 }
@@ -34,21 +34,21 @@ export function deleteEntry(
   entries: Entry[],
   id: string,
   undoStack: Action[],
-  _redoStack: Action[]
+  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
-  const entry = entries.find(e => e.id === id);
+  const entry = entries.find((e) => e.id === id);
   if (!entry) return null;
 
   const newUndoStack = pushUndo(undoStack, {
     type: 'DELETE_ENTRY',
     data: entry,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 
   return {
-    entries: entries.filter(e => e.id !== id),
+    entries: entries.filter((e) => e.id !== id),
     undoStack: newUndoStack,
-    redoStack: []
+    redoStack: [],
   };
 }
 
@@ -59,21 +59,21 @@ export function deleteMultiple(
   entries: Entry[],
   ids: string[],
   undoStack: Action[],
-  _redoStack: Action[]
+  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
-  const deletedEntries = entries.filter(e => ids.includes(e.id));
+  const deletedEntries = entries.filter((e) => ids.includes(e.id));
   if (deletedEntries.length === 0) return null;
 
   const newUndoStack = pushUndo(undoStack, {
     type: 'DELETE_MULTIPLE',
     data: deletedEntries,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 
   return {
-    entries: entries.filter(e => !ids.includes(e.id)),
+    entries: entries.filter((e) => !ids.includes(e.id)),
     undoStack: newUndoStack,
-    redoStack: []
+    redoStack: [],
   };
 }
 
@@ -83,14 +83,14 @@ export function deleteMultiple(
 export function clearAll(
   entries: Entry[],
   undoStack: Action[],
-  _redoStack: Action[]
+  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
   if (entries.length === 0) return null;
 
   const newUndoStack = pushUndo(undoStack, {
     type: 'CLEAR_ALL',
     data: [...entries],
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 
   return { entries: [], undoStack: newUndoStack, redoStack: [] };
@@ -104,9 +104,9 @@ export function updateEntry(
   id: string,
   updates: Partial<Entry>,
   undoStack: Action[],
-  _redoStack: Action[]
+  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
-  const index = entries.findIndex(e => e.id === id);
+  const index = entries.findIndex((e) => e.id === id);
   if (index === -1) return null;
 
   const oldEntry = entries[index];
@@ -116,7 +116,7 @@ export function updateEntry(
     type: 'UPDATE_ENTRY',
     data: oldEntry,
     newData: newEntry,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 
   const newEntries = [...entries];
@@ -141,8 +141,13 @@ export function pushUndo(undoStack: Action[], action: Action): Action[] {
 export function undo(
   entries: Entry[],
   undoStack: Action[],
-  redoStack: Action[]
-): { entries: Entry[]; undoStack: Action[]; redoStack: Action[]; result: { type: Action['type']; data: Entry | Entry[] } | null } {
+  redoStack: Action[],
+): {
+  entries: Entry[];
+  undoStack: Action[];
+  redoStack: Action[];
+  result: { type: Action['type']; data: Entry | Entry[] } | null;
+} {
   if (undoStack.length === 0) {
     return { entries, undoStack, redoStack, result: null };
   }
@@ -157,14 +162,17 @@ export function undo(
   switch (action.type) {
     case 'ADD_ENTRY': {
       const entry = action.data as Entry;
-      newEntries = newEntries.filter(e => e.id !== entry.id);
+      newEntries = newEntries.filter((e) => e.id !== entry.id);
       result = entry;
       break;
     }
     case 'DELETE_ENTRY': {
       const entry = action.data as Entry;
       newEntries.push(entry);
-      newEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      newEntries.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
       result = entry;
       break;
     }
@@ -172,13 +180,16 @@ export function undo(
     case 'CLEAR_ALL': {
       const deletedEntries = action.data as Entry[];
       newEntries = [...newEntries, ...deletedEntries];
-      newEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      newEntries.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
       result = deletedEntries;
       break;
     }
     case 'UPDATE_ENTRY': {
       const oldEntry = action.data as Entry;
-      const index = newEntries.findIndex(e => e.id === oldEntry.id);
+      const index = newEntries.findIndex((e) => e.id === oldEntry.id);
       if (index !== -1) {
         newEntries[index] = oldEntry;
       }
@@ -191,7 +202,7 @@ export function undo(
     entries: newEntries,
     undoStack: newUndoStack,
     redoStack: newRedoStack,
-    result: result ? { type: action.type, data: result } : null
+    result: result ? { type: action.type, data: result } : null,
   };
 }
 
@@ -201,8 +212,13 @@ export function undo(
 export function redo(
   entries: Entry[],
   undoStack: Action[],
-  redoStack: Action[]
-): { entries: Entry[]; undoStack: Action[]; redoStack: Action[]; result: Entry | Entry[] | null } {
+  redoStack: Action[],
+): {
+  entries: Entry[];
+  undoStack: Action[];
+  redoStack: Action[];
+  result: Entry | Entry[] | null;
+} {
   if (redoStack.length === 0) {
     return { entries, undoStack, redoStack, result: null };
   }
@@ -218,28 +234,31 @@ export function redo(
     case 'ADD_ENTRY': {
       const entry = action.data as Entry;
       newEntries.push(entry);
-      newEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      newEntries.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
       result = entry;
       break;
     }
     case 'DELETE_ENTRY': {
       const entry = action.data as Entry;
-      newEntries = newEntries.filter(e => e.id !== entry.id);
+      newEntries = newEntries.filter((e) => e.id !== entry.id);
       result = entry;
       break;
     }
     case 'DELETE_MULTIPLE':
     case 'CLEAR_ALL': {
       const deletedEntries = action.data as Entry[];
-      const idsToDelete = new Set(deletedEntries.map(e => e.id));
-      newEntries = newEntries.filter(e => !idsToDelete.has(e.id));
+      const idsToDelete = new Set(deletedEntries.map((e) => e.id));
+      newEntries = newEntries.filter((e) => !idsToDelete.has(e.id));
       result = deletedEntries;
       break;
     }
     case 'UPDATE_ENTRY': {
       const oldEntry = action.data as Entry;
       const newEntry = action.newData as Entry;
-      const index = newEntries.findIndex(e => e.id === oldEntry.id);
+      const index = newEntries.findIndex((e) => e.id === oldEntry.id);
       if (index !== -1 && newEntry) {
         newEntries[index] = newEntry;
       }
@@ -252,7 +271,7 @@ export function redo(
     entries: newEntries,
     undoStack: newUndoStack,
     redoStack: newRedoStack,
-    result
+    result,
   };
 }
 
@@ -261,11 +280,14 @@ export function redo(
 /**
  * Add entry to sync queue
  */
-export function addToSyncQueue(syncQueue: SyncQueueItem[], entry: Entry): SyncQueueItem[] {
+export function addToSyncQueue(
+  syncQueue: SyncQueueItem[],
+  entry: Entry,
+): SyncQueueItem[] {
   const item: SyncQueueItem = {
     entry,
     retryCount: 0,
-    lastAttempt: 0
+    lastAttempt: 0,
   };
   return [...syncQueue, item];
 }
@@ -273,8 +295,11 @@ export function addToSyncQueue(syncQueue: SyncQueueItem[], entry: Entry): SyncQu
 /**
  * Remove entry from sync queue
  */
-export function removeFromSyncQueue(syncQueue: SyncQueueItem[], entryId: string): SyncQueueItem[] {
-  return syncQueue.filter(item => item.entry.id !== entryId);
+export function removeFromSyncQueue(
+  syncQueue: SyncQueueItem[],
+  entryId: string,
+): SyncQueueItem[] {
+  return syncQueue.filter((item) => item.entry.id !== entryId);
 }
 
 /**
@@ -283,10 +308,10 @@ export function removeFromSyncQueue(syncQueue: SyncQueueItem[], entryId: string)
 export function updateSyncQueueItem(
   syncQueue: SyncQueueItem[],
   entryId: string,
-  updates: Partial<SyncQueueItem>
+  updates: Partial<SyncQueueItem>,
 ): SyncQueueItem[] {
-  return syncQueue.map(item =>
-    item.entry.id === entryId ? { ...item, ...updates } : item
+  return syncQueue.map((item) =>
+    item.entry.id === entryId ? { ...item, ...updates } : item,
   );
 }
 
@@ -299,10 +324,10 @@ export function mergeCloudEntries(
   entries: Entry[],
   cloudEntries: Entry[],
   deletedIds: string[],
-  localDeviceId: string
+  localDeviceId: string,
 ): { entries: Entry[]; addedCount: number } {
   let addedCount = 0;
-  const existingIds = new Set(entries.map(e => `${e.id}-${e.deviceId}`));
+  const existingIds = new Set(entries.map((e) => `${e.id}-${e.deviceId}`));
   const deletedSet = new Set(deletedIds);
   const newEntries: Entry[] = [];
 
@@ -329,7 +354,10 @@ export function mergeCloudEntries(
 
   if (newEntries.length > 0) {
     const allEntries = [...entries, ...newEntries];
-    allEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    allEntries.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
     return { entries: allEntries, addedCount };
   }
 
@@ -341,12 +369,12 @@ export function mergeCloudEntries(
  */
 export function removeDeletedCloudEntries(
   entries: Entry[],
-  deletedIds: string[]
+  deletedIds: string[],
 ): { entries: Entry[]; removedCount: number } {
   const deletedSet = new Set(deletedIds);
   let removedCount = 0;
 
-  const filteredEntries = entries.filter(entry => {
+  const filteredEntries = entries.filter((entry) => {
     const deleteKey = `${entry.id}:${entry.deviceId}`;
     const isDeleted = deletedSet.has(deleteKey) || deletedSet.has(entry.id);
 

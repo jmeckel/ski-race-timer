@@ -3,33 +3,37 @@
  * Handles VirtualList, filtering, search, pull-to-refresh, and action buttons
  */
 
-import { store } from '../store';
-import { VirtualList, PullToRefresh, showToast } from '../components';
-import { syncService, feedbackUndo } from '../services';
+import { PullToRefresh, showToast, VirtualList } from '../components';
 import { t } from '../i18n/translations';
+import { feedbackUndo, syncService } from '../services';
+import { store } from '../store';
+import type { Entry, FaultEntry } from '../types';
 import { getElement } from '../utils';
+import { ListenerManager } from '../utils/listenerManager';
 import { exportResults } from './export';
+import { openFaultEditModal, openMarkDeletionModal } from './faults';
 import { openPhotoViewer } from './photoViewer';
-import { openFaultEditModal, openMarkDeletionModal } from './faultEntry';
-import type { Entry, FaultEntry, Language } from '../types';
 
 // Module state
 let virtualList: VirtualList | null = null;
 let pullToRefreshInstance: PullToRefresh | null = null;
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-// Event listener references for cleanup
-type EventListenerRef = { element: HTMLElement | null; event: string; handler: EventListener };
-let eventListeners: EventListenerRef[] = [];
+const listeners = new ListenerManager();
 
 // CustomEvent type declarations for results view
-export type ConfirmModalAction = 'delete' | 'deleteSelected' | 'clearAll' | 'undoAdd';
+export type ConfirmModalAction =
+  | 'delete'
+  | 'deleteSelected'
+  | 'clearAll'
+  | 'undoAdd';
 
 /**
  * Dispatch event to open edit modal for an entry
  */
 function dispatchOpenEditModal(entry: Entry): void {
-  window.dispatchEvent(new CustomEvent('open-edit-modal', { detail: { entry } }));
+  window.dispatchEvent(
+    new CustomEvent('open-edit-modal', { detail: { entry } }),
+  );
 }
 
 /**
@@ -43,30 +47,9 @@ function dispatchPromptDelete(entry: Entry): void {
  * Dispatch event to open confirm modal
  */
 function dispatchOpenConfirmModal(action: ConfirmModalAction): void {
-  window.dispatchEvent(new CustomEvent('open-confirm-modal', { detail: { action } }));
-}
-
-/**
- * Register an event listener and track it for cleanup
- */
-function addListener<T extends HTMLElement>(
-  element: T | null,
-  event: string,
-  handler: EventListener
-): void {
-  if (!element) return;
-  element.addEventListener(event, handler);
-  eventListeners.push({ element, event, handler });
-}
-
-/**
- * Remove all registered event listeners
- */
-function removeAllListeners(): void {
-  for (const { element, event, handler } of eventListeners) {
-    element?.removeEventListener(event, handler);
-  }
-  eventListeners = [];
+  window.dispatchEvent(
+    new CustomEvent('open-confirm-modal', { detail: { action } }),
+  );
 }
 
 /**
@@ -81,7 +64,7 @@ export function getVirtualList(): VirtualList | null {
  */
 export function initResultsView(): void {
   // Cleanup previous initialization
-  removeAllListeners();
+  listeners.removeAll();
   if (searchTimeout) {
     clearTimeout(searchTimeout);
     searchTimeout = null;
@@ -97,11 +80,11 @@ export function initResultsView(): void {
     onItemSelect: (entry) => {
       store.toggleEntrySelection(entry.id);
     },
-    onViewPhoto: (entry) => openPhotoViewer(entry)
+    onViewPhoto: (entry) => openPhotoViewer(entry),
   });
 
   // Listen for fault edit requests from VirtualList
-  addListener(container, 'fault-edit-request', ((e: CustomEvent) => {
+  listeners.add(container, 'fault-edit-request', ((e: CustomEvent) => {
     const fault = e.detail?.fault as FaultEntry;
     if (fault) {
       openFaultEditModal(fault);
@@ -109,7 +92,7 @@ export function initResultsView(): void {
   }) as EventListener);
 
   // Listen for fault delete requests from VirtualList
-  addListener(container, 'fault-delete-request', ((e: CustomEvent) => {
+  listeners.add(container, 'fault-delete-request', ((e: CustomEvent) => {
     const fault = e.detail?.fault as FaultEntry;
     if (fault) {
       openMarkDeletionModal(fault);
@@ -129,28 +112,27 @@ export function initResultsView(): void {
       onRefresh: async () => {
         await syncService.forceRefresh();
         showToast(t('syncReceived', store.getState().currentLang), 'success');
-      }
+      },
     });
   }
 
   // Search input with debounce
   const searchInput = getElement<HTMLInputElement>('search-input');
   if (searchInput) {
-    const searchHandler = () => {
+    listeners.add(searchInput, 'input', () => {
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
         applyFilters();
       }, 300);
-    };
-    addListener(searchInput, 'input', searchHandler);
+    });
   }
 
   // Filter selects
   const pointFilter = getElement<HTMLSelectElement>('filter-point');
   const statusFilter = getElement<HTMLSelectElement>('filter-status');
 
-  addListener(pointFilter, 'change', applyFilters);
-  addListener(statusFilter, 'change', applyFilters);
+  if (pointFilter) listeners.add(pointFilter, 'change', applyFilters);
+  if (statusFilter) listeners.add(statusFilter, 'change', applyFilters);
 
   // Action buttons
   initResultsActions();
@@ -167,50 +149,64 @@ export function initResultsView(): void {
  */
 function initResultsActions(): void {
   // Clear All button
-  addListener(getElement('clear-all-btn'), 'click', () => {
-    const state = store.getState();
-    if (state.entries.length === 0) {
-      showToast(t('noEntries', state.currentLang), 'info');
-      return;
-    }
-    dispatchOpenConfirmModal('clearAll');
-  });
+  const clearAllBtn = getElement('clear-all-btn');
+  if (clearAllBtn) {
+    listeners.add(clearAllBtn, 'click', () => {
+      const state = store.getState();
+      if (state.entries.length === 0) {
+        showToast(t('noEntries', state.currentLang), 'info');
+        return;
+      }
+      dispatchOpenConfirmModal('clearAll');
+    });
+  }
 
   // Undo button
-  addListener(getElement('undo-btn'), 'click', () => {
-    if (store.canUndo()) {
-      // Check if this is a destructive undo (undoing ADD_ENTRY deletes an entry)
-      const nextAction = store.peekUndo();
-      if (nextAction && nextAction.type === 'ADD_ENTRY') {
-        // Show confirmation modal for destructive undo
-        dispatchOpenConfirmModal('undoAdd');
-      } else {
-        // Non-destructive undo - proceed immediately
-        const result = store.undo();
-        feedbackUndo();
-        showToast(t('undone', store.getState().currentLang), 'success');
+  const undoBtn = getElement('undo-btn');
+  if (undoBtn) {
+    listeners.add(undoBtn, 'click', () => {
+      if (store.canUndo()) {
+        // Check if this is a destructive undo (undoing ADD_ENTRY deletes an entry)
+        const nextAction = store.peekUndo();
+        if (nextAction && nextAction.type === 'ADD_ENTRY') {
+          // Show confirmation modal for destructive undo
+          dispatchOpenConfirmModal('undoAdd');
+        } else {
+          // Non-destructive undo - proceed immediately
+          const result = store.undo();
+          feedbackUndo();
+          showToast(t('undone', store.getState().currentLang), 'success');
 
-        // Sync undo to cloud if needed
-        const state = store.getState();
-        if (result && result.type === 'ADD_ENTRY' && state.settings.sync && state.raceId) {
-          const entry = result.data as Entry;
-          syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+          // Sync undo to cloud if needed
+          const state = store.getState();
+          if (
+            result &&
+            result.type === 'ADD_ENTRY' &&
+            state.settings.sync &&
+            state.raceId
+          ) {
+            const entry = result.data as Entry;
+            syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+          }
         }
       }
-    }
-  });
+    });
+  }
 
   // Export button
-  addListener(getElement('export-btn'), 'click', exportResults);
+  const exportBtn = getElement('export-btn');
+  if (exportBtn) listeners.add(exportBtn, 'click', exportResults);
 
   // Delete selected button
-  addListener(getElement('delete-selected-btn'), 'click', () => {
-    const state = store.getState();
-    if (state.selectedEntries.size > 0) {
-      dispatchOpenConfirmModal('deleteSelected');
-    }
-  });
-
+  const deleteSelectedBtn = getElement('delete-selected-btn');
+  if (deleteSelectedBtn) {
+    listeners.add(deleteSelectedBtn, 'click', () => {
+      const state = store.getState();
+      if (state.selectedEntries.size > 0) {
+        dispatchOpenConfirmModal('deleteSelected');
+      }
+    });
+  }
 }
 
 /**
@@ -226,7 +222,7 @@ export function applyFilters(): void {
   virtualList.applyFilters(
     searchInput?.value || '',
     pointFilter?.value || 'all',
-    statusFilter?.value || 'all'
+    statusFilter?.value || 'all',
   );
 
   updateStats();
@@ -240,10 +236,12 @@ export function updateStats(): void {
   const entries = state.entries;
 
   const total = entries.length;
-  const racers = new Set(entries.map(e => e.bib)).size;
+  const racers = new Set(entries.map((e) => e.bib)).size;
   // Count distinct racers who have at least one OK finish (not finish entries)
   const finished = new Set(
-    entries.filter(e => e.point === 'F' && e.status === 'ok').map(e => e.bib)
+    entries
+      .filter((e) => e.point === 'F' && e.status === 'ok')
+      .map((e) => e.bib),
   ).size;
 
   const totalEl = getElement('stat-total');
@@ -275,7 +273,7 @@ export function cleanupResultsView(): void {
     clearTimeout(searchTimeout);
     searchTimeout = null;
   }
-  removeAllListeners();
+  listeners.removeAll();
   if (pullToRefreshInstance) {
     pullToRefreshInstance.destroy();
     pullToRefreshInstance = null;

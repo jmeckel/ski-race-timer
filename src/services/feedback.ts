@@ -12,7 +12,11 @@ const AUDIO_IDLE_TIMEOUT = 30000; // 30 seconds before suspending
 function getAudioContext(): AudioContext | null {
   if (!audioContext) {
     try {
-      audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      audioContext = new (
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
+      )();
     } catch (error) {
       logger.warn('AudioContext not available:', error);
       return null;
@@ -58,7 +62,10 @@ export function vibrate(pattern: number | number[]): void {
 /**
  * Play a beep sound
  */
-export function playBeep(frequency: number = 880, duration: number = 100): void {
+export function playBeep(
+  frequency: number = 880,
+  duration: number = 100,
+): void {
   const settings = store.getState().settings;
   if (!settings.sound) return;
 
@@ -85,7 +92,10 @@ export function playBeep(frequency: number = 880, duration: number = 100): void 
 
     // Fade out to avoid clicks
     gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      ctx.currentTime + duration / 1000,
+    );
 
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration / 1000);

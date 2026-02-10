@@ -3,15 +3,18 @@
  * Handles photo viewing, loading from IndexedDB, and deletion
  */
 
-import { store } from '../store';
-import { photoStorage } from '../services';
 import { showToast } from '../components';
-import { feedbackDelete } from '../services';
 import { t } from '../i18n/translations';
-import { logger } from '../utils/logger';
-import { getPointLabel, getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
-import { openModal, closeModal } from './modals';
+import { feedbackDelete, photoStorage } from '../services';
+import { store } from '../store';
 import type { Entry } from '../types';
+import {
+  formatTime as formatTimeDisplay,
+  getPointColor,
+  getPointLabel,
+} from '../utils/format';
+import { logger } from '../utils/logger';
+import { closeModal, openModal } from './modals';
 
 // Module state
 let currentPhotoEntryId: string | null = null;
@@ -26,7 +29,9 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
 
   currentPhotoEntryId = entry.id;
 
-  const image = document.getElementById('photo-viewer-image') as HTMLImageElement;
+  const image = document.getElementById(
+    'photo-viewer-image',
+  ) as HTMLImageElement;
   const bibEl = document.getElementById('photo-viewer-bib');
   const pointEl = document.getElementById('photo-viewer-point');
   const timeEl = document.getElementById('photo-viewer-time');

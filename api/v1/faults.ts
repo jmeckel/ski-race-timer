@@ -1,3 +1,6 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type Redis from 'ioredis';
+import { atomicUpdate, CACHE_EXPIRY_SECONDS } from '../lib/atomicOps.js';
 import { validateAuth } from '../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
 import {
@@ -18,35 +21,113 @@ import { isValidRaceId, checkRateLimit, VALID_FAULT_TYPES, MAX_DEVICE_NAME_LENGT
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
-const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
-const MAX_ATOMIC_RETRIES = 5;
 
-function isValidFaultEntry(fault) {
+interface FaultEntry {
+  id: string | number;
+  bib: string;
+  run: 1 | 2;
+  gateNumber: number;
+  faultType: string;
+  timestamp: string;
+  gateRange: [number, number];
+  deviceId?: string;
+  deviceName?: string;
+  syncedAt?: number;
+  notes?: string | null;
+  notesSource?: 'voice' | 'manual' | null;
+  notesTimestamp?: string | null;
+  currentVersion?: number;
+  versionHistory?: unknown[];
+  markedForDeletion?: boolean;
+  markedForDeletionAt?: string | null;
+  markedForDeletionBy?: string | null;
+  markedForDeletionByDeviceId?: string | null;
+  deletionApprovedAt?: string | null;
+  deletionApprovedBy?: string | null;
+}
+
+interface FaultsData {
+  faults: FaultEntry[];
+  lastUpdated: number | null;
+}
+
+interface GateAssignment {
+  deviceName: string;
+  gateStart: number;
+  gateEnd: number;
+  lastSeen: number;
+  isReady: boolean;
+  firstGateColor: string;
+}
+
+interface GateAssignmentResult {
+  deviceId: string;
+  deviceName: string;
+  gateStart: number;
+  gateEnd: number;
+  lastSeen: number;
+  isReady: boolean;
+  firstGateColor: string;
+}
+
+interface AtomicAddFaultResult {
+  success: boolean;
+  existing: FaultsData;
+  isDuplicate?: boolean;
+  error?: string;
+}
+
+interface AtomicDeleteFaultResult {
+  success: boolean;
+  wasRemoved?: boolean;
+  existing?: FaultsData;
+  error?: string;
+}
+
+interface PostRequestBody {
+  fault?: FaultEntry;
+  deviceId?: string;
+  deviceName?: string;
+  gateRange?: [number, number];
+  isReady?: boolean;
+  firstGateColor?: string;
+}
+
+interface DeleteRequestBody {
+  faultId?: string | number;
+  deviceId?: string;
+  deviceName?: string;
+  approvedBy?: string;
+}
+
+function isValidFaultEntry(fault: unknown): fault is FaultEntry {
   if (!fault || typeof fault !== 'object') return false;
 
+  const f = fault as Record<string, unknown>;
+
   // ID must be string or number
-  if (typeof fault.id !== 'number' && typeof fault.id !== 'string') return false;
-  if (typeof fault.id === 'string' && fault.id.length === 0) return false;
+  if (typeof f.id !== 'number' && typeof f.id !== 'string') return false;
+  if (typeof f.id === 'string' && f.id.length === 0) return false;
 
   // Bib is required
-  if (!fault.bib || typeof fault.bib !== 'string') return false;
-  if (fault.bib.length > 10) return false;
+  if (!f.bib || typeof f.bib !== 'string') return false;
+  if (f.bib.length > 10) return false;
 
   // Run must be 1 or 2
-  if (fault.run !== 1 && fault.run !== 2) return false;
+  if (f.run !== 1 && f.run !== 2) return false;
 
   // Gate number must be positive integer
-  if (typeof fault.gateNumber !== 'number' || fault.gateNumber < 1) return false;
+  if (typeof f.gateNumber !== 'number' || f.gateNumber < 1) return false;
 
   // Fault type must be valid
-  if (!VALID_FAULT_TYPES.includes(fault.faultType)) return false;
+  if (!(VALID_FAULT_TYPES as readonly string[]).includes(f.faultType as string)) return false;
 
   // Timestamp required
-  if (!fault.timestamp || isNaN(Date.parse(fault.timestamp))) return false;
+  if (!f.timestamp || isNaN(Date.parse(f.timestamp as string))) return false;
 
   // Gate range must be array of two numbers
-  if (!Array.isArray(fault.gateRange) || fault.gateRange.length !== 2) return false;
-  if (typeof fault.gateRange[0] !== 'number' || typeof fault.gateRange[1] !== 'number') return false;
+  if (!Array.isArray(f.gateRange) || f.gateRange.length !== 2) return false;
+  if (typeof f.gateRange[0] !== 'number' || typeof f.gateRange[1] !== 'number') return false;
 
   return true;
 }
@@ -54,127 +135,101 @@ function isValidFaultEntry(fault) {
 /**
  * Atomically add fault to race data
  */
-async function atomicAddFault(client, redisKey, enrichedFault, sanitizedDeviceId) {
-  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
-    await client.watch(redisKey);
+async function atomicAddFault(client: Redis, redisKey: string, enrichedFault: FaultEntry, sanitizedDeviceId: string): Promise<AtomicAddFaultResult> {
+  const result = await atomicUpdate<FaultsData, AtomicAddFaultResult>(
+    client, redisKey,
+    { faults: [], lastUpdated: null },
+    (existing: FaultsData) => {
+      if (!Array.isArray(existing.faults)) existing.faults = [];
 
-    const existingData = await client.get(redisKey);
-    const existing = safeJsonParse(existingData, { faults: [], lastUpdated: null });
-
-    if (!Array.isArray(existing.faults)) {
-      existing.faults = [];
-    }
-
-    // Check limit
-    if (existing.faults.length >= MAX_FAULTS_PER_RACE) {
-      await client.unwatch();
-      return {
-        success: false,
-        error: `Maximum faults limit (${MAX_FAULTS_PER_RACE}) reached for this race`,
-        existing
-      };
-    }
-
-    // Check for existing fault (same fault from same device)
-    const faultId = String(enrichedFault.id);
-    const existingIndex = existing.faults.findIndex(
-      f => String(f.id) === faultId && f.deviceId === sanitizedDeviceId
-    );
-
-    if (existingIndex !== -1) {
-      const existingFault = existing.faults[existingIndex];
-      // Update if version is newer or if marking for deletion
-      const shouldUpdate =
-        (enrichedFault.currentVersion > (existingFault.currentVersion || 1)) ||
-        (enrichedFault.markedForDeletion !== existingFault.markedForDeletion);
-
-      if (shouldUpdate) {
-        // Update existing fault with new data
-        existing.faults[existingIndex] = enrichedFault;
-        existing.lastUpdated = Date.now();
-      } else {
-        // No update needed, return as duplicate
-        await client.unwatch();
-        return { success: true, existing, isDuplicate: true };
+      // Check limit
+      if (existing.faults.length >= MAX_FAULTS_PER_RACE) {
+        return { abort: true, result: {
+          success: false,
+          error: `Maximum faults limit (${MAX_FAULTS_PER_RACE}) reached for this race`,
+          existing
+        }};
       }
-    } else {
-      // Add new fault
-      existing.faults.push(enrichedFault);
-      existing.lastUpdated = Date.now();
-    }
 
-    const multi = client.multi();
-    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
-    const result = await multi.exec();
+      // Check for existing fault (same fault from same device)
+      const faultId = String(enrichedFault.id);
+      const existingIndex = existing.faults.findIndex(
+        (f: FaultEntry) => String(f.id) === faultId && f.deviceId === sanitizedDeviceId
+      );
 
-    if (result !== null) {
-      return { success: true, existing, isDuplicate: false };
-    }
+      if (existingIndex !== -1) {
+        const existingFault = existing.faults[existingIndex];
+        const shouldUpdate =
+          ((enrichedFault.currentVersion || 1) > (existingFault.currentVersion || 1)) ||
+          (enrichedFault.markedForDeletion !== existingFault.markedForDeletion);
 
-    console.log(`atomicAddFault: retry ${retry + 1}/${MAX_ATOMIC_RETRIES}`);
+        if (shouldUpdate) {
+          existing.faults[existingIndex] = enrichedFault;
+          existing.lastUpdated = Date.now();
+        } else {
+          return { abort: true, result: { success: true, existing, isDuplicate: true }};
+        }
+      } else {
+        existing.faults.push(enrichedFault);
+        existing.lastUpdated = Date.now();
+      }
+
+      return { data: existing, result: { success: true, existing, isDuplicate: false }};
+    },
+    'atomicAddFault'
+  );
+  // Handle AtomicConflictError (existing: null) by providing empty default
+  if (result.existing === null) {
+    return { ...result, existing: { faults: [], lastUpdated: null } };
   }
-
-  return {
-    success: false,
-    error: 'Concurrent modification conflict, please retry',
-    existing: null
-  };
+  return result;
 }
 
 /**
  * Atomically delete fault from race data
  */
-async function atomicDeleteFault(client, redisKey, faultIdStr, sanitizedDeviceId) {
-  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
-    await client.watch(redisKey);
+async function atomicDeleteFault(client: Redis, redisKey: string, faultIdStr: string, sanitizedDeviceId: string): Promise<AtomicDeleteFaultResult> {
+  const result = await atomicUpdate<FaultsData, AtomicDeleteFaultResult>(
+    client, redisKey,
+    { faults: [], lastUpdated: null },
+    (existing: FaultsData) => {
+      if (!Array.isArray(existing.faults)) existing.faults = [];
 
-    const existingData = await client.get(redisKey);
-    const existing = safeJsonParse(existingData, { faults: [], lastUpdated: null });
+      const originalLength = existing.faults.length;
+      existing.faults = existing.faults.filter((f: FaultEntry) => {
+        const idMatch = String(f.id) === faultIdStr;
+        if (sanitizedDeviceId) return !(idMatch && f.deviceId === sanitizedDeviceId);
+        return !idMatch;
+      });
 
-    if (!Array.isArray(existing.faults)) {
-      existing.faults = [];
-    }
-
-    const originalLength = existing.faults.length;
-    existing.faults = existing.faults.filter(f => {
-      const idMatch = String(f.id) === faultIdStr;
-      if (sanitizedDeviceId) {
-        return !(idMatch && f.deviceId === sanitizedDeviceId);
+      const wasRemoved = existing.faults.length < originalLength;
+      if (!wasRemoved) {
+        return { abort: true, result: { success: true, wasRemoved: false, existing }};
       }
-      return !idMatch;
-    });
 
-    const wasRemoved = existing.faults.length < originalLength;
-
-    if (!wasRemoved) {
-      await client.unwatch();
-      return { success: true, wasRemoved: false, existing };
-    }
-
-    existing.lastUpdated = Date.now();
-
-    const multi = client.multi();
-    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
-    const result = await multi.exec();
-
-    if (result !== null) {
-      return { success: true, wasRemoved: true, existing };
-    }
-
-    console.log(`atomicDeleteFault: retry ${retry + 1}/${MAX_ATOMIC_RETRIES}`);
+      existing.lastUpdated = Date.now();
+      return { data: existing, result: { success: true, wasRemoved: true, existing }};
+    },
+    'atomicDeleteFault'
+  );
+  if (result.existing === null) {
+    return { ...result, existing: { faults: [], lastUpdated: null } };
   }
-
-  return {
-    success: false,
-    error: 'Concurrent modification conflict, please retry',
-    existing: null
-  };
+  return result;
 }
 
 /**
  * Update gate assignment for a device
  */
-async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceName, gateRange, isReady, firstGateColor) {
+async function updateGateAssignment(
+  client: Redis,
+  normalizedRaceId: string,
+  deviceId: string,
+  deviceName: string,
+  gateRange: [number, number],
+  isReady: boolean,
+  firstGateColor: string
+): Promise<void> {
   if (!deviceId || !gateRange) return;
 
   const assignmentsKey = `race:${normalizedRaceId}:gate_assignments`;
@@ -185,7 +240,7 @@ async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceNa
     lastSeen: Date.now(),
     isReady: isReady === true,
     firstGateColor: firstGateColor || 'red'
-  });
+  } satisfies GateAssignment);
 
   await client.hset(assignmentsKey, deviceId, assignmentData);
   await client.expire(assignmentsKey, CACHE_EXPIRY_SECONDS);
@@ -194,7 +249,7 @@ async function updateGateAssignment(client, normalizedRaceId, deviceId, deviceNa
 /**
  * Get all gate assignments for a race
  */
-async function getGateAssignments(client, normalizedRaceId) {
+async function getGateAssignments(client: Redis, normalizedRaceId: string): Promise<GateAssignmentResult[]> {
   const assignmentsKey = `race:${normalizedRaceId}:gate_assignments`;
   const assignments = await client.hgetall(assignmentsKey);
 
@@ -202,13 +257,13 @@ async function getGateAssignments(client, normalizedRaceId) {
     return [];
   }
 
-  const result = [];
+  const result: GateAssignmentResult[] = [];
   const now = Date.now();
   const staleThreshold = 60000; // 1 minute
 
   for (const [deviceId, assignmentJson] of Object.entries(assignments)) {
     try {
-      const assignment = JSON.parse(assignmentJson);
+      const assignment: GateAssignment = JSON.parse(assignmentJson);
       // Include if seen within threshold
       if (now - assignment.lastSeen <= staleThreshold) {
         result.push({
@@ -221,7 +276,7 @@ async function getGateAssignments(client, normalizedRaceId) {
           firstGateColor: assignment.firstGateColor || 'red'
         });
       }
-    } catch (e) {
+    } catch (e: unknown) {
       // Skip invalid data
     }
   }
@@ -229,7 +284,7 @@ async function getGateAssignments(client, normalizedRaceId) {
   return result;
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
     return;
@@ -242,18 +297,21 @@ export default async function handler(req, res) {
     return sendBadRequest(res, 'raceId is required');
   }
 
-  if (!isValidRaceId(raceId)) {
+  const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
+
+  if (!isValidRaceId(raceIdStr)) {
     return sendBadRequest(res, 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.');
   }
 
-  const normalizedRaceId = raceId.toLowerCase();
+  const normalizedRaceId = raceIdStr.toLowerCase();
   const faultsKey = `race:${normalizedRaceId}:faults`;
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -264,7 +322,7 @@ export default async function handler(req, res) {
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method, {
+  const rateLimitResult = await checkRateLimit(client, clientIP, req.method!, {
     keyPrefix: 'faults',
     window: 60,
     maxRequests: 100,
@@ -287,7 +345,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       // Fetch faults for race
       const data = await client.get(faultsKey);
-      const parsed = safeJsonParse(data, { faults: [], lastUpdated: null });
+      const parsed = safeJsonParse(data, { faults: [], lastUpdated: null }) as FaultsData;
 
       // Get deleted fault IDs
       const deletedKey = `race:${normalizedRaceId}:deleted_faults`;
@@ -299,16 +357,16 @@ export default async function handler(req, res) {
       // Update gate assignment if provided in query (with validation)
       const { deviceId, deviceName, gateStart, gateEnd, isReady, firstGateColor } = req.query;
       if (deviceId && gateStart && gateEnd) {
-        const start = parseInt(gateStart, 10);
-        const end = parseInt(gateEnd, 10);
+        const start = parseInt(gateStart as string, 10);
+        const end = parseInt(gateEnd as string, 10);
         // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
         if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
           const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
           await updateGateAssignment(
             client,
             normalizedRaceId,
-            deviceId,
-            deviceName,
+            deviceId as string,
+            deviceName as string,
             [start, end],
             isReady === 'true',
             validColor
@@ -325,7 +383,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { fault, deviceId, deviceName, gateRange, isReady, firstGateColor } = req.body || {};
+      const { fault, deviceId, deviceName, gateRange, isReady, firstGateColor } = (req.body || {}) as PostRequestBody;
 
       if (!fault) {
         return sendBadRequest(res, 'fault is required');
@@ -339,7 +397,7 @@ export default async function handler(req, res) {
       const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
 
       // Build enriched fault with version history and deletion flags
-      const enrichedFault = {
+      const enrichedFault: FaultEntry = {
         id: String(fault.id),
         bib: sanitizeString(fault.bib, 10),
         run: fault.run,
@@ -370,13 +428,13 @@ export default async function handler(req, res) {
 
       if (!addResult.success) {
         const status = addResult.error?.includes('limit') ? 400 : 409;
-        return sendError(res, addResult.error, status);
+        return sendError(res, addResult.error!, status);
       }
 
       // Update gate assignment if provided (with validation)
       if (gateRange && Array.isArray(gateRange) && gateRange.length === 2) {
-        const start = parseInt(gateRange[0], 10);
-        const end = parseInt(gateRange[1], 10);
+        const start = parseInt(String(gateRange[0]), 10);
+        const end = parseInt(String(gateRange[1]), 10);
         // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
         if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
           const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
@@ -398,13 +456,13 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       // Server-side role validation for fault deletion
       // Only users with 'chiefJudge' role can delete faults
-      const userRole = authResult.payload?.role;
+      const userRole = authResult.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
         console.log(`[AUDIT] Fault deletion DENIED: role=${userRole}, expected=chiefJudge, ip=${clientIP}`);
         return sendError(res, 'Fault deletion requires Chief Judge role', 403);
       }
 
-      const { faultId, deviceId, deviceName, approvedBy } = req.body || {};
+      const { faultId, deviceId, deviceName, approvedBy } = (req.body || {}) as DeleteRequestBody;
 
       if (!faultId) {
         return sendBadRequest(res, 'faultId is required');
@@ -421,7 +479,7 @@ export default async function handler(req, res) {
       const deleteResult = await atomicDeleteFault(client, faultsKey, faultIdStr, sanitizedDeviceId);
 
       if (!deleteResult.success) {
-        return sendError(res, deleteResult.error, 409);
+        return sendError(res, deleteResult.error!, 409);
       }
 
       // Track deleted fault ID with metadata
@@ -438,10 +496,11 @@ export default async function handler(req, res) {
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error) {
-    console.error('Faults API error:', error.message);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Faults API error:', err.message);
 
-    if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+    if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
       return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 

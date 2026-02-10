@@ -5,39 +5,46 @@
 
 import { store } from '../../store';
 import { fetchWithTimeout } from '../../utils/errors';
-import { photoStorage } from '../photoStorage';
-import { batteryService } from '../battery';
 import { logger } from '../../utils/logger';
 import { getAuthHeaders } from '../auth';
-
-// Import modules
-import { networkMonitor } from './networkMonitor';
+import { batteryService } from '../battery';
+import { photoStorage } from '../photoStorage';
 import { broadcastManager } from './broadcast';
-import { pollingManager } from './polling';
-import { queueProcessor } from './queue';
 import {
-  initializeEntrySync, cleanupEntrySync,
-  fetchCloudEntries, sendEntryToCloud, deleteEntryFromCloud, pushLocalEntries,
-  getLastSyncTimestamp
+  cleanupEntrySync,
+  deleteEntryFromCloud,
+  fetchCloudEntries,
+  getLastSyncTimestamp,
+  initializeEntrySync,
+  pushLocalEntries,
+  sendEntryToCloud,
 } from './entrySync';
 import {
-  initializeFaultSync, cleanupFaultSync,
-  fetchCloudFaults, sendFaultToCloud, deleteFaultFromCloudApi, pushLocalFaults,
-  getOtherGateAssignments
+  cleanupFaultSync,
+  deleteFaultFromCloudApi,
+  fetchCloudFaults,
+  getOtherGateAssignments,
+  initializeFaultSync,
+  pushLocalFaults,
+  sendFaultToCloud,
 } from './faultSync';
+// Import modules
+import { networkMonitor } from './networkMonitor';
+import { pollingManager } from './polling';
+import { queueProcessor } from './queue';
 import { API_BASE, FETCH_TIMEOUT } from './types';
 
 // Re-export auth functions for backwards compatibility
 export {
   AUTH_TOKEN_KEY,
+  clearAuthToken,
+  exchangePinForToken,
   hasAuthToken,
   setAuthToken,
-  clearAuthToken,
-  exchangePinForToken
 } from '../auth';
 
 // Re-export types
-export type { PollingConfig, BroadcastMessage } from './types';
+export type { BroadcastMessage, PollingConfig } from './types';
 
 /**
  * SyncService facade - coordinates all sync modules
@@ -127,7 +134,7 @@ class SyncService {
       () => {
         // Browser went offline - update status immediately
         store.setSyncStatus('offline');
-      }
+      },
     );
 
     // Check initial online status
@@ -159,8 +166,9 @@ class SyncService {
         pollingManager.resetToFastPolling();
       },
       onCleanup: () => this.cleanup(),
-      showToast: (message, type, duration) => this.showSyncToast(message, type, duration),
-      fetchFaults: () => fetchCloudFaults()
+      showToast: (message, type, duration) =>
+        this.showSyncToast(message, type, duration),
+      fetchFaults: () => fetchCloudFaults(),
     });
 
     // Initialize fault sync
@@ -168,17 +176,24 @@ class SyncService {
       onResetFastPolling: () => {
         pollingManager.resetToFastPolling();
       },
-      showToast: (message, type, duration) => this.showSyncToast(message, type, duration)
+      showToast: (message, type, duration) =>
+        this.showSyncToast(message, type, duration),
     });
   }
 
   /**
    * Show sync toast notification
    */
-  private showSyncToast(message: string, type: 'success' | 'warning' | 'error' = 'success', duration?: number): void {
-    window.dispatchEvent(new CustomEvent('show-toast', {
-      detail: { message, type, duration }
-    }));
+  private showSyncToast(
+    message: string,
+    type: 'success' | 'warning' | 'error' = 'success',
+    duration?: number,
+  ): void {
+    window.dispatchEvent(
+      new CustomEvent('show-toast', {
+        detail: { message, type, duration },
+      }),
+    );
   }
 
   /**
@@ -264,7 +279,10 @@ class SyncService {
   /**
    * Delete entry from cloud
    */
-  deleteEntryFromCloud(entryId: string, entryDeviceId?: string): Promise<boolean> {
+  deleteEntryFromCloud(
+    entryId: string,
+    entryDeviceId?: string,
+  ): Promise<boolean> {
     return deleteEntryFromCloud(entryId, entryDeviceId);
   }
 
@@ -278,7 +296,11 @@ class SyncService {
   /**
    * Delete fault from cloud
    */
-  async deleteFaultFromCloud(faultId: string, faultDeviceId?: string, approvedBy?: string): Promise<boolean> {
+  async deleteFaultFromCloud(
+    faultId: string,
+    faultDeviceId?: string,
+    approvedBy?: string,
+  ): Promise<boolean> {
     return deleteFaultFromCloudApi(faultId, faultDeviceId, approvedBy);
   }
 
@@ -292,7 +314,9 @@ class SyncService {
   /**
    * Check if a race exists in the cloud
    */
-  async checkRaceExists(raceId: string): Promise<{ exists: boolean; entryCount: number }> {
+  async checkRaceExists(
+    raceId: string,
+  ): Promise<{ exists: boolean; entryCount: number }> {
     if (!raceId) {
       return { exists: false, entryCount: 0 };
     }
@@ -301,7 +325,7 @@ class SyncService {
       const response = await fetchWithTimeout(
         `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`,
         { headers: getAuthHeaders() },
-        5000
+        5000,
       );
 
       if (!response.ok) {
@@ -311,7 +335,7 @@ class SyncService {
       const data = await response.json();
       return {
         exists: data.exists === true,
-        entryCount: typeof data.entryCount === 'number' ? data.entryCount : 0
+        entryCount: typeof data.entryCount === 'number' ? data.entryCount : 0,
       };
     } catch (error) {
       logger.error('Check race exists error:', error);
@@ -352,23 +376,30 @@ class SyncService {
         const params = new URLSearchParams({
           raceId: state.raceId,
           deviceId: state.deviceId,
-          deviceName: state.deviceName
+          deviceName: state.deviceName,
         });
-        const response = await fetchWithTimeout(`${API_BASE}?${params}`, {
-          headers: getAuthHeaders()
-        }, FETCH_TIMEOUT);
+        const response = await fetchWithTimeout(
+          `${API_BASE}?${params}`,
+          {
+            headers: getAuthHeaders(),
+          },
+          FETCH_TIMEOUT,
+        );
 
         if (response.ok) {
           const data = await response.json();
           const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
 
           for (const cloudEntry of cloudEntries) {
-            if (cloudEntry.photo &&
-                cloudEntry.photo !== 'indexeddb' &&
-                cloudEntry.photo.length > 20 &&
-                cloudEntry.deviceId !== state.deviceId) {
-              const localEntry = state.entries.find(e =>
-                e.id === cloudEntry.id && e.deviceId === cloudEntry.deviceId
+            if (
+              cloudEntry.photo &&
+              cloudEntry.photo !== 'indexeddb' &&
+              cloudEntry.photo.length > 20 &&
+              cloudEntry.deviceId !== state.deviceId
+            ) {
+              const localEntry = state.entries.find(
+                (e) =>
+                  e.id === cloudEntry.id && e.deviceId === cloudEntry.deviceId,
               );
               if (!localEntry || !localEntry.photo) {
                 downloadCount++;
@@ -387,7 +418,7 @@ class SyncService {
       uploadSize,
       downloadCount,
       downloadSize,
-      totalSize: uploadSize + downloadSize
+      totalSize: uploadSize + downloadSize,
     };
   }
 }
@@ -396,7 +427,9 @@ class SyncService {
 export const syncService = new SyncService();
 
 // Helper function to send entry and broadcast
-export async function syncEntry(entry: import('../../types').Entry): Promise<void> {
+export async function syncEntry(
+  entry: import('../../types').Entry,
+): Promise<void> {
   const state = store.getState();
 
   // Broadcast to other tabs
@@ -413,7 +446,9 @@ export async function syncEntry(entry: import('../../types').Entry): Promise<voi
 }
 
 // Helper function to sync fault
-export async function syncFault(fault: import('../../types').FaultEntry): Promise<void> {
+export async function syncFault(
+  fault: import('../../types').FaultEntry,
+): Promise<void> {
   const state = store.getState();
 
   // Broadcast to other tabs
@@ -426,7 +461,9 @@ export async function syncFault(fault: import('../../types').FaultEntry): Promis
 }
 
 // Helper function to delete fault from cloud
-export async function deleteFaultFromCloud(fault: import('../../types').FaultEntry): Promise<boolean> {
+export async function deleteFaultFromCloud(
+  fault: import('../../types').FaultEntry,
+): Promise<boolean> {
   const state = store.getState();
 
   // Broadcast deletion to other tabs
@@ -434,7 +471,11 @@ export async function deleteFaultFromCloud(fault: import('../../types').FaultEnt
 
   // Delete from cloud if enabled
   if (state.settings.sync && state.raceId) {
-    return syncService.deleteFaultFromCloud(fault.id, fault.deviceId, fault.markedForDeletionBy);
+    return syncService.deleteFaultFromCloud(
+      fault.id,
+      fault.deviceId,
+      fault.markedForDeletionBy,
+    );
   }
   return true;
 }

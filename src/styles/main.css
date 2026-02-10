@@ -3,44 +3,44 @@
 /* Optimized for outdoor visibility with high contrast */
 :root {
   /* Primary Alpine Blues */
-  --primary: #0EA5E9;           /* Alpine blue - mountain lake */
-  --primary-dark: #0284C7;      /* Deeper alpine blue */
-  --primary-light: #38BDF8;     /* Ice blue - glacier */
-  --secondary: #E31837;         /* Red - brand accent */
-  --secondary-light: #60A5FA;   /* Light blue for gradients */
-  --accent: #FFFFFF;
+  --primary: #0ea5e9; /* Alpine blue - mountain lake */
+  --primary-dark: #0284c7; /* Deeper alpine blue */
+  --primary-light: #38bdf8; /* Ice blue - glacier */
+  --secondary: #e31837; /* Red - brand accent */
+  --secondary-light: #60a5fa; /* Light blue for gradients */
+  --accent: #ffffff;
 
   /* Timing Point Colors */
-  --start-color: #F97316;       /* Sunset orange for Start */
-  --start-color-dark: #EA580C;  /* Darker orange */
-  --finish-color: #10B981;      /* Forest green for Finish */
+  --start-color: #f97316; /* Sunset orange for Start */
+  --start-color-dark: #ea580c; /* Darker orange */
+  --finish-color: #10b981; /* Forest green for Finish */
   --finish-color-dark: #059669; /* Darker green */
 
   /* Surfaces */
-  --background: #0A0A0A;        /* Near-black for depth */
-  --surface: #141414;           /* Slightly lighter for surfaces */
-  --surface-elevated: #1E1E1E;  /* Elevated surfaces */
+  --background: #0a0a0a; /* Near-black for depth */
+  --surface: #141414; /* Slightly lighter for surfaces */
+  --surface-elevated: #1e1e1e; /* Elevated surfaces */
 
   /* Text */
-  --text-primary: #FFFFFF;      /* Pure white for max contrast */
-  --text-secondary: #D0D0D0;    /* Brighter secondary text for outdoor */
-  --text-tertiary: #909090;     /* Brighter tertiary text for outdoor */
+  --text-primary: #ffffff; /* Pure white for max contrast */
+  --text-secondary: #d0d0d0; /* Brighter secondary text for outdoor */
+  --text-tertiary: #909090; /* Brighter tertiary text for outdoor */
 
   /* Status Colors */
-  --success: #10B981;           /* Matches finish color */
-  --warning: #FBBF24;
-  --error: #EF4444;
+  --success: #10b981; /* Matches finish color */
+  --warning: #fbbf24;
+  --error: #ef4444;
 
   /* GPS Status */
-  --gps-active: #10B981;
-  --gps-searching: #FBBF24;
-  --gps-inactive: #EF4444;
+  --gps-active: #10b981;
+  --gps-searching: #fbbf24;
+  --gps-inactive: #ef4444;
 
   /* Layout */
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
-  --radius: 12px;               /* Slightly larger radius for modern feel */
-  --radius-sm: 8px;             /* Smaller radius for compact elements */
+  --radius: 12px; /* Slightly larger radius for modern feel */
+  --radius-sm: 8px; /* Smaller radius for compact elements */
 }
 
 /* ===== Reset & Base ===== */
@@ -65,7 +65,7 @@ body {
   height: 100%;
   height: -webkit-fill-available;
   overflow: hidden;
-  font-family: 'Outfit', -apple-system, sans-serif;
+  font-family: "Outfit", -apple-system, sans-serif;
   background: var(--background);
   color: var(--text-primary);
   line-height: 1.5;
@@ -202,7 +202,9 @@ body {
 
 .sync-dot.connected {
   background: var(--success);
-  box-shadow: 0 0 8px var(--success), 0 0 16px rgba(74, 222, 128, 0.4);
+  box-shadow:
+    0 0 8px var(--success),
+    0 0 16px rgba(74, 222, 128, 0.4);
 }
 
 .sync-dot.error {
@@ -219,7 +221,8 @@ body {
 }
 
 @keyframes syncPulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -255,7 +258,7 @@ body {
 .judges-ready-count {
   font-size: 0.75rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .judges-ready-indicator.all-ready {
@@ -265,8 +268,13 @@ body {
 }
 
 @keyframes pulse-ready {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 /* Individual Judge Ready Indicator (shown in gate judge mode instead of GPS) */
@@ -320,7 +328,11 @@ body {
 
 .entry-count-badge {
   padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.85) 0%, rgba(234, 88, 12, 0.75) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.85) 0%,
+    rgba(234, 88, 12, 0.75) 100%
+  );
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: white;
@@ -329,7 +341,9 @@ body {
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 12px rgba(249, 115, 22, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== Views ===== */
@@ -343,7 +357,6 @@ body {
 .view.active {
   display: flex !important;
 }
-
 
 /* ===== Tab Bar ===== */
 .tab-bar {
@@ -367,7 +380,9 @@ body {
   color: var(--text-tertiary);
   font-size: 0.7rem;
   cursor: pointer;
-  transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
+  transition:
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
   position: relative;
 }
 
@@ -377,7 +392,7 @@ body {
 }
 
 .tab-btn::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 50%;
@@ -428,7 +443,6 @@ body {
   order: 4;
 }
 
-
 /* ===== GPS Indicator ===== */
 .gps-indicator {
   display: flex;
@@ -452,7 +466,9 @@ body {
 .gps-dot.active {
   background: var(--gps-active);
   animation: gpsPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 8px var(--gps-active), 0 0 16px rgba(74, 222, 128, 0.4);
+  box-shadow:
+    0 0 8px var(--gps-active),
+    0 0 16px rgba(74, 222, 128, 0.4);
 }
 
 .gps-dot.searching {
@@ -466,7 +482,8 @@ body {
 }
 
 @keyframes gpsPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -567,7 +584,8 @@ body {
 }
 
 @keyframes voicePulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -1001,7 +1019,6 @@ body {
   }
 }
 
-
 /* ===== Print Styles ===== */
 @media print {
   .tab-bar,
@@ -1043,14 +1060,15 @@ body {
 }
 
 .timestamp-btn.glass-surface-1::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: radial-gradient(
-    ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%) calc(30% + var(--motion-tilt-y, 0) * 20%),
+    ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%)
+      calc(30% + var(--motion-tilt-y, 0) * 20%),
     rgba(255, 255, 255, 0.3) 0%,
     transparent 50%
   );
@@ -1142,7 +1160,9 @@ body {
 .setting-row.glass-surface-3 {
   background: transparent;
   border-radius: var(--radius);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .setting-row.glass-surface-3:hover {
@@ -1167,7 +1187,11 @@ body {
 }
 
 .timing-point-btn.glass-surface-3.active[data-point="S"] {
-  background: linear-gradient(135deg, var(--start-color) 0%, var(--start-color-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--start-color) 0%,
+    var(--start-color-dark) 100%
+  );
   border-color: var(--start-color);
   box-shadow:
     0 0 25px rgba(249, 115, 22, 0.5),
@@ -1181,7 +1205,11 @@ body {
 }
 
 .timing-point-btn.glass-surface-3.active[data-point="F"] {
-  background: linear-gradient(135deg, var(--finish-color) 0%, var(--finish-color-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--finish-color) 0%,
+    var(--finish-color-dark) 100%
+  );
   border-color: var(--finish-color);
   box-shadow:
     0 0 25px rgba(16, 185, 129, 0.5),
@@ -1204,7 +1232,11 @@ body {
 
 /* Run buttons - Alpine blue glow */
 .run-btn.glass-surface-3.active {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(14, 165, 233, 0.6) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.85) 0%,
+    rgba(14, 165, 233, 0.6) 100%
+  );
   border-color: rgba(147, 197, 253, 0.9);
   color: #fff;
   box-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
@@ -1251,7 +1283,6 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
 }
-
 
 /* ===== Ambient Mode ===== */
 /* Battery-saving, ultra-minimal UI for inactive timer view */
@@ -1302,7 +1333,7 @@ body.ambient-mode .timer-view .timestamp-btn {
 
 /* Subtle pulse indicator at bottom */
 body.ambient-mode .timer-view::after {
-  content: '';
+  content: "";
   position: fixed;
   bottom: 40px;
   left: 50%;
@@ -1315,7 +1346,8 @@ body.ambient-mode .timer-view::after {
 }
 
 @keyframes ambientPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
   }
   50% {

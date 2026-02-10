@@ -34,7 +34,7 @@
 }
 
 .gate-range {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary);
@@ -128,7 +128,7 @@
 }
 
 .coverage-badge .gate-range {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 600;
   font-size: 0.7rem;
   color: var(--primary);
@@ -178,7 +178,7 @@
   background: var(--surface-elevated);
   border: 3px solid transparent;
   border-radius: var(--radius);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.25rem;
   font-weight: 700;
   cursor: pointer;
@@ -248,7 +248,7 @@
 }
 
 .fault-detail-gate-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -366,7 +366,7 @@
 }
 
 .gate-judge-fault-bib {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -382,7 +382,7 @@
 }
 
 .gate-judge-fault-gate {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 600;
 }
 
@@ -445,7 +445,7 @@
   background: var(--surface-elevated);
   border: 2px solid transparent;
   border-radius: var(--radius);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -467,7 +467,7 @@
   width: 7ch;
   height: 56px;
   text-align: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: var(--radius);
@@ -504,7 +504,7 @@
 }
 
 .inline-fault-type-btn .fault-type-short {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--warning);
@@ -534,7 +534,7 @@
   flex: 1;
   width: 100%;
   padding: 14px 16px;
-  background: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
+  background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
   border: none;
   border-radius: var(--radius);
   color: white;
@@ -596,7 +596,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   cursor: pointer;
@@ -625,7 +629,7 @@
 }
 
 .bib-card-number {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -633,7 +637,7 @@
 }
 
 .bib-card-time {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
@@ -712,7 +716,7 @@
 
 .ready-toggle-btn.ready {
   border-color: var(--success);
-  background: linear-gradient(135deg, var(--success) 0%, #16A34A 100%);
+  background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
   color: white;
   box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
 }
@@ -735,7 +739,7 @@
   padding: 20px 24px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
+  background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
   color: white;
   font-size: 1.25rem;
   font-weight: 700;
@@ -776,7 +780,7 @@
 .gate-input {
   width: 80px;
   text-align: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -814,7 +818,7 @@
 
 .gate-color-btn.active {
   border-color: var(--primary);
-  background: var(--primary)10;
+  background: var(--primary) 10;
 }
 
 .gate-color-btn.red.active {
@@ -832,7 +836,6 @@
   height: 16px;
   border-radius: 50%;
 }
-
 
 /* Notes Icon in Fault Lists */
 .gate-judge-fault-note-icon,
@@ -858,7 +861,6 @@
   background: var(--warning);
   color: var(--background);
 }
-
 
 /* ===== Gate Judge Landscape Mode ===== */
 @media (orientation: landscape) and (max-height: 500px) {
@@ -976,5 +978,3 @@
     font-size: 0.8rem;
   }
 }
-
-

@@ -13,12 +13,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
     name: 'Tiramisu Fox',
     description: {
       en: 'Battery power saver for longer outdoor timing. Improved PIN security and faster voice notes.',
-      de: 'Batterieschoner für längere Zeitmessung im Freien. Verbesserte PIN-Sicherheit und schnellere Sprachnotizen.'
-    }
-  }
+      de: 'Batterieschoner für längere Zeitmessung im Freien. Verbesserte PIN-Sicherheit und schnellere Sprachnotizen.',
+    },
+  },
 };
 
-export function getVersionInfo(version: string): { name: string; description: string } | null {
+export function getVersionInfo(
+  version: string,
+): { name: string; description: string } | null {
   const parts = version.split('.');
   if (parts.length < 2) return null;
   const minorKey = `${parts[0]}.${parts[1]}`;
@@ -27,6 +29,6 @@ export function getVersionInfo(version: string): { name: string; description: st
   const lang = store.getState().currentLang;
   return {
     name: info.name,
-    description: info.description[lang] || info.description.en
+    description: info.description[lang] || info.description.en,
   };
 }

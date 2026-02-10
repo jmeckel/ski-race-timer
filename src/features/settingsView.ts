@@ -3,34 +3,52 @@
  * Handles all settings toggles, language, sync configuration, and race ID management
  */
 
-import { store } from '../store';
-import { syncService, photoStorage, feedbackTap, feedbackWarning, voiceModeService } from '../services';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
-import { isValidRaceId } from '../utils/validation';
+import {
+  feedbackTap,
+  feedbackWarning,
+  photoStorage,
+  syncService,
+  voiceModeService,
+} from '../services';
+import { AUTH_TOKEN_KEY, hasAuthToken } from '../services/sync';
+import { store } from '../store';
+import type { DeviceRole, Language, RaceInfo } from '../types';
 import { fetchWithTimeout, getElement } from '../utils';
 import { logger } from '../utils/logger';
-import { AUTH_TOKEN_KEY, hasAuthToken } from '../services/sync';
-import { getTodaysRecentRaces, addRecentRace, type RecentRace } from '../utils/recentRaces';
+import {
+  addRecentRace,
+  getTodaysRecentRaces,
+  type RecentRace,
+} from '../utils/recentRaces';
+import {
+  attachRecentRaceItemHandlers,
+  renderRecentRaceItems,
+} from '../utils/recentRacesUi';
+import { isValidRaceId } from '../utils/validation';
 import { getVersionInfo } from '../version';
-import { attachRecentRaceItemHandlers, renderRecentRaceItems } from '../utils/recentRacesUi';
-import { openModal } from './modals';
-import { updateGateJudgeTabVisibility } from './gateJudgeView';
-import { refreshInlineFaultUI } from './faultEntry';
 import { exportResults } from './export';
-import { verifyPinForRaceJoin } from './raceManagement';
-import type { Language, DeviceRole, RaceInfo } from '../types';
+import { updateGateJudgeTabVisibility } from './gateJudgeView';
+import { openModal } from './modals';
+import { verifyPinForRaceJoin } from './race';
 
 // Module state
 let raceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let raceCheckRequestId = 0;
-let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null = null;
-let lastRaceExistsState: { exists: boolean | null; entryCount: number } = { exists: null, entryCount: 0 };
+let settingsRecentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
+  null;
+let lastRaceExistsState: { exists: boolean | null; entryCount: number } = {
+  exists: null,
+  entryCount: 0,
+};
 let updateRoleToggleHandler: (() => void) | null = null;
 
 // Promise-based event helpers for async operations
 type PhotoSyncWarningResolve = () => void;
-type RaceChangeDialogResolve = (result: 'export' | 'delete' | 'keep' | 'cancel') => void;
+type RaceChangeDialogResolve = (
+  result: 'export' | 'delete' | 'keep' | 'cancel',
+) => void;
 let pendingPhotoSyncResolve: PhotoSyncWarningResolve | null = null;
 let pendingRaceChangeResolve: RaceChangeDialogResolve | null = null;
 
@@ -49,12 +67,17 @@ async function requestPhotoSyncWarningModal(): Promise<void> {
  * Request race change dialog via CustomEvent
  * Returns a promise that resolves with the user's choice
  */
-async function requestRaceChangeDialog(type: 'synced' | 'unsynced', lang: Language): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
+async function requestRaceChangeDialog(
+  type: 'synced' | 'unsynced',
+  lang: Language,
+): Promise<'export' | 'delete' | 'keep' | 'cancel'> {
   return new Promise((resolve) => {
     pendingRaceChangeResolve = resolve;
-    window.dispatchEvent(new CustomEvent('request-race-change-dialog', {
-      detail: { type, lang }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('request-race-change-dialog', {
+        detail: { type, lang },
+      }),
+    );
   });
 }
 
@@ -71,7 +94,9 @@ export function resolvePhotoSyncWarning(): void {
 /**
  * Resolve pending race change dialog (called from app.ts with user's choice)
  */
-export function resolveRaceChangeDialog(result: 'export' | 'delete' | 'keep' | 'cancel'): void {
+export function resolveRaceChangeDialog(
+  result: 'export' | 'delete' | 'keep' | 'cancel',
+): void {
   if (pendingRaceChangeResolve) {
     pendingRaceChangeResolve(result);
     pendingRaceChangeResolve = null;
@@ -131,7 +156,8 @@ export function initSettingsView(): void {
         store.updateSettings({ sync: syncToggle.checked });
 
         // Update sync photos toggle state
-        const syncPhotosToggle = getElement<HTMLInputElement>('sync-photos-toggle');
+        const syncPhotosToggle =
+          getElement<HTMLInputElement>('sync-photos-toggle');
         if (syncPhotosToggle) {
           syncPhotosToggle.disabled = !syncToggle.checked;
           if (!syncToggle.checked) {
@@ -234,7 +260,9 @@ export function initSettingsView(): void {
     langToggle.querySelectorAll('.lang-option').forEach((opt) => {
       opt.addEventListener('keydown', (e) => {
         const event = e as KeyboardEvent;
-        const lang = (opt as HTMLElement).getAttribute('data-lang') as 'de' | 'en';
+        const lang = (opt as HTMLElement).getAttribute('data-lang') as
+          | 'de'
+          | 'en';
 
         switch (event.key) {
           case 'Enter':
@@ -243,16 +271,19 @@ export function initSettingsView(): void {
             selectLanguage(lang);
             break;
           case 'ArrowLeft':
-          case 'ArrowRight':
+          case 'ArrowRight': {
             event.preventDefault();
             // Toggle between the two options
             const otherLang = lang === 'de' ? 'en' : 'de';
-            const otherOpt = langToggle.querySelector(`[data-lang="${otherLang}"]`) as HTMLElement;
+            const otherOpt = langToggle.querySelector(
+              `[data-lang="${otherLang}"]`,
+            ) as HTMLElement;
             if (otherOpt) {
               otherOpt.focus();
               selectLanguage(otherLang);
             }
             break;
+          }
         }
       });
     });
@@ -290,7 +321,10 @@ export function initSettingsView(): void {
         if (hasEntries && isChangingRace) {
           if (wasPreviouslySynced) {
             // Was synced with another race - ask to export or delete
-            const action = await requestRaceChangeDialog('synced', state.currentLang);
+            const action = await requestRaceChangeDialog(
+              'synced',
+              state.currentLang,
+            );
             if (action === 'export') {
               exportResults();
               store.clearAll();
@@ -307,7 +341,10 @@ export function initSettingsView(): void {
             }
           } else {
             // Not previously synced - ask to keep or delete
-            const action = await requestRaceChangeDialog('unsynced', state.currentLang);
+            const action = await requestRaceChangeDialog(
+              'unsynced',
+              state.currentLang,
+            );
             if (action === 'delete') {
               store.clearAll();
               store.clearFaultEntries();
@@ -361,7 +398,9 @@ export function initSettingsView(): void {
 
   // Settings recent races button
   const settingsRecentRacesBtn = getElement('settings-recent-races-btn');
-  const settingsRecentRacesDropdown = getElement('settings-recent-races-dropdown');
+  const settingsRecentRacesDropdown = getElement(
+    'settings-recent-races-dropdown',
+  );
   if (settingsRecentRacesBtn && settingsRecentRacesDropdown) {
     settingsRecentRacesBtn.addEventListener('click', () => {
       feedbackTap();
@@ -378,7 +417,10 @@ export function initSettingsView(): void {
     if (!settingsRecentRacesDocumentHandler) {
       settingsRecentRacesDocumentHandler = (e) => {
         const target = e.target as Node;
-        if (!settingsRecentRacesBtn.contains(target) && !settingsRecentRacesDropdown.contains(target)) {
+        if (
+          !settingsRecentRacesBtn.contains(target) &&
+          !settingsRecentRacesDropdown.contains(target)
+        ) {
           settingsRecentRacesDropdown.style.display = 'none';
           settingsRecentRacesBtn.setAttribute('aria-expanded', 'false');
         }
@@ -418,7 +460,10 @@ function initAdvancedSettingsToggle(): void {
 
   toggle.setAttribute('role', 'button');
   // Start expanded by default
-  toggle.setAttribute('aria-expanded', section.classList.contains('expanded') ? 'true' : 'false');
+  toggle.setAttribute(
+    'aria-expanded',
+    section.classList.contains('expanded') ? 'true' : 'false',
+  );
   toggle.addEventListener('click', () => {
     const isExpanded = section.classList.toggle('expanded');
     toggle.setAttribute('aria-expanded', String(isExpanded));
@@ -451,7 +496,10 @@ export function initRoleToggle(): void {
       }
 
       // If switching away from gateJudge while on gateJudge view, go to timer
-      if (role !== 'gateJudge' && store.getState().currentView === 'gateJudge') {
+      if (
+        role !== 'gateJudge' &&
+        store.getState().currentView === 'gateJudge'
+      ) {
         store.setView('timer');
       }
     }
@@ -466,7 +514,7 @@ export function updateRoleToggle(): void {
   if (!roleToggle) return;
 
   const state = store.getState();
-  roleToggle.querySelectorAll('.role-card-setting').forEach(card => {
+  roleToggle.querySelectorAll('.role-card-setting').forEach((card) => {
     const role = card.getAttribute('data-role');
     const isActive = role === state.deviceRole;
     card.classList.toggle('active', isActive);
@@ -532,7 +580,7 @@ export function updateLangToggle(): void {
   const lang = store.getState().currentLang;
   const langToggle = getElement('lang-toggle');
   if (langToggle) {
-    langToggle.querySelectorAll('.lang-option').forEach(opt => {
+    langToggle.querySelectorAll('.lang-option').forEach((opt) => {
       const isActive = opt.getAttribute('data-lang') === lang;
       opt.classList.toggle('active', isActive);
       opt.setAttribute('aria-checked', String(isActive));
@@ -590,21 +638,21 @@ export function updateTranslations(): void {
   const lang = store.getState().currentLang as Language;
   document.documentElement.lang = lang;
 
-  document.querySelectorAll('[data-i18n]').forEach(el => {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
     if (key) {
       el.textContent = t(key, lang);
     }
   });
 
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
     const key = el.getAttribute('data-i18n-placeholder');
     if (key) {
       (el as HTMLInputElement).placeholder = t(key, lang);
     }
   });
 
-  document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+  document.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
     const key = el.getAttribute('data-i18n-aria-label');
     if (key) {
       el.setAttribute('aria-label', t(key, lang));
@@ -612,7 +660,10 @@ export function updateTranslations(): void {
   });
 
   // Update dynamically set text that depends on language
-  updateRaceExistsIndicator(lastRaceExistsState.exists, lastRaceExistsState.entryCount);
+  updateRaceExistsIndicator(
+    lastRaceExistsState.exists,
+    lastRaceExistsState.entryCount,
+  );
 
   // Update version description for new language
   const versionDescEl = document.getElementById('app-version-description');
@@ -628,7 +679,7 @@ export function updateTranslations(): void {
 export function applySettings(): void {
   // Simple mode deprecated: always show advanced UI and timing points.
   const advancedElements = document.querySelectorAll('[data-advanced]');
-  advancedElements.forEach(el => {
+  advancedElements.forEach((el) => {
     (el as HTMLElement).style.display = '';
   });
 
@@ -652,12 +703,12 @@ export function applyGlassEffectSettings(): void {
   if (settings.glassEffects) {
     root.classList.remove('no-glass-effects');
     // Add glass-enabled class to key elements for motion-reactive styles
-    document.querySelectorAll('.glass-enable-target').forEach(el => {
+    document.querySelectorAll('.glass-enable-target').forEach((el) => {
       el.classList.add('glass-enabled');
     });
   } else {
     root.classList.add('no-glass-effects');
-    document.querySelectorAll('.glass-enabled').forEach(el => {
+    document.querySelectorAll('.glass-enabled').forEach((el) => {
       el.classList.remove('glass-enabled');
     });
   }
@@ -706,7 +757,9 @@ export async function checkRaceExists(raceId: string): Promise<void> {
  * Show settings recent races dropdown and populate with today's races
  * Fetches from API if authenticated, falls back to localStorage
  */
-export async function showSettingsRecentRacesDropdown(dropdown: HTMLElement): Promise<void> {
+export async function showSettingsRecentRacesDropdown(
+  dropdown: HTMLElement,
+): Promise<void> {
   const lang = store.getState().currentLang;
 
   // Show loading state
@@ -749,9 +802,13 @@ export async function fetchRacesFromApi(): Promise<RecentRace[]> {
     return [];
   }
 
-  const response = await fetchWithTimeout('/api/v1/admin/races', {
-    headers: { 'Authorization': `Bearer ${token}` }
-  }, 5000);
+  const response = await fetchWithTimeout(
+    '/api/v1/admin/races',
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+    5000,
+  );
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
@@ -766,17 +823,17 @@ export async function fetchRacesFromApi(): Promise<RecentRace[]> {
   const todayStart = today.getTime();
 
   const todaysRaces = raceInfos
-    .filter(race => race.lastUpdated && race.lastUpdated >= todayStart)
-    .map(race => ({
+    .filter((race) => race.lastUpdated && race.lastUpdated >= todayStart)
+    .map((race) => ({
       raceId: race.raceId,
       createdAt: race.lastUpdated || Date.now(),
       lastUpdated: race.lastUpdated || Date.now(),
-      entryCount: race.entryCount
+      entryCount: race.entryCount,
     }))
     .slice(0, 5);
 
   // Also update localStorage with fetched races for future use
-  todaysRaces.forEach(race => {
+  todaysRaces.forEach((race) => {
     addRecentRace(race.raceId, race.lastUpdated, race.entryCount);
   });
 
@@ -786,7 +843,10 @@ export async function fetchRacesFromApi(): Promise<RecentRace[]> {
 /**
  * Select a recent race and fill the settings race ID input
  */
-export function selectSettingsRecentRace(race: RecentRace, dropdown: HTMLElement): void {
+export function selectSettingsRecentRace(
+  race: RecentRace,
+  dropdown: HTMLElement,
+): void {
   const input = getElement<HTMLInputElement>('race-id-input');
   if (input) {
     input.value = race.raceId;
@@ -800,7 +860,10 @@ export function selectSettingsRecentRace(race: RecentRace, dropdown: HTMLElement
 /**
  * Update race exists indicator UI
  */
-export function updateRaceExistsIndicator(exists: boolean | null, entryCount: number): void {
+export function updateRaceExistsIndicator(
+  exists: boolean | null,
+  entryCount: number,
+): void {
   // Store state for language updates
   lastRaceExistsState = { exists, entryCount };
 
@@ -821,7 +884,8 @@ export function updateRaceExistsIndicator(exists: boolean | null, entryCount: nu
   if (exists) {
     indicator.classList.add('found');
     if (entryCount > 0) {
-      const cloudText = entryCount === 1 ? t('entryInCloud', lang) : t('entriesInCloud', lang);
+      const cloudText =
+        entryCount === 1 ? t('entryInCloud', lang) : t('entriesInCloud', lang);
       textEl.textContent = `${entryCount} ${cloudText}`;
     } else {
       textEl.textContent = t('raceFound', lang);

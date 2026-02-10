@@ -40,18 +40,19 @@ export const ErrorCode = {
   SYNC_ERROR: 'SYNC_ERROR',
 } as const;
 
-export type ErrorCodeType = typeof ErrorCode[keyof typeof ErrorCode];
+export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 // ===== Error Severity =====
 
 export const ErrorSeverity = {
-  CRITICAL: 'critical',  // Data loss risk, auth failures
-  ERROR: 'error',        // Network failures, validation errors
-  WARNING: 'warning',    // Duplicates, fallbacks used
-  INFO: 'info',          // Status changes
+  CRITICAL: 'critical', // Data loss risk, auth failures
+  ERROR: 'error', // Network failures, validation errors
+  WARNING: 'warning', // Duplicates, fallbacks used
+  INFO: 'info', // Status changes
 } as const;
 
-export type ErrorSeverityType = typeof ErrorSeverity[keyof typeof ErrorSeverity];
+export type ErrorSeverityType =
+  (typeof ErrorSeverity)[keyof typeof ErrorSeverity];
 
 // ===== Toast Durations =====
 
@@ -117,7 +118,9 @@ function getErrorMessage(error: unknown): string {
  */
 export function handleError(context: ErrorContext): void {
   const message = formatLogMessage(context);
-  const errorMessage = context.error ? getErrorMessage(context.error) : 'No error details';
+  const errorMessage = context.error
+    ? getErrorMessage(context.error)
+    : 'No error details';
 
   // Log based on severity
   const logData = {
@@ -145,18 +148,25 @@ export function handleError(context: ErrorContext): void {
     const lang = store.getState().currentLang;
     const userMessage = t(context.userMessageKey, lang);
     const toastType = mapSeverityToToastType(context.severity);
-    const duration = TOAST_DURATION[context.severity.toUpperCase() as keyof typeof TOAST_DURATION] || TOAST_DURATION.ERROR;
+    const duration =
+      TOAST_DURATION[
+        context.severity.toUpperCase() as keyof typeof TOAST_DURATION
+      ] || TOAST_DURATION.ERROR;
 
     showToast(userMessage, toastType, duration);
   }
 
   // Dispatch custom event for critical errors
   if (context.severity === ErrorSeverity.CRITICAL) {
-    window.dispatchEvent(new CustomEvent('critical-error', { detail: context }));
+    window.dispatchEvent(
+      new CustomEvent('critical-error', { detail: context }),
+    );
   }
 }
 
-function mapSeverityToToastType(severity: ErrorSeverityType): 'success' | 'error' | 'warning' | 'info' {
+function mapSeverityToToastType(
+  severity: ErrorSeverityType,
+): 'success' | 'error' | 'warning' | 'info' {
   switch (severity) {
     case ErrorSeverity.CRITICAL:
     case ErrorSeverity.ERROR:
@@ -179,7 +189,7 @@ export function logError(
   component: string,
   operation: string,
   error: unknown,
-  userMessageKey?: string
+  userMessageKey?: string,
 ): void {
   handleError({
     component,
@@ -197,7 +207,7 @@ export function logWarning(
   component: string,
   operation: string,
   error: unknown,
-  userMessageKey?: string
+  userMessageKey?: string,
 ): void {
   handleError({
     component,
@@ -215,7 +225,7 @@ export function logCritical(
   component: string,
   operation: string,
   error: unknown,
-  userMessageKey?: string
+  userMessageKey?: string,
 ): void {
   handleError({
     component,
@@ -231,7 +241,9 @@ export function logCritical(
 /**
  * Check if response is an API error
  */
-export function isApiError(response: ApiResponse): response is ApiErrorResponse {
+export function isApiError(
+  response: ApiResponse,
+): response is ApiErrorResponse {
   return !response.success;
 }
 
@@ -243,7 +255,7 @@ export function createApiError(
   message: string,
   statusCode: number,
   details?: string,
-  retryAfter?: number
+  retryAfter?: number,
 ): { status: number; body: ApiErrorResponse } {
   return {
     status: statusCode,
@@ -280,10 +292,12 @@ export function isNetworkError(error: unknown): boolean {
   }
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
-    return msg.includes('network') ||
-           msg.includes('failed to fetch') ||
-           msg.includes('econnrefused') ||
-           msg.includes('etimedout');
+    return (
+      msg.includes('network') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('econnrefused') ||
+      msg.includes('etimedout')
+    );
   }
   return false;
 }
@@ -323,7 +337,7 @@ export class FetchTimeoutError extends Error {
 export async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
-  timeout: number = DEFAULT_FETCH_TIMEOUT
+  timeout: number = DEFAULT_FETCH_TIMEOUT,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);

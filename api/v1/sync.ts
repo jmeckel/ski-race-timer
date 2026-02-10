@@ -1,3 +1,6 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type Redis from 'ioredis';
+import { atomicUpdate, CACHE_EXPIRY_SECONDS, MAX_ATOMIC_RETRIES } from '../lib/atomicOps.js';
 import { validateAuth } from '../lib/jwt.js';
 import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
 import {
@@ -18,17 +21,101 @@ import { isValidRaceId, checkRateLimit, MAX_DEVICE_NAME_LENGTH } from '../lib/va
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
-const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
+const DEFAULT_PAGE_LIMIT = 500;
+const MAX_PAGE_LIMIT = 2000;
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds - device considered inactive after this
-const MAX_ATOMIC_RETRIES = 5; // Max retries for atomic operations
 
 // Photo upload rate limiting (per device per race)
 const PHOTO_RATE_LIMIT_WINDOW = 300; // 5 minute window
 const PHOTO_RATE_LIMIT_MAX = 20; // Max photos per device per window
 
+interface DeviceData {
+  name: string;
+  lastSeen: number;
+}
+
+interface GpsCoords {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+}
+
+interface RaceEntry {
+  id: string | number;
+  bib?: string;
+  point: 'S' | 'F';
+  timestamp: string;
+  status?: 'ok' | 'dns' | 'dnf' | 'dsq' | 'flt';
+  run?: 1 | 2;
+  deviceId?: string;
+  deviceName?: string;
+  photo?: string;
+  gpsCoords?: GpsCoords;
+  syncedAt?: number;
+}
+
+interface RaceData {
+  entries: RaceEntry[];
+  lastUpdated: number | null;
+}
+
+interface PhotoRateLimitResult {
+  allowed: boolean;
+  count: number;
+  limit: number;
+  error?: string;
+}
+
+interface AtomicAddResult {
+  success: boolean;
+  existing: RaceData;
+  isDuplicate?: boolean;
+  crossDeviceDuplicate?: CrossDeviceDuplicate | null;
+  error?: string;
+}
+
+interface AtomicDeleteResult {
+  success: boolean;
+  wasRemoved?: boolean;
+  existing?: RaceData;
+  error?: string;
+}
+
+interface CrossDeviceDuplicate {
+  bib: string;
+  point: string;
+  run: number;
+  deviceName: string;
+  timestamp: string;
+}
+
+interface HighestBibResult {
+  success: boolean;
+  error?: string;
+}
+
+interface PostRequestBody {
+  entry?: RaceEntry;
+  deviceId?: string;
+  deviceName?: string;
+}
+
+interface DeleteRequestBody {
+  entryId?: string | number;
+  deviceId?: string;
+  deviceName?: string;
+}
+
+interface PaginationMeta {
+  offset: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
 // Photo rate limiting per device per race
 // Prevents memory exhaustion from rapid photo uploads
-async function checkPhotoRateLimit(client, raceId, deviceId) {
+async function checkPhotoRateLimit(client: Redis, raceId: string, deviceId: string): Promise<PhotoRateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - (now % PHOTO_RATE_LIMIT_WINDOW);
   const key = `ratelimit:photo:${raceId}:${deviceId}:${windowStart}`;
@@ -39,56 +126,59 @@ async function checkPhotoRateLimit(client, raceId, deviceId) {
     multi.expire(key, PHOTO_RATE_LIMIT_WINDOW + 10);
     const results = await multi.exec();
 
-    const count = results[0][1];
+    const count = results![0][1] as number;
     return {
       allowed: count <= PHOTO_RATE_LIMIT_MAX,
       count,
       limit: PHOTO_RATE_LIMIT_MAX
     };
-  } catch (error) {
-    console.error('Photo rate limit check error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Photo rate limit check error:', message);
     // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
     // Prevents memory exhaustion if Redis is unavailable
     return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX, error: 'Rate limiting unavailable' };
   }
 }
 
-function isValidEntry(entry) {
+function isValidEntry(entry: unknown): entry is RaceEntry {
   if (!entry || typeof entry !== 'object') return false;
 
-  // ID can be string (new format) or number (legacy)
-  if (typeof entry.id !== 'number' && typeof entry.id !== 'string') return false;
-  if (typeof entry.id === 'number' && entry.id <= 0) return false;
-  if (typeof entry.id === 'string' && entry.id.length === 0) return false;
+  const e = entry as Record<string, unknown>;
 
-  if (entry.bib !== undefined && typeof entry.bib !== 'string') return false;
-  if (entry.bib && entry.bib.length > 10) return false;
-  if (!['S', 'F'].includes(entry.point)) return false;
-  if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
-  if (entry.status && !['ok', 'dns', 'dnf', 'dsq', 'flt'].includes(entry.status)) return false;
+  // ID can be string (new format) or number (legacy)
+  if (typeof e.id !== 'number' && typeof e.id !== 'string') return false;
+  if (typeof e.id === 'number' && e.id <= 0) return false;
+  if (typeof e.id === 'string' && e.id.length === 0) return false;
+
+  if (e.bib !== undefined && typeof e.bib !== 'string') return false;
+  if (typeof e.bib === 'string' && e.bib.length > 10) return false;
+  if (!['S', 'F'].includes(e.point as string)) return false;
+  if (!e.timestamp || isNaN(Date.parse(e.timestamp as string))) return false;
+  if (e.status && !['ok', 'dns', 'dnf', 'dsq', 'flt'].includes(e.status as string)) return false;
 
   // Run validation (optional field, but must be 1 or 2 if present)
-  if (entry.run !== undefined && entry.run !== 1 && entry.run !== 2) return false;
+  if (e.run !== undefined && e.run !== 1 && e.run !== 2) return false;
 
   return true;
 }
 
 // Update device heartbeat in Redis
-async function updateDeviceHeartbeat(client, normalizedRaceId, deviceId, deviceName) {
+async function updateDeviceHeartbeat(client: Redis, normalizedRaceId: string, deviceId: string, deviceName: string): Promise<void> {
   if (!deviceId) return;
 
   const devicesKey = `race:${normalizedRaceId}:devices`;
   const deviceData = JSON.stringify({
     name: deviceName || 'Unknown',
     lastSeen: Date.now()
-  });
+  } satisfies DeviceData);
 
   await client.hset(devicesKey, deviceId, deviceData);
   await client.expire(devicesKey, CACHE_EXPIRY_SECONDS);
 }
 
 // Get active device count (devices seen within threshold)
-async function getActiveDeviceCount(client, normalizedRaceId) {
+async function getActiveDeviceCount(client: Redis, normalizedRaceId: string): Promise<number> {
   const devicesKey = `race:${normalizedRaceId}:devices`;
   const devices = await client.hgetall(devicesKey);
 
@@ -98,17 +188,17 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
 
   const now = Date.now();
   let activeCount = 0;
-  const staleDevices = [];
+  const staleDevices: string[] = [];
 
   for (const [deviceId, deviceJson] of Object.entries(devices)) {
     try {
-      const device = JSON.parse(deviceJson);
+      const device: DeviceData = JSON.parse(deviceJson);
       if (now - device.lastSeen <= DEVICE_STALE_THRESHOLD) {
         activeCount++;
       } else {
         staleDevices.push(deviceId);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       staleDevices.push(deviceId);
     }
   }
@@ -123,7 +213,7 @@ async function getActiveDeviceCount(client, normalizedRaceId) {
 
 // Update highest bib if new bib is higher (atomic with WATCH)
 // Returns { success: true } on success, { success: false, error: string } on failure
-async function updateHighestBib(client, normalizedRaceId, bib) {
+async function updateHighestBib(client: Redis, normalizedRaceId: string, bib: string | undefined): Promise<HighestBibResult> {
   if (!bib) return { success: true };
 
   const bibNum = parseInt(bib, 10);
@@ -136,7 +226,7 @@ async function updateHighestBib(client, normalizedRaceId, bib) {
     await client.watch(highestBibKey);
 
     const currentHighest = await client.get(highestBibKey);
-    const currentNum = parseInt(currentHighest, 10) || 0;
+    const currentNum = parseInt(currentHighest as string, 10) || 0;
 
     if (bibNum <= currentNum) {
       await client.unwatch();
@@ -160,154 +250,108 @@ async function updateHighestBib(client, normalizedRaceId, bib) {
  * Atomically add entry to race data using WATCH/MULTI/EXEC
  * Returns { success, existing, isDuplicate, crossDeviceDuplicate, error }
  */
-async function atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId) {
-  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
-    // Watch the key for changes
-    await client.watch(redisKey);
+async function atomicAddEntry(client: Redis, redisKey: string, enrichedEntry: RaceEntry, sanitizedDeviceId: string): Promise<AtomicAddResult> {
+  const result = await atomicUpdate<RaceData, AtomicAddResult>(
+    client, redisKey,
+    { entries: [], lastUpdated: null },
+    (existing: RaceData) => {
+      if (!Array.isArray(existing.entries)) existing.entries = [];
 
-    // Read current data
-    const existingData = await client.get(redisKey);
-    const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
-
-    // Ensure entries is an array
-    if (!Array.isArray(existing.entries)) {
-      existing.entries = [];
-    }
-
-    // Check entry limit
-    if (existing.entries.length >= MAX_ENTRIES_PER_RACE) {
-      await client.unwatch();
-      return {
-        success: false,
-        error: `Maximum entries limit (${MAX_ENTRIES_PER_RACE}) reached for this race`,
-        existing
-      };
-    }
-
-    // Check for duplicates (same entry from same device)
-    const entryId = String(enrichedEntry.id);
-    const isDuplicate = existing.entries.some(
-      e => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
-    );
-
-    // Check for cross-device duplicates (same bib + same point + same run from different device)
-    let crossDeviceDuplicate = null;
-    if (enrichedEntry.bib) {
-      const entryRun = enrichedEntry.run ?? 1;
-      const existingMatch = existing.entries.find(
-        e => e.bib === enrichedEntry.bib &&
-             e.point === enrichedEntry.point &&
-             (e.run ?? 1) === entryRun &&
-             e.deviceId !== sanitizedDeviceId
-      );
-      if (existingMatch) {
-        crossDeviceDuplicate = {
-          bib: existingMatch.bib,
-          point: existingMatch.point,
-          run: existingMatch.run ?? 1,
-          deviceName: existingMatch.deviceName || 'Unknown device',
-          timestamp: existingMatch.timestamp
-        };
+      // Check entry limit
+      if (existing.entries.length >= MAX_ENTRIES_PER_RACE) {
+        return { abort: true, result: {
+          success: false,
+          error: `Maximum entries limit (${MAX_ENTRIES_PER_RACE}) reached for this race`,
+          existing
+        }};
       }
-    }
 
-    if (isDuplicate) {
-      await client.unwatch();
-      return { success: true, existing, isDuplicate: true, crossDeviceDuplicate };
-    }
+      // Check for duplicates (same entry from same device)
+      const entryId = String(enrichedEntry.id);
+      const isDuplicate = existing.entries.some(
+        (e: RaceEntry) => String(e.id) === entryId && e.deviceId === sanitizedDeviceId
+      );
 
-    // Add entry and update timestamp
-    existing.entries.push(enrichedEntry);
-    existing.lastUpdated = Date.now();
+      // Check for cross-device duplicates (same bib + same point + same run from different device)
+      let crossDeviceDuplicate: CrossDeviceDuplicate | null = null;
+      if (enrichedEntry.bib) {
+        const entryRun = enrichedEntry.run ?? 1;
+        const existingMatch = existing.entries.find(
+          (e: RaceEntry) => e.bib === enrichedEntry.bib &&
+               e.point === enrichedEntry.point &&
+               ((e.run ?? 1) === entryRun) &&
+               e.deviceId !== sanitizedDeviceId
+        );
+        if (existingMatch) {
+          crossDeviceDuplicate = {
+            bib: existingMatch.bib!,
+            point: existingMatch.point,
+            run: existingMatch.run ?? 1,
+            deviceName: existingMatch.deviceName || 'Unknown device',
+            timestamp: existingMatch.timestamp
+          };
+        }
+      }
 
-    // Atomic write with MULTI/EXEC
-    const multi = client.multi();
-    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
-    const result = await multi.exec();
+      if (isDuplicate) {
+        return { abort: true, result: { success: true, existing, isDuplicate: true, crossDeviceDuplicate }};
+      }
 
-    if (result !== null) {
-      // Success - transaction committed
-      return { success: true, existing, isDuplicate: false, crossDeviceDuplicate };
-    }
-
-    // WATCH detected concurrent modification, retry
-    console.log(`atomicAddEntry: retry ${retry + 1}/${MAX_ATOMIC_RETRIES} due to concurrent modification`);
+      existing.entries.push(enrichedEntry);
+      existing.lastUpdated = Date.now();
+      return { data: existing, result: { success: true, existing, isDuplicate: false, crossDeviceDuplicate }};
+    },
+    'atomicAddEntry'
+  );
+  // Handle AtomicConflictError (existing: null) by providing empty default
+  if (result.existing === null) {
+    return { ...result, existing: { entries: [], lastUpdated: null } };
   }
-
-  // Max retries exceeded
-  return {
-    success: false,
-    error: 'Concurrent modification conflict, please retry',
-    existing: null
-  };
+  return result;
 }
 
 /**
  * Atomically delete entry from race data using WATCH/MULTI/EXEC
  * Returns { success, wasRemoved, existing, error }
  */
-async function atomicDeleteEntry(client, redisKey, entryIdStr, sanitizedDeviceId) {
-  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
-    // Watch the key for changes
-    await client.watch(redisKey);
+async function atomicDeleteEntry(client: Redis, redisKey: string, entryIdStr: string, sanitizedDeviceId: string): Promise<AtomicDeleteResult> {
+  const result = await atomicUpdate<RaceData, AtomicDeleteResult>(
+    client, redisKey,
+    { entries: [], lastUpdated: null },
+    (existing: RaceData) => {
+      if (!Array.isArray(existing.entries)) existing.entries = [];
 
-    // Read current data
-    const existingData = await client.get(redisKey);
-    const existing = safeJsonParse(existingData, { entries: [], lastUpdated: null });
+      const originalLength = existing.entries.length;
+      existing.entries = existing.entries.filter((e: RaceEntry) => {
+        const idMatch = String(e.id) === entryIdStr;
+        if (sanitizedDeviceId) return !(idMatch && e.deviceId === sanitizedDeviceId);
+        return !idMatch;
+      });
 
-    // Ensure entries is an array
-    if (!Array.isArray(existing.entries)) {
-      existing.entries = [];
-    }
-
-    // Filter out the entry to delete
-    const originalLength = existing.entries.length;
-    existing.entries = existing.entries.filter(e => {
-      const idMatch = String(e.id) === entryIdStr;
-      // If deviceId provided, only delete entries from that device
-      if (sanitizedDeviceId) {
-        return !(idMatch && e.deviceId === sanitizedDeviceId);
+      const wasRemoved = existing.entries.length < originalLength;
+      if (!wasRemoved) {
+        return { abort: true, result: { success: true, wasRemoved: false, existing }};
       }
-      return !idMatch;
-    });
 
-    const wasRemoved = existing.entries.length < originalLength;
-
-    if (!wasRemoved) {
-      await client.unwatch();
-      return { success: true, wasRemoved: false, existing };
-    }
-
-    // Update timestamp and write atomically
-    existing.lastUpdated = Date.now();
-
-    const multi = client.multi();
-    multi.set(redisKey, JSON.stringify(existing), 'EX', CACHE_EXPIRY_SECONDS);
-    const result = await multi.exec();
-
-    if (result !== null) {
-      return { success: true, wasRemoved: true, existing };
-    }
-
-    // WATCH detected concurrent modification, retry
-    console.log(`atomicDeleteEntry: retry ${retry + 1}/${MAX_ATOMIC_RETRIES} due to concurrent modification`);
+      existing.lastUpdated = Date.now();
+      return { data: existing, result: { success: true, wasRemoved: true, existing }};
+    },
+    'atomicDeleteEntry'
+  );
+  if (result.existing === null) {
+    return { ...result, existing: { entries: [], lastUpdated: null } };
   }
-
-  return {
-    success: false,
-    error: 'Concurrent modification conflict, please retry',
-    existing: null
-  };
+  return result;
 }
 
 // Get highest bib for race
-async function getHighestBib(client, normalizedRaceId) {
+async function getHighestBib(client: Redis, normalizedRaceId: string): Promise<number> {
   const highestBibKey = `race:${normalizedRaceId}:highestBib`;
   const highest = await client.get(highestBibKey);
-  return parseInt(highest, 10) || 0;
+  return parseInt(highest as string, 10) || 0;
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
     return;
@@ -320,19 +364,22 @@ export default async function handler(req, res) {
     return sendBadRequest(res, 'raceId is required');
   }
 
-  if (!isValidRaceId(raceId)) {
+  const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
+
+  if (!isValidRaceId(raceIdStr)) {
     return sendBadRequest(res, 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only (max 50 chars).');
   }
 
   // Normalize race ID to lowercase for case-insensitive matching
-  const normalizedRaceId = raceId.toLowerCase();
+  const normalizedRaceId = raceIdStr.toLowerCase();
   const redisKey = `race:${normalizedRaceId}`;
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
-  } catch (error) {
-    console.error('Redis initialization error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Redis initialization error:', message);
     return sendServiceUnavailable(res, 'Database service unavailable');
   }
 
@@ -343,7 +390,7 @@ export default async function handler(req, res) {
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method, {
+  const rateLimitResult = await checkRateLimit(client, clientIP, req.method!, {
     keyPrefix: 'sync',
     window: 60,
     maxRequests: 100,
@@ -369,7 +416,7 @@ export default async function handler(req, res) {
       const tombstoneKey = `race:${normalizedRaceId}:deleted`;
       const tombstoneData = await client.get(tombstoneKey);
       if (tombstoneData) {
-        const tombstone = safeJsonParse(tombstoneData, {});
+        const tombstone = safeJsonParse(tombstoneData, {} as Record<string, unknown>);
         return sendSuccess(res, {
           deleted: true,
           deletedAt: tombstone.deletedAt || Date.now(),
@@ -380,7 +427,7 @@ export default async function handler(req, res) {
       // Handle checkOnly query - just check if race exists
       if (req.query.checkOnly === 'true') {
         const data = await client.get(redisKey);
-        const parsed = safeJsonParse(data, null);
+        const parsed = safeJsonParse(data, null) as RaceData | null;
         const exists = parsed !== null;
         const entryCount = exists && Array.isArray(parsed.entries) ? parsed.entries.length : 0;
         return sendSuccess(res, { exists, entryCount });
@@ -389,11 +436,13 @@ export default async function handler(req, res) {
       // Update device heartbeat if deviceId provided (from query params)
       const { deviceId: queryDeviceId, deviceName: queryDeviceName } = req.query;
       if (queryDeviceId) {
-        await updateDeviceHeartbeat(client, normalizedRaceId, queryDeviceId, queryDeviceName);
+        const deviceIdStr = typeof queryDeviceId === 'string' ? queryDeviceId : String(queryDeviceId);
+        const deviceNameStr = typeof queryDeviceName === 'string' ? queryDeviceName : '';
+        await updateDeviceHeartbeat(client, normalizedRaceId, deviceIdStr, deviceNameStr);
       }
 
       const data = await client.get(redisKey);
-      const parsed = safeJsonParse(data, { entries: [], lastUpdated: null });
+      const parsed = safeJsonParse(data, { entries: [], lastUpdated: null }) as RaceData;
 
       // Get deleted entry IDs
       const deletedKey = `race:${normalizedRaceId}:deleted_entries`;
@@ -405,12 +454,29 @@ export default async function handler(req, res) {
       // Get highest bib
       const highestBib = await getHighestBib(client, normalizedRaceId);
 
+      const allEntries = Array.isArray(parsed.entries) ? parsed.entries : [];
+      const total = allEntries.length;
+
+      // Pagination: optional offset/limit query params (backwards-compatible)
+      const { offset: offsetParam, limit: limitParam } = req.query;
+      let entries = allEntries;
+      let paginationMeta: PaginationMeta | null = null;
+
+      if (limitParam !== undefined) {
+        const offset = Math.max(0, parseInt(offsetParam as string, 10) || 0);
+        const limit = Math.min(MAX_PAGE_LIMIT, Math.max(1, parseInt(limitParam as string, 10) || DEFAULT_PAGE_LIMIT));
+        entries = allEntries.slice(offset, offset + limit);
+        paginationMeta = { offset, limit, total, hasMore: offset + limit < total };
+      }
+
       return sendSuccess(res, {
-        entries: Array.isArray(parsed.entries) ? parsed.entries : [],
+        entries,
         lastUpdated: parsed.lastUpdated || null,
+        total,
         deviceCount,
         highestBib,
-        deletedIds: deletedIds || []
+        deletedIds: deletedIds || [],
+        ...(paginationMeta && { pagination: paginationMeta })
       });
     }
 
@@ -419,7 +485,7 @@ export default async function handler(req, res) {
       const tombstoneKey = `race:${normalizedRaceId}:deleted`;
       const tombstoneData = await client.get(tombstoneKey);
       if (tombstoneData) {
-        const tombstone = safeJsonParse(tombstoneData, {});
+        const tombstone = safeJsonParse(tombstoneData, {} as Record<string, unknown>);
         return sendSuccess(res, {
           deleted: true,
           deletedAt: tombstone.deletedAt || Date.now(),
@@ -427,7 +493,7 @@ export default async function handler(req, res) {
         });
       }
 
-      const { entry, deviceId, deviceName } = req.body || {};
+      const { entry, deviceId, deviceName } = (req.body || {}) as PostRequestBody;
 
       // Validate entry
       if (!entry) {
@@ -443,7 +509,7 @@ export default async function handler(req, res) {
       const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
 
       // Build enriched entry with only allowed fields
-      const enrichedEntry = {
+      const enrichedEntry: RaceEntry = {
         id: String(entry.id),
         bib: sanitizeString(entry.bib, 10),
         point: entry.point,
@@ -487,7 +553,7 @@ export default async function handler(req, res) {
 
       if (!addResult.success) {
         const status = addResult.error?.includes('limit') ? 400 : 409;
-        return sendError(res, addResult.error, status);
+        return sendError(res, addResult.error!, status);
       }
 
       // Update device heartbeat
@@ -517,7 +583,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const { entryId, deviceId } = req.body || {};
+      const { entryId, deviceId } = (req.body || {}) as DeleteRequestBody;
 
       // Validate inputs
       if (!entryId) {
@@ -531,7 +597,7 @@ export default async function handler(req, res) {
       const deleteResult = await atomicDeleteEntry(client, redisKey, entryIdStr, sanitizedDeviceId);
 
       if (!deleteResult.success) {
-        return sendError(res, deleteResult.error, 409);
+        return sendError(res, deleteResult.error!, 409);
       }
 
       // Add to deleted entries set (tracks all deleted IDs for sync)
@@ -543,7 +609,7 @@ export default async function handler(req, res) {
 
       // Update device heartbeat
       if (sanitizedDeviceId) {
-        const sanitizedDeviceName = sanitizeString(req.body?.deviceName, MAX_DEVICE_NAME_LENGTH);
+        const sanitizedDeviceName = sanitizeString((req.body as DeleteRequestBody)?.deviceName, MAX_DEVICE_NAME_LENGTH);
         await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
       }
 
@@ -559,11 +625,12 @@ export default async function handler(req, res) {
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error) {
-    console.error('Sync API error:', error.message);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Sync API error:', err.message);
 
     // Don't expose internal error details to client
-    if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+    if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
       return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
     }
 

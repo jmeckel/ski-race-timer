@@ -3,14 +3,18 @@
  * Handles Chief Judge panel, fault summaries, penalty configuration, and deletion approvals
  */
 
-import { store } from '../store';
-import { syncService, syncFault, deleteFaultFromCloud } from '../services/sync';
 import { showToast } from '../components';
-import { feedbackTap, feedbackSuccess, feedbackDelete } from '../services';
 import { t } from '../i18n/translations';
-import { escapeHtml, escapeAttr } from '../utils';
-import { exportResults, exportChiefSummary, exportFaultSummaryWhatsApp } from './export';
-import type { FaultEntry, FaultType, Language, Run } from '../types';
+import { feedbackDelete, feedbackSuccess, feedbackTap } from '../services';
+import { deleteFaultFromCloud, syncFault, syncService } from '../services/sync';
+import { store } from '../store';
+import type { FaultEntry, Language, Run } from '../types';
+import { escapeAttr, escapeHtml, getFaultTypeLabel } from '../utils';
+import {
+  exportChiefSummary,
+  exportFaultSummaryWhatsApp,
+  exportResults,
+} from './export';
 
 // Module-level store subscription cleanup
 let unsubscribeChiefJudge: (() => void) | null = null;
@@ -26,7 +30,9 @@ let pendingPinVerifyResolve: PinVerifyResolve | null = null;
 async function requestPinVerification(lang: Language): Promise<boolean> {
   return new Promise((resolve) => {
     pendingPinVerifyResolve = resolve;
-    window.dispatchEvent(new CustomEvent('request-pin-verification', { detail: { lang } }));
+    window.dispatchEvent(
+      new CustomEvent('request-pin-verification', { detail: { lang } }),
+    );
   });
 }
 
@@ -45,14 +51,18 @@ export function resolvePinVerification(verified: boolean): void {
  * Dispatch event to open fault edit modal
  */
 function dispatchOpenFaultEditModal(fault: FaultEntry): void {
-  window.dispatchEvent(new CustomEvent('open-fault-edit-modal', { detail: { fault } }));
+  window.dispatchEvent(
+    new CustomEvent('open-fault-edit-modal', { detail: { fault } }),
+  );
 }
 
 /**
  * Dispatch event to open mark deletion modal
  */
 function dispatchOpenMarkDeletionModal(fault: FaultEntry): void {
-  window.dispatchEvent(new CustomEvent('open-mark-deletion-modal', { detail: { fault } }));
+  window.dispatchEvent(
+    new CustomEvent('open-mark-deletion-modal', { detail: { fault } }),
+  );
 }
 
 /**
@@ -74,18 +84,6 @@ function dispatchUpdateInlineBibSelector(): void {
  */
 function dispatchUpdateInlineGateSelector(): void {
   window.dispatchEvent(new CustomEvent('update-inline-gate-selector'));
-}
-
-/**
- * Get localized fault type label
- */
-export function getFaultTypeLabel(faultType: FaultType, lang: Language): string {
-  const labels: Record<FaultType, string> = {
-    'MG': t('faultMGShort', lang),
-    'STR': t('faultSTRShort', lang),
-    'BR': t('faultBRShort', lang)
-  };
-  return labels[faultType] || faultType;
 }
 
 /**
@@ -134,7 +132,12 @@ export function initChiefJudgeToggle(): void {
       updateChiefJudgeToggleVisibility();
     }
     // Refresh fault summary panel when faults or penalty config change and panel is visible
-    if ((keys.includes('faultEntries') || keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) && stateSnapshot.isChiefJudgeView) {
+    if (
+      (keys.includes('faultEntries') ||
+        keys.includes('penaltySeconds') ||
+        keys.includes('usePenaltyMode')) &&
+      stateSnapshot.isChiefJudgeView
+    ) {
       updateFaultSummaryPanel();
       updatePendingDeletionsPanel();
     }
@@ -143,11 +146,19 @@ export function initChiefJudgeToggle(): void {
       updatePenaltyConfigUI();
     }
     // Update judges overview when entries change (sync polling) and panel is visible
-    if ((keys.includes('entries') || keys.includes('faultEntries') || keys.includes('isJudgeReady')) && stateSnapshot.isChiefJudgeView) {
+    if (
+      (keys.includes('entries') ||
+        keys.includes('faultEntries') ||
+        keys.includes('isJudgeReady')) &&
+      stateSnapshot.isChiefJudgeView
+    ) {
       updateJudgesOverview();
     }
     // Update inline fault list when faults change and device is a gate judge
-    if (keys.includes('faultEntries') && stateSnapshot.deviceRole === 'gateJudge') {
+    if (
+      keys.includes('faultEntries') &&
+      stateSnapshot.deviceRole === 'gateJudge'
+    ) {
       dispatchUpdateInlineFaultsList();
       dispatchUpdateInlineBibSelector();
     }
@@ -156,7 +167,10 @@ export function initChiefJudgeToggle(): void {
       dispatchUpdateInlineBibSelector();
     }
     // Update inline gate selector when gate assignment changes
-    if (keys.includes('gateAssignment') && stateSnapshot.deviceRole === 'gateJudge') {
+    if (
+      keys.includes('gateAssignment') &&
+      stateSnapshot.deviceRole === 'gateJudge'
+    ) {
       dispatchUpdateInlineGateSelector();
     }
   });
@@ -258,10 +272,11 @@ export function updatePenaltyConfigUI(): void {
 
   if (modeToggle) {
     const buttons = modeToggle.querySelectorAll('.penalty-mode-btn');
-    buttons.forEach(btn => {
+    buttons.forEach((btn) => {
       const mode = btn.getAttribute('data-mode');
-      const isActive = (mode === 'penalty' && state.usePenaltyMode) ||
-                       (mode === 'dsq' && !state.usePenaltyMode);
+      const isActive =
+        (mode === 'penalty' && state.usePenaltyMode) ||
+        (mode === 'dsq' && !state.usePenaltyMode);
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
     });
@@ -322,7 +337,7 @@ export function updateJudgesOverview(): void {
       gateStart: state.gateAssignment[0],
       gateEnd: state.gateAssignment[1],
       lastSeen: Date.now(),
-      isReady: state.isJudgeReady
+      isReady: state.isJudgeReady,
     });
   }
 
@@ -333,19 +348,23 @@ export function updateJudgesOverview(): void {
   }
 
   const existingCards = overviewList.querySelectorAll('.judge-card');
-  existingCards.forEach(card => card.remove());
+  existingCards.forEach((card) => card.remove());
 
   if (allJudges.length === 0) return;
 
   allJudges.sort((a, b) => a.gateStart - b.gateStart);
 
-  const cardsHtml = allJudges.map(judge => `
+  const cardsHtml = allJudges
+    .map(
+      (judge) => `
     <div class="judge-card${judge.isReady ? ' ready' : ''}">
       <span class="judge-ready-indicator"></span>
       <span class="judge-name" title="${escapeAttr(judge.deviceName)}">${escapeHtml(judge.deviceName)}</span>
       <span class="judge-gates">${judge.gateStart}–${judge.gateEnd}</span>
     </div>
-  `).join('');
+  `,
+    )
+    .join('');
 
   if (emptyState) {
     emptyState.insertAdjacentHTML('beforebegin', cardsHtml);
@@ -386,7 +405,7 @@ export function updateFaultSummaryPanel(): void {
 
   if (faultsByBib.size === 0) {
     const cards = summaryList.querySelectorAll('.fault-summary-card');
-    cards.forEach(card => card.remove());
+    cards.forEach((card) => card.remove());
     return;
   }
 
@@ -405,17 +424,21 @@ export function updateFaultSummaryPanel(): void {
     const run = parseInt(runStr, 10) as Run;
 
     const isFinalized = store.isRacerFinalized(bib, run);
-    const activeFaults = racerFaults.filter(f => !f.markedForDeletion);
-    const penaltySeconds = state.usePenaltyMode ? activeFaults.length * state.penaltySeconds : 0;
+    const activeFaults = racerFaults.filter((f) => !f.markedForDeletion);
+    const penaltySeconds = state.usePenaltyMode
+      ? activeFaults.length * state.penaltySeconds
+      : 0;
 
-    const faultRows = racerFaults.map(fault => {
-      const isMarkedForDeletion = fault.markedForDeletion;
-      const deletionInfo = isMarkedForDeletion && fault.markedForDeletionBy
-        ? `${t('deletionPending', lang)} (${fault.markedForDeletionBy})`
-        : '';
-      const hasNotes = fault.notes && fault.notes.length > 0;
+    const faultRows = racerFaults
+      .map((fault) => {
+        const isMarkedForDeletion = fault.markedForDeletion;
+        const deletionInfo =
+          isMarkedForDeletion && fault.markedForDeletionBy
+            ? `${t('deletionPending', lang)} (${fault.markedForDeletionBy})`
+            : '';
+        const hasNotes = fault.notes && fault.notes.length > 0;
 
-      return `
+        return `
         <div class="fault-entry-row${isMarkedForDeletion ? ' marked-for-deletion' : ''}" data-fault-id="${escapeAttr(fault.id)}">
           <div class="fault-gate-info">
             <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${escapeHtml(String(fault.gateNumber))}</span>
@@ -433,15 +456,18 @@ export function updateFaultSummaryPanel(): void {
             </button>
             <button class="fault-row-btn delete-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}">
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                ${isMarkedForDeletion
-                  ? '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/>'
-                  : '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'}
+                ${
+                  isMarkedForDeletion
+                    ? '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/>'
+                    : '<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'
+                }
               </svg>
             </button>
           </div>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     const actionHtml = isFinalized
       ? `<div class="finalized-badge">
@@ -481,7 +507,7 @@ export function updateFaultSummaryPanel(): void {
   }
 
   const existingCards = summaryList.querySelectorAll('.fault-summary-card');
-  existingCards.forEach(card => card.remove());
+  existingCards.forEach((card) => card.remove());
 
   if (emptyState) {
     emptyState.insertAdjacentHTML('beforebegin', cardsHtml.join(''));
@@ -491,17 +517,19 @@ export function updateFaultSummaryPanel(): void {
 
   // Add click handlers
   const finalizeButtons = summaryList.querySelectorAll('.finalize-btn');
-  finalizeButtons.forEach(btn => {
+  finalizeButtons.forEach((btn) => {
     btn.addEventListener('click', handleFinalizeClick);
   });
 
   const editFaultButtons = summaryList.querySelectorAll('.edit-fault-btn');
-  editFaultButtons.forEach(btn => {
+  editFaultButtons.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const faultId = (btn as HTMLElement).dataset.faultId;
       if (faultId) {
-        const fault = store.getState().faultEntries.find(f => f.id === faultId);
+        const fault = store
+          .getState()
+          .faultEntries.find((f) => f.id === faultId);
         if (fault) {
           dispatchOpenFaultEditModal(fault);
         }
@@ -510,12 +538,14 @@ export function updateFaultSummaryPanel(): void {
   });
 
   const deleteFaultButtons = summaryList.querySelectorAll('.delete-fault-btn');
-  deleteFaultButtons.forEach(btn => {
+  deleteFaultButtons.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const faultId = (btn as HTMLElement).dataset.faultId;
       if (faultId) {
-        const fault = store.getState().faultEntries.find(f => f.id === faultId);
+        const fault = store
+          .getState()
+          .faultEntries.find((f) => f.id === faultId);
         if (fault) {
           if (fault.markedForDeletion) {
             handleRejectFaultDeletion(fault);
@@ -535,7 +565,9 @@ function handleRejectFaultDeletion(fault: FaultEntry): void {
   const success = store.rejectFaultDeletion(fault.id);
 
   if (success) {
-    const restoredFault = store.getState().faultEntries.find(f => f.id === fault.id);
+    const restoredFault = store
+      .getState()
+      .faultEntries.find((f) => f.id === fault.id);
     if (restoredFault) {
       syncFault(restoredFault);
     }
@@ -587,15 +619,19 @@ export function updatePendingDeletionsPanel(): void {
     return;
   }
 
-  const itemsHtml = pendingDeletions.map(fault => {
-    const timeStr = fault.markedForDeletionAt
-      ? new Date(fault.markedForDeletionAt).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '';
+  const itemsHtml = pendingDeletions
+    .map((fault) => {
+      const timeStr = fault.markedForDeletionAt
+        ? new Date(fault.markedForDeletionAt).toLocaleTimeString(
+            lang === 'de' ? 'de-DE' : 'en-US',
+            {
+              hour: '2-digit',
+              minute: '2-digit',
+            },
+          )
+        : '';
 
-    return `
+      return `
       <div class="pending-deletion-item" data-fault-id="${escapeAttr(fault.id)}">
         <div class="pending-deletion-info">
           <span class="pending-deletion-fault">
@@ -619,16 +655,17 @@ export function updatePendingDeletionsPanel(): void {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   list.innerHTML = itemsHtml;
 
-  list.querySelectorAll('.pending-deletion-btn.approve').forEach(btn => {
+  list.querySelectorAll('.pending-deletion-btn.approve').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const faultId = (btn as HTMLElement).dataset.faultId;
       if (faultId) {
-        const fault = pendingDeletions.find(f => f.id === faultId);
+        const fault = pendingDeletions.find((f) => f.id === faultId);
         if (fault) {
           handleApproveFaultDeletion(fault);
         }
@@ -636,12 +673,12 @@ export function updatePendingDeletionsPanel(): void {
     });
   });
 
-  list.querySelectorAll('.pending-deletion-btn.reject').forEach(btn => {
+  list.querySelectorAll('.pending-deletion-btn.reject').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const faultId = (btn as HTMLElement).dataset.faultId;
       if (faultId) {
-        const fault = pendingDeletions.find(f => f.id === faultId);
+        const fault = pendingDeletions.find((f) => f.id === faultId);
         if (fault) {
           handleRejectFaultDeletion(fault);
         }
@@ -665,7 +702,10 @@ function handleFinalizeClick(event: Event): void {
   feedbackSuccess();
 
   const state = store.getState();
-  showToast(`#${bib.padStart(3, '0')} ${t('finalized', state.currentLang)}`, 'success');
+  showToast(
+    `#${bib.padStart(3, '0')} ${t('finalized', state.currentLang)}`,
+    'success',
+  );
 
   updateFaultSummaryPanel();
 }

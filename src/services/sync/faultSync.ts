@@ -3,20 +3,24 @@
  * Handles fault cloud operations and gate assignment coordination
  */
 
-import { store } from '../../store';
-import { fetchWithTimeout } from '../../utils/errors';
 import { t } from '../../i18n/translations';
+import { store } from '../../store';
+import type { FaultEntry, GateAssignment } from '../../types';
+import { fetchWithTimeout } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 import { getAuthHeaders } from '../auth';
 import { FAULTS_API_BASE, FETCH_TIMEOUT } from './types';
-import type { FaultEntry, GateAssignment } from '../../types';
 
 /**
  * Callbacks for fault sync operations
  */
 export interface FaultSyncCallbacks {
   onResetFastPolling: () => void;
-  showToast: (message: string, type?: 'success' | 'warning' | 'error', duration?: number) => void;
+  showToast: (
+    message: string,
+    type?: 'success' | 'warning' | 'error',
+    duration?: number,
+  ) => void;
 }
 
 let callbacks: FaultSyncCallbacks | null = null;
@@ -37,7 +41,9 @@ export function initializeFaultSync(syncCallbacks: FaultSyncCallbacks): void {
 function updateGateAssignments(assignments: GateAssignment[]): void {
   const state = store.getState();
   // Filter out this device's assignment
-  otherGateAssignments = assignments.filter(a => a.deviceId !== state.deviceId);
+  otherGateAssignments = assignments.filter(
+    (a) => a.deviceId !== state.deviceId,
+  );
 }
 
 /**
@@ -59,7 +65,7 @@ export async function fetchCloudFaults(): Promise<void> {
     const params = new URLSearchParams({
       raceId: state.raceId,
       deviceId: state.deviceId,
-      deviceName: state.deviceName
+      deviceName: state.deviceName,
     });
 
     // Include gate assignment and ready status if this device is a gate judge
@@ -73,7 +79,7 @@ export async function fetchCloudFaults(): Promise<void> {
     const response = await fetchWithTimeout(
       `${FAULTS_API_BASE}?${params}`,
       { headers: getAuthHeaders() },
-      FETCH_TIMEOUT
+      FETCH_TIMEOUT,
     );
 
     if (!response.ok) {
@@ -93,7 +99,9 @@ export async function fetchCloudFaults(): Promise<void> {
 
     const cloudFaults = Array.isArray(data.faults) ? data.faults : [];
     const deletedIds = Array.isArray(data.deletedIds)
-      ? data.deletedIds.filter((id: unknown): id is string => typeof id === 'string')
+      ? data.deletedIds.filter(
+          (id: unknown): id is string => typeof id === 'string',
+        )
       : [];
 
     // Remove locally any faults that were deleted from cloud
@@ -106,7 +114,9 @@ export async function fetchCloudFaults(): Promise<void> {
       const added = store.mergeFaultsFromCloud(cloudFaults, deletedIds);
       if (added > 0) {
         const lang = store.getState().currentLang;
-        callbacks?.showToast(t('syncedFaultsFromCloud', lang).replace('{count}', String(added)));
+        callbacks?.showToast(
+          t('syncedFaultsFromCloud', lang).replace('{count}', String(added)),
+        );
       }
     }
 
@@ -117,9 +127,13 @@ export async function fetchCloudFaults(): Promise<void> {
   } catch (error) {
     logger.error('Fault sync fetch error:', error);
     // Dispatch event so UI can show fault sync status
-    window.dispatchEvent(new CustomEvent('fault-sync-error', {
-      detail: { error: error instanceof Error ? error.message : 'Unknown error' }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('fault-sync-error', {
+        detail: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      }),
+    );
   }
 }
 
@@ -142,10 +156,10 @@ export async function sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
           deviceName: state.deviceName,
           gateRange: state.gateAssignment,
           isReady: state.isJudgeReady,
-          firstGateColor: state.firstGateColor
-        })
+          firstGateColor: state.firstGateColor,
+        }),
       },
-      FETCH_TIMEOUT
+      FETCH_TIMEOUT,
     );
 
     if (!response.ok) {
@@ -168,7 +182,11 @@ export async function sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
 /**
  * Delete fault from cloud
  */
-export async function deleteFaultFromCloudApi(faultId: string, faultDeviceId?: string, approvedBy?: string): Promise<boolean> {
+export async function deleteFaultFromCloudApi(
+  faultId: string,
+  faultDeviceId?: string,
+  approvedBy?: string,
+): Promise<boolean> {
   const state = store.getState();
   if (!state.settings.sync || !state.raceId) return false;
 
@@ -182,10 +200,10 @@ export async function deleteFaultFromCloudApi(faultId: string, faultDeviceId?: s
           faultId,
           deviceId: faultDeviceId || state.deviceId,
           deviceName: state.deviceName,
-          approvedBy: approvedBy || state.deviceName
-        })
+          approvedBy: approvedBy || state.deviceName,
+        }),
       },
-      FETCH_TIMEOUT
+      FETCH_TIMEOUT,
     );
 
     if (!response.ok) {

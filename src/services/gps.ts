@@ -8,14 +8,14 @@ import { batteryService } from './battery';
 const GPS_OPTIONS_NORMAL: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 10000,
-  maximumAge: 10000
+  maximumAge: 10000,
 };
 
 // Low battery: disable high accuracy to save significant power
 const GPS_OPTIONS_LOW_BATTERY: PositionOptions = {
   enableHighAccuracy: false,
   timeout: 15000,
-  maximumAge: 15000
+  maximumAge: 15000,
 };
 
 // Accuracy thresholds (in meters)
@@ -60,7 +60,7 @@ class GpsService {
       this.watchId = navigator.geolocation.watchPosition(
         (position) => this.handlePosition(position),
         (error) => this.handleError(error),
-        options
+        options,
       );
 
       // Add visibility change handler to pause/resume GPS for battery optimization
@@ -84,7 +84,7 @@ class GpsService {
               this.watchId = navigator.geolocation.watchPosition(
                 (position) => this.handlePosition(position),
                 (error) => this.handleError(error),
-                opts
+                opts,
               );
             }
           }
@@ -100,14 +100,16 @@ class GpsService {
 
           const shouldUseLowPower = batteryService.isLowBattery();
           if (shouldUseLowPower !== this.usingLowPowerMode) {
-            logger.debug(`[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`);
+            logger.debug(
+              `[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`,
+            );
             // Restart watch with new options
             navigator.geolocation.clearWatch(this.watchId);
             const opts = this.getGpsOptions();
             this.watchId = navigator.geolocation.watchPosition(
               (position) => this.handlePosition(position),
               (error) => this.handleError(error),
-              opts
+              opts,
             );
           }
         });
@@ -118,7 +120,10 @@ class GpsService {
       logger.error('Failed to start GPS:', error);
       // Clean up visibility handler if it was registered before error
       if (this.visibilityHandler) {
-        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        document.removeEventListener(
+          'visibilitychange',
+          this.visibilityHandler,
+        );
         this.visibilityHandler = null;
       }
       store.setGpsStatus('inactive');
@@ -207,13 +212,15 @@ class GpsService {
   /**
    * Get current coordinates for entry
    */
-  getCoordinates(): { latitude: number; longitude: number; accuracy: number } | undefined {
+  getCoordinates():
+    | { latitude: number; longitude: number; accuracy: number }
+    | undefined {
     if (!this.lastPosition) return undefined;
 
     return {
       latitude: this.lastPosition.coords.latitude,
       longitude: this.lastPosition.coords.longitude,
-      accuracy: this.lastPosition.coords.accuracy
+      accuracy: this.lastPosition.coords.accuracy,
     };
   }
 
@@ -268,7 +275,7 @@ class GpsService {
           resolve(position);
         },
         () => resolve(null),
-        this.getGpsOptions()
+        this.getGpsOptions(),
       );
     });
   }

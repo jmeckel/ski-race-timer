@@ -6,33 +6,36 @@
  */
 
 import type {
-  AppState,
-  Entry,
-  FaultEntry,
-  Settings,
   Action,
-  SyncStatus,
-  TimingPoint,
-  Run,
-  Language,
-  SyncQueueItem,
+  AppState,
   DeviceInfo,
   DeviceRole,
-  GateColor
+  Entry,
+  FaultEntry,
+  GateColor,
+  Language,
+  Run,
+  Settings,
+  SyncQueueItem,
+  SyncStatus,
+  TimingPoint,
 } from '../types';
-import { generateDeviceId, generateDeviceName } from '../utils/id';
-import { isValidEntry, migrateSchema } from '../utils/validation';
 import { SCHEMA_VERSION } from '../types';
+import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { logger } from '../utils/logger';
+import { isValidEntry, migrateSchema } from '../utils/validation';
 
 // Import slices
 import * as entriesSlice from './slices/entriesSlice';
 import * as faultsSlice from './slices/faultsSlice';
-import * as uiSlice from './slices/uiSlice';
 import * as gateJudgeSlice from './slices/gateJudgeSlice';
-import * as syncSlice from './slices/syncSlice';
-import { DEFAULT_SETTINGS, type BooleanSettingKey } from './slices/settingsSlice';
 import * as settingsSlice from './slices/settingsSlice';
+import {
+  type BooleanSettingKey,
+  DEFAULT_SETTINGS,
+} from './slices/settingsSlice';
+import * as syncSlice from './slices/syncSlice';
+import * as uiSlice from './slices/uiSlice';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -48,7 +51,7 @@ const STORAGE_KEYS = {
   DEVICE_ROLE: 'skiTimerDeviceRole',
   GATE_ASSIGNMENT: 'skiTimerGateAssignment',
   FIRST_GATE_COLOR: 'skiTimerFirstGateColor',
-  FAULT_ENTRIES: 'skiTimerFaultEntries'
+  FAULT_ENTRIES: 'skiTimerFaultEntries',
 } as const;
 
 // Maximum pending notification queue size
@@ -56,15 +59,26 @@ const MAX_NOTIFICATION_QUEUE = 100;
 
 // All state keys that get persisted to localStorage
 const PERSISTENT_KEYS = [
-  'entries', 'settings', 'currentLang', 'deviceName', 'raceId',
-  'lastSyncedRaceId', 'syncQueue', 'deviceRole', 'gateAssignment',
-  'firstGateColor', 'faultEntries'
+  'entries',
+  'settings',
+  'currentLang',
+  'deviceName',
+  'raceId',
+  'lastSyncedRaceId',
+  'syncQueue',
+  'deviceRole',
+  'gateAssignment',
+  'firstGateColor',
+  'faultEntries',
 ] as const;
 
 /**
  * State change listener type
  */
-type StateListener = (stateSnapshot: Readonly<AppState>, changedKeys: (keyof AppState)[]) => void;
+type StateListener = (
+  stateSnapshot: Readonly<AppState>,
+  changedKeys: (keyof AppState)[],
+) => void;
 
 // Error callback for listener exceptions
 type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
@@ -75,7 +89,10 @@ class Store {
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private dirtySlices: Set<string> = new Set(); // Track which slices need saving
   private isNotifying = false;
-  private pendingNotifications: { keys: (keyof AppState)[]; stateSnapshot: AppState }[] = [];
+  private pendingNotifications: {
+    keys: (keyof AppState)[];
+    stateSnapshot: AppState;
+  }[] = [];
   private listenerErrorCallback: ListenerErrorCallback | null = null;
   private failedListenerCount = 0;
 
@@ -105,8 +122,8 @@ class Store {
         const parsed = JSON.parse(entriesJson);
         if (Array.isArray(parsed)) {
           entries = parsed
-            .filter(e => isValidEntry(e))
-            .map(e => ({ ...e, run: e.run ?? 1 }));
+            .filter((e) => isValidEntry(e))
+            .map((e) => ({ ...e, run: e.run ?? 1 }));
         }
       }
     } catch (e) {
@@ -141,16 +158,20 @@ class Store {
       localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, deviceName);
     }
     const raceId = localStorage.getItem(STORAGE_KEYS.RACE_ID) || '';
-    const lastSyncedRaceId = localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
+    const lastSyncedRaceId =
+      localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
 
     // Load Gate Judge state
-    const deviceRole = (localStorage.getItem(STORAGE_KEYS.DEVICE_ROLE) || 'timer') as DeviceRole;
+    const deviceRole = (localStorage.getItem(STORAGE_KEYS.DEVICE_ROLE) ||
+      'timer') as DeviceRole;
     let gateAssignment: [number, number] | null = null;
     let firstGateColor: GateColor = 'red';
     let faultEntries: FaultEntry[] = [];
 
     try {
-      const gateAssignmentJson = localStorage.getItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+      const gateAssignmentJson = localStorage.getItem(
+        STORAGE_KEYS.GATE_ASSIGNMENT,
+      );
       if (gateAssignmentJson) {
         const parsed = JSON.parse(gateAssignmentJson);
         if (Array.isArray(parsed) && parsed.length === 2) {
@@ -215,7 +236,7 @@ class Store {
       gpsAccuracy: null,
       gpsStatus: 'inactive',
       cameraReady: false,
-      cameraError: null
+      cameraError: null,
     };
   }
 
@@ -236,8 +257,13 @@ class Store {
 
     // Check queue bounds before adding
     if (this.pendingNotifications.length >= MAX_NOTIFICATION_QUEUE) {
-      logger.warn(`Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`);
-      this.pendingNotifications.splice(0, Math.floor(MAX_NOTIFICATION_QUEUE / 2));
+      logger.warn(
+        `Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`,
+      );
+      this.pendingNotifications.splice(
+        0,
+        Math.floor(MAX_NOTIFICATION_QUEUE / 2),
+      );
     }
 
     this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
@@ -325,17 +351,27 @@ class Store {
 
       // Only serialize slices that actually changed
       if (dirty.has('entries')) {
-        const entriesToSave = this.state.entries.map(entry => {
-          if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
+        const entriesToSave = this.state.entries.map((entry) => {
+          if (
+            entry.photo &&
+            entry.photo !== 'indexeddb' &&
+            entry.photo.length > 20
+          ) {
             return { ...entry, photo: 'indexeddb' };
           }
           return entry;
         });
-        localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entriesToSave));
+        localStorage.setItem(
+          STORAGE_KEYS.ENTRIES,
+          JSON.stringify(entriesToSave),
+        );
       }
 
       if (dirty.has('settings')) {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(this.state.settings));
+        localStorage.setItem(
+          STORAGE_KEYS.SETTINGS,
+          JSON.stringify(this.state.settings),
+        );
       }
 
       if (dirty.has('currentLang')) {
@@ -351,11 +387,17 @@ class Store {
       }
 
       if (dirty.has('lastSyncedRaceId')) {
-        localStorage.setItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID, this.state.lastSyncedRaceId);
+        localStorage.setItem(
+          STORAGE_KEYS.LAST_SYNCED_RACE_ID,
+          this.state.lastSyncedRaceId,
+        );
       }
 
       if (dirty.has('syncQueue')) {
-        localStorage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(this.state.syncQueue));
+        localStorage.setItem(
+          STORAGE_KEYS.SYNC_QUEUE,
+          JSON.stringify(this.state.syncQueue),
+        );
       }
 
       if (dirty.has('deviceRole')) {
@@ -364,23 +406,35 @@ class Store {
 
       if (dirty.has('gateAssignment')) {
         if (this.state.gateAssignment) {
-          localStorage.setItem(STORAGE_KEYS.GATE_ASSIGNMENT, JSON.stringify(this.state.gateAssignment));
+          localStorage.setItem(
+            STORAGE_KEYS.GATE_ASSIGNMENT,
+            JSON.stringify(this.state.gateAssignment),
+          );
         } else {
           localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
         }
       }
 
       if (dirty.has('firstGateColor')) {
-        localStorage.setItem(STORAGE_KEYS.FIRST_GATE_COLOR, this.state.firstGateColor);
+        localStorage.setItem(
+          STORAGE_KEYS.FIRST_GATE_COLOR,
+          this.state.firstGateColor,
+        );
       }
 
       if (dirty.has('faultEntries')) {
-        localStorage.setItem(STORAGE_KEYS.FAULT_ENTRIES, JSON.stringify(this.state.faultEntries));
+        localStorage.setItem(
+          STORAGE_KEYS.FAULT_ENTRIES,
+          JSON.stringify(this.state.faultEntries),
+        );
       }
 
       // Schema version only needs writing when entries or settings change
       if (dirty.has('entries') || dirty.has('settings')) {
-        localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
+        localStorage.setItem(
+          STORAGE_KEYS.SCHEMA_VERSION,
+          String(SCHEMA_VERSION),
+        );
       }
     } catch (e) {
       logger.error('Failed to save to storage:', e);
@@ -394,10 +448,17 @@ class Store {
         const { usage, quota } = await navigator.storage.estimate();
         if (quota && usage) {
           const usagePercent = usage / quota;
-          if (usagePercent > 0.9) {
-            window.dispatchEvent(new CustomEvent('storage-warning', {
-              detail: { usage, quota, percent: Math.round(usagePercent * 100) }
-            }));
+          if (usagePercent > 0.75) {
+            window.dispatchEvent(
+              new CustomEvent('storage-warning', {
+                detail: {
+                  usage,
+                  quota,
+                  percent: Math.round(usagePercent * 100),
+                  critical: usagePercent > 0.9,
+                },
+              }),
+            );
           }
         }
       } catch (e) {
@@ -407,15 +468,18 @@ class Store {
   }
 
   private dispatchStorageError(error: Error) {
-    window.dispatchEvent(new CustomEvent('storage-error', {
-      detail: {
-        message: error.message,
-        isQuotaError: error.name === 'QuotaExceededError' ||
-                      error.message.includes('quota') ||
-                      error.message.includes('storage'),
-        entryCount: this.state.entries.length
-      }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('storage-error', {
+        detail: {
+          message: error.message,
+          isQuotaError:
+            error.name === 'QuotaExceededError' ||
+            error.message.includes('quota') ||
+            error.message.includes('storage'),
+          entryCount: this.state.entries.length,
+        },
+      }),
+    );
   }
 
   // ===== Entry Actions (delegated to entriesSlice) =====
@@ -425,14 +489,14 @@ class Store {
       this.state.entries,
       entry,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     this.setState({
       entries: result.entries,
       undoStack: result.undoStack,
       redoStack: result.redoStack,
       lastRecordedEntry: entry,
-      isRecording: false
+      isRecording: false,
     });
 
     if (this.state.settings.sync && this.state.raceId) {
@@ -445,13 +509,13 @@ class Store {
       this.state.entries,
       id,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     if (result) {
       this.setState({
         entries: result.entries,
         undoStack: result.undoStack,
-        redoStack: result.redoStack
+        redoStack: result.redoStack,
       });
     }
   }
@@ -461,7 +525,7 @@ class Store {
       this.state.entries,
       ids,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -469,7 +533,7 @@ class Store {
         undoStack: result.undoStack,
         redoStack: result.redoStack,
         selectMode: false,
-        selectedEntries: new Set()
+        selectedEntries: new Set(),
       });
     }
   }
@@ -478,7 +542,7 @@ class Store {
     const result = entriesSlice.clearAll(
       this.state.entries,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -486,7 +550,7 @@ class Store {
         undoStack: result.undoStack,
         redoStack: result.redoStack,
         selectMode: false,
-        selectedEntries: new Set()
+        selectedEntries: new Set(),
       });
     }
   }
@@ -497,13 +561,13 @@ class Store {
       id,
       updates,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     if (result) {
       this.setState({
         entries: result.entries,
         undoStack: result.undoStack,
-        redoStack: result.redoStack
+        redoStack: result.redoStack,
       });
       return true;
     }
@@ -529,12 +593,12 @@ class Store {
     const result = entriesSlice.undo(
       this.state.entries,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     this.setState({
       entries: result.entries,
       undoStack: result.undoStack,
-      redoStack: result.redoStack
+      redoStack: result.redoStack,
     });
     return result.result;
   }
@@ -543,12 +607,12 @@ class Store {
     const result = entriesSlice.redo(
       this.state.entries,
       this.state.undoStack,
-      this.state.redoStack
+      this.state.redoStack,
     );
     this.setState({
       entries: result.entries,
       undoStack: result.undoStack,
-      redoStack: result.redoStack
+      redoStack: result.redoStack,
     });
     return result.result;
   }
@@ -561,12 +625,19 @@ class Store {
   }
 
   removeFromSyncQueue(entryId: string) {
-    const syncQueue = entriesSlice.removeFromSyncQueue(this.state.syncQueue, entryId);
+    const syncQueue = entriesSlice.removeFromSyncQueue(
+      this.state.syncQueue,
+      entryId,
+    );
     this.setState({ syncQueue });
   }
 
   updateSyncQueueItem(entryId: string, updates: Partial<SyncQueueItem>) {
-    const syncQueue = entriesSlice.updateSyncQueueItem(this.state.syncQueue, entryId, updates);
+    const syncQueue = entriesSlice.updateSyncQueueItem(
+      this.state.syncQueue,
+      entryId,
+      updates,
+    );
     this.setState({ syncQueue });
   }
 
@@ -597,15 +668,24 @@ class Store {
   }
 
   setSelectMode(enabled: boolean) {
-    this.setState(uiSlice.setSelectMode(enabled, this.state.selectedEntries), false);
+    this.setState(
+      uiSlice.setSelectMode(enabled, this.state.selectedEntries),
+      false,
+    );
   }
 
   toggleEntrySelection(id: string) {
-    this.setState(uiSlice.toggleEntrySelection(id, this.state.selectedEntries), false);
+    this.setState(
+      uiSlice.toggleEntrySelection(id, this.state.selectedEntries),
+      false,
+    );
   }
 
   selectAllEntries() {
-    this.setState(uiSlice.selectAllEntries(this.state.entries.map(e => e.id)), false);
+    this.setState(
+      uiSlice.selectAllEntries(this.state.entries.map((e) => e.id)),
+      false,
+    );
   }
 
   clearSelection() {
@@ -634,7 +714,7 @@ class Store {
     return gateJudgeSlice.getGateColor(
       gateNumber,
       this.state.gateAssignment,
-      this.state.firstGateColor
+      this.state.firstGateColor,
     );
   }
 
@@ -655,19 +735,32 @@ class Store {
   }
 
   toggleChiefJudgeView() {
-    this.setState(gateJudgeSlice.toggleChiefJudgeView(this.state.isChiefJudgeView), false);
+    this.setState(
+      gateJudgeSlice.toggleChiefJudgeView(this.state.isChiefJudgeView),
+      false,
+    );
   }
 
   finalizeRacer(bib: string, run: Run) {
-    this.setState(gateJudgeSlice.finalizeRacer(bib, run, this.state.finalizedRacers), false);
+    this.setState(
+      gateJudgeSlice.finalizeRacer(bib, run, this.state.finalizedRacers),
+      false,
+    );
   }
 
   unfinalizeRacer(bib: string, run: Run) {
-    this.setState(gateJudgeSlice.unfinalizeRacer(bib, run, this.state.finalizedRacers), false);
+    this.setState(
+      gateJudgeSlice.unfinalizeRacer(bib, run, this.state.finalizedRacers),
+      false,
+    );
   }
 
   isRacerFinalized(bib: string, run: Run): boolean {
-    return gateJudgeSlice.isRacerFinalized(bib, run, this.state.finalizedRacers);
+    return gateJudgeSlice.isRacerFinalized(
+      bib,
+      run,
+      this.state.finalizedRacers,
+    );
   }
 
   clearFinalizedRacers() {
@@ -688,18 +781,33 @@ class Store {
 
   // ===== Fault Entry Actions (delegated to faultsSlice) =====
 
-  addFaultEntry(fault: Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>) {
-    const faultEntries = faultsSlice.addFaultEntry(this.state.faultEntries, fault);
+  addFaultEntry(
+    fault: Omit<
+      FaultEntry,
+      'currentVersion' | 'versionHistory' | 'markedForDeletion'
+    >,
+  ) {
+    const faultEntries = faultsSlice.addFaultEntry(
+      this.state.faultEntries,
+      fault,
+    );
     this.setState({ faultEntries });
   }
 
   deleteFaultEntry(id: string) {
-    const faultEntries = faultsSlice.deleteFaultEntry(this.state.faultEntries, id);
+    const faultEntries = faultsSlice.deleteFaultEntry(
+      this.state.faultEntries,
+      id,
+    );
     this.setState({ faultEntries });
   }
 
   updateFaultEntry(id: string, updates: Partial<FaultEntry>): boolean {
-    const faultEntries = faultsSlice.updateFaultEntry(this.state.faultEntries, id, updates);
+    const faultEntries = faultsSlice.updateFaultEntry(
+      this.state.faultEntries,
+      id,
+      updates,
+    );
     if (faultEntries) {
       this.setState({ faultEntries });
       return true;
@@ -709,8 +817,19 @@ class Store {
 
   updateFaultEntryWithHistory(
     id: string,
-    updates: Partial<Pick<FaultEntry, 'bib' | 'run' | 'gateNumber' | 'faultType' | 'notes' | 'notesSource' | 'notesTimestamp'>>,
-    changeDescription?: string
+    updates: Partial<
+      Pick<
+        FaultEntry,
+        | 'bib'
+        | 'run'
+        | 'gateNumber'
+        | 'faultType'
+        | 'notes'
+        | 'notesSource'
+        | 'notesTimestamp'
+      >
+    >,
+    changeDescription?: string,
   ): boolean {
     const faultEntries = faultsSlice.updateFaultEntryWithHistory(
       this.state.faultEntries,
@@ -718,7 +837,7 @@ class Store {
       updates,
       this.state.deviceName,
       this.state.deviceId,
-      changeDescription
+      changeDescription,
     );
     if (faultEntries) {
       this.setState({ faultEntries });
@@ -733,7 +852,7 @@ class Store {
       id,
       versionNumber,
       this.state.deviceName,
-      this.state.deviceId
+      this.state.deviceId,
     );
     if (faultEntries) {
       this.setState({ faultEntries });
@@ -747,7 +866,7 @@ class Store {
       this.state.faultEntries,
       id,
       this.state.deviceName,
-      this.state.deviceId
+      this.state.deviceId,
     );
     if (faultEntries) {
       this.setState({ faultEntries });
@@ -760,7 +879,7 @@ class Store {
     const result = faultsSlice.approveFaultDeletion(
       this.state.faultEntries,
       id,
-      this.state.deviceName
+      this.state.deviceName,
     );
     if (result.approvedFault) {
       this.setState({ faultEntries: result.faultEntries });
@@ -773,7 +892,7 @@ class Store {
       this.state.faultEntries,
       id,
       this.state.deviceName,
-      this.state.deviceId
+      this.state.deviceId,
     );
     if (faultEntries) {
       this.setState({ faultEntries });
@@ -794,12 +913,15 @@ class Store {
     return faultsSlice.getFaultsForBib(this.state.faultEntries, bib, run);
   }
 
-  mergeFaultsFromCloud(cloudFaults: unknown[], deletedIds: string[] = []): number {
+  mergeFaultsFromCloud(
+    cloudFaults: unknown[],
+    deletedIds: string[] = [],
+  ): number {
     const result = faultsSlice.mergeFaultsFromCloud(
       this.state.faultEntries,
       cloudFaults,
       deletedIds,
-      this.state.deviceId
+      this.state.deviceId,
     );
     if (result.addedCount > 0) {
       this.setState({ faultEntries: result.faultEntries });
@@ -808,7 +930,10 @@ class Store {
   }
 
   removeDeletedCloudFaults(deletedIds: string[]): number {
-    const result = faultsSlice.removeDeletedCloudFaults(this.state.faultEntries, deletedIds);
+    const result = faultsSlice.removeDeletedCloudFaults(
+      this.state.faultEntries,
+      deletedIds,
+    );
     if (result.removedCount > 0) {
       this.setState({ faultEntries: result.faultEntries });
     }
@@ -816,7 +941,10 @@ class Store {
   }
 
   markFaultSynced(faultId: string) {
-    const faultEntries = faultsSlice.markFaultSynced(this.state.faultEntries, faultId);
+    const faultEntries = faultsSlice.markFaultSynced(
+      this.state.faultEntries,
+      faultId,
+    );
     this.setState({ faultEntries });
   }
 
@@ -860,11 +988,17 @@ class Store {
   }
 
   addConnectedDevice(device: DeviceInfo) {
-    this.setState(syncSlice.addConnectedDevice(device, this.state.connectedDevices), false);
+    this.setState(
+      syncSlice.addConnectedDevice(device, this.state.connectedDevices),
+      false,
+    );
   }
 
   removeConnectedDevice(deviceId: string) {
-    this.setState(syncSlice.removeConnectedDevice(deviceId, this.state.connectedDevices), false);
+    this.setState(
+      syncSlice.removeConnectedDevice(deviceId, this.state.connectedDevices),
+      false,
+    );
   }
 
   setCloudDeviceCount(count: number) {
@@ -881,20 +1015,29 @@ class Store {
 
   // ===== GPS State =====
 
-  setGpsStatus(status: 'inactive' | 'searching' | 'active' | 'paused', accuracy?: number) {
-    this.setState({
-      gpsStatus: status,
-      gpsAccuracy: accuracy ?? null
-    }, false);
+  setGpsStatus(
+    status: 'inactive' | 'searching' | 'active' | 'paused',
+    accuracy?: number,
+  ) {
+    this.setState(
+      {
+        gpsStatus: status,
+        gpsAccuracy: accuracy ?? null,
+      },
+      false,
+    );
   }
 
   // ===== Camera State =====
 
   setCameraReady(ready: boolean, error?: string) {
-    this.setState({
-      cameraReady: ready,
-      cameraError: error ?? null
-    }, false);
+    this.setState(
+      {
+        cameraReady: ready,
+        cameraError: error ?? null,
+      },
+      false,
+    );
   }
 
   // ===== Cloud Merge Operations =====
@@ -904,7 +1047,7 @@ class Store {
       this.state.entries,
       cloudEntries,
       deletedIds,
-      this.state.deviceId
+      this.state.deviceId,
     );
     if (result.addedCount > 0) {
       this.setState({ entries: result.entries });
@@ -913,7 +1056,10 @@ class Store {
   }
 
   removeDeletedCloudEntries(deletedIds: string[]): number {
-    const result = entriesSlice.removeDeletedCloudEntries(this.state.entries, deletedIds);
+    const result = entriesSlice.removeDeletedCloudEntries(
+      this.state.entries,
+      deletedIds,
+    );
     if (result.removedCount > 0) {
       this.setState({ entries: result.entries });
     }
@@ -923,28 +1069,41 @@ class Store {
   // ===== Export/Import =====
 
   exportData(): string {
-    return JSON.stringify({
-      version: SCHEMA_VERSION,
-      entries: this.state.entries,
-      settings: this.state.settings,
-      deviceId: this.state.deviceId,
-      deviceName: this.state.deviceName,
-      raceId: this.state.raceId,
-      exportedAt: new Date().toISOString()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: SCHEMA_VERSION,
+        entries: this.state.entries,
+        settings: this.state.settings,
+        deviceId: this.state.deviceId,
+        deviceName: this.state.deviceName,
+        raceId: this.state.raceId,
+        exportedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    );
   }
 
-  importData(jsonData: string): { success: boolean; entriesImported: number; error?: string } {
+  importData(jsonData: string): {
+    success: boolean;
+    entriesImported: number;
+    error?: string;
+  } {
     try {
       const parsed = JSON.parse(jsonData);
       const migrated = migrateSchema(parsed, this.state.deviceId);
 
-      const existingIds = new Set(this.state.entries.map(e => e.id));
-      const newEntries = migrated.entries.filter((e: Entry) => !existingIds.has(e.id));
+      const existingIds = new Set(this.state.entries.map((e) => e.id));
+      const newEntries = migrated.entries.filter(
+        (e: Entry) => !existingIds.has(e.id),
+      );
 
       if (newEntries.length > 0) {
         const entries = [...this.state.entries, ...newEntries];
-        entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        entries.sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+        );
         this.setState({ entries });
       }
 

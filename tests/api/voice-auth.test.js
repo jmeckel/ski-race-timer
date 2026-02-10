@@ -22,7 +22,7 @@ const mockRedisClient = {
 let mockRedisAvailable = true;
 let mockRedisError = false;
 
-vi.mock('../../api/lib/redis.js', () => ({
+vi.mock('../../api/lib/redis.ts', () => ({
   getRedis: vi.fn(() => {
     if (!mockRedisAvailable) return null;
     return mockRedisClient;
@@ -31,7 +31,7 @@ vi.mock('../../api/lib/redis.js', () => ({
   CLIENT_PIN_KEY: 'admin:clientPin'
 }));
 
-vi.mock('../../api/lib/jwt.js', () => ({
+vi.mock('../../api/lib/jwt.ts', () => ({
   validateAuth: vi.fn(async (req, client, key) => {
     const authHeader = req.headers?.authorization;
     if (!authHeader) {
@@ -74,7 +74,7 @@ describe('Voice API Authentication', () => {
     // Dynamic import to pick up mocks
     vi.resetModules();
     try {
-      const module = await import('../../api/v1/voice.js');
+      const module = await import('../../api/v1/voice.ts');
       handler = module.default;
     } catch {
       // voice.js may fail to import due to missing env vars or other deps
@@ -127,7 +127,7 @@ describe('Voice API Authentication', () => {
     it('voice.js should contain fail-closed auth check', async () => {
       // Read the source file to verify the pattern
       const fs = await import('fs');
-      const source = fs.readFileSync('api/v1/voice.js', 'utf-8');
+      const source = fs.readFileSync('api/v1/voice.ts', 'utf-8');
 
       // Should check for Redis unavailability and return error
       expect(source).toContain('!redisClient || hasRedisError()');
@@ -139,7 +139,7 @@ describe('Voice API Authentication', () => {
 
     it('voice.js should call validateAuth', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('api/v1/voice.js', 'utf-8');
+      const source = fs.readFileSync('api/v1/voice.ts', 'utf-8');
 
       expect(source).toContain('validateAuth(req, redisClient, CLIENT_PIN_KEY)');
       expect(source).toContain('sendAuthRequired');

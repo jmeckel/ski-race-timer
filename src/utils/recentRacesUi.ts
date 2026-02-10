@@ -1,15 +1,18 @@
-import type { RecentRace } from './recentRaces';
-import { escapeHtml, escapeAttr } from './format';
-import { store } from '../store';
 import { t } from '../i18n/translations';
+import { store } from '../store';
+import { escapeAttr, escapeHtml } from './format';
+import type { RecentRace } from './recentRaces';
 
 export function renderRecentRaceItem(race: RecentRace): string {
   const lang = store.getState().currentLang;
-  const entryText = race.entryCount !== undefined ? `${race.entryCount} ${t('entries', lang)}` : '';
+  const entryText =
+    race.entryCount !== undefined
+      ? `${race.entryCount} ${t('entries', lang)}`
+      : '';
   const safeRaceId = escapeHtml(race.raceId);
   const attrRaceId = escapeAttr(race.raceId);
   return `
-    <div class="recent-race-item" data-race-id="${attrRaceId}" tabindex="0" role="option" aria-label="${escapeAttr(t('race', lang))} ${safeRaceId}${entryText ? ', ' + entryText : ''}">
+    <div class="recent-race-item" data-race-id="${attrRaceId}" tabindex="0" role="option" aria-label="${escapeAttr(t('race', lang))} ${safeRaceId}${entryText ? `, ${entryText}` : ''}">
       <span class="recent-race-id">${safeRaceId}</span>
       <span class="recent-race-meta">${entryText}</span>
     </div>
@@ -23,7 +26,7 @@ export function renderRecentRaceItems(races: RecentRace[]): string {
 export function attachRecentRaceItemHandlers(
   dropdown: HTMLElement,
   races: RecentRace[],
-  onSelect: (race: RecentRace) => void
+  onSelect: (race: RecentRace) => void,
 ): void {
   const items = dropdown.querySelectorAll('.recent-race-item');
   items.forEach((item, index) => {
@@ -41,13 +44,14 @@ export function attachRecentRaceItemHandlers(
 
       switch (event.key) {
         case 'Enter':
-        case ' ':
+        case ' ': {
           event.preventDefault();
           const race = races[index];
           if (race) {
             onSelect(race);
           }
           break;
+        }
         case 'ArrowDown':
           event.preventDefault();
           if (index < itemsArray.length - 1) {

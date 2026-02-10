@@ -29,8 +29,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
-      include: ['api/**/*.js', 'public/**/*.js', 'src/**/*.ts'],
-      exclude: ['tests/**/*', 'node_modules/**/*', 'src/**/*.d.ts']
+      include: ['api/**/*.{js,ts}', 'public/**/*.js', 'src/**/*.ts'],
+      exclude: ['tests/**/*', 'node_modules/**/*', 'src/**/*.d.ts'],
+      thresholds: {
+        statements: 50,
+        branches: 40,
+        functions: 45,
+        lines: 50,
+      }
     },
 
     // Global test timeout

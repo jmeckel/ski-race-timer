@@ -50,7 +50,8 @@ export const translations = {
     confirmDeleteText: 'Are you sure you want to delete this entry?',
     confirmDeleteFault: 'Delete this fault?',
     confirmClearAll: 'Clear All Results',
-    clearAllText: 'This will delete all recorded entries. This action cannot be undone.',
+    clearAllText:
+      'This will delete all recorded entries. This action cannot be undone.',
     confirmUndoAdd: 'Undo Recording',
     confirmUndoAddText: 'This will delete the recorded entry. Continue?',
     delete: 'Delete',
@@ -74,7 +75,8 @@ export const translations = {
     syncError: '!',
     syncReceived: 'Synced from cloud',
     raceId: 'Race ID',
-    invalidRaceId: 'Invalid Race ID. Use letters, numbers, hyphens, underscores only.',
+    invalidRaceId:
+      'Invalid Race ID. Use letters, numbers, hyphens, underscores only.',
     deviceName: 'Time Keeper ID',
     cloudSync: 'Cloud Sync',
     syncStatus: 'Sync Status',
@@ -109,7 +111,8 @@ export const translations = {
     hapticFeedback: 'Haptic Feedback',
     soundFeedback: 'Sound Feedback',
     language: 'Language',
-    advancedSettingsHint: 'These options can affect timing accuracy. Change only if needed.',
+    advancedSettingsHint:
+      'These options can affect timing accuracy. Change only if needed.',
 
     // Settings descriptions
     simpleModeDesc: 'Simplified interface for basic timing',
@@ -135,8 +138,10 @@ export const translations = {
 
     // Race Change
     raceChangeTitle: 'Change Race',
-    raceChangeSyncedText: 'You have results from another race. Export or delete them before switching?',
-    raceChangeUnsyncedText: 'You have existing results. Keep them or delete before switching?',
+    raceChangeSyncedText:
+      'You have results from another race. Export or delete them before switching?',
+    raceChangeUnsyncedText:
+      'You have existing results. Keep them or delete before switching?',
     keepResults: 'Keep',
 
     // Misc
@@ -155,13 +160,15 @@ export const translations = {
     photoTooLarge: 'Photo too large for sync',
     syncedEntriesFromCloud: 'Synced {count} entries from cloud',
     syncedFaultsFromCloud: 'Synced {count} faults from cloud',
-    crossDeviceDuplicate: 'Duplicate: Bib {bib} {point} already recorded by {device}',
+    crossDeviceDuplicate:
+      'Duplicate: Bib {bib} {point} already recorded by {device}',
 
     // Photo sync settings
     syncPhotos: 'Sync Photos',
     syncPhotosDesc: 'Share photos across devices via cloud',
     syncPhotosWarning: 'Enable Photo Sync',
-    syncPhotosWarningText: 'Enabling photo sync will transfer the following data:',
+    syncPhotosWarningText:
+      'Enabling photo sync will transfer the following data:',
     photosToUpload: 'Photos to upload',
     photosToDownload: 'Photos to download',
     totalDataVolume: 'Total data volume',
@@ -180,7 +187,8 @@ export const translations = {
     enterPinToJoinRace: 'Enter your PIN to join this race.',
     enterPinForChiefJudge: 'Enter your PIN to access Chief Judge mode.',
     enterChiefJudgePin: 'Enter Chief Judge PIN',
-    enterPinForChiefJudgeInfo: 'Chief Judge mode requires a separate PIN. First use sets the PIN.',
+    enterPinForChiefJudgeInfo:
+      'Chief Judge mode requires a separate PIN. First use sets the PIN.',
     syncRequiresPin: 'Sync disabled. Enable sync and enter PIN to reconnect.',
     incorrectPin: 'Incorrect PIN',
     verify: 'Verify',
@@ -248,8 +256,8 @@ export const translations = {
     onboardingWelcomeDesc: 'GPS-synchronized timing for ski races',
     getStarted: 'Get Started',
     skipSetup: 'Skip',
-    onboardingRole: 'What\'s Your Role?',
-    onboardingRoleDesc: 'Choose how you\'ll be helping at the race',
+    onboardingRole: "What's Your Role?",
+    onboardingRoleDesc: "Choose how you'll be helping at the race",
     roleTimerTitle: 'Timer',
     roleTimerDesc: 'You will record start and finish times',
     roleJudgeTitle: 'Gate Judge',
@@ -259,18 +267,20 @@ export const translations = {
     onboardingDeviceNameJudge: 'Your Name',
     onboardingDeviceNameJudgeDesc: 'This identifies you as the gate judge',
     onboardingPhoto: 'Photo Documentation',
-    onboardingPhotoDesc: 'Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.',
+    onboardingPhotoDesc:
+      'Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.',
     enablePhotoCapture: 'Enable Photo Capture',
     photoCaptureLabel: 'Photo Capture',
     onboardingGates: 'Your Gate Assignment',
-    onboardingGatesDesc: 'Enter the gate numbers you\'ll be watching. You can change this later.',
+    onboardingGatesDesc:
+      "Enter the gate numbers you'll be watching. You can change this later.",
     onboardingRaceSetup: 'Join a Race',
     onboardingRaceSetupDesc: 'Enter a race ID to sync with other timers',
     skipForNow: 'Skip for now',
     onboardingReady: 'Ready to Time!',
     onboardingReadyJudge: 'Ready to Judge!',
     onboardingTip: 'Tap the big blue button to record timestamps',
-    onboardingTipJudge: 'Tap a racer\'s bib to record a fault',
+    onboardingTipJudge: "Tap a racer's bib to record a fault",
     startTiming: 'Start Timing',
     startJudging: 'Start Judging',
     continue: 'Continue',
@@ -287,7 +297,8 @@ export const translations = {
     recentRaces: 'Recent Races',
     noRecentRaces: 'No races from today',
     errorOccurred: 'Something went wrong',
-    errorRecoveryMessage: 'The app encountered an error. You can dismiss this and continue, or reload the app.',
+    errorRecoveryMessage:
+      'The app encountered an error. You can dismiss this and continue, or reload the app.',
     dismiss: 'Dismiss',
     reload: 'Reload',
     updateAvailable: 'Update available! Reload to get the latest version.',
@@ -394,7 +405,8 @@ export const translations = {
 
     // Deletion Workflow
     markForDeletion: 'Mark for Deletion',
-    markForDeletionText: 'This fault will be marked for deletion and requires Chief Judge approval to permanently delete.',
+    markForDeletionText:
+      'This fault will be marked for deletion and requires Chief Judge approval to permanently delete.',
     markedForDeletion: 'Marked for deletion',
     deletionPending: 'Deletion pending',
     pendingDeletions: 'Pending Deletions',
@@ -466,7 +478,7 @@ export const translations = {
 
     // Auth
     sessionExpired: 'Session expired. Please re-enter your PIN.',
-    authSuccess: 'Authentication successful'
+    authSuccess: 'Authentication successful',
   },
 
   de: {
@@ -518,7 +530,8 @@ export const translations = {
     confirmDeleteText: 'Möchten Sie diesen Eintrag wirklich löschen?',
     confirmDeleteFault: 'Diesen Fehler löschen?',
     confirmClearAll: 'Alle löschen',
-    clearAllText: 'Alle Einträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+    clearAllText:
+      'Alle Einträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
     confirmUndoAdd: 'Erfassung rückgängig',
     confirmUndoAddText: 'Der erfasste Eintrag wird gelöscht. Fortfahren?',
     delete: 'Löschen',
@@ -542,7 +555,8 @@ export const translations = {
     syncError: '!',
     syncReceived: 'Von Cloud synchronisiert',
     raceId: 'Rennen-ID',
-    invalidRaceId: 'Ungültige Rennen-ID. Nur Buchstaben, Zahlen, Bindestriche, Unterstriche.',
+    invalidRaceId:
+      'Ungültige Rennen-ID. Nur Buchstaben, Zahlen, Bindestriche, Unterstriche.',
     deviceName: 'Zeitnehmer-ID',
     cloudSync: 'Cloud-Sync',
     syncStatus: 'Sync-Status',
@@ -577,7 +591,8 @@ export const translations = {
     hapticFeedback: 'Vibration',
     soundFeedback: 'Signalton',
     language: 'Sprache',
-    advancedSettingsHint: 'Diese Optionen beeinflussen die Zeitmessung. Nur bei Bedarf ändern.',
+    advancedSettingsHint:
+      'Diese Optionen beeinflussen die Zeitmessung. Nur bei Bedarf ändern.',
 
     // Settings descriptions
     simpleModeDesc: 'Vereinfachte Oberfläche für einfache Zeitmessung',
@@ -603,8 +618,10 @@ export const translations = {
 
     // Race Change
     raceChangeTitle: 'Rennen wechseln',
-    raceChangeSyncedText: 'Es gibt Ergebnisse von einem anderen Rennen. Exportieren oder löschen?',
-    raceChangeUnsyncedText: 'Es gibt bestehende Ergebnisse. Behalten oder löschen?',
+    raceChangeSyncedText:
+      'Es gibt Ergebnisse von einem anderen Rennen. Exportieren oder löschen?',
+    raceChangeUnsyncedText:
+      'Es gibt bestehende Ergebnisse. Behalten oder löschen?',
     keepResults: 'Behalten',
 
     // Misc
@@ -623,13 +640,15 @@ export const translations = {
     photoTooLarge: 'Foto zu groß für Sync',
     syncedEntriesFromCloud: '{count} Einträge aus Cloud synchronisiert',
     syncedFaultsFromCloud: '{count} Torfehler aus Cloud synchronisiert',
-    crossDeviceDuplicate: 'Duplikat: Startnr. {bib} {point} bereits von {device} erfasst',
+    crossDeviceDuplicate:
+      'Duplikat: Startnr. {bib} {point} bereits von {device} erfasst',
 
     // Photo sync settings
     syncPhotos: 'Fotos synchronisieren',
     syncPhotosDesc: 'Fotos über Cloud mit anderen Geräten teilen',
     syncPhotosWarning: 'Foto-Sync aktivieren',
-    syncPhotosWarningText: 'Aktivierung der Foto-Synchronisierung überträgt folgende Daten:',
+    syncPhotosWarningText:
+      'Aktivierung der Foto-Synchronisierung überträgt folgende Daten:',
     photosToUpload: 'Fotos hochzuladen',
     photosToDownload: 'Fotos herunterzuladen',
     totalDataVolume: 'Gesamtes Datenvolumen',
@@ -646,10 +665,13 @@ export const translations = {
     enterAdminPin: 'Rennverwaltungs-PIN eingeben',
     enterPinText: 'Geben Sie Ihre PIN ein, um die Rennverwaltung zu öffnen.',
     enterPinToJoinRace: 'Geben Sie Ihre PIN ein, um diesem Rennen beizutreten.',
-    enterPinForChiefJudge: 'Geben Sie Ihre PIN ein, um die Obmann-Ansicht zu öffnen.',
+    enterPinForChiefJudge:
+      'Geben Sie Ihre PIN ein, um die Obmann-Ansicht zu öffnen.',
     enterChiefJudgePin: 'Obmann-PIN eingeben',
-    enterPinForChiefJudgeInfo: 'Der Obmann-Modus erfordert eine separate PIN. Erste Eingabe setzt die PIN.',
-    syncRequiresPin: 'Sync deaktiviert. Aktivieren Sie Sync und geben Sie die PIN ein.',
+    enterPinForChiefJudgeInfo:
+      'Der Obmann-Modus erfordert eine separate PIN. Erste Eingabe setzt die PIN.',
+    syncRequiresPin:
+      'Sync deaktiviert. Aktivieren Sie Sync und geben Sie die PIN ein.',
     incorrectPin: 'Falsche PIN',
     verify: 'Bestätigen',
     setPinFirst: 'Bitte zuerst Rennverwaltungs-PIN festlegen',
@@ -675,7 +697,8 @@ export const translations = {
     raceDeletedSuccess: 'Rennen gelöscht:',
     confirmDeleteRace: 'Rennen löschen',
     confirmDeleteRaceText: 'Möchten Sie das Rennen wirklich löschen',
-    loadError: 'Fehler beim Laden der Rennen. Verbindung prüfen und erneut versuchen.',
+    loadError:
+      'Fehler beim Laden der Rennen. Verbindung prüfen und erneut versuchen.',
     deleteError: 'Fehler beim Löschen des Rennens',
     entry: 'Eintrag',
     device: 'Gerät',
@@ -723,17 +746,21 @@ export const translations = {
     roleJudgeTitle: 'Torrichter',
     roleJudgeDesc: 'Du erfasst Torfehler',
     onboardingDeviceName: 'Timer benennen',
-    onboardingDeviceNameDesc: 'Dieser Name identifiziert dein Gerät beim Synchronisieren',
+    onboardingDeviceNameDesc:
+      'Dieser Name identifiziert dein Gerät beim Synchronisieren',
     onboardingDeviceNameJudge: 'Dein Name',
     onboardingDeviceNameJudgeDesc: 'Dies identifiziert dich als Torrichter',
     onboardingPhoto: 'Foto-Dokumentation',
-    onboardingPhotoDesc: 'Automatisch ein Foto bei jeder Zeiterfassung aufnehmen. Nützlich zur Überprüfung von Startnr. und bei Unstimmigkeiten.',
+    onboardingPhotoDesc:
+      'Automatisch ein Foto bei jeder Zeiterfassung aufnehmen. Nützlich zur Überprüfung von Startnr. und bei Unstimmigkeiten.',
     enablePhotoCapture: 'Foto-Aufnahme aktivieren',
     photoCaptureLabel: 'Foto-Aufnahme',
     onboardingGates: 'Deine Tor-Zuweisung',
-    onboardingGatesDesc: 'Gib die Tornummern ein, die du beobachtest. Du kannst dies später ändern.',
+    onboardingGatesDesc:
+      'Gib die Tornummern ein, die du beobachtest. Du kannst dies später ändern.',
     onboardingRaceSetup: 'Rennen beitreten',
-    onboardingRaceSetupDesc: 'Gib eine Rennen-ID ein um mit anderen Timern zu synchronisieren',
+    onboardingRaceSetupDesc:
+      'Gib eine Rennen-ID ein um mit anderen Timern zu synchronisieren',
     skipForNow: 'Vorerst überspringen',
     onboardingReady: 'Bereit zur Zeitmessung!',
     onboardingReadyJudge: 'Bereit als Torrichter!',
@@ -755,7 +782,8 @@ export const translations = {
     recentRaces: 'Letzte Rennen',
     noRecentRaces: 'Keine Rennen von heute',
     errorOccurred: 'Ein Fehler ist aufgetreten',
-    errorRecoveryMessage: 'Die App hat einen Fehler festgestellt. Sie können diesen Hinweis schließen und fortfahren, oder die App neu laden.',
+    errorRecoveryMessage:
+      'Die App hat einen Fehler festgestellt. Sie können diesen Hinweis schließen und fortfahren, oder die App neu laden.',
     dismiss: 'Schließen',
     reload: 'Neu laden',
     updateAvailable: 'Update verfügbar! Neu laden für die neueste Version.',
@@ -772,7 +800,8 @@ export const translations = {
     roleTimer: 'Zeitnehmer',
     roleGateJudge: 'Torrichter',
     gateAssignment: 'Tor-Zuweisung',
-    noGateAssignment: 'Keine Tor-Zuweisung. Bitte zuerst den Torbereich festlegen.',
+    noGateAssignment:
+      'Keine Tor-Zuweisung. Bitte zuerst den Torbereich festlegen.',
     gates: 'Tore',
     gatesFrom: 'Von',
     gatesTo: 'Bis',
@@ -862,7 +891,8 @@ export const translations = {
 
     // Deletion Workflow
     markForDeletion: 'Zum Löschen markieren',
-    markForDeletionText: 'Dieser Fehler wird zum Löschen markiert und benötigt die Genehmigung des Obmanns für die endgültige Löschung.',
+    markForDeletionText:
+      'Dieser Fehler wird zum Löschen markiert und benötigt die Genehmigung des Obmanns für die endgültige Löschung.',
     markedForDeletion: 'Zum Löschen markiert',
     deletionPending: 'Löschung ausstehend',
     pendingDeletions: 'Ausstehende Löschungen',
@@ -871,7 +901,8 @@ export const translations = {
     deletionMarkedBy: 'Markiert von',
     deletionApproved: 'Löschung genehmigt',
     deletionRejected: 'Löschung abgelehnt',
-    cannotEditPendingDeletion: 'Fehler mit ausstehender Löschung kann nicht bearbeitet werden',
+    cannotEditPendingDeletion:
+      'Fehler mit ausstehender Löschung kann nicht bearbeitet werden',
 
     // Voice Mode
     voiceMode: 'Sprachsteuerung',
@@ -898,7 +929,8 @@ export const translations = {
     syncingStatus: 'Synchronisiere...',
 
     // Localization - Gate Assignment Modal
-    gateAssignmentInstructions: 'Gib den Torbereich ein, für den du verantwortlich bist:',
+    gateAssignmentInstructions:
+      'Gib den Torbereich ein, für den du verantwortlich bist:',
 
     // Localization - Ready Status
     readySuffix: ' - Bereit',
@@ -934,8 +966,8 @@ export const translations = {
 
     // Auth
     sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',
-    authSuccess: 'Authentifizierung erfolgreich'
-  }
+    authSuccess: 'Authentifizierung erfolgreich',
+  },
 } satisfies Record<Language, Translations>;
 
 // ===== Compile-time Translation Key Safety =====
@@ -946,13 +978,21 @@ export const translations = {
 export type TranslationKey = keyof typeof translations.en;
 
 // Verify DE has all EN keys
-type _MissingInDe = Exclude<keyof typeof translations.en, keyof typeof translations.de>;
-type _MissingInEn = Exclude<keyof typeof translations.de, keyof typeof translations.en>;
+type _MissingInDe = Exclude<
+  keyof typeof translations.en,
+  keyof typeof translations.de
+>;
+type _MissingInEn = Exclude<
+  keyof typeof translations.de,
+  keyof typeof translations.en
+>;
 
 // These lines cause compile errors if any keys are missing between languages.
 // The error message will show which specific keys are missing.
-const _assertDeComplete: _MissingInDe extends never ? true : _MissingInDe = true;
-const _assertEnComplete: _MissingInEn extends never ? true : _MissingInEn = true;
+const _assertDeComplete: _MissingInDe extends never ? true : _MissingInDe =
+  true;
+const _assertEnComplete: _MissingInEn extends never ? true : _MissingInEn =
+  true;
 
 // Suppress unused variable warnings
 void _assertDeComplete;
@@ -962,8 +1002,11 @@ void _assertEnComplete;
  * Get translation for a key
  * Accepts TranslationKey for type-safe usage or string for dynamic keys
  */
-export function t(key: TranslationKey | (string & {}), lang: Language = 'de'): string {
+export function t(
+  key: TranslationKey | (string & {}),
+  lang: Language = 'de',
+): string {
   const langMap = translations[lang] as Record<string, string>;
-  const enMap = translations['en'] as Record<string, string>;
+  const enMap = translations.en as Record<string, string>;
   return langMap[key] || enMap[key] || key;
 }

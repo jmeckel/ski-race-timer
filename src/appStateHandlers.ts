@@ -1,29 +1,38 @@
-import { store } from './store';
-import { wakeLockService, ambientModeService } from './services';
-import { applyViewServices } from './utils/viewServices';
 import {
-  updateBibDisplay, updateTimingPointSelection, updateRunSelection
-} from './features/timerView';
+  updateGpsIndicator,
+  updatePhotoCaptureIndicator,
+  updateSyncStatusIndicator,
+  updateUndoButton,
+  updateViewVisibility,
+} from './appUiUpdates';
+import { updateActiveBibsList } from './features/faults';
 import {
-  isRadialModeActive, updateRadialBib
-} from './features/radialTimerView';
-import {
-  getVirtualList, updateStats, updateEntryCountBadge
-} from './features/resultsView';
-import {
-  updateRoleToggle, applyGlassEffectSettings
-} from './features/settingsView';
-import {
-  updateGateJudgeTabVisibility, updateGateRangeDisplay,
-  updateJudgeReadyStatus, updateGateJudgeRunSelection
+  updateGateJudgeRunSelection,
+  updateGateJudgeTabVisibility,
+  updateGateRangeDisplay,
+  updateJudgeReadyStatus,
 } from './features/gateJudgeView';
 import {
-  updateActiveBibsList
-} from './features/faultEntry';
+  isRadialModeActive,
+  updateRadialBib,
+} from './features/radialTimerView';
 import {
-  updateViewVisibility, updateSyncStatusIndicator, updateGpsIndicator,
-  updatePhotoCaptureIndicator, updateUndoButton
-} from './appUiUpdates';
+  getVirtualList,
+  updateEntryCountBadge,
+  updateStats,
+} from './features/resultsView';
+import {
+  applyGlassEffectSettings,
+  updateRoleToggle,
+} from './features/settingsView';
+import {
+  updateBibDisplay,
+  updateRunSelection,
+  updateTimingPointSelection,
+} from './features/timerView';
+import { ambientModeService, wakeLockService } from './services';
+import { store } from './store';
+import { applyViewServices } from './utils/viewServices';
 
 /**
  * State change handler map: groups related updates together
@@ -33,55 +42,69 @@ type StateHandler = (state: ReturnType<typeof store.getState>) => void;
 
 const STATE_HANDLERS: Record<string, StateHandler[]> = {
   // Timer view updates (handles both classic and radial modes)
-  bibInput: [() => {
-    if (isRadialModeActive()) {
-      updateRadialBib();
-    } else {
-      updateBibDisplay();
-    }
-  }],
-  selectedPoint: [() => {
-    if (!isRadialModeActive()) {
-      updateTimingPointSelection();
-    }
-    // Radial mode handles this via its own store subscription
-  }],
+  bibInput: [
+    () => {
+      if (isRadialModeActive()) {
+        updateRadialBib();
+      } else {
+        updateBibDisplay();
+      }
+    },
+  ],
+  selectedPoint: [
+    () => {
+      if (!isRadialModeActive()) {
+        updateTimingPointSelection();
+      }
+      // Radial mode handles this via its own store subscription
+    },
+  ],
 
   // Run selection updates both timer and gate judge views
-  selectedRun: [(state) => {
-    updateRunSelection();
-    updateGateJudgeRunSelection();
-    if (state.currentView === 'gateJudge') updateActiveBibsList();
-  }],
+  selectedRun: [
+    (state) => {
+      updateRunSelection();
+      updateGateJudgeRunSelection();
+      if (state.currentView === 'gateJudge') updateActiveBibsList();
+    },
+  ],
 
   // Entry updates affect results list and gate judge view
-  entries: [(state) => {
-    const vList = getVirtualList();
-    if (vList) vList.setEntries(state.entries);
-    updateStats();
-    updateEntryCountBadge();
-    if (state.currentView === 'gateJudge') updateActiveBibsList();
-  }],
+  entries: [
+    (state) => {
+      const vList = getVirtualList();
+      if (vList) vList.setEntries(state.entries);
+      updateStats();
+      updateEntryCountBadge();
+      if (state.currentView === 'gateJudge') updateActiveBibsList();
+    },
+  ],
 
   // Gate Judge role/state updates
-  deviceRole: [() => {
-    updateRoleToggle();
-    updateGateJudgeTabVisibility();
-    updateJudgeReadyStatus();
-  }],
+  deviceRole: [
+    () => {
+      updateRoleToggle();
+      updateGateJudgeTabVisibility();
+      updateJudgeReadyStatus();
+    },
+  ],
   isJudgeReady: [() => updateJudgeReadyStatus()],
   gateAssignment: [() => updateGateRangeDisplay()],
-  faultEntries: [(state) => {
-    if (state.currentView === 'gateJudge') updateActiveBibsList();
-  }],
+  faultEntries: [
+    (state) => {
+      if (state.currentView === 'gateJudge') updateActiveBibsList();
+    },
+  ],
 
   // Status indicators
   syncStatus: [() => updateSyncStatusIndicator()],
   cloudDeviceCount: [() => updateSyncStatusIndicator()],
-  gpsStatus: [() => {
-    updateGpsIndicator();
-    updateJudgeReadyStatus();
-  }],
+  gpsStatus: [
+    () => {
+      updateGpsIndicator();
+      updateJudgeReadyStatus();
+    },
+  ],
   undoStack: [() => updateUndoButton()],
 };
 
@@ -145,7 +168,10 @@ function handleSettingsChange(): void {
 /**
  * Handle state changes - dispatches to appropriate handlers
  */
-export function handleStateChange(state: ReturnType<typeof store.getState>, changedKeys: (keyof typeof state)[]): void {
+export function handleStateChange(
+  state: ReturnType<typeof store.getState>,
+  changedKeys: (keyof typeof state)[],
+): void {
   // Handle view changes (complex logic extracted to separate function)
   if (changedKeys.includes('currentView')) {
     handleViewChange(state);
@@ -158,7 +184,10 @@ export function handleStateChange(state: ReturnType<typeof store.getState>, chan
   }
 
   // Handle currentView + settings combo for services
-  if (changedKeys.includes('currentView') && !changedKeys.includes('settings')) {
+  if (
+    changedKeys.includes('currentView') &&
+    !changedKeys.includes('settings')
+  ) {
     applyViewServices(state);
   }
 

@@ -10,7 +10,9 @@ const elementCache = new Map<string, HTMLElement | null>();
  * Get an element by ID with caching
  * Returns null if element doesn't exist
  */
-export function getElement<T extends HTMLElement = HTMLElement>(id: string): T | null {
+export function getElement<T extends HTMLElement = HTMLElement>(
+  id: string,
+): T | null {
   if (!elementCache.has(id)) {
     elementCache.set(id, document.getElementById(id));
   }
@@ -21,7 +23,9 @@ export function getElement<T extends HTMLElement = HTMLElement>(id: string): T |
  * Get an element by ID, throwing if not found
  * Use when element must exist
  */
-export function getElementOrThrow<T extends HTMLElement = HTMLElement>(id: string): T {
+export function getElementOrThrow<T extends HTMLElement = HTMLElement>(
+  id: string,
+): T {
   const el = getElement<T>(id);
   if (!el) {
     throw new Error(`Element with id "${id}" not found`);
@@ -63,6 +67,6 @@ export function preCacheElements(ids: string[]): void {
 export function getCacheStats(): { size: number; hits: string[] } {
   return {
     size: elementCache.size,
-    hits: Array.from(elementCache.keys())
+    hits: Array.from(elementCache.keys()),
   };
 }

@@ -6,9 +6,9 @@ const CAMERA_CONFIG: MediaStreamConstraints = {
   video: {
     facingMode: 'environment', // Rear camera
     width: { ideal: 1280 },
-    height: { ideal: 720 }
+    height: { ideal: 720 },
   },
-  audio: false
+  audio: false,
 };
 
 // Photo quality settings
@@ -102,7 +102,8 @@ class CameraService {
 
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Camera initialization failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Camera initialization failed';
       logger.error('Camera initialization error:', errorMessage);
       this.cameraState = 'stopped';
       store.setCameraReady(false, errorMessage);
@@ -116,7 +117,10 @@ class CameraService {
   private handleVisibilityChange(): void {
     if (document.hidden) {
       // Page is hidden
-      if (this.cameraState === 'initializing' || this.cameraState === 'resuming') {
+      if (
+        this.cameraState === 'initializing' ||
+        this.cameraState === 'resuming'
+      ) {
         // Mark pending change - will be handled when init/resume completes
         this.pendingVisibilityChange = 'hidden';
       } else if (this.cameraState === 'ready') {
@@ -124,7 +128,10 @@ class CameraService {
       }
     } else {
       // Page is visible
-      if (this.cameraState === 'initializing' || this.cameraState === 'resuming') {
+      if (
+        this.cameraState === 'initializing' ||
+        this.cameraState === 'resuming'
+      ) {
         // Clear any pending hidden change
         this.pendingVisibilityChange = null;
       } else if (this.cameraState === 'paused') {
@@ -138,7 +145,7 @@ class CameraService {
    */
   private pauseCamera(): void {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
       if (this.videoElement) {
         this.videoElement.srcObject = null;
@@ -214,7 +221,11 @@ class CameraService {
    * Returns base64 encoded JPEG image
    */
   async capturePhoto(): Promise<string | null> {
-    if (this.cameraState !== 'ready' || !this.videoElement || !this.canvasElement) {
+    if (
+      this.cameraState !== 'ready' ||
+      !this.videoElement ||
+      !this.canvasElement
+    ) {
       logger.warn('Camera not ready for capture');
       return null;
     }
@@ -267,7 +278,9 @@ class CameraService {
 
       // Check size limit
       if (sizeKB > PHOTO_MAX_SIZE_KB) {
-        const error = new Error(`Photo too large (${sizeKB}KB > ${PHOTO_MAX_SIZE_KB}KB limit)`);
+        const error = new Error(
+          `Photo too large (${sizeKB}KB > ${PHOTO_MAX_SIZE_KB}KB limit)`,
+        );
         error.name = 'PhotoTooLargeError';
         throw error;
       }
@@ -284,7 +297,7 @@ class CameraService {
    */
   stop(): void {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
     }
 

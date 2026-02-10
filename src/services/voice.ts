@@ -5,10 +5,15 @@
  */
 
 import { store } from '../store';
+import type {
+  LLMConfig,
+  VoiceContext,
+  VoiceIntent,
+  VoiceStatus,
+} from '../types';
 import { logger } from '../utils/logger';
-import { speechSynthesis } from './speechSynthesis';
 import { processVoiceCommandWithTimeout } from './llmProvider';
-import type { VoiceIntent, VoiceContext, VoiceStatus, LLMConfig } from '../types';
+import { speechSynthesis } from './speechSynthesis';
 
 // Extend Window for Speech Recognition types
 interface SpeechRecognitionEvent extends Event {
@@ -89,7 +94,8 @@ class VoiceModeService {
     this.llmConfig = config;
 
     // Set up speech recognition
-    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionClass =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognitionClass();
     this.recognition.continuous = true;
     this.recognition.interimResults = false;
@@ -166,7 +172,12 @@ class VoiceModeService {
       logger.debug('[Voice] Recognition ended');
 
       // Restart if still enabled, online, and not paused
-      if (this.isEnabled && this.isOnline && !this.isPaused && this.status !== 'error') {
+      if (
+        this.isEnabled &&
+        this.isOnline &&
+        !this.isPaused &&
+        this.status !== 'error'
+      ) {
         this.scheduleRestart();
       }
     };
@@ -184,7 +195,7 @@ class VoiceModeService {
       if (this.isEnabled && this.isOnline && !this.isPaused) {
         try {
           this.recognition?.start();
-        } catch (e) {
+        } catch (_e) {
           // Already started, ignore
         }
       }
@@ -204,11 +215,12 @@ class VoiceModeService {
       role: state.deviceRole,
       language: state.currentLang,
       currentRun: state.selectedRun,
-      activeBibs: state.deviceRole === 'gateJudge'
-        ? this.getActiveBibs(state.selectedRun)
-        : undefined,
+      activeBibs:
+        state.deviceRole === 'gateJudge'
+          ? this.getActiveBibs(state.selectedRun)
+          : undefined,
       gateRange: state.gateAssignment || undefined,
-      pendingConfirmation: this.pendingIntent || undefined
+      pendingConfirmation: this.pendingIntent || undefined,
     };
 
     try {
@@ -216,11 +228,10 @@ class VoiceModeService {
         transcript,
         context,
         this.llmConfig,
-        this.LLM_TIMEOUT_MS
+        this.LLM_TIMEOUT_MS,
       );
 
       await this.handleIntent(intent);
-
     } catch (error) {
       logger.error('[Voice] Processing error:', error);
       this.setStatus('error');
@@ -249,7 +260,7 @@ class VoiceModeService {
     }
 
     // Active = started but not finished
-    return Array.from(startedBibs).filter(bib => !finishedBibs.has(bib));
+    return Array.from(startedBibs).filter((bib) => !finishedBibs.has(bib));
   }
 
   /**
@@ -263,14 +274,19 @@ class VoiceModeService {
     }
 
     // Handle confirmation responses
-    if (this.pendingIntent && (intent.action === 'confirm' || intent.action === 'cancel')) {
+    if (
+      this.pendingIntent &&
+      (intent.action === 'confirm' || intent.action === 'cancel')
+    ) {
       if (intent.action === 'confirm') {
         this.executeIntent(this.pendingIntent);
         await speechSynthesis.sayRecorded();
       } else {
         // Cancelled - just acknowledge
         const lang = store.getState().currentLang;
-        await speechSynthesis.speak(lang === 'de' ? 'Abgebrochen' : 'Cancelled');
+        await speechSynthesis.speak(
+          lang === 'de' ? 'Abgebrochen' : 'Cancelled',
+        );
       }
       this.pendingIntent = null;
       this.setStatus('listening');
@@ -325,7 +341,7 @@ class VoiceModeService {
       this.setStatus('listening');
       try {
         this.recognition?.start();
-      } catch (e) {
+      } catch (_e) {
         // Already started
       }
     }
@@ -400,7 +416,7 @@ class VoiceModeService {
 
     try {
       this.recognition?.stop();
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
 
@@ -426,7 +442,7 @@ class VoiceModeService {
 
     try {
       this.recognition?.abort();
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
 

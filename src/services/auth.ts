@@ -13,7 +13,7 @@ export const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 export function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   if (token) {
-    return { 'Authorization': `Bearer ${token}` };
+    return { Authorization: `Bearer ${token}` };
   }
   return {};
 }
@@ -67,21 +67,27 @@ const TOKEN_EXCHANGE_TIMEOUT_MS = 10000;
 /**
  * Exchange PIN for JWT token
  */
-export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJudge' | 'chiefJudge'): Promise<{
+export async function exchangePinForToken(
+  pin: string,
+  role?: 'timer' | 'gateJudge' | 'chiefJudge',
+): Promise<{
   success: boolean;
   token?: string;
   error?: string;
   isNewPin?: boolean;
 }> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TOKEN_EXCHANGE_TIMEOUT_MS);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    TOKEN_EXCHANGE_TIMEOUT_MS,
+  );
 
   try {
     const response = await fetch('/api/v1/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin, role }),
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
@@ -113,10 +119,14 @@ export async function exchangePinForToken(pin: string, role?: 'timer' | 'gateJud
 /**
  * Dispatch auth expired event for UI to handle
  */
-export function dispatchAuthExpired(message: string = 'Session expired. Please re-enter your PIN.'): void {
-  window.dispatchEvent(new CustomEvent('auth-expired', {
-    detail: { message }
-  }));
+export function dispatchAuthExpired(
+  message: string = 'Session expired. Please re-enter your PIN.',
+): void {
+  window.dispatchEvent(
+    new CustomEvent('auth-expired', {
+      detail: { message },
+    }),
+  );
 }
 
 /**

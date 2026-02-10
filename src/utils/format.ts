@@ -1,4 +1,5 @@
-import type { Language, TimingPoint, Run } from '../types';
+import { t } from '../i18n/translations';
+import type { FaultType, Language, Run, TimingPoint } from '../types';
 
 /**
  * Format time as HH:MM:SS.mmm
@@ -19,7 +20,7 @@ export function formatDate(date: Date, lang: Language = 'de'): string {
     weekday: 'short',
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
   };
   return date.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', options);
 }
@@ -59,9 +60,7 @@ export function escapeHtml(str: string): string {
  * Escapes quotes in addition to HTML entities
  */
 export function escapeAttr(str: string): string {
-  return escapeHtml(str)
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeHtml(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /**
@@ -69,8 +68,8 @@ export function escapeAttr(str: string): string {
  */
 export function getPointColor(point: TimingPoint): string {
   const colors: Record<TimingPoint, string> = {
-    'S': 'var(--success)',
-    'F': 'var(--secondary)'
+    S: 'var(--success)',
+    F: 'var(--secondary)',
   };
   return colors[point] || 'var(--text-secondary)';
 }
@@ -78,10 +77,13 @@ export function getPointColor(point: TimingPoint): string {
 /**
  * Get display label for timing point
  */
-export function getPointLabel(point: TimingPoint, lang: Language = 'de'): string {
+export function getPointLabel(
+  point: TimingPoint,
+  lang: Language = 'de',
+): string {
   const labels: Record<Language, Record<TimingPoint, string>> = {
     en: { S: 'Start', F: 'Finish' },
-    de: { S: 'Start', F: 'Ziel' }
+    de: { S: 'Start', F: 'Ziel' },
   };
   return labels[lang][point];
 }
@@ -92,7 +94,7 @@ export function getPointLabel(point: TimingPoint, lang: Language = 'de'): string
 export function getRunLabel(run: Run, lang: Language = 'de'): string {
   const labels: Record<Language, Record<Run, string>> = {
     en: { 1: 'R1', 2: 'R2' },
-    de: { 1: 'L1', 2: 'L2' }
+    de: { 1: 'L1', 2: 'L2' },
   };
   return labels[lang][run];
 }
@@ -103,9 +105,24 @@ export function getRunLabel(run: Run, lang: Language = 'de'): string {
 export function getRunColor(run: Run): string {
   const colors: Record<Run, string> = {
     1: 'var(--primary)',
-    2: 'var(--warning)'
+    2: 'var(--warning)',
   };
   return colors[run] || 'var(--text-secondary)';
+}
+
+/**
+ * Get localized fault type label
+ */
+export function getFaultTypeLabel(
+  faultType: FaultType,
+  lang: Language,
+): string {
+  const labels: Record<FaultType, string> = {
+    MG: t('faultMGShort', lang),
+    STR: t('faultSTRShort', lang),
+    BR: t('faultBRShort', lang),
+  };
+  return labels[faultType] || faultType;
 }
 
 /**
@@ -122,7 +139,7 @@ export function formatFileSize(bytes: number): string {
  */
 export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
-  return str.slice(0, maxLength - 3) + '...';
+  return `${str.slice(0, maxLength - 3)}...`;
 }
 
 /**
@@ -130,7 +147,7 @@ export function truncate(str: string, maxLength: number): string {
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
@@ -144,7 +161,7 @@ export function debounce<T extends (...args: unknown[]) => void>(
  */
 export function throttle<T extends (...args: unknown[]) => void>(
   fn: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
   return (...args: Parameters<T>) => {

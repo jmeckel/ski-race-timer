@@ -9,7 +9,7 @@ const FOCUSABLE_SELECTOR = [
   'textarea:not([disabled])',
   'input:not([disabled])',
   'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])'
+  '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
 type FocusState = {
@@ -20,8 +20,9 @@ type FocusState = {
 const focusStateMap = new WeakMap<HTMLElement, FocusState>();
 
 function getFocusableElements(modal: HTMLElement): HTMLElement[] {
-  return Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-    .filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+  return Array.from(
+    modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
 }
 
 function focusFirstElement(modal: HTMLElement): void {
@@ -73,7 +74,7 @@ function trapFocus(modal: HTMLElement): void {
   modal.addEventListener('keydown', keydownHandler);
   focusStateMap.set(modal, {
     previousFocus: document.activeElement as HTMLElement | null,
-    keydownHandler
+    keydownHandler,
   });
 }
 
@@ -129,7 +130,7 @@ export function openModal(modal: HTMLElement | null): void {
  * Close all open modals with animation
  */
 export function closeAllModalsAnimated(): void {
-  document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+  document.querySelectorAll('.modal-overlay.show').forEach((modal) => {
     closeModal(modal as HTMLElement);
   });
 }

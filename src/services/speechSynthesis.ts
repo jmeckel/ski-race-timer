@@ -37,10 +37,14 @@ class SpeechSynthesisService {
       this.selectVoiceForLanguage(store.getState().currentLang);
     } else {
       // Voices not loaded yet, wait for event
-      this.synth.addEventListener('voiceschanged', () => {
-        this.voicesLoaded = true;
-        this.selectVoiceForLanguage(store.getState().currentLang);
-      }, { once: true });
+      this.synth.addEventListener(
+        'voiceschanged',
+        () => {
+          this.voicesLoaded = true;
+          this.selectVoiceForLanguage(store.getState().currentLang);
+        },
+        { once: true },
+      );
     }
   }
 
@@ -55,16 +59,24 @@ class SpeechSynthesisService {
 
     // Try to find a voice that matches the language
     // Prefer female voices as they're often clearer
-    this.voice = voices.find(v =>
-      v.lang.startsWith(langCode) && v.name.toLowerCase().includes('female')
-    ) || voices.find(v =>
-      v.lang.startsWith(langCode)
-    ) || voices.find(v =>
-      v.lang.startsWith('en') // Fallback to English
-    ) || null;
+    this.voice =
+      voices.find(
+        (v) =>
+          v.lang.startsWith(langCode) &&
+          v.name.toLowerCase().includes('female'),
+      ) ||
+      voices.find((v) => v.lang.startsWith(langCode)) ||
+      voices.find(
+        (v) => v.lang.startsWith('en'), // Fallback to English
+      ) ||
+      null;
 
     if (this.voice) {
-      logger.debug('[SpeechSynthesis] Selected voice:', this.voice.name, this.voice.lang);
+      logger.debug(
+        '[SpeechSynthesis] Selected voice:',
+        this.voice.name,
+        this.voice.lang,
+      );
     }
   }
 
@@ -80,7 +92,10 @@ class SpeechSynthesisService {
   /**
    * Speak the given text
    */
-  speak(text: string, options?: { rate?: number; pitch?: number }): Promise<void> {
+  speak(
+    text: string,
+    options?: { rate?: number; pitch?: number },
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.synth) {
         reject(new Error('Speech synthesis not supported'));

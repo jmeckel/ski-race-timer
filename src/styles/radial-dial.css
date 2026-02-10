@@ -93,7 +93,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-bib-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 48px;
   font-weight: 700;
   color: var(--text-primary);
@@ -114,8 +114,14 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 @keyframes radialBlink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Top Right: Clear Button Corner */
@@ -129,7 +135,11 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--radial-clear-color-dark) 0%, var(--radial-clear-color) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--radial-clear-color-dark) 0%,
+    var(--radial-clear-color) 100%
+  );
   border: 2px solid var(--radial-clear-border);
   color: rgba(255, 255, 255, 0.9);
   font-size: 18px;
@@ -141,11 +151,16 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   justify-content: center;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
+    0 2px 8px
+    color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
 }
 
 .radial-clear-btn:active {
-  background: linear-gradient(135deg, var(--radial-clear-color) 0%, var(--radial-clear-color-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--radial-clear-color) 0%,
+    var(--radial-clear-color-dark) 100%
+  );
   transform: scale(0.95);
 }
 
@@ -287,7 +302,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 30px;
   font-weight: 600;
   color: var(--text-primary);
@@ -398,12 +413,16 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 @keyframes timeFlash {
-  0% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .radial-time-hm {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 26px;
   font-weight: 400;
   color: var(--text-secondary);
@@ -411,7 +430,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-time-seconds {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 96px;
   font-weight: 700;
   color: var(--text-primary);
@@ -420,7 +439,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-time-subseconds {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 48px;
   font-weight: 500;
   color: var(--text-secondary);
@@ -464,14 +483,16 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   border-color: var(--radial-start-color);
   color: var(--radial-start-color);
   background: color-mix(in srgb, var(--radial-start-color) 20%, transparent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--radial-start-color) 40%, transparent);
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--radial-start-color) 40%, transparent);
 }
 
 .radial-point-btn.finish.active {
   border-color: var(--radial-finish-color);
   color: var(--radial-finish-color);
   background: color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--radial-finish-color) 40%, transparent);
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--radial-finish-color) 40%, transparent);
 }
 
 /* Run Selector - Right side inside dial center */
@@ -538,7 +559,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-stats-bib {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
@@ -562,7 +583,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-stats-time {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 14px;
   color: var(--text-secondary);
 }
@@ -586,7 +607,11 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, var(--radial-finish-color) 0%, var(--radial-finish-color-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--radial-finish-color) 0%,
+    var(--radial-finish-color-dark) 100%
+  );
   color: white;
   border: none;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -606,7 +631,11 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-time-btn:active {
-  background: linear-gradient(135deg, var(--radial-finish-color-dark) 0%, var(--radial-clear-border) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--radial-finish-color-dark) 0%,
+    var(--radial-clear-border) 100%
+  );
   transform: scale(0.98);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -619,14 +648,24 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
 @keyframes btnFlash {
   0% {
-    background: linear-gradient(135deg, var(--radial-start-color) 0%, var(--radial-start-color-dark) 100%);
-    box-shadow: 0 0 40px color-mix(in srgb, var(--radial-start-color) 50%, transparent);
+    background: linear-gradient(
+      135deg,
+      var(--radial-start-color) 0%,
+      var(--radial-start-color-dark) 100%
+    );
+    box-shadow: 0 0 40px
+      color-mix(in srgb, var(--radial-start-color) 50%, transparent);
   }
   100% {
-    background: linear-gradient(135deg, var(--radial-finish-color) 0%, var(--radial-finish-color-dark) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--radial-finish-color) 0%,
+      var(--radial-finish-color-dark) 100%
+    );
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      0 -4px 20px color-mix(in srgb, var(--radial-finish-color) 30%, transparent);
+      0 -4px 20px
+      color-mix(in srgb, var(--radial-finish-color) 30%, transparent);
   }
 }
 
@@ -662,14 +701,14 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 }
 
 .radial-confirmation-bib {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 48px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .radial-confirmation-time {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 24px;
   color: var(--text-secondary);
   margin-top: 8px;
@@ -758,8 +797,13 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
 
 /* Pulse animation for status dots */
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ===== Landscape Mode ===== */

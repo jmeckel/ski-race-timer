@@ -3,16 +3,15 @@
  * Provides consistent fetch patterns with auth, error handling, and typing
  */
 
-import { fetchWithTimeout, logError } from './errors';
-import type { RaceInfo } from '../types';
 import {
-  AUTH_TOKEN_KEY,
+  clearAuthToken as authClearToken,
+  getAuthHeaders,
   getAuthToken,
   hasAuthToken,
-  getAuthHeaders,
   setAuthToken,
-  clearAuthToken as authClearToken
 } from '../services/auth';
+import type { RaceInfo } from '../types';
+import { fetchWithTimeout, logError } from './errors';
 
 // Re-export for backwards compatibility
 export { getAuthToken, hasAuthToken };
@@ -70,7 +69,7 @@ export interface TokenResponse {
 async function apiRequest<T>(
   url: string,
   options: RequestInit = {},
-  apiOptions: ApiRequestOptions = {}
+  apiOptions: ApiRequestOptions = {},
 ): Promise<ApiResult<T>> {
   const { timeout = DEFAULT_TIMEOUT, requiresAuth = false } = apiOptions;
 
@@ -84,10 +83,14 @@ async function apiRequest<T>(
       Object.assign(headers, getAuthHeaders());
     }
 
-    const response = await fetchWithTimeout(url, {
-      ...options,
-      headers,
-    }, timeout);
+    const response = await fetchWithTimeout(
+      url,
+      {
+        ...options,
+        headers,
+      },
+      timeout,
+    );
 
     // Handle auth errors
     if (response.status === 401) {
@@ -142,29 +145,37 @@ async function apiRequest<T>(
  * Fetch all races from the admin API
  */
 export async function fetchRaces(): Promise<ApiResult<RacesResponse>> {
-  return apiRequest<RacesResponse>(ADMIN_API_BASE, {
-    method: 'GET',
-  }, {
-    requiresAuth: true,
-    timeout: SHORT_TIMEOUT,
-  });
+  return apiRequest<RacesResponse>(
+    ADMIN_API_BASE,
+    {
+      method: 'GET',
+    },
+    {
+      requiresAuth: true,
+      timeout: SHORT_TIMEOUT,
+    },
+  );
 }
 
 /**
  * Delete a race by ID
  */
-export async function deleteRace(raceId: string): Promise<ApiResult<{ success: boolean }>> {
+export async function deleteRace(
+  raceId: string,
+): Promise<ApiResult<{ success: boolean }>> {
   return apiRequest<{ success: boolean }>(
     `${ADMIN_API_BASE}?raceId=${encodeURIComponent(raceId)}`,
     { method: 'DELETE' },
-    { requiresAuth: true }
+    { requiresAuth: true },
   );
 }
 
 /**
  * Check if a race exists
  */
-export async function checkRaceExists(raceId: string): Promise<ApiResult<RaceExistsResponse>> {
+export async function checkRaceExists(
+  raceId: string,
+): Promise<ApiResult<RaceExistsResponse>> {
   const params = new URLSearchParams({
     raceId: raceId.toLowerCase(),
     checkOnly: 'true',
@@ -173,7 +184,7 @@ export async function checkRaceExists(raceId: string): Promise<ApiResult<RaceExi
   return apiRequest<RaceExistsResponse>(
     `${SYNC_API_BASE}?${params}`,
     { method: 'GET' },
-    { requiresAuth: true, timeout: SHORT_TIMEOUT }
+    { requiresAuth: true, timeout: SHORT_TIMEOUT },
   );
 }
 
@@ -183,23 +194,34 @@ export async function checkRaceExists(raceId: string): Promise<ApiResult<RaceExi
  * Check PIN status
  */
 export async function getPinStatus(): Promise<ApiResult<PinStatusResponse>> {
-  return apiRequest<PinStatusResponse>(PIN_API_BASE, {
-    method: 'GET',
-  }, {
-    timeout: SHORT_TIMEOUT,
-  });
+  return apiRequest<PinStatusResponse>(
+    PIN_API_BASE,
+    {
+      method: 'GET',
+    },
+    {
+      timeout: SHORT_TIMEOUT,
+    },
+  );
 }
 
 /**
  * Change PIN (requires current PIN for verification)
  */
-export async function changePin(currentPin: string, newPin: string): Promise<ApiResult<{ success: boolean }>> {
-  return apiRequest<{ success: boolean }>(PIN_API_BASE, {
-    method: 'POST',
-    body: JSON.stringify({ currentPin, newPin }),
-  }, {
-    requiresAuth: true,
-  });
+export async function changePin(
+  currentPin: string,
+  newPin: string,
+): Promise<ApiResult<{ success: boolean }>> {
+  return apiRequest<{ success: boolean }>(
+    PIN_API_BASE,
+    {
+      method: 'POST',
+      body: JSON.stringify({ currentPin, newPin }),
+    },
+    {
+      requiresAuth: true,
+    },
+  );
 }
 
 // ===== Auth API =====
@@ -207,13 +229,19 @@ export async function changePin(currentPin: string, newPin: string): Promise<Api
 /**
  * Exchange PIN for JWT token
  */
-export async function exchangeToken(pin: string): Promise<ApiResult<TokenResponse>> {
+export async function exchangeToken(
+  pin: string,
+): Promise<ApiResult<TokenResponse>> {
   try {
-    const response = await fetchWithTimeout(AUTH_API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    }, SHORT_TIMEOUT);
+    const response = await fetchWithTimeout(
+      AUTH_API_BASE,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      },
+      SHORT_TIMEOUT,
+    );
 
     const data = await response.json();
 
@@ -251,7 +279,11 @@ export const clearAuthToken = authClearToken;
 
 // ===== Recent Races Helper =====
 
-import { addRecentRace, getTodaysRecentRaces, type RecentRace } from './recentRaces';
+import {
+  addRecentRace,
+  getTodaysRecentRaces,
+  type RecentRace,
+} from './recentRaces';
 
 /**
  * Fetch today's races from API with localStorage fallback
@@ -267,8 +299,8 @@ export async function fetchTodaysRaces(): Promise<RecentRace[]> {
       const todayStart = today.getTime();
 
       const todaysRaces = result.data.races
-        .filter(race => race.lastUpdated && race.lastUpdated >= todayStart)
-        .map(race => ({
+        .filter((race) => race.lastUpdated && race.lastUpdated >= todayStart)
+        .map((race) => ({
           raceId: race.raceId,
           createdAt: race.lastUpdated || Date.now(),
           lastUpdated: race.lastUpdated || Date.now(),
@@ -277,7 +309,7 @@ export async function fetchTodaysRaces(): Promise<RecentRace[]> {
         .slice(0, 5);
 
       // Update localStorage cache
-      todaysRaces.forEach(race => {
+      todaysRaces.forEach((race) => {
         addRecentRace(race.raceId, race.lastUpdated, race.entryCount);
       });
 

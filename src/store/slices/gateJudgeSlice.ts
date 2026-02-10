@@ -3,7 +3,7 @@
  * Handles gate judge state, assignments, and ready status
  */
 
-import type { DeviceRole, GateColor, Run, Entry } from '../../types';
+import type { DeviceRole, Entry, GateColor, Run } from '../../types';
 
 // Gate Judge State type
 export interface GateJudgeState {
@@ -28,7 +28,9 @@ export function setDeviceRole(role: DeviceRole): Partial<GateJudgeState> {
 /**
  * Set gate assignment
  */
-export function setGateAssignment(assignment: [number, number] | null): Partial<GateJudgeState> {
+export function setGateAssignment(
+  assignment: [number, number] | null,
+): Partial<GateJudgeState> {
   return { gateAssignment: assignment };
 }
 
@@ -46,7 +48,7 @@ export function setFirstGateColor(color: GateColor): Partial<GateJudgeState> {
 export function getGateColor(
   gateNumber: number,
   gateAssignment: [number, number] | null,
-  firstGateColor: GateColor
+  firstGateColor: GateColor,
 ): GateColor {
   if (!gateAssignment) return firstGateColor;
 
@@ -76,7 +78,9 @@ export function setJudgeReady(ready: boolean): Partial<GateJudgeState> {
 /**
  * Toggle judge ready status
  */
-export function toggleJudgeReady(currentReady: boolean): Partial<GateJudgeState> {
+export function toggleJudgeReady(
+  currentReady: boolean,
+): Partial<GateJudgeState> {
   return { isJudgeReady: !currentReady };
 }
 
@@ -90,7 +94,9 @@ export function setChiefJudgeView(enabled: boolean): Partial<GateJudgeState> {
 /**
  * Toggle chief judge view
  */
-export function toggleChiefJudgeView(current: boolean): Partial<GateJudgeState> {
+export function toggleChiefJudgeView(
+  current: boolean,
+): Partial<GateJudgeState> {
   return { isChiefJudgeView: !current };
 }
 
@@ -100,7 +106,7 @@ export function toggleChiefJudgeView(current: boolean): Partial<GateJudgeState> 
 export function finalizeRacer(
   bib: string,
   run: Run,
-  currentFinalized: Set<string>
+  currentFinalized: Set<string>,
 ): Partial<GateJudgeState> {
   const key = `${bib}-${run}`;
   const finalizedRacers = new Set(currentFinalized);
@@ -114,7 +120,7 @@ export function finalizeRacer(
 export function unfinalizeRacer(
   bib: string,
   run: Run,
-  currentFinalized: Set<string>
+  currentFinalized: Set<string>,
 ): Partial<GateJudgeState> {
   const key = `${bib}-${run}`;
   const finalizedRacers = new Set(currentFinalized);
@@ -128,7 +134,7 @@ export function unfinalizeRacer(
 export function isRacerFinalized(
   bib: string,
   run: Run,
-  finalizedRacers: Set<string>
+  finalizedRacers: Set<string>,
 ): boolean {
   const key = `${bib}-${run}`;
   return finalizedRacers.has(key);
@@ -151,7 +157,9 @@ export function setPenaltySeconds(seconds: number): Partial<GateJudgeState> {
 /**
  * Set penalty mode (penalty time vs DSQ)
  */
-export function setUsePenaltyMode(usePenalty: boolean): Partial<GateJudgeState> {
+export function setUsePenaltyMode(
+  usePenalty: boolean,
+): Partial<GateJudgeState> {
   return { usePenaltyMode: usePenalty };
 }
 
@@ -159,14 +167,14 @@ export function setUsePenaltyMode(usePenalty: boolean): Partial<GateJudgeState> 
  * Get active bibs (started but not finished) for current run
  */
 export function getActiveBibs(entries: Entry[], run: Run): string[] {
-  const started = entries.filter(e => e.point === 'S' && e.run === run);
-  const finished = entries.filter(e => e.point === 'F' && e.run === run);
-  const finishedBibs = new Set(finished.map(e => e.bib));
+  const started = entries.filter((e) => e.point === 'S' && e.run === run);
+  const finished = entries.filter((e) => e.point === 'F' && e.run === run);
+  const finishedBibs = new Set(finished.map((e) => e.bib));
   // Use Set to deduplicate bibs
   const activeBibSet = new Set(
-    started
-      .filter(e => !finishedBibs.has(e.bib))
-      .map(e => e.bib)
+    started.filter((e) => !finishedBibs.has(e.bib)).map((e) => e.bib),
   );
-  return Array.from(activeBibSet).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  return Array.from(activeBibSet).sort(
+    (a, b) => parseInt(a, 10) - parseInt(b, 10),
+  );
 }

@@ -4,8 +4,8 @@
  * Supports both tap-to-enter and spin-to-increment interactions
  */
 
-import { feedbackTap } from '../services';
 import { t } from '../i18n/translations';
+import { feedbackTap } from '../services';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
@@ -39,7 +39,8 @@ export class RadialDial {
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
   private lastTouchTime = 0; // To prevent synthetic mouse events after touch
-  private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> = new Map(); // Track for cleanup
+  private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> =
+    new Map(); // Track for cleanup
   private cachedNumberSpans: HTMLElement[] = []; // Cached for hot-path animation
   private cachedNumberElements: Map<string, HTMLElement> = new Map(); // digit -> element map
   private isDestroyed = false;
@@ -53,7 +54,7 @@ export class RadialDial {
       onChange: options.onChange || (() => {}),
       momentum: options.momentum ?? 1.5,
       friction: options.friction ?? 0.97,
-      sensitivity: options.sensitivity ?? 24
+      sensitivity: options.sensitivity ?? 24,
     };
 
     this.init();
@@ -133,7 +134,7 @@ export class RadialDial {
     ticksContainer.innerHTML = '';
     for (let i = 0; i < 60; i++) {
       const tick = document.createElement('div');
-      tick.className = 'dial-tick' + (i % 6 === 0 ? ' major' : '');
+      tick.className = `dial-tick${i % 6 === 0 ? ' major' : ''}`;
       tick.style.transform = `rotate(${i * 6}deg)`;
       ticksContainer.appendChild(tick);
     }
@@ -162,8 +163,12 @@ export class RadialDial {
     window.addEventListener('mouseup', this.handleDragEnd);
 
     // Touch events
-    this.container.addEventListener('touchstart', this.handleDragStart, { passive: false });
-    window.addEventListener('touchmove', this.handleDragMove, { passive: false });
+    this.container.addEventListener('touchstart', this.handleDragStart, {
+      passive: false,
+    });
+    window.addEventListener('touchmove', this.handleDragMove, {
+      passive: false,
+    });
     window.addEventListener('touchend', this.handleDragEnd);
 
     // Re-layout on orientation/resize change
@@ -200,7 +205,7 @@ export class RadialDial {
     // Check if in ring area (not center)
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const dist = Math.sqrt(Math.pow(clientX - centerX, 2) + Math.pow(clientY - centerY, 2));
+    const dist = Math.sqrt((clientX - centerX) ** 2 + (clientY - centerY) ** 2);
 
     // Don't start drag if in center area (allow buttons to work)
     // dial-center is 52% of container, so radius is 26%
@@ -250,8 +255,8 @@ export class RadialDial {
     // Check if we've moved enough to consider this a drag (not a tap)
     if (this.dragStartPos && !this.hasDraggedSignificantly) {
       const moveDistance = Math.sqrt(
-        Math.pow(clientX - this.dragStartPos.x, 2) +
-        Math.pow(clientY - this.dragStartPos.y, 2)
+        (clientX - this.dragStartPos.x) ** 2 +
+          (clientY - this.dragStartPos.y) ** 2,
       );
       if (moveDistance > 10) {
         this.hasDraggedSignificantly = true;
@@ -285,7 +290,8 @@ export class RadialDial {
     if (Math.abs(this.accumulatedRotation) >= this.options.sensitivity) {
       const direction = this.accumulatedRotation > 0 ? 1 : -1;
       this.adjustBib(direction);
-      this.accumulatedRotation = this.accumulatedRotation % this.options.sensitivity;
+      this.accumulatedRotation =
+        this.accumulatedRotation % this.options.sensitivity;
     }
 
     this.lastAngle = currentAngle;
@@ -304,10 +310,12 @@ export class RadialDial {
       const centerY = rect.top + rect.height / 2;
 
       // Get angle of tap relative to center (in degrees, 0 = right, 90 = down)
-      let tapAngle = Math.atan2(
-        this.dragStartPos.y - centerY,
-        this.dragStartPos.x - centerX
-      ) * (180 / Math.PI);
+      let tapAngle =
+        Math.atan2(
+          this.dragStartPos.y - centerY,
+          this.dragStartPos.x - centerX,
+        ) *
+        (180 / Math.PI);
 
       // Adjust for current rotation of the dial
       tapAngle -= this.rotation;
@@ -327,11 +335,12 @@ export class RadialDial {
 
       numbers.forEach((num, i) => {
         // Each number is at angle (i * 36 - 90) degrees from top
-        let numAngle = (i * 36 - 90 + 360) % 360;
+        const numAngle = (i * 36 - 90 + 360) % 360;
         let diff = Math.abs(tapAngle - numAngle);
         if (diff > 180) diff = 360 - diff;
 
-        if (diff < closestDiff && diff < 20) { // 20° tolerance (half of 36° spacing)
+        if (diff < closestDiff && diff < 20) {
+          // 20° tolerance (half of 36° spacing)
           closestDiff = diff;
           closestNum = num;
         }
@@ -339,7 +348,9 @@ export class RadialDial {
 
       if (closestDiff < 20) {
         // Find the element to flash
-        const numberEl = this.dialNumbers?.querySelector(`[data-num="${closestNum}"]`) as HTMLElement | null;
+        const numberEl = this.dialNumbers?.querySelector(
+          `[data-num="${closestNum}"]`,
+        ) as HTMLElement | null;
         if (numberEl) {
           this.handleNumberTap(closestNum, numberEl);
         }
@@ -380,7 +391,8 @@ export class RadialDial {
     if (Math.abs(this.accumulatedRotation) >= this.options.sensitivity) {
       const direction = this.accumulatedRotation > 0 ? 1 : -1;
       this.adjustBib(direction);
-      this.accumulatedRotation = this.accumulatedRotation % this.options.sensitivity;
+      this.accumulatedRotation =
+        this.accumulatedRotation % this.options.sensitivity;
     }
 
     // Apply friction
@@ -415,7 +427,7 @@ export class RadialDial {
       return;
     }
 
-    this.rotation *= (1 - snapSpeed);
+    this.rotation *= 1 - snapSpeed;
     this.updateDialRotation();
 
     this.snapBackAnimationId = requestAnimationFrame(this.snapBack);

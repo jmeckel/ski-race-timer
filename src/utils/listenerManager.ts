@@ -10,12 +10,24 @@
  *   listeners.removeAll(); // Removes all tracked listeners
  */
 export class ListenerManager {
-  private listeners: Array<[EventTarget, string, EventListener, boolean | AddEventListenerOptions | undefined]> = [];
+  private listeners: Array<
+    [
+      EventTarget,
+      string,
+      EventListener,
+      boolean | AddEventListenerOptions | undefined,
+    ]
+  > = [];
 
   /**
    * Add an event listener and track it for later removal
    */
-  add(target: EventTarget, event: string, handler: EventListener, options?: boolean | AddEventListenerOptions): void {
+  add(
+    target: EventTarget,
+    event: string,
+    handler: EventListener,
+    options?: boolean | AddEventListenerOptions,
+  ): void {
     target.addEventListener(event, handler, options);
     this.listeners.push([target, event, handler, options]);
   }

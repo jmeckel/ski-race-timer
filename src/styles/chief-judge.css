@@ -5,7 +5,7 @@
   padding: 8px 0 4px 0;
   margin-bottom: 4px;
   border-bottom: 1px solid var(--surface-elevated);
-  display: none;  /* Hidden by default, shown when sync is enabled with faults */
+  display: none; /* Hidden by default, shown when sync is enabled with faults */
 }
 
 .chief-judge-toggle-btn {
@@ -31,7 +31,7 @@
 
 .chief-judge-toggle-btn.active {
   border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary) 0%, #2563EB 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
   color: white;
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 }
@@ -81,7 +81,7 @@
 }
 
 .fault-summary-count {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--warning);
@@ -120,7 +120,7 @@
 }
 
 .fault-card-bib {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -133,7 +133,7 @@
 }
 
 .fault-card-penalty {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--warning);
@@ -180,7 +180,7 @@
 }
 
 .fault-gate-num {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -259,8 +259,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Pending Deletions Section */
@@ -329,7 +334,7 @@
 }
 
 .pending-deletion-fault {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -513,7 +518,7 @@
 }
 
 .penalty-seconds-value {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--warning);
@@ -558,7 +563,7 @@
 }
 
 .judges-overview-count {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--success);
@@ -619,7 +624,7 @@
 }
 
 .judge-gates {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--primary);
@@ -663,8 +668,8 @@
 }
 
 .chief-export-btn.whatsapp {
-  background: #25D366;
-  border-color: #25D366;
+  background: #25d366;
+  border-color: #25d366;
   color: white;
 }
 

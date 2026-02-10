@@ -10,7 +10,7 @@ export const logger = {
   debug: isDev ? console.log.bind(console) : () => {},
   log: isDev ? console.log.bind(console) : () => {},
   info: isDev ? console.info.bind(console) : () => {},
-  warn: console.warn.bind(console),  // Keep in production
+  warn: console.warn.bind(console), // Keep in production
   error: console.error.bind(console), // Keep in production
 };
 

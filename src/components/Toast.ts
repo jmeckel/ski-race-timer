@@ -25,7 +25,10 @@ export class Toast {
 
     // Listen for custom toast events - store reference for cleanup
     this.toastEventListener = ((e: CustomEvent) => {
-      this.show(e.detail.message, { type: e.detail.type, duration: e.detail.duration });
+      this.show(e.detail.message, {
+        type: e.detail.type,
+        duration: e.detail.duration,
+      });
     }) as EventListener;
     window.addEventListener('show-toast', this.toastEventListener);
   }
@@ -111,14 +114,14 @@ export class Toast {
       success: 'var(--success)',
       error: 'var(--error)',
       warning: 'var(--warning)',
-      info: 'var(--primary)'
+      info: 'var(--primary)',
     };
 
     const icons = {
       success: '<path d="M20 6L9 17l-5-5"/>',
       error: '<path d="M18 6L6 18M6 6l12 12"/>',
       warning: '<path d="M12 9v4M12 17h.01"/>',
-      info: '<path d="M12 16v-4M12 8h.01"/>'
+      info: '<path d="M12 16v-4M12 8h.01"/>',
     };
 
     toast.style.cssText = `
@@ -156,7 +159,9 @@ export class Toast {
 
     // Also block mousedown/touchstart to prevent any underlying click handlers
     toast.addEventListener('mousedown', (e) => e.stopPropagation());
-    toast.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    toast.addEventListener('touchstart', (e) => e.stopPropagation(), {
+      passive: true,
+    });
 
     return toast;
   }
@@ -230,7 +235,11 @@ export function getToast(): Toast {
 /**
  * Show toast helper
  */
-export function showToast(message: string, type: ToastType = 'info', duration?: number): void {
+export function showToast(
+  message: string,
+  type: ToastType = 'info',
+  duration?: number,
+): void {
   getToast().show(message, { type, duration });
 }
 

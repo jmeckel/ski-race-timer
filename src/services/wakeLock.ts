@@ -4,10 +4,10 @@
  * Uses the Screen Wake Lock API when available
  */
 
-import { logger } from '../utils/logger';
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { logger } from '../utils/logger';
 
 class WakeLockService {
   private wakeLock: WakeLockSentinel | null = null;

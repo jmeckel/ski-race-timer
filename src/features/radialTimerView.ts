@@ -3,16 +3,29 @@
  * Handles the radial dial timer interface with iPod-style spin input
  */
 
-import { store } from '../store';
 import { RadialDial } from '../components/RadialDial';
-import { showToast } from '../components';
-import { syncService, gpsService, captureTimingPhoto, photoStorage, batteryService } from '../services';
-import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
-import { generateEntryId, getPointLabel, logWarning, getElement, escapeHtml } from '../utils';
-import { formatTime } from '../utils/format';
 import { t } from '../i18n/translations';
+import {
+  batteryService,
+  captureTimingPhoto,
+  feedbackSuccess,
+  feedbackTap,
+  feedbackWarning,
+  gpsService,
+  photoStorage,
+  syncService,
+} from '../services';
+import { store } from '../store';
+import type { Entry, Run, TimingPoint } from '../types';
+import {
+  escapeHtml,
+  generateEntryId,
+  getElement,
+  getPointLabel,
+  logWarning,
+} from '../utils';
+import { formatTime } from '../utils/format';
 import { logger } from '../utils/logger';
-import type { Entry, TimingPoint, Run } from '../types';
 
 // Battery-aware frame throttling (mirrors Clock.ts pattern)
 const FRAME_SKIP_NORMAL = 0;
@@ -22,7 +35,7 @@ const FRAME_SKIP_CRITICAL = 3; // 15fps
 const FRAME_SKIP_BY_LEVEL: Record<string, number> = {
   normal: FRAME_SKIP_NORMAL,
   low: FRAME_SKIP_LOW,
-  critical: FRAME_SKIP_CRITICAL
+  critical: FRAME_SKIP_CRITICAL,
 };
 
 // Module state
@@ -72,7 +85,10 @@ export function initRadialTimerView(): void {
       updateRadialGpsStatus();
       updateRadialSyncStatus();
     }
-    if (changedKeys.includes('syncStatus') || changedKeys.includes('cloudDeviceCount')) {
+    if (
+      changedKeys.includes('syncStatus') ||
+      changedKeys.includes('cloudDeviceCount')
+    ) {
       updateRadialSyncStatus();
     }
     if (changedKeys.includes('selectedPoint')) {
@@ -119,7 +135,8 @@ function initRadialClock(): void {
   const tick = () => {
     // Battery-aware frame skipping (matches Clock.ts pattern)
     clockCurrentFrame++;
-    const shouldUpdate = clockFrameSkip === 0 || (clockCurrentFrame % (clockFrameSkip + 1)) === 0;
+    const shouldUpdate =
+      clockFrameSkip === 0 || clockCurrentFrame % (clockFrameSkip + 1) === 0;
 
     if (shouldUpdate) {
       updateClock();
@@ -134,13 +151,16 @@ function initRadialClock(): void {
   }
 
   // Subscribe to battery changes for adaptive frame rate
-  batteryService.initialize().then(() => {
-    batteryUnsubscribe = batteryService.subscribe((status) => {
-      clockFrameSkip = FRAME_SKIP_BY_LEVEL[status.batteryLevel];
+  batteryService
+    .initialize()
+    .then(() => {
+      batteryUnsubscribe = batteryService.subscribe((status) => {
+        clockFrameSkip = FRAME_SKIP_BY_LEVEL[status.batteryLevel];
+      });
+    })
+    .catch(() => {
+      // Battery API unavailable - use normal frame rate
     });
-  }).catch(() => {
-    // Battery API unavailable - use normal frame rate
-  });
 
   // Pause when page is hidden, resume when visible
   visibilityHandler = () => {
@@ -180,7 +200,7 @@ function initRadialDial(): void {
     },
     momentum: 1.5,
     friction: 0.97,
-    sensitivity: 24
+    sensitivity: 24,
   });
 
   // Sync initial bib value
@@ -200,7 +220,7 @@ function updateRadialBibDisplay(value: string): void {
 
   const cursor = '<span class="radial-bib-cursor"></span>';
   if (!value) {
-    bibEl.innerHTML = '---' + cursor;
+    bibEl.innerHTML = `---${cursor}`;
     bibEl.classList.remove('active');
   } else {
     // Escape value for XSS protection (defense in depth)
@@ -239,7 +259,7 @@ function initRadialTimingPoints(): void {
  */
 function updateRadialTimingPointSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.radial-point-btn').forEach(btn => {
+  document.querySelectorAll('.radial-point-btn').forEach((btn) => {
     const isActive = btn.getAttribute('data-point') === state.selectedPoint;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
@@ -276,7 +296,7 @@ function initRadialRunSelector(): void {
  */
 function updateRadialRunSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.radial-run-btn').forEach(btn => {
+  document.querySelectorAll('.radial-run-btn').forEach((btn) => {
     const runStr = btn.getAttribute('data-run');
     const isActive = runStr === String(state.selectedRun);
     btn.classList.toggle('active', isActive);
@@ -327,7 +347,11 @@ function initRadialKeyboard(): void {
     const activeTag = document.activeElement?.tagName;
     const state = store.getState();
 
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+    if (
+      activeTag === 'INPUT' ||
+      activeTag === 'TEXTAREA' ||
+      activeTag === 'SELECT'
+    ) {
       return;
     }
     if (state.currentView !== 'timer') {
@@ -430,7 +454,7 @@ async function recordRadialTimestamp(): Promise<void> {
       status: 'ok',
       deviceId: state.deviceId,
       deviceName: state.deviceName,
-      gpsCoords
+      gpsCoords,
     };
 
     // Photo capture (async, non-blocking)
@@ -448,15 +472,21 @@ async function recordRadialTimestamp(): Promise<void> {
             }
           }
         })
-        .catch(err => {
+        .catch((err) => {
           logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
         });
     }
 
     // Check for duplicate
-    const isDuplicate = !!(entry.bib && state.entries.some(
-      e => e.bib === entry.bib && e.point === entry.point && (e.run ?? 1) === entry.run
-    ));
+    const isDuplicate = !!(
+      entry.bib &&
+      state.entries.some(
+        (e) =>
+          e.bib === entry.bib &&
+          e.point === entry.point &&
+          (e.run ?? 1) === entry.run,
+      )
+    );
 
     // Add entry
     store.addEntry(entry);
@@ -477,9 +507,10 @@ async function recordRadialTimestamp(): Promise<void> {
     // Auto-increment bib or clear after recording
     if (state.settings.auto && state.bibInput) {
       const localNext = parseInt(state.bibInput, 10) + 1;
-      const nextBib = state.settings.sync && state.cloudHighestBib > 0
-        ? Math.max(localNext, state.cloudHighestBib + 1)
-        : localNext;
+      const nextBib =
+        state.settings.sync && state.cloudHighestBib > 0
+          ? Math.max(localNext, state.cloudHighestBib + 1)
+          : localNext;
       const newBib = String(nextBib);
       store.setBibInput(newBib);
       radialDial?.setValue(newBib);
@@ -492,7 +523,6 @@ async function recordRadialTimestamp(): Promise<void> {
 
     // Update stats
     updateRadialStatsDisplay();
-
   } finally {
     store.setRecording(false);
   }
@@ -608,7 +638,10 @@ function updateRadialSyncStatus(): void {
   if (text) {
     const deviceCount = state.cloudDeviceCount || 0;
     const lang = state.currentLang;
-    text.textContent = deviceCount > 0 ? `${t('synced', lang)} (${deviceCount})` : t('syncingStatus', lang);
+    text.textContent =
+      deviceCount > 0
+        ? `${t('synced', lang)} (${deviceCount})`
+        : t('syncingStatus', lang);
   }
 }
 
@@ -634,7 +667,10 @@ function updateRadialStatsDisplay(): void {
 
     if (lastBibEl) lastBibEl.textContent = lastEntry.bib || '---';
     if (lastPointEl) {
-      lastPointEl.textContent = lastEntry.point === 'S' ? t('startShort', state.currentLang) : t('finishShort', state.currentLang);
+      lastPointEl.textContent =
+        lastEntry.point === 'S'
+          ? t('startShort', state.currentLang)
+          : t('finishShort', state.currentLang);
       lastPointEl.className = `radial-stats-point ${lastEntry.point === 'S' ? 'start' : 'finish'}`;
     }
     if (lastTimeEl) {

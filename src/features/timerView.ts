@@ -3,20 +3,38 @@
  * Handles clock display, number pad, timing points, run selection, and timestamp recording
  */
 
-import { store } from '../store';
 import { Clock, showToast } from '../components';
-import { syncService, gpsService, captureTimingPhoto, photoStorage, ambientModeService } from '../services';
-import { feedbackSuccess, feedbackWarning, feedbackTap } from '../services';
-import { generateEntryId, getPointLabel, getRunLabel, getRunColor, logWarning, getElement } from '../utils';
-import { getPointColor, formatTime as formatTimeDisplay } from '../utils/format';
 import { t } from '../i18n/translations';
-import { logger } from '../utils/logger';
+import {
+  ambientModeService,
+  captureTimingPhoto,
+  feedbackSuccess,
+  feedbackTap,
+  feedbackWarning,
+  gpsService,
+  photoStorage,
+  syncService,
+} from '../services';
+import { store } from '../store';
 import type { Entry, TimingPoint, VoiceIntent } from '../types';
+import {
+  generateEntryId,
+  getElement,
+  getPointLabel,
+  getRunColor,
+  getRunLabel,
+  logWarning,
+} from '../utils';
+import {
+  formatTime as formatTimeDisplay,
+  getPointColor,
+} from '../utils/format';
+import { logger } from '../utils/logger';
 
 // Module state
 let clock: Clock | null = null;
 let timerKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
-let timerTimeoutIds: Set<number> = new Set();
+const timerTimeoutIds: Set<number> = new Set();
 
 /**
  * Check if bib is all zeros (e.g., "0", "00", "000")
@@ -58,18 +76,23 @@ export function destroyClock(): void {
  */
 export function initTabs(): void {
   const tabBtns = document.querySelectorAll('.tab-btn');
-  const visibleTabs = () => Array.from(tabBtns).filter(btn =>
-    (btn as HTMLElement).style.display !== 'none'
-  ) as HTMLElement[];
+  const visibleTabs = () =>
+    Array.from(tabBtns).filter(
+      (btn) => (btn as HTMLElement).style.display !== 'none',
+    ) as HTMLElement[];
 
-  tabBtns.forEach(btn => {
+  tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
-      const view = btn.getAttribute('data-view') as 'timer' | 'results' | 'settings' | 'gateJudge';
+      const view = btn.getAttribute('data-view') as
+        | 'timer'
+        | 'results'
+        | 'settings'
+        | 'gateJudge';
       if (view) {
         store.setView(view);
         feedbackTap();
         // Update ARIA states for accessibility
-        tabBtns.forEach(t => {
+        tabBtns.forEach((t) => {
           t.setAttribute('aria-selected', t === btn ? 'true' : 'false');
         });
       }
@@ -176,7 +199,7 @@ export function initTimingPoints(): void {
       store.setSelectedPoint(point);
       feedbackTap();
       // Update ARIA states for accessibility
-      container.querySelectorAll('.timing-point-btn').forEach(b => {
+      container.querySelectorAll('.timing-point-btn').forEach((b) => {
         b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
       });
     }
@@ -196,11 +219,11 @@ export function initRunSelector(): void {
     if (!btn) return;
 
     const runStr = btn.getAttribute('data-run');
-    const run = runStr ? parseInt(runStr, 10) as 1 | 2 : 1;
+    const run = runStr ? (parseInt(runStr, 10) as 1 | 2) : 1;
     store.setSelectedRun(run);
     feedbackTap();
     // Update ARIA states for accessibility
-    container.querySelectorAll('.run-btn').forEach(b => {
+    container.querySelectorAll('.run-btn').forEach((b) => {
       b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
     });
   });
@@ -235,7 +258,11 @@ export function initTimestampButton(): void {
     const state = store.getState();
 
     // Skip if user is typing in an input field or not on timer view
-    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+    if (
+      activeTag === 'INPUT' ||
+      activeTag === 'TEXTAREA' ||
+      activeTag === 'SELECT'
+    ) {
       return;
     }
     if (state.currentView !== 'timer') {
@@ -273,8 +300,11 @@ export function initTimestampButton(): void {
       store.setSelectedPoint('S');
       feedbackTap();
       // Update ARIA states
-      document.querySelectorAll('.timing-point-btn').forEach(btn => {
-        btn.setAttribute('aria-checked', btn.getAttribute('data-point') === 'S' ? 'true' : 'false');
+      document.querySelectorAll('.timing-point-btn').forEach((btn) => {
+        btn.setAttribute(
+          'aria-checked',
+          btn.getAttribute('data-point') === 'S' ? 'true' : 'false',
+        );
       });
       return;
     }
@@ -284,8 +314,11 @@ export function initTimestampButton(): void {
       store.setSelectedPoint('F');
       feedbackTap();
       // Update ARIA states
-      document.querySelectorAll('.timing-point-btn').forEach(btn => {
-        btn.setAttribute('aria-checked', btn.getAttribute('data-point') === 'F' ? 'true' : 'false');
+      document.querySelectorAll('.timing-point-btn').forEach((btn) => {
+        btn.setAttribute(
+          'aria-checked',
+          btn.getAttribute('data-point') === 'F' ? 'true' : 'false',
+        );
       });
       return;
     }
@@ -363,7 +396,7 @@ export async function recordTimestamp(): Promise<void> {
       status: 'ok',
       deviceId: state.deviceId,
       deviceName: state.deviceName,
-      gpsCoords
+      gpsCoords,
     };
 
     // Capture photo asynchronously - don't block timestamp recording
@@ -374,17 +407,27 @@ export async function recordTimestamp(): Promise<void> {
           if (photo) {
             try {
               const currentState = store.getState();
-              const entryStillExists = currentState.entries.some(e => e.id === entryId);
+              const entryStillExists = currentState.entries.some(
+                (e) => e.id === entryId,
+              );
               if (!entryStillExists) {
-                logger.warn('Entry was deleted before photo could be attached:', entryId);
+                logger.warn(
+                  'Entry was deleted before photo could be attached:',
+                  entryId,
+                );
                 return;
               }
 
               const saved = await photoStorage.savePhoto(entryId, photo);
               if (saved) {
-                const updated = store.updateEntry(entryId, { photo: 'indexeddb' });
+                const updated = store.updateEntry(entryId, {
+                  photo: 'indexeddb',
+                });
                 if (!updated) {
-                  logger.warn('Entry deleted during photo save, removing orphaned photo:', entryId);
+                  logger.warn(
+                    'Entry deleted during photo save, removing orphaned photo:',
+                    entryId,
+                  );
                   await photoStorage.deletePhoto(entryId);
                 }
               } else {
@@ -397,7 +440,7 @@ export async function recordTimestamp(): Promise<void> {
             }
           }
         })
-        .catch(err => {
+        .catch((err) => {
           if (err instanceof Error && err.name === 'PhotoTooLargeError') {
             const lang = store.getState().currentLang;
             showToast(t('photoTooLarge', lang), 'warning');
@@ -408,9 +451,14 @@ export async function recordTimestamp(): Promise<void> {
     }
 
     // Check for duplicate
-    const isDuplicate = entry.bib && state.entries.some(
-      e => e.bib === entry.bib && e.point === entry.point && (e.run ?? 1) === entry.run
-    );
+    const isDuplicate =
+      entry.bib &&
+      state.entries.some(
+        (e) =>
+          e.bib === entry.bib &&
+          e.point === entry.point &&
+          (e.run ?? 1) === entry.run,
+      );
 
     // Check for zero bib
     const hasZeroBib = isZeroBib(entry.bib);
@@ -436,9 +484,10 @@ export async function recordTimestamp(): Promise<void> {
     // Auto-increment bib after recording
     if (state.settings.auto && state.bibInput) {
       const localNext = parseInt(state.bibInput, 10) + 1;
-      const nextBib = state.settings.sync && state.cloudHighestBib > 0
-        ? Math.max(localNext, state.cloudHighestBib + 1)
-        : localNext;
+      const nextBib =
+        state.settings.sync && state.cloudHighestBib > 0
+          ? Math.max(localNext, state.cloudHighestBib + 1)
+          : localNext;
       store.setBibInput(String(nextBib));
     } else if (!state.bibInput) {
       store.setBibInput('');
@@ -448,7 +497,6 @@ export async function recordTimestamp(): Promise<void> {
 
     // Update last recorded display
     updateLastRecorded(entry);
-
   } finally {
     store.setRecording(false);
   }
@@ -461,10 +509,18 @@ function showConfirmation(entry: Entry): void {
   const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
-  const bibEl = overlay.querySelector('.confirmation-bib') as HTMLElement | null;
-  const pointEl = overlay.querySelector('.confirmation-point') as HTMLElement | null;
-  const runEl = overlay.querySelector('.confirmation-run') as HTMLElement | null;
-  const timeEl = overlay.querySelector('.confirmation-time') as HTMLElement | null;
+  const bibEl = overlay.querySelector(
+    '.confirmation-bib',
+  ) as HTMLElement | null;
+  const pointEl = overlay.querySelector(
+    '.confirmation-point',
+  ) as HTMLElement | null;
+  const runEl = overlay.querySelector(
+    '.confirmation-run',
+  ) as HTMLElement | null;
+  const timeEl = overlay.querySelector(
+    '.confirmation-time',
+  ) as HTMLElement | null;
 
   const state = store.getState();
 
@@ -530,7 +586,9 @@ function triggerSnowflakeBurst(point: 'S' | 'F'): void {
       text-shadow: 0 0 6px ${color};
     `;
 
-    flake.addEventListener('animationend', () => flake.remove(), { once: true });
+    flake.addEventListener('animationend', () => flake.remove(), {
+      once: true,
+    });
     burst.appendChild(flake);
   }
 }
@@ -542,7 +600,9 @@ function showDuplicateWarning(entry: Entry): void {
   const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
-  const warningEl = overlay.querySelector('.confirmation-duplicate') as HTMLElement | null;
+  const warningEl = overlay.querySelector(
+    '.confirmation-duplicate',
+  ) as HTMLElement | null;
   if (warningEl) {
     warningEl.style.display = 'flex';
   }
@@ -563,7 +623,9 @@ function showZeroBibWarning(entry: Entry): void {
   const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
-  const warningEl = overlay.querySelector('.confirmation-zero-bib') as HTMLElement | null;
+  const warningEl = overlay.querySelector(
+    '.confirmation-zero-bib',
+  ) as HTMLElement | null;
   if (warningEl) {
     warningEl.style.display = 'flex';
   }
@@ -619,7 +681,9 @@ export function updateBibDisplay(): void {
   const bibDisplay = getElement('bib-display');
   const bibValue = bibDisplay?.querySelector('.bib-value');
   if (bibValue) {
-    bibValue.textContent = state.bibInput ? state.bibInput.padStart(3, '0') : '---';
+    bibValue.textContent = state.bibInput
+      ? state.bibInput.padStart(3, '0')
+      : '---';
   }
 
   const timestampBtn = getElement('timestamp-btn');
@@ -633,7 +697,7 @@ export function updateBibDisplay(): void {
  */
 export function updateTimingPointSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.timing-point-btn').forEach(btn => {
+  document.querySelectorAll('.timing-point-btn').forEach((btn) => {
     const isActive = btn.getAttribute('data-point') === state.selectedPoint;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
@@ -645,7 +709,7 @@ export function updateTimingPointSelection(): void {
  */
 export function updateRunSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.run-btn').forEach(btn => {
+  document.querySelectorAll('.run-btn').forEach((btn) => {
     const isActive = btn.getAttribute('data-run') === String(state.selectedRun);
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));

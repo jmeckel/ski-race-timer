@@ -3,8 +3,8 @@
  * Provider-agnostic interface for processing voice commands via LLM
  */
 
+import type { LLMConfig, VoiceContext, VoiceIntent } from '../types';
 import { logger } from '../utils/logger';
-import type { VoiceIntent, VoiceContext, LLMConfig } from '../types';
 
 const SYSTEM_PROMPT = `You are a voice command processor for a ski race timing app.
 Parse the user's spoken command and return a structured JSON response.
@@ -71,9 +71,12 @@ function isProxyEndpoint(endpoint: string): boolean {
 export async function processVoiceCommand(
   transcript: string,
   context: VoiceContext,
-  config: LLMConfig
+  config: LLMConfig,
 ): Promise<VoiceIntent> {
-  const { endpoint, apiKey, model, maxTokens } = { ...DEFAULT_CONFIG, ...config };
+  const { endpoint, apiKey, model, maxTokens } = {
+    ...DEFAULT_CONFIG,
+    ...config,
+  };
 
   if (!endpoint) {
     throw new Error('LLM endpoint is required');
@@ -89,7 +92,14 @@ export async function processVoiceCommand(
     throw new Error('API key is required for direct LLM calls');
   }
 
-  return processDirectAPI(transcript, context, endpoint, apiKey, model, maxTokens);
+  return processDirectAPI(
+    transcript,
+    context,
+    endpoint,
+    apiKey,
+    model,
+    maxTokens,
+  );
 }
 
 /**
@@ -98,7 +108,7 @@ export async function processVoiceCommand(
 async function processViaProxy(
   transcript: string,
   context: VoiceContext,
-  endpoint: string
+  endpoint: string,
 ): Promise<VoiceIntent> {
   try {
     const response = await fetch(endpoint, {
@@ -106,7 +116,7 @@ async function processViaProxy(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ transcript, context })
+      body: JSON.stringify({ transcript, context }),
     });
 
     if (!response.ok) {
@@ -123,13 +133,12 @@ async function processViaProxy(
     }
 
     throw new Error('Invalid proxy response');
-
   } catch (error) {
     logger.error('[LLMProvider] Proxy processing error:', error);
     return {
       action: 'unknown',
       confidence: 0,
-      confirmationNeeded: false
+      confirmationNeeded: false,
     };
   }
 }
@@ -143,7 +152,7 @@ async function processDirectAPI(
   endpoint: string,
   apiKey: string,
   model?: string,
-  maxTokens?: number
+  maxTokens?: number,
 ): Promise<VoiceIntent> {
   const contextJson = JSON.stringify({
     role: context.role,
@@ -151,10 +160,12 @@ async function processDirectAPI(
     currentRun: context.currentRun,
     activeBibs: context.activeBibs,
     gateRange: context.gateRange,
-    pendingConfirmation: context.pendingConfirmation ? {
-      action: context.pendingConfirmation.action,
-      params: context.pendingConfirmation.params
-    } : null
+    pendingConfirmation: context.pendingConfirmation
+      ? {
+          action: context.pendingConfirmation.action,
+          params: context.pendingConfirmation.params,
+        }
+      : null,
   });
 
   const userMessage = `Context: ${contextJson}\n\nTranscript: "${transcript}"`;
@@ -164,15 +175,15 @@ async function processDirectAPI(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
         model,
         max_tokens: maxTokens,
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }]
-      })
+        messages: [{ role: 'user', content: userMessage }],
+      }),
     });
 
     if (!response.ok) {
@@ -198,7 +209,10 @@ async function processDirectAPI(
     // Parse JSON response - handle potential markdown code blocks
     let jsonContent = content.trim();
     if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+      jsonContent = jsonContent
+        .replace(/```json?\n?/g, '')
+        .replace(/```$/g, '')
+        .trim();
     }
 
     const intent = JSON.parse(jsonContent) as VoiceIntent;
@@ -210,7 +224,6 @@ async function processDirectAPI(
 
     logger.debug('[LLMProvider] Parsed intent:', intent);
     return intent;
-
   } catch (error) {
     logger.error('[LLMProvider] Processing error:', error);
 
@@ -218,7 +231,7 @@ async function processDirectAPI(
     return {
       action: 'unknown',
       confidence: 0,
-      confirmationNeeded: false
+      confirmationNeeded: false,
     };
   }
 }
@@ -230,7 +243,7 @@ export async function processVoiceCommandWithTimeout(
   transcript: string,
   context: VoiceContext,
   config: LLMConfig,
-  timeoutMs: number = 5000
+  timeoutMs: number = 5000,
 ): Promise<VoiceIntent> {
   const timeoutPromise = new Promise<VoiceIntent>((_, reject) => {
     setTimeout(() => reject(new Error('LLM request timeout')), timeoutMs);
@@ -238,13 +251,13 @@ export async function processVoiceCommandWithTimeout(
 
   return Promise.race([
     processVoiceCommand(transcript, context, config),
-    timeoutPromise
+    timeoutPromise,
   ]).catch((error) => {
     logger.warn('[LLMProvider] Timeout or error:', error);
     return {
       action: 'unknown' as const,
       confidence: 0,
-      confirmationNeeded: false
+      confirmationNeeded: false,
     };
   });
 }

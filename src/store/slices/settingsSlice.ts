@@ -35,7 +35,7 @@ export const DEFAULT_SETTINGS: Settings = {
   motionEffects: true,
   glassEffects: true,
   outdoorMode: false,
-  ambientMode: true
+  ambientMode: true,
 };
 
 /**
@@ -43,7 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
  */
 export function updateSettings(
   currentSettings: Settings,
-  updates: Partial<Settings>
+  updates: Partial<Settings>,
 ): Settings {
   return { ...currentSettings, ...updates };
 }
@@ -53,10 +53,10 @@ export function updateSettings(
  */
 export function toggleSetting(
   currentSettings: Settings,
-  key: BooleanSettingKey
+  key: BooleanSettingKey,
 ): Settings {
   return {
     ...currentSettings,
-    [key]: !currentSettings[key]
+    [key]: !currentSettings[key],
   };
 }

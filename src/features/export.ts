@@ -3,12 +3,12 @@
  * CSV export in Race Horology format
  */
 
-import { store } from '../store';
-import { t } from '../i18n/translations';
 import { showToast } from '../components';
+import { t } from '../i18n/translations';
 import { feedbackSuccess } from '../services';
+import { store } from '../store';
+import type { FaultEntry, FaultType, Language } from '../types';
 import { logger } from '../utils/logger';
-import type { Entry, Language, FaultEntry, FaultType } from '../types';
 
 /**
  * Format timestamp for Race Horology CSV export
@@ -25,9 +25,17 @@ export function formatTimeForRaceHorology(isoTimestamp: string): string {
   if (cs >= 100) {
     cs = 0;
     s++;
-    if (s >= 60) { s = 0; m++; }
-    if (m >= 60) { m = 0; h++; }
-    if (h >= 24) { h = 0; }
+    if (s >= 60) {
+      s = 0;
+      m++;
+    }
+    if (m >= 60) {
+      m = 0;
+      h++;
+    }
+    if (h >= 24) {
+      h = 0;
+    }
   }
 
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(cs).padStart(2, '0')}`;
@@ -44,7 +52,7 @@ export function escapeCSVField(field: string): string {
   let escaped = field;
 
   // Prefix with single quote if starts with formula character
-  if (formulaChars.some(char => escaped.startsWith(char))) {
+  if (formulaChars.some((char) => escaped.startsWith(char))) {
     escaped = `'${escaped}`;
   }
 
@@ -59,7 +67,12 @@ export function escapeCSVField(field: string): string {
   }
 
   // Wrap in quotes if contains special characters (semicolon is CSV delimiter)
-  if (escaped.includes(';') || escaped.includes('"') || escaped.includes('\n') || escaped.includes('|')) {
+  if (
+    escaped.includes(';') ||
+    escaped.includes('"') ||
+    escaped.includes('\n') ||
+    escaped.includes('|')
+  ) {
     escaped = `"${escaped}"`;
   }
 
@@ -83,7 +96,7 @@ function getStatusLabel(status: string, lang: Language): string {
     dns: { en: 'DNS', de: 'DNS' },
     dnf: { en: 'DNF', de: 'DNF' },
     dsq: { en: 'DSQ', de: 'DSQ' },
-    flt: { en: 'FLT', de: 'STR' },  // Fault penalty (Strafzeit)
+    flt: { en: 'FLT', de: 'STR' }, // Fault penalty (Strafzeit)
   };
   return statusMap[status]?.[lang] || status.toUpperCase();
 }
@@ -104,7 +117,7 @@ function formatFaultsForCSV(faults: FaultEntry[]): string {
   if (faults.length === 0) return '';
   return faults
     .sort((a, b) => a.gateNumber - b.gateNumber)
-    .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
+    .map((f) => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
     .join(',');
 }
 
@@ -125,8 +138,9 @@ export function exportResults(): void {
 
   try {
     // Sort entries by timestamp
-    const sortedEntries = [...entries].sort((a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    const sortedEntries = [...entries].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
     // Check if there are any faults - if so, include fault columns
@@ -138,7 +152,7 @@ export function exportResults(): void {
       ? 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler'
       : 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
 
-    const rows = sortedEntries.map(entry => {
+    const rows = sortedEntries.map((entry) => {
       const bib = escapeCSVField(entry.bib);
       const run = entry.run ?? 1;
       const point = getExportPointLabel(entry.point);
@@ -146,24 +160,28 @@ export function exportResults(): void {
       const device = escapeCSVField(entry.deviceName || entry.deviceId);
 
       // Get faults for this bib/run (only on Finish entries)
-      const entryFaults = entry.point === 'F'
-        ? faults.filter(f => f.bib === entry.bib && f.run === run)
-        : [];
+      const entryFaults =
+        entry.point === 'F'
+          ? faults.filter((f) => f.bib === entry.bib && f.run === run)
+          : [];
 
       // Determine status based on faults
       let status: string;
       if (entry.point === 'F' && entryFaults.length > 0) {
         // If using penalty mode, status is FLT; otherwise DSQ
-        status = state.usePenaltyMode ? getStatusLabel('flt', lang) : getStatusLabel('dsq', lang);
+        status = state.usePenaltyMode
+          ? getStatusLabel('flt', lang)
+          : getStatusLabel('dsq', lang);
       } else {
         status = getStatusLabel(entry.status, lang);
       }
 
       if (hasFaults) {
         // Calculate penalty time
-        const penaltySeconds = entryFaults.length > 0 && state.usePenaltyMode
-          ? entryFaults.length * state.penaltySeconds
-          : 0;
+        const penaltySeconds =
+          entryFaults.length > 0 && state.usePenaltyMode
+            ? entryFaults.length * state.penaltySeconds
+            : 0;
         const faultStr = formatFaultsForCSV(entryFaults);
 
         return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr}`;
@@ -206,7 +224,10 @@ export function exportResults(): void {
 /**
  * Generate export filename
  */
-export function getExportFilename(raceId: string, extension: string = 'csv'): string {
+export function getExportFilename(
+  raceId: string,
+  extension: string = 'csv',
+): string {
   const date = new Date().toISOString().split('T')[0];
   const safeRaceId = raceId.replace(/[^a-zA-Z0-9-_]/g, '_') || 'race';
   return `${safeRaceId}_${date}.${extension}`;
@@ -226,7 +247,7 @@ export function exportJudgeReport(): void {
   const gateAssignment = state.gateAssignment;
 
   // Filter faults to only those recorded by this device
-  const myFaults = faults.filter(f => f.deviceId === deviceId);
+  const myFaults = faults.filter((f) => f.deviceId === deviceId);
 
   // Build report
   const lines: string[] = [];
@@ -237,22 +258,28 @@ export function exportJudgeReport(): void {
   lines.push(`        ${t('gateJudgeCard', lang).toUpperCase()}`);
   lines.push(divider);
   lines.push(`${t('race', lang)}:     ${raceId}`);
-  lines.push(`${t('date', lang)}:      ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`);
+  lines.push(
+    `${t('date', lang)}:      ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`,
+  );
   lines.push(`${t('gateJudgeLabel', lang)}: ${deviceName}`);
   if (gateAssignment) {
-    lines.push(`${t('gates', lang)}:       ${gateAssignment[0]} - ${gateAssignment[1]}`);
+    lines.push(
+      `${t('gates', lang)}:       ${gateAssignment[0]} - ${gateAssignment[1]}`,
+    );
   }
   lines.push(thinDivider);
 
   // Group faults by run
-  const run1Faults = myFaults.filter(f => f.run === 1);
-  const run2Faults = myFaults.filter(f => f.run === 2);
+  const run1Faults = myFaults.filter((f) => f.run === 1);
+  const run2Faults = myFaults.filter((f) => f.run === 2);
 
   const formatFaultRow = (f: FaultEntry): string => {
     const bib = f.bib.padStart(5);
     const gate = String(f.gateNumber).padStart(4);
     const type = getFaultTypeCode(f.faultType).padEnd(10);
-    const time = new Date(f.timestamp).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US');
+    const time = new Date(f.timestamp).toLocaleTimeString(
+      lang === 'de' ? 'de-DE' : 'en-US',
+    );
     return `  ${bib}   │  ${gate}  │ ${type} │ ${time}`;
   };
 
@@ -263,28 +290,34 @@ export function exportJudgeReport(): void {
 
   if (run1Faults.length > 0 || run2Faults.length === 0) {
     lines.push(`${t('runLabel', lang)} 1:`);
-    lines.push(`${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`);
+    lines.push(
+      `${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`,
+    );
     lines.push('────────┼──────┼───────────┼───────────────');
     if (run1Faults.length === 0) {
       lines.push(`  ${t('noFaultsEntered', lang)}`);
     } else {
-      run1Faults.forEach(f => lines.push(formatFaultRow(f)));
+      run1Faults.forEach((f) => lines.push(formatFaultRow(f)));
     }
     lines.push('');
   }
 
   if (run2Faults.length > 0) {
     lines.push(`${t('runLabel', lang)} 2:`);
-    lines.push(`${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`);
+    lines.push(
+      `${bibHeader.substring(0, 7).padEnd(7)} │ ${gateHeader.substring(0, 4).padEnd(4)} │ ${faultHeader.substring(0, 9).padEnd(9)} │ ${timeHeader}`,
+    );
     lines.push('────────┼──────┼───────────┼───────────────');
-    run2Faults.forEach(f => lines.push(formatFaultRow(f)));
+    run2Faults.forEach((f) => lines.push(formatFaultRow(f)));
     lines.push('');
   }
 
   lines.push(thinDivider);
   lines.push(`${t('signature', lang)}: ________________________`);
   lines.push('');
-  lines.push(`${t('legend', lang)}: MG=${t('missedGateLegend', lang)}, STR=${t('straddlingLegend', lang)}, BR=${t('bindingLegend', lang)}`);
+  lines.push(
+    `${t('legend', lang)}: MG=${t('missedGateLegend', lang)}, STR=${t('straddlingLegend', lang)}, BR=${t('bindingLegend', lang)}`,
+  );
   lines.push(divider);
 
   const content = lines.join('\n');
@@ -295,7 +328,10 @@ export function exportJudgeReport(): void {
 
   const link = document.createElement('a');
   link.href = url;
-  link.download = getExportFilename(`${raceId}_${t('gateJudgeCard', lang)}_${deviceName.replace(/\s+/g, '_')}`, 'txt');
+  link.download = getExportFilename(
+    `${raceId}_${t('gateJudgeCard', lang)}_${deviceName.replace(/\s+/g, '_')}`,
+    'txt',
+  );
 
   document.body.appendChild(link);
   link.click();
@@ -340,18 +376,22 @@ export function exportFaultSummaryWhatsApp(): void {
   lines.push('');
 
   // Group by run
-  const run1Bibs = Array.from(faultsByBib.entries()).filter(([key]) => key.endsWith('-1'));
-  const run2Bibs = Array.from(faultsByBib.entries()).filter(([key]) => key.endsWith('-2'));
+  const run1Bibs = Array.from(faultsByBib.entries()).filter(([key]) =>
+    key.endsWith('-1'),
+  );
+  const run2Bibs = Array.from(faultsByBib.entries()).filter(([key]) =>
+    key.endsWith('-2'),
+  );
 
   const formatBibFaults = (key: string, racerFaults: FaultEntry[]): string => {
     const [bib] = key.split('-');
     const paddedBib = bib.padStart(3, '0');
     const gateList = racerFaults
       .sort((a, b) => a.gateNumber - b.gateNumber)
-      .map(f => `T${f.gateNumber}`)
+      .map((f) => `T${f.gateNumber}`)
       .join('+');
     const faultTypes = racerFaults
-      .map(f => getFaultTypeCode(f.faultType))
+      .map((f) => getFaultTypeCode(f.faultType))
       .join(', ');
 
     if (state.usePenaltyMode) {
@@ -371,7 +411,10 @@ export function exportFaultSummaryWhatsApp(): void {
       lines.push(`🔴 ${t('dsq', lang)}:`);
     }
     run1Bibs
-      .sort((a, b) => parseInt(a[0].split('-')[0]) - parseInt(b[0].split('-')[0]))
+      .sort(
+        (a, b) =>
+          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+      )
       .forEach(([key, racerFaults]) => {
         lines.push(formatBibFaults(key, racerFaults));
       });
@@ -387,7 +430,10 @@ export function exportFaultSummaryWhatsApp(): void {
       lines.push(`🔴 ${t('dsq', lang)}:`);
     }
     run2Bibs
-      .sort((a, b) => parseInt(a[0].split('-')[0]) - parseInt(b[0].split('-')[0]))
+      .sort(
+        (a, b) =>
+          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+      )
       .forEach(([key, racerFaults]) => {
         lines.push(formatBibFaults(key, racerFaults));
       });
@@ -396,19 +442,27 @@ export function exportFaultSummaryWhatsApp(): void {
 
   // Footer
   const now = new Date();
-  lines.push(`📅 ${now.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')} ${now.toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`);
+  lines.push(
+    `📅 ${now.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')} ${now.toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`,
+  );
 
   const content = lines.join('\n');
 
   // Copy to clipboard for easy sharing
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(content).then(() => {
-      feedbackSuccess();
-      showToast(t('copiedToClipboard', lang), 'success');
-    }).catch(() => {
-      // Fallback: download as file
-      downloadTextFile(content, getExportFilename(`${raceId}_WhatsApp`, 'txt'));
-    });
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        feedbackSuccess();
+        showToast(t('copiedToClipboard', lang), 'success');
+      })
+      .catch(() => {
+        // Fallback: download as file
+        downloadTextFile(
+          content,
+          getExportFilename(`${raceId}_WhatsApp`, 'txt'),
+        );
+      });
   } else {
     // Fallback: download as file
     downloadTextFile(content, getExportFilename(`${raceId}_WhatsApp`, 'txt'));
@@ -443,25 +497,39 @@ export function exportChiefSummary(): void {
   const divider = '══════════════════════════════════════════════════════';
 
   // Group by run
-  const run1Bibs = Array.from(faultsByBib.entries()).filter(([key]) => key.endsWith('-1'));
-  const run2Bibs = Array.from(faultsByBib.entries()).filter(([key]) => key.endsWith('-2'));
+  const run1Bibs = Array.from(faultsByBib.entries()).filter(([key]) =>
+    key.endsWith('-1'),
+  );
+  const run2Bibs = Array.from(faultsByBib.entries()).filter(([key]) =>
+    key.endsWith('-2'),
+  );
 
-  const formatRunSummary = (runBibs: [string, FaultEntry[]][], runNum: number) => {
+  const formatRunSummary = (
+    runBibs: [string, FaultEntry[]][],
+    runNum: number,
+  ) => {
     if (runBibs.length === 0) return;
 
-    lines.push(`${t('faultSummaryTitle', lang)} - ${t('runLabel', lang)} ${runNum}`);
+    lines.push(
+      `${t('faultSummaryTitle', lang)} - ${t('runLabel', lang)} ${runNum}`,
+    );
     lines.push(divider);
-    lines.push(`${t('bib', lang).substring(0, 7).padEnd(7)} │ ${t('faults', lang).padEnd(16)} │ ${t('penalty', lang).padStart(9)} │ Status`);
+    lines.push(
+      `${t('bib', lang).substring(0, 7).padEnd(7)} │ ${t('faults', lang).padEnd(16)} │ ${t('penalty', lang).padStart(9)} │ Status`,
+    );
     lines.push('────────┼──────────────────┼───────────┼────────');
 
     runBibs
-      .sort((a, b) => parseInt(a[0].split('-')[0]) - parseInt(b[0].split('-')[0]))
+      .sort(
+        (a, b) =>
+          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+      )
       .forEach(([key, racerFaults]) => {
         const [bib] = key.split('-');
         const paddedBib = bib.padStart(5);
         const faultStr = racerFaults
           .sort((a, b) => a.gateNumber - b.gateNumber)
-          .map(f => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
+          .map((f) => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
           .join(', ')
           .padEnd(16);
 
@@ -476,24 +544,33 @@ export function exportChiefSummary(): void {
           statusStr = t('dsq', lang);
         }
 
-        lines.push(`  ${paddedBib}   │ ${faultStr} │ ${penaltyStr} │ ${statusStr}`);
+        lines.push(
+          `  ${paddedBib}   │ ${faultStr} │ ${penaltyStr} │ ${statusStr}`,
+        );
       });
 
     lines.push('');
   };
 
-  lines.push(`${raceId} - ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`);
+  lines.push(
+    `${raceId} - ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`,
+  );
   lines.push('');
 
   formatRunSummary(run1Bibs, 1);
   formatRunSummary(run2Bibs, 2);
 
   lines.push(divider);
-  lines.push(`${t('generated', lang)}: ${new Date().toLocaleString(lang === 'de' ? 'de-DE' : 'en-US')}`);
+  lines.push(
+    `${t('generated', lang)}: ${new Date().toLocaleString(lang === 'de' ? 'de-DE' : 'en-US')}`,
+  );
 
   const content = lines.join('\n');
 
-  downloadTextFile(content, getExportFilename(`${raceId}_${t('summary', lang)}`, 'txt'));
+  downloadTextFile(
+    content,
+    getExportFilename(`${raceId}_${t('summary', lang)}`, 'txt'),
+  );
 
   feedbackSuccess();
   showToast(t('exported', lang), 'success');

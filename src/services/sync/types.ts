@@ -35,7 +35,15 @@ export const POLL_INTERVAL_METERED_BASE = 15000; // 15s base when on metered con
  * Network Information API type definition
  */
 export interface NetworkInformation extends EventTarget {
-  type?: 'bluetooth' | 'cellular' | 'ethernet' | 'none' | 'wifi' | 'wimax' | 'other' | 'unknown';
+  type?:
+    | 'bluetooth'
+    | 'cellular'
+    | 'ethernet'
+    | 'none'
+    | 'wifi'
+    | 'wimax'
+    | 'other'
+    | 'unknown';
   effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
   saveData?: boolean;
   onchange?: ((this: NetworkInformation, ev: Event) => unknown) | null;
@@ -53,7 +61,11 @@ export interface PollingConfig {
 /**
  * Broadcast message types for cross-tab communication
  */
-export type BroadcastMessageType = 'entry' | 'presence' | 'fault' | 'fault-deleted';
+export type BroadcastMessageType =
+  | 'entry'
+  | 'presence'
+  | 'fault'
+  | 'fault-deleted';
 
 export interface BroadcastMessage {
   type: BroadcastMessageType;

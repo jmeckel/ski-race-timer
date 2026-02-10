@@ -26,7 +26,10 @@ export function initGlobalErrorHandlers(): void {
   window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
   // Handle critical errors from our error system
-  window.addEventListener('critical-error', handleCriticalError as EventListener);
+  window.addEventListener(
+    'critical-error',
+    handleCriticalError as EventListener,
+  );
 }
 
 /**
@@ -35,14 +38,17 @@ export function initGlobalErrorHandlers(): void {
 export function cleanupGlobalErrorHandlers(): void {
   window.removeEventListener('error', handleGlobalError);
   window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-  window.removeEventListener('critical-error', handleCriticalError as EventListener);
+  window.removeEventListener(
+    'critical-error',
+    handleCriticalError as EventListener,
+  );
 }
 
 /**
  * Handle global window.onerror events
  */
 function handleGlobalError(event: ErrorEvent): void {
-  const { message, filename, lineno, colno, error } = event;
+  const { message, error } = event;
 
   // Log the error
   logError('Global', 'uncaught error', error || message, undefined);
@@ -104,7 +110,9 @@ function trackError(message: string): void {
   recentErrors.push({ message, timestamp: now });
 
   // Clean old errors
-  recentErrors = recentErrors.filter(e => now - e.timestamp < ERROR_WINDOW_MS);
+  recentErrors = recentErrors.filter(
+    (e) => now - e.timestamp < ERROR_WINDOW_MS,
+  );
 }
 
 /**
@@ -190,11 +198,13 @@ function showErrorOverlay(message: string): void {
   }, 100);
 
   // Add button handlers
-  document.getElementById('error-dismiss-btn')?.addEventListener('click', () => {
-    overlay.remove();
-    errorOverlayShown = false;
-    recentErrors = []; // Reset error tracking
-  });
+  document
+    .getElementById('error-dismiss-btn')
+    ?.addEventListener('click', () => {
+      overlay.remove();
+      errorOverlayShown = false;
+      recentErrors = []; // Reset error tracking
+    });
 
   document.getElementById('error-reload-btn')?.addEventListener('click', () => {
     window.location.reload();
@@ -213,11 +223,9 @@ function escapeHtml(text: string): string {
 /**
  * Wrap an async function with error handling
  */
-export function withErrorBoundary<T extends (...args: unknown[]) => Promise<unknown>>(
-  fn: T,
-  component: string,
-  operation: string
-): T {
+export function withErrorBoundary<
+  T extends (...args: unknown[]) => Promise<unknown>,
+>(fn: T, component: string, operation: string): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
@@ -236,13 +244,13 @@ export function withErrorBoundary<T extends (...args: unknown[]) => Promise<unkn
 export function safeHandler<E extends Event>(
   handler: (event: E) => void | Promise<void>,
   component: string,
-  operation: string
+  operation: string,
 ): (event: E) => void {
   return (event: E) => {
     try {
       const result = handler(event);
       if (result instanceof Promise) {
-        result.catch(error => {
+        result.catch((error) => {
           logError(component, operation, error);
         });
       }

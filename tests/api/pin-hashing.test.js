@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
-import { hashPin, verifyPin } from '../../api/lib/jwt.js';
+import { hashPin, verifyPin } from '../../api/lib/jwt.ts';
 
 describe('PIN Hashing (PBKDF2)', () => {
   describe('hashPin', () => {

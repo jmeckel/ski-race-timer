@@ -6,26 +6,26 @@ import Redis from 'ioredis';
  */
 
 // Redis key constants
-export const CLIENT_PIN_KEY = 'admin:clientPin';
-export const CHIEF_JUDGE_PIN_KEY = 'admin:chiefJudgePin';
+export const CLIENT_PIN_KEY: string = 'admin:clientPin';
+export const CHIEF_JUDGE_PIN_KEY: string = 'admin:chiefJudgePin';
 
 // Singleton Redis client
-let redis = null;
-let redisError = null;
-let lastErrorTime = 0;
+let redis: Redis | null = null;
+let redisError: Error | null = null;
+let lastErrorTime: number = 0;
 
 // Configuration
-const RECONNECT_DELAY = 5000; // 5 seconds before attempting reconnection after error
+const RECONNECT_DELAY: number = 5000; // 5 seconds before attempting reconnection after error
 
 /**
  * Get or create Redis client with consistent configuration
- * @returns {Redis} Redis client instance
- * @throws {Error} If REDIS_URL is not configured
+ * @returns Redis client instance
+ * @throws If REDIS_URL is not configured
  */
-export function getRedis() {
+export function getRedis(): Redis {
   // If we have an error and enough time has passed, reset connection to retry
   if (redisError && redis) {
-    const timeSinceError = Date.now() - lastErrorTime;
+    const timeSinceError: number = Date.now() - lastErrorTime;
     if (timeSinceError > RECONNECT_DELAY) {
       console.log('Attempting Redis reconnection after error...');
       try {
@@ -47,22 +47,22 @@ export function getRedis() {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
       connectTimeout: 10000,
-      retryStrategy(times) {
+      retryStrategy(times: number): number | null {
         if (times > 3) {
           lastErrorTime = Date.now();
           return null; // Stop retrying after 3 attempts
         }
         return Math.min(times * 200, 2000);
       },
-      reconnectOnError(err) {
+      reconnectOnError(err: Error): boolean {
         // Reconnect on specific recoverable errors
-        const targetErrors = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
+        const targetErrors: string[] = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
         return targetErrors.some(e => err.message.includes(e));
       }
     });
 
     // Handle Redis connection events
-    redis.on('error', (err) => {
+    redis.on('error', (err: Error) => {
       console.error('Redis connection error:', err.message);
       redisError = err;
       lastErrorTime = Date.now();
@@ -87,16 +87,16 @@ export function getRedis() {
 
 /**
  * Check if there's an active Redis error
- * @returns {boolean} True if there's an error
+ * @returns True if there's an error
  */
-export function hasRedisError() {
+export function hasRedisError(): boolean {
   return redisError !== null;
 }
 
 /**
  * Get the current Redis error (if any)
- * @returns {Error|null} The current error or null
+ * @returns The current error or null
  */
-export function getRedisError() {
+export function getRedisError(): Error | null {
   return redisError;
 }
