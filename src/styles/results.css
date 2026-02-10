@@ -196,10 +196,54 @@
 /* ===== Results View Landscape ===== */
 @media (orientation: landscape) {
   .results-view {
-    padding: 8px 16px;
+    padding: 0 16px;
+  }
+
+  .results-header {
+    padding: 4px 16px;
+  }
+
+  .search-filter-bar {
+    margin-bottom: 4px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .search-input,
+  .filter-select {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+
+  .filter-select {
+    padding-right: 24px;
+  }
+
+  .stats-row {
+    gap: 12px;
+    padding: 2px 0;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
   }
 
   .results-list {
     max-width: none;
+  }
+
+  .results-actions {
+    padding: 4px 16px;
+    gap: 4px;
+  }
+
+  .action-btn {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    gap: 4px;
   }
 }
