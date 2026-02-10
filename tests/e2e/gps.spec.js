@@ -225,6 +225,7 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     await enterBib(page, 1);
+    await page.locator('#radial-time-btn').waitFor({ state: 'visible' });
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
