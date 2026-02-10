@@ -16,6 +16,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       de: 'Batterieschoner für längere Zeitmessung im Freien. Verbesserte PIN-Sicherheit und schnellere Sprachnotizen.',
     },
   },
+  '5.19': {
+    name: 'Marzipan Lynx',
+    description: {
+      en: 'Under-the-hood reliability upgrade. Stronger server-side input validation and improved code quality.',
+      de: 'Verbesserungen unter der Haube. Stärkere serverseitige Eingabevalidierung und verbesserte Codequalität.',
+    },
+  },
 };
 
 export function getVersionInfo(
