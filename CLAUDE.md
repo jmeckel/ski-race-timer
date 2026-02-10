@@ -342,10 +342,11 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
 ```
 
 **Rules:**
-- **Key**: Minor version only (e.g. `"5.19"`) — all patches under that minor share the same codename
+- **Key**: Minor version only (e.g. `"5.19"`) — all patches under that minor share the same codename and description
 - **Name**: `"Dessert Animal"` format, both capitalized, unique per release. Keep it fun but professional.
 - **Description**: 1-2 sentences, end-user wording (not developer jargon). Must have both `en` and `de` translations.
-- **Patch-only bumps**: No new entry needed — the existing minor entry covers all patches.
+- **Bug fixes / patch bumps**: Only increment the patch digit (e.g. 5.18.1 → 5.18.2). Do NOT add a new entry or change the codename/description — the existing minor entry covers all patches automatically.
+- **New codename only on minor bump**: A new `VERSION_NAMES` entry is only added when the minor version changes (e.g. 5.18 → 5.19).
 - **Display**: Settings screen shows `Version X.Y.Z "Name"` with the description below. The name also appears in clipboard debug info.
 
 **Files involved in version display:**
