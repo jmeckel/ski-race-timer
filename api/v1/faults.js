@@ -14,55 +14,12 @@ import {
   sanitizeString,
   safeJsonParse
 } from '../lib/response.js';
+import { isValidRaceId, checkRateLimit, VALID_FAULT_TYPES, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
-const MAX_RACE_ID_LENGTH = 50;
-const MAX_DEVICE_NAME_LENGTH = 100;
 const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
 const MAX_ATOMIC_RETRIES = 5;
-
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60; // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 100;
-const RATE_LIMIT_MAX_POSTS = 50;
-
-// Rate limiting using Redis
-async function checkRateLimit(client, ip, method) {
-  const now = Math.floor(Date.now() / 1000);
-  const windowStart = now - (now % RATE_LIMIT_WINDOW);
-  const limit = method === 'POST' ? RATE_LIMIT_MAX_POSTS : RATE_LIMIT_MAX_REQUESTS;
-  const key = `ratelimit:faults:${method}:${ip}:${windowStart}`;
-
-  try {
-    const multi = client.multi();
-    multi.incr(key);
-    multi.expire(key, RATE_LIMIT_WINDOW + 10);
-    const results = await multi.exec();
-    const count = results[0][1];
-
-    return {
-      allowed: count <= limit,
-      remaining: Math.max(0, limit - count),
-      reset: windowStart + RATE_LIMIT_WINDOW,
-      limit
-    };
-  } catch (error) {
-    console.error('Rate limit check error:', error.message);
-    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
-    return { allowed: false, remaining: 0, reset: windowStart + RATE_LIMIT_WINDOW, limit, error: 'Rate limiting unavailable' };
-  }
-}
-
-// Input validation helpers
-function isValidRaceId(raceId) {
-  if (!raceId || typeof raceId !== 'string') return false;
-  if (raceId.length > MAX_RACE_ID_LENGTH) return false;
-  return /^[a-zA-Z0-9_-]+$/.test(raceId);
-}
-
-// Validate fault type
-const VALID_FAULT_TYPES = ['MG', 'STR', 'BR'];
 
 function isValidFaultEntry(fault) {
   if (!fault || typeof fault !== 'object') return false;
@@ -307,7 +264,12 @@ export default async function handler(req, res) {
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method);
+  const rateLimitResult = await checkRateLimit(client, clientIP, req.method, {
+    keyPrefix: 'faults',
+    window: 60,
+    maxRequests: 100,
+    maxPosts: 50
+  });
 
   setRateLimitHeaders(res, rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.reset);
 

@@ -14,53 +14,17 @@ import {
   sanitizeString,
   safeJsonParse
 } from '../lib/response.js';
+import { isValidRaceId, checkRateLimit, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
-const MAX_RACE_ID_LENGTH = 50;
-const MAX_DEVICE_NAME_LENGTH = 100;
 const CACHE_EXPIRY_SECONDS = 86400; // 24 hours
 const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds - device considered inactive after this
 const MAX_ATOMIC_RETRIES = 5; // Max retries for atomic operations
 
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60; // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 100; // Max requests per window per IP
-const RATE_LIMIT_MAX_POSTS = 30; // Max POST requests per window per IP
-
 // Photo upload rate limiting (per device per race)
 const PHOTO_RATE_LIMIT_WINDOW = 300; // 5 minute window
 const PHOTO_RATE_LIMIT_MAX = 20; // Max photos per device per window
-
-// Rate limiting using Redis
-async function checkRateLimit(client, ip, method) {
-  const now = Math.floor(Date.now() / 1000);
-  const windowStart = now - (now % RATE_LIMIT_WINDOW);
-
-  // Different limits for GET and POST
-  const limit = method === 'POST' ? RATE_LIMIT_MAX_POSTS : RATE_LIMIT_MAX_REQUESTS;
-  const key = `ratelimit:${method}:${ip}:${windowStart}`;
-
-  try {
-    const multi = client.multi();
-    multi.incr(key);
-    multi.expire(key, RATE_LIMIT_WINDOW + 10); // Extra buffer for expiry
-    const results = await multi.exec();
-
-    const count = results[0][1];
-
-    return {
-      allowed: count <= limit,
-      remaining: Math.max(0, limit - count),
-      reset: windowStart + RATE_LIMIT_WINDOW,
-      limit
-    };
-  } catch (error) {
-    console.error('Rate limit check error:', error.message);
-    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
-    return { allowed: false, remaining: 0, reset: windowStart + RATE_LIMIT_WINDOW, limit, error: 'Rate limiting unavailable' };
-  }
-}
 
 // Photo rate limiting per device per race
 // Prevents memory exhaustion from rapid photo uploads
@@ -87,19 +51,6 @@ async function checkPhotoRateLimit(client, raceId, deviceId) {
     // Prevents memory exhaustion if Redis is unavailable
     return { allowed: false, count: 0, limit: PHOTO_RATE_LIMIT_MAX, error: 'Rate limiting unavailable' };
   }
-}
-
-// Input validation helpers
-/**
- * Validate race ID format.
- * Race IDs are CASE-INSENSITIVE - they are normalized to lowercase internally.
- * Example: "RACE2024", "Race2024", and "race2024" all refer to the same race.
- */
-function isValidRaceId(raceId) {
-  if (!raceId || typeof raceId !== 'string') return false;
-  if (raceId.length > MAX_RACE_ID_LENGTH) return false;
-  // Allow alphanumeric, hyphens, and underscores only
-  return /^[a-zA-Z0-9_-]+$/.test(raceId);
 }
 
 function isValidEntry(entry) {
@@ -392,7 +343,12 @@ export default async function handler(req, res) {
 
   // Apply rate limiting
   const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method);
+  const rateLimitResult = await checkRateLimit(client, clientIP, req.method, {
+    keyPrefix: 'sync',
+    window: 60,
+    maxRequests: 100,
+    maxPosts: 30
+  });
 
   // Set rate limit headers
   setRateLimitHeaders(res, rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.reset);

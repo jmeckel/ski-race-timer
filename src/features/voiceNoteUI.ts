@@ -11,6 +11,7 @@ import { showToast } from '../components';
 import { feedbackTap, feedbackSuccess } from '../services';
 import { t } from '../i18n/translations';
 import { openModal, closeModal, isAnyModalOpen } from './modals';
+import { getModalContext } from '../utils/modalContext';
 
 // Module state
 let currentFaultId: string | null = null;
@@ -316,7 +317,7 @@ export function initFaultConfirmationOverlay(): void {
       feedbackTap();
 
       // Get the fault ID from the overlay
-      const faultId = overlay?.getAttribute('data-fault-id');
+      const faultId = overlay ? getModalContext<{ faultId: string }>(overlay)?.faultId : undefined;
 
       // Hide the confirmation overlay
       dismissFaultConfirmation();

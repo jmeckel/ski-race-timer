@@ -5,4 +5,5 @@ coverage/
 playwright-report/
 .playwright-mcp/
 test-results/
+dist/stats.html
 .DS_Store

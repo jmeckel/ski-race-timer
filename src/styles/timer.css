@@ -1,0 +1,411 @@
+/* ===== Timer View ===== */
+.timer-view {
+  padding: 12px;
+  gap: 6px;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Portrait mode element ordering */
+.timer-view .clock-container { order: 1; }
+.timer-view .timing-controls { order: 2; }
+.timer-view .timestamp-btn { order: 3; }
+.timer-view .bib-entry-section { order: 4; }
+.timer-view .number-pad { order: 5; }
+
+.clock-container {
+  text-align: center;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+/* Bib Entry Section - combines bib display and last recorded */
+.bib-entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bib-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--surface-elevated);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.bib-display:hover {
+  background: var(--surface-elevated);
+}
+
+.bib-display.expanded {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+/* Expand indicator */
+.bib-display::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-tertiary);
+  border-bottom: 2px solid var(--text-tertiary);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.bib-display.expanded::after {
+  transform: rotate(-135deg);
+}
+
+.bib-label {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bib-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 800;
+  min-width: 100px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Last recorded inline with bib */
+.last-recorded-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.last-recorded-inline .label {
+  color: var(--text-tertiary);
+}
+
+.last-recorded-inline .bib {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.last-recorded-inline .point {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.last-recorded-inline .point.start {
+  background: color-mix(in srgb, var(--start-color) 20%, transparent);
+  color: var(--start-color);
+}
+
+.last-recorded-inline .point.finish {
+  background: color-mix(in srgb, var(--finish-color) 20%, transparent);
+  color: var(--finish-color);
+}
+
+.last-recorded-inline .time {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary);
+}
+
+.last-recorded-inline.visible {
+  opacity: 1;
+}
+
+.last-recorded-inline.pulse {
+  animation: lastRecordedInlinePulse 0.5s ease-out;
+}
+
+@keyframes lastRecordedInlinePulse {
+  0% {
+    background: rgba(56, 189, 248, 0.2);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* Timing Controls Container - holds timing points and run selector on same line */
+.timing-controls {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Timing Points - Large color-coded cards */
+.timing-points {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-shrink: 0;
+  align-items: stretch;
+}
+
+.timing-point-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 14px 16px;
+  border: 2px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.timing-point-btn:active {
+  transform: scale(0.96);
+}
+
+.timing-point-btn.active {
+  color: var(--text-primary);
+  transform: scale(1.02);
+}
+
+/* Start button - Orange theme */
+.timing-point-btn[data-point="S"] {
+  --point-color: var(--start-color);
+  --point-color-dark: var(--start-color-dark);
+}
+
+/* Finish button - Green theme */
+.timing-point-btn[data-point="F"] {
+  --point-color: var(--finish-color);
+  --point-color-dark: var(--finish-color-dark);
+}
+
+/* Active state with gradient and glow */
+.timing-point-btn.active {
+  border-color: var(--point-color);
+  background: linear-gradient(135deg, var(--point-color) 0%, var(--point-color-dark) 100%);
+  color: white;
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--point-color) 40%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Inactive state hint color */
+.timing-point-btn:not(.active) {
+  border-color: color-mix(in srgb, var(--point-color) 30%, var(--surface-elevated));
+}
+
+.timing-point-btn:not(.active):hover {
+  border-color: color-mix(in srgb, var(--point-color) 50%, var(--surface-elevated));
+  background: color-mix(in srgb, var(--point-color) 8%, var(--surface));
+}
+
+/* Run Selector */
+.run-selector {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.run-btn {
+  flex: 1;
+  max-width: 48px;
+  padding: 12px 6px;
+  border: 2px solid color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
+  border-radius: var(--radius);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.run-btn:active {
+  transform: scale(0.95);
+}
+
+.run-btn.active {
+  border-color: var(--primary);
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+/* Edit Modal Run Selector */
+.edit-run-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-run-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid color-mix(in srgb, var(--text-tertiary) 35%, var(--surface-elevated));
+  border-radius: var(--radius);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-run-btn.active {
+  border-color: var(--primary);
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+/* Result Run Badge */
+.result-run {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Number Pad - Collapsible */
+.number-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+}
+
+.number-pad.collapsed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+}
+
+.num-btn {
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+  min-height: 44px;
+  min-width: 44px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.num-btn:active {
+  background: var(--surface-elevated);
+  transform: scale(0.95) translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.num-btn.action {
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.num-btn.action:active {
+  background: var(--surface);
+}
+
+/* Timestamp Button - Primary action with dramatic glow */
+.timestamp-btn {
+  width: 100%;
+  padding: 28px 24px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease-out, background 0.2s ease;
+  box-shadow:
+    0 0 30px rgba(14, 165, 233, 0.4),
+    0 0 60px rgba(14, 165, 233, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  position: relative;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+/* Inner glow highlight */
+.timestamp-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+  border-radius: 9999px 9999px 0 0;
+  pointer-events: none;
+}
+
+.timestamp-btn:active {
+  transform: scale(0.96);
+  box-shadow:
+    0 0 15px rgba(14, 165, 233, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Breathing glow animation - uses keyframes from animations.css */
+.timestamp-btn.breathe-glow {
+  animation: breatheGlow 3s ease-in-out infinite;
+}
+
+/* Flash animation when time is recorded */
+@keyframes recordFlash {
+  0% {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    box-shadow:
+      0 0 50px rgba(56, 189, 248, 0.8),
+      0 0 100px rgba(56, 189, 248, 0.4),
+      0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  }
+}
+
+.timestamp-btn.flash {
+  animation: recordFlash 0.4s ease-out;
+}
+

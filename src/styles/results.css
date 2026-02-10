@@ -1,0 +1,177 @@
+/* ===== Results View ===== */
+.results-view {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.results-header {
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-elevated);
+}
+
+/* Unified Filter Bar */
+.search-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--surface-elevated);
+}
+
+.search-input,
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, var(--background));
+}
+
+/* Placeholder styling - darker for better contrast (WCAG AA) */
+::placeholder {
+  color: #707070;
+  opacity: 1;
+}
+
+.search-input::placeholder {
+  color: #707070;
+}
+
+.filter-select {
+  padding-right: 28px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+.stats-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.results-list {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.results-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--surface-elevated);
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, box-shadow 0.15s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.97);
+  background: var(--primary);
+  color: white;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-btn.danger {
+  color: var(--error);
+}
+
+.action-btn.danger:active {
+  background: var(--error);
+  color: white;
+}
+
+/* Admin action buttons - ensure text is always visible */
+.admin-action-btn {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  white-space: nowrap;
+  min-width: fit-content;
+  gap: 6px;
+}
+
+/* Select Mode Bar */
+.select-mode-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
+.select-mode-bar.active {
+  display: flex;
+}
+
+/* ===== Results View Landscape ===== */
+@media (orientation: landscape) {
+  .results-view {
+    padding: 8px 16px;
+  }
+
+  .results-list {
+    max-width: none;
+  }
+}
+

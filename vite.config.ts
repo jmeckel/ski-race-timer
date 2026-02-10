@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { resolve } from 'path';
 import pkg from './package.json';
 
@@ -69,7 +70,13 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    ...(process.env.ANALYZE ? [visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true
+    })] : [])
   ],
   server: {
     port: 3000,

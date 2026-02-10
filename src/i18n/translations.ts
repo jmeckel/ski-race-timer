@@ -1,6 +1,6 @@
 import type { Language, Translations } from '../types';
 
-export const translations: Record<Language, Translations> = {
+export const translations = {
   en: {
     // Navigation
     timer: 'Timer',
@@ -936,11 +936,34 @@ export const translations: Record<Language, Translations> = {
     sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',
     authSuccess: 'Authentifizierung erfolgreich'
   }
-};
+} satisfies Record<Language, Translations>;
+
+// ===== Compile-time Translation Key Safety =====
+// These assertions ensure EN and DE translations stay in sync.
+// If a key is added to one language but not the other, TypeScript will error.
+
+/** All translation keys derived from the English translations */
+export type TranslationKey = keyof typeof translations.en;
+
+// Verify DE has all EN keys
+type _MissingInDe = Exclude<keyof typeof translations.en, keyof typeof translations.de>;
+type _MissingInEn = Exclude<keyof typeof translations.de, keyof typeof translations.en>;
+
+// These lines cause compile errors if any keys are missing between languages.
+// The error message will show which specific keys are missing.
+const _assertDeComplete: _MissingInDe extends never ? true : _MissingInDe = true;
+const _assertEnComplete: _MissingInEn extends never ? true : _MissingInEn = true;
+
+// Suppress unused variable warnings
+void _assertDeComplete;
+void _assertEnComplete;
 
 /**
  * Get translation for a key
+ * Accepts TranslationKey for type-safe usage or string for dynamic keys
  */
-export function t(key: string, lang: Language = 'de'): string {
-  return translations[lang][key] || translations['en'][key] || key;
+export function t(key: TranslationKey | (string & {}), lang: Language = 'de'): string {
+  const langMap = translations[lang] as Record<string, string>;
+  const enMap = translations['en'] as Record<string, string>;
+  return langMap[key] || enMap[key] || key;
 }

@@ -1,0 +1,490 @@
+/* ===== Onboarding Modal (Full-screen Setup Wizard) ===== */
+.modal-overlay.onboarding-fullscreen {
+  background: var(--background);
+  padding: 0;
+}
+
+.onboarding-container {
+  background: var(--background);
+  border-radius: 0;
+  border: none;
+  padding: 24px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  max-width: 480px;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: none;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Skip button - always visible at top right */
+.onboarding-skip-btn {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--text-tertiary);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.onboarding-skip-btn:hover,
+.onboarding-skip-btn:active {
+  background: var(--surface-elevated);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+@media (min-height: 700px) {
+  .onboarding-container {
+    justify-content: center;
+  }
+}
+
+@media (max-height: 600px) {
+  .onboarding-container {
+    justify-content: flex-start;
+    padding-top: 16px;
+  }
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.onboarding-progress-label {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: -14px 0 16px;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: var(--primary);
+  transform: scale(1.25);
+}
+
+.progress-dot.completed {
+  background: var(--success);
+}
+
+.onboarding-card {
+  animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.onboarding-icon.success {
+  color: var(--success);
+  font-size: 72px;
+}
+
+.onboarding-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.onboarding-card p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.onboarding-card .text-input {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.onboarding-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.onboarding-input-row .text-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.onboarding-regenerate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.onboarding-regenerate-btn:hover {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.onboarding-regenerate-btn:active {
+  transform: scale(0.95);
+}
+
+.onboarding-regenerate-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.onboarding-regenerate-btn:active svg {
+  transform: rotate(180deg);
+}
+
+.onboarding-lang-select {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+#onboarding-modal .lang-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid var(--surface-elevated);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#onboarding-modal .lang-btn:active {
+  transform: scale(0.97);
+}
+
+#onboarding-modal .lang-btn.selected {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.onboarding-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.onboarding-btn:active {
+  transform: scale(0.98);
+}
+
+.onboarding-btn.primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.onboarding-btn.primary:active {
+  background: var(--primary-dark);
+}
+
+.onboarding-btn.secondary {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.onboarding-btn.secondary:hover {
+  color: var(--text-primary);
+}
+
+.onboarding-btn.text {
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+.onboarding-btn.text:hover {
+  color: var(--text-secondary);
+}
+
+.onboarding-btn-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.onboarding-btn-row .onboarding-btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+.onboarding-btn-row .onboarding-btn.secondary {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 16px 24px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+}
+
+.onboarding-summary {
+  margin: 16px 0;
+  text-align: left;
+}
+
+.onboarding-summary-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.onboarding-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-elevated);
+  font-size: 0.875rem;
+}
+
+.onboarding-summary-row:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+.onboarding-summary-row:last-child {
+  border-radius: 0 0 10px 10px;
+}
+
+.onboarding-summary-row:only-child {
+  border-radius: 10px;
+}
+
+.onboarding-summary-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.onboarding-summary-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+}
+
+.onboarding-summary-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.onboarding-summary-badge.enabled {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.onboarding-summary-badge.disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.onboarding-summary-badge.role {
+  background: rgba(14, 165, 233, 0.15);
+  color: var(--primary);
+}
+
+.onboarding-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+#onboarding-modal .race-status {
+  font-size: 0.8125rem;
+  margin-bottom: 12px;
+  min-height: 20px;
+  transition: all 0.2s ease;
+}
+
+#onboarding-modal .race-status.found {
+  color: var(--success);
+}
+
+#onboarding-modal .race-status.new {
+  color: var(--text-tertiary);
+}
+
+.onboarding-tip {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+/* Role Selection Cards */
+.onboarding-role-select {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 2px solid var(--surface-elevated);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.role-card:active {
+  transform: scale(0.98);
+}
+
+.role-card.selected {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.role-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.role-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.role-card-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.role-card-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.role-card.selected .role-card-check {
+  background: var(--primary);
+  color: white;
+}
+
+/* Onboarding Gate Inputs */
+.onboarding-gate-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.onboarding-gate-inputs .gate-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.onboarding-gate-inputs .gate-input-group label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.onboarding-gate-inputs .gate-input {
+  width: 80px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.onboarding-gate-inputs .gate-range-separator {
+  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  padding-bottom: 12px;
+}
+

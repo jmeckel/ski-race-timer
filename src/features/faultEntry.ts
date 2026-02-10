@@ -12,6 +12,7 @@ import { escapeHtml, escapeAttr, makeNumericInput } from '../utils';
 import { formatTime as formatTimeDisplay } from '../utils/format';
 import { openModal, closeModal } from './modals';
 import { getFaultTypeLabel } from './chiefJudgeView';
+import { setModalContext, getModalContext } from '../utils/modalContext';
 import type { FaultEntry, FaultType, Run } from '../types';
 
 // Module state
@@ -292,7 +293,7 @@ export function showFaultConfirmation(fault: FaultEntry): void {
   if (!overlay) return;
 
   // Store fault ID for "Add Note" button
-  overlay.setAttribute('data-fault-id', fault.id);
+  setModalContext(overlay, { faultId: fault.id });
 
   const bibEl = overlay.querySelector('.fault-confirmation-bib');
   const gateEl = overlay.querySelector('.fault-confirmation-gate');
@@ -1211,7 +1212,7 @@ export function openFaultDeleteConfirmation(fault: FaultEntry): void {
   }
 
   // Store fault ID for confirmation
-  modal.setAttribute('data-fault-id', fault.id);
+  setModalContext(modal, { faultId: fault.id });
 
   const state = store.getState();
   const gateColor = store.getGateColor(fault.gateNumber);

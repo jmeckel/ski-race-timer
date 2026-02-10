@@ -1,0 +1,228 @@
+import { store } from './store';
+import { getElement } from './utils/domCache';
+import { t } from './i18n/translations';
+import {
+  updateBibDisplay, updateTimingPointSelection, updateRunSelection
+} from './features/timerView';
+import {
+  isRadialModeActive, updateRadialBib
+} from './features/radialTimerView';
+import {
+  updateStats, updateEntryCountBadge
+} from './features/resultsView';
+import {
+  updateSettingsInputs, updateTranslations
+} from './features/settingsView';
+import {
+  updateGateRangeDisplay, updateJudgeReadyStatus, updateGateJudgeRunSelection
+} from './features/gateJudgeView';
+import {
+  updateActiveBibsList, refreshInlineFaultUI
+} from './features/faultEntry';
+import type { VoiceStatus } from './types';
+
+/**
+ * Update UI elements
+ */
+export function updateUI(): void {
+  updateViewVisibility();
+
+  // Update timer display based on mode
+  if (isRadialModeActive()) {
+    updateRadialBib();
+  } else {
+    updateBibDisplay();
+    updateTimingPointSelection();
+  }
+
+  updateRunSelection();
+  updateStats();
+  updateEntryCountBadge();
+  updateSyncStatusIndicator();
+  updateGpsIndicator();
+  updateJudgeReadyStatus();
+  updatePhotoCaptureIndicator();
+  updateUndoButton();
+  updateSettingsInputs();
+  updateTranslations();
+}
+
+/**
+ * Convert camelCase to kebab-case for CSS class names
+ */
+function toKebabCase(str: string): string {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * Update view visibility
+ */
+export function updateViewVisibility(): void {
+  const state = store.getState();
+  document.querySelectorAll('.view').forEach(view => {
+    view.classList.remove('active');
+  });
+
+  // Convert view name to kebab-case for CSS class (e.g., 'gateJudge' -> 'gate-judge')
+  const viewClass = toKebabCase(state.currentView);
+  const activeView = document.querySelector(`.${viewClass}-view`);
+  if (activeView) {
+    activeView.classList.add('active');
+  }
+
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-view') === state.currentView);
+  });
+
+  // Update Gate Judge view when switching to it
+  if (state.currentView === 'gateJudge') {
+    updateActiveBibsList();
+    updateGateRangeDisplay();
+    updateGateJudgeRunSelection();
+    refreshInlineFaultUI();
+  }
+}
+
+/**
+ * Update sync status indicator
+ */
+export function updateSyncStatusIndicator(): void {
+  const state = store.getState();
+  const indicator = getElement('sync-indicator');
+  const dot = getElement('sync-indicator')?.querySelector('.sync-dot');
+  const text = getElement('sync-indicator')?.querySelector('.sync-status-text');
+  const deviceCountEl = getElement('sync-device-count');
+
+  // Show indicator when sync is enabled
+  if (indicator) {
+    indicator.style.display = state.settings.sync ? 'flex' : 'none';
+  }
+
+  if (dot) {
+    dot.classList.remove('connected', 'error', 'offline', 'syncing');
+    if (state.syncStatus === 'connected') {
+      dot.classList.add('connected');
+    } else if (state.syncStatus === 'syncing') {
+      dot.classList.add('syncing');
+    } else if (state.syncStatus === 'error') {
+      dot.classList.add('error');
+    } else if (state.syncStatus === 'offline') {
+      dot.classList.add('offline');
+    }
+  }
+
+  if (text) {
+    text.textContent = t(state.syncStatus, state.currentLang);
+  }
+
+  // Show device count when connected
+  if (deviceCountEl) {
+    if (state.syncStatus === 'connected' && state.cloudDeviceCount > 0) {
+      deviceCountEl.textContent = `(${state.cloudDeviceCount})`;
+      deviceCountEl.style.display = 'inline';
+    } else {
+      deviceCountEl.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * Update GPS indicator
+ */
+export function updateGpsIndicator(): void {
+  const state = store.getState();
+  const indicator = getElement('gps-indicator');
+  const dot = indicator?.querySelector('.gps-dot');
+  const text = indicator?.querySelector('.gps-status-text');
+
+  // Show indicator when GPS is enabled
+  if (indicator) {
+    indicator.style.display = state.settings.gps ? 'flex' : 'none';
+  }
+
+  if (dot) {
+    dot.classList.remove('active', 'searching', 'paused');
+    if (state.gpsStatus === 'active') {
+      dot.classList.add('active');
+    } else if (state.gpsStatus === 'searching') {
+      dot.classList.add('searching');
+    } else if (state.gpsStatus === 'paused') {
+      // GPS was working but is now paused (e.g., not on timer view) - show green without animation
+      dot.classList.add('paused');
+    }
+    // 'inactive' status = no class = red (GPS not working or permission denied)
+  }
+
+  if (text) {
+    const lang = store.getState().currentLang;
+    text.textContent = t('gps', lang);
+  }
+}
+
+/**
+ * Update photo capture indicator in header status bar
+ */
+export function updatePhotoCaptureIndicator(): void {
+  const state = store.getState();
+  const cameraIndicator = getElement('camera-indicator');
+  if (cameraIndicator) {
+    cameraIndicator.style.display = state.settings.photoCapture ? 'flex' : 'none';
+  }
+}
+
+/**
+ * Update voice indicator in header
+ */
+export function updateVoiceIndicator(status: VoiceStatus): void {
+  const indicator = getElement('voice-indicator');
+  const statusText = getElement('voice-status-text');
+
+  if (!indicator) return;
+
+  // Show/hide indicator based on status
+  if (status === 'inactive') {
+    indicator.style.display = 'none';
+    return;
+  }
+
+  indicator.style.display = 'flex';
+
+  // Remove all status classes
+  indicator.classList.remove('listening', 'processing', 'confirming', 'offline', 'error');
+
+  // Add current status class
+  indicator.classList.add(status);
+
+  // Update status text
+  if (statusText) {
+    const lang = store.getState().currentLang;
+    switch (status) {
+      case 'listening':
+        statusText.textContent = t('voiceListening', lang);
+        break;
+      case 'processing':
+        statusText.textContent = t('voiceProcessing', lang);
+        break;
+      case 'confirming':
+        statusText.textContent = t('voiceConfirming', lang);
+        break;
+      case 'offline':
+        statusText.textContent = t('voiceOffline', lang);
+        break;
+      case 'error':
+        statusText.textContent = t('voiceError', lang);
+        break;
+    }
+  }
+}
+
+/**
+ * Update undo button state
+ */
+export function updateUndoButton(): void {
+  const undoBtn = getElement('undo-btn');
+  if (undoBtn) {
+    undoBtn.toggleAttribute('disabled', !store.canUndo());
+  }
+}
