@@ -225,13 +225,8 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     await enterBib(page, 1);
-    // Dismiss any toast (e.g. GPS warning) that may overlay the record button
-    const toast = page.locator('.toast');
-    if (await toast.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await toast.click({ timeout: 2000 }).catch(() => {});
-      await toast.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
-    }
-    await page.click('#radial-time-btn');
+    // Force click to bypass any toast overlay (GPS warning) that may intercept pointer events
+    await page.click('#radial-time-btn', { force: true });
     await waitForConfirmationToHide(page);
 
     // Verify entry recorded
