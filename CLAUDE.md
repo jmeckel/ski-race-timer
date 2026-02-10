@@ -310,9 +310,10 @@ Follow semantic versioning (MAJOR.MINOR.PATCH):
 - **MAJOR** (1.0.0): Breaking changes, major rewrites, significant API changes
 
 Examples:
-- Single bug fix → bump patch (4.1.0 → 4.1.1)
-- New feature like "Gate Judge" → bump minor (4.0.0 → 4.1.0)
-- Complete rewrite or breaking change → bump major (4.1.0 → 5.0.0)
+- Single bug fix → bump patch (5.18.1 → 5.18.2). Codename stays the same.
+- Multiple small fixes in one session → still just one patch bump (5.18.1 → 5.18.2)
+- New feature like "Gate Judge" → bump minor (5.18.2 → 5.19.0). Add new codename entry.
+- Complete rewrite or breaking change → bump major (5.19.0 → 6.0.0). Add new codename entry.
 
 Commit the version bump separately with a message like "Bump version to X.Y.Z" summarizing what changed.
 
