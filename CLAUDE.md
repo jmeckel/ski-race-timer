@@ -36,6 +36,7 @@ Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for s
 │   ├── app.ts             # Main application logic
 │   ├── main.ts            # App entry point and initialization
 │   ├── onboarding.ts      # First-run onboarding wizard
+│   ├── version.ts         # Version codenames and per-release changelogs
 │   ├── store/             # State management (Zustand-like)
 │   ├── services/          # GPS, sync, camera, feedback services
 │   ├── components/        # UI components (Clock, VirtualList, Toast)
@@ -314,6 +315,45 @@ Examples:
 - Complete rewrite or breaking change → bump major (4.1.0 → 5.0.0)
 
 Commit the version bump separately with a message like "Bump version to X.Y.Z" summarizing what changed.
+
+### Version Codenames & Changelogs
+
+Each **minor** release gets a dessert+animal codename and a short end-user changelog displayed in the settings screen. These are defined in `src/version.ts`.
+
+**When bumping to a new minor version**, add an entry to `VERSION_NAMES` in `src/version.ts`:
+
+```typescript
+const VERSION_NAMES: Record<string, VersionInfo> = {
+  '5.18': {
+    name: 'Tiramisu Fox',
+    description: {
+      en: 'Battery power saver for longer outdoor timing. Improved PIN security and faster voice notes.',
+      de: 'Batterieschoner für längere Zeitmessung im Freien. Verbesserte PIN-Sicherheit und schnellere Sprachnotizen.'
+    }
+  },
+  '5.19': {
+    name: 'Waffle Owl',   // Pick a unique dessert + animal combo
+    description: {
+      en: '1-2 sentences describing user-facing changes.',
+      de: 'German translation of the same.'
+    }
+  }
+};
+```
+
+**Rules:**
+- **Key**: Minor version only (e.g. `"5.19"`) — all patches under that minor share the same codename
+- **Name**: `"Dessert Animal"` format, both capitalized, unique per release. Keep it fun but professional.
+- **Description**: 1-2 sentences, end-user wording (not developer jargon). Must have both `en` and `de` translations.
+- **Patch-only bumps**: No new entry needed — the existing minor entry covers all patches.
+- **Display**: Settings screen shows `Version X.Y.Z "Name"` with the description below. The name also appears in clipboard debug info.
+
+**Files involved in version display:**
+- `src/version.ts` — Codename map and `getVersionInfo()` lookup
+- `index.html` — `#app-version-name` and `#app-version-description` elements inside `#version-info-btn`
+- `src/app.ts` — Populates name + description on init, includes name in debug info
+- `src/features/settingsView.ts` — Updates description in `updateTranslations()` on language switch
+- `src/styles/main.css` — `.version-name` (primary color) and `.version-description` (tertiary, small) styles
 
 ## Feature Completion Checklist
 
