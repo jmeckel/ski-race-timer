@@ -66,8 +66,9 @@ class VoiceNoteService {
 
   /**
    * Initialize the service (lazy initialization on first use)
+   * Can be called early to pre-warm the browser's SpeechRecognition object.
    */
-  private initialize(): boolean {
+  initialize(): boolean {
     if (this.recognition) return true;
 
     if (!this.isSupported()) {

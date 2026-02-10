@@ -49,15 +49,21 @@ export function openVoiceNoteModal(faultId: string): void {
   const micBtn = document.getElementById('voice-note-mic-btn');
   if (micBtn) {
     micBtn.classList.toggle('unsupported', !voiceNoteService.isSupported());
+    micBtn.classList.remove('loading');
   }
 
   // Reset listening indicator
   updateListeningIndicator(false);
 
+  // Pre-warm speech recognition while modal animates (saves ~5-20ms on first recording)
+  if (voiceNoteService.isSupported()) {
+    voiceNoteService.initialize();
+  }
+
   openModal(modal);
 
-  // Focus textarea
-  setTimeout(() => textarea?.focus(), 100);
+  // Focus textarea on next frame (after modal becomes visible)
+  requestAnimationFrame(() => textarea?.focus());
 }
 
 /**
@@ -127,12 +133,18 @@ export function startVoiceRecording(): void {
     return;
   }
 
+  // Show loading state immediately for visual feedback while browser initializes
+  const micBtn = document.getElementById('voice-note-mic-btn');
+  micBtn?.classList.add('loading');
+
   // Pause voice mode to avoid SpeechRecognition conflicts
   // Browser only allows one active SpeechRecognition session at a time
   voiceModeService.pause();
 
   // Set up callbacks
   unsubscribeStatus = voiceNoteService.onStatusChange((status) => {
+    // Remove loading state once browser responds
+    micBtn?.classList.remove('loading');
     updateListeningIndicator(status === 'listening');
 
     if (status === 'error') {
@@ -164,7 +176,8 @@ export function startVoiceRecording(): void {
   if (started) {
     feedbackTap();
   } else {
-    // Failed to start - resume voice mode
+    // Failed to start - clear loading state and resume voice mode
+    micBtn?.classList.remove('loading');
     voiceModeService.resume();
   }
 }

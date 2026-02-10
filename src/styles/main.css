@@ -1350,7 +1350,7 @@ body {
 
 .modal-overlay.show {
   display: flex;
-  animation: overlayIn 0.2s ease-out;
+  animation: overlayIn 0.15s ease-out;
 }
 
 .modal-overlay.closing {
@@ -1367,7 +1367,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
   overflow: hidden;
-  animation: modalIn 0.2s ease-out;
+  animation: modalIn 0.15s ease-out;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
@@ -4555,6 +4555,12 @@ body {
   background: var(--error);
   color: white;
   animation: micPulse 1s infinite;
+}
+
+.voice-note-mic-btn.loading {
+  background: var(--primary);
+  color: white;
+  animation: micPulse 0.6s infinite;
 }
 
 .voice-note-mic-btn.unsupported {
