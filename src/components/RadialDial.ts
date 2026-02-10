@@ -32,7 +32,8 @@ export class RadialDial {
   private spinAnimationId: number | null = null;
   private snapBackAnimationId: number | null = null;
   private snapBackTimeoutId: number | null = null;
-  private resizeTimeoutId: number | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private lastContainerWidth = 0;
   private visualTimeoutIds: Set<number> = new Set(); // Track short visual effect timeouts
   private dragStartPos: { x: number; y: number } | null = null;
   private hasDraggedSignificantly = false;
@@ -167,20 +168,19 @@ export class RadialDial {
     });
     window.addEventListener('touchend', this.handleDragEnd);
 
-    // Re-layout on orientation/resize change
-    window.addEventListener('resize', this.handleResize);
+    // Re-layout when container size actually changes (fires after layout)
+    this.lastContainerWidth = this.container.offsetWidth;
+    this.resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const newWidth = Math.round(entry.contentRect.width);
+      if (newWidth > 0 && newWidth !== this.lastContainerWidth) {
+        this.lastContainerWidth = newWidth;
+        this.generateDialNumbers();
+      }
+    });
+    this.resizeObserver.observe(this.container);
   }
-
-  private handleResize = (): void => {
-    // Debounce resize events
-    if (this.resizeTimeoutId) {
-      clearTimeout(this.resizeTimeoutId);
-    }
-    this.resizeTimeoutId = window.setTimeout(() => {
-      this.generateDialNumbers();
-      this.resizeTimeoutId = null;
-    }, 100);
-  };
 
   private handleDragStart = (e: MouseEvent | TouchEvent): void => {
     const isTouch = 'touches' in e;
@@ -518,8 +518,9 @@ export class RadialDial {
     if (this.snapBackTimeoutId) {
       clearTimeout(this.snapBackTimeoutId);
     }
-    if (this.resizeTimeoutId) {
-      clearTimeout(this.resizeTimeoutId);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
 
     // Clear all visual effect timeouts
@@ -543,6 +544,5 @@ export class RadialDial {
     window.removeEventListener('mouseup', this.handleDragEnd);
     window.removeEventListener('touchmove', this.handleDragMove);
     window.removeEventListener('touchend', this.handleDragEnd);
-    window.removeEventListener('resize', this.handleResize);
   }
 }

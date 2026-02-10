@@ -497,8 +497,6 @@
   border-radius: var(--radius);
   font-size: 0.8rem;
   font-weight: 600;
-  overflow: hidden;
-  min-width: 0;
 }
 
 .gps-dot {

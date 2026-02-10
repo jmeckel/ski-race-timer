@@ -30,6 +30,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       de: 'Offline-Banner, Rückgängig-Funktion für Löschungen, neu organisierte Einstellungen und standardisierte Ereignisbereinigung.',
     },
   },
+  '5.21': {
+    name: 'Churros Otter',
+    description: {
+      en: 'Responsive layout fixes for all screen sizes. Dial and numbers scale smoothly from iPhone SE to iPad landscape.',
+      de: 'Responsive Layout-Korrekturen für alle Bildschirmgrößen. Zifferblatt und Zahlen skalieren fließend vom iPhone SE bis iPad Querformat.',
+    },
+  },
 };
 
 export function getVersionInfo(
