@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0D0D0D">
   <meta name="description" content="GPS-synchronized ski race timing application">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-C7aOyfQm.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-or8a5AUb.css">
+  <script type="module" crossorigin src="/assets/main-ny8E6K7q.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-Bqcxa0gL.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
@@ -72,7 +72,7 @@
           <span class="voice-dot"></span>
           <span class="voice-status-text" id="voice-status-text"></span>
         </div>
-        <span class="entry-count-badge" id="entry-count-badge" style="display: none;">0</span>
+        <span class="entry-count-badge" id="entry-count-badge" style="display: none;" aria-live="polite">0</span>
       </div>
     </header>
 
@@ -154,7 +154,7 @@
                 <span class="radial-stats-point finish" id="radial-last-point" data-i18n="finishShort">F</span>
               </div>
               <div class="radial-stats-time" id="radial-last-time">--:--:--.---</div>
-              <div class="radial-stats-count" id="radial-stats-count">---</div>
+              <div class="radial-stats-count" id="radial-stats-count" aria-live="polite">---</div>
             </div>
 
             <!-- Bottom Right: Time Button -->
@@ -171,7 +171,7 @@
 
           <!-- Confirmation Overlay -->
           <div class="radial-confirmation-overlay" id="radial-confirmation-overlay">
-            <div class="radial-confirmation-check">✓</div>
+            <div class="radial-confirmation-check" aria-hidden="true">✓</div>
             <div class="radial-confirmation-bib" id="radial-confirm-bib">---</div>
             <div class="radial-confirmation-time" id="radial-confirm-time">--:--:--.---</div>
             <div class="radial-confirmation-point finish" id="radial-confirm-point">Finish</div>
@@ -210,7 +210,7 @@
           </div>
 
           <!-- Stats -->
-          <div class="stats-row">
+          <div class="stats-row" aria-live="polite">
             <div class="stat-item">
               <div class="stat-value" id="stat-total">0</div>
               <div class="stat-label" data-i18n="total">Total</div>
@@ -237,7 +237,7 @@
               <span class="judges-overview-title" data-i18n="gateJudges">Gate Judges</span>
               <span class="judges-overview-count" id="judges-overview-count">0</span>
             </div>
-            <div class="judges-overview-list" id="judges-overview-list">
+            <div class="judges-overview-list" id="judges-overview-list" aria-live="polite">
               <!-- Populated dynamically -->
               <div class="judges-overview-empty" id="judges-overview-empty" data-i18n="noJudgesConnected">
                 No gate judges connected
@@ -257,7 +257,7 @@
             </div>
             <div class="penalty-seconds-selector" id="penalty-seconds-selector">
               <button class="penalty-adj-btn" data-adj="-1" aria-label="Decrease penalty seconds">−</button>
-              <span class="penalty-seconds-value" id="penalty-seconds-value">5</span>
+              <span class="penalty-seconds-value" id="penalty-seconds-value" aria-live="polite">5</span>
               <span class="penalty-seconds-unit">s</span>
               <button class="penalty-adj-btn" data-adj="+1" aria-label="Increase penalty seconds">+</button>
             </div>
@@ -286,7 +286,7 @@
           <div class="fault-summary-list" id="fault-summary-list">
             <!-- Fault cards will be populated dynamically -->
             <div class="chief-empty-state empty-state" id="chief-empty-state">
-              <span class="empty-icon">🏔️</span>
+              <span class="empty-icon" aria-hidden="true">🏔️</span>
               <span data-i18n="noFaultsRecorded">No faults recorded</span>
               <span class="empty-subtitle" data-i18n="cleanRunHint">Clean run so far</span>
             </div>
@@ -359,6 +359,10 @@
           <div class="gate-assignment-display">
             <span class="gate-label" data-i18n="gates">Gates</span>
             <span class="gate-range" id="gate-range-display">--</span>
+            <span class="gate-color-indicator" id="gate-color-indicator" aria-live="polite">
+              <span class="gate-color-dot" aria-hidden="true"></span>
+              <span class="gate-color-text" id="gate-color-text"></span>
+            </span>
             <button class="gate-change-btn" id="gate-change-btn" data-i18n="changeGates">Change</button>
           </div>
           <div class="run-selector gate-judge-run-selector" id="gate-judge-run-selector" role="radiogroup" aria-label="Run">
@@ -377,70 +381,68 @@
           <div class="coverage-list" id="other-judges-list"></div>
         </div>
 
-        <!-- Split Layout: Fault List + Inline Entry -->
-        <div class="gate-judge-split">
-          <!-- Recorded Faults List -->
+        <!-- Gate-First Quick Entry Layout -->
+        <div class="gate-first-layout">
+          <!-- Gate Grid (PRIMARY UI - large prominent buttons) -->
+          <div class="gate-grid-section">
+            <div class="gate-grid" id="inline-gate-selector" role="radiogroup" aria-label="Select gate">
+              <!-- Populated dynamically based on gate assignment -->
+            </div>
+          </div>
+
+          <!-- Fault Detail Panel (appears after selecting a gate) -->
+          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;" aria-live="polite">
+            <div class="fault-detail-header">
+              <span class="fault-detail-gate-label" id="fault-detail-gate-label"></span>
+              <button class="fault-detail-close" id="fault-detail-close" aria-label="Close" data-i18n-aria-label="close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Fault Type Selection -->
+            <div class="inline-fault-types" id="inline-fault-types">
+              <button class="inline-fault-type-btn" data-fault="MG" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
+                <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
+              </button>
+              <button class="inline-fault-type-btn" data-fault="STR" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
+                <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
+              </button>
+              <button class="inline-fault-type-btn" data-fault="BR" aria-pressed="false">
+                <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
+                <span class="fault-type-long" data-i18n="faultBR">Binding Release</span>
+              </button>
+            </div>
+
+            <!-- Bib Entry (auto-filled from last starter) -->
+            <div class="fault-detail-bib-row">
+              <label class="inline-entry-label" for="inline-bib-input" data-i18n="bib">Bib</label>
+              <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" data-i18n-aria-label="bib">
+            </div>
+          </div>
+
+          <!-- Recorded Faults (compact scrollable list) -->
           <div class="gate-judge-faults-section">
             <div class="section-header">
               <span class="section-title" data-i18n="recordedFaults">Recorded Faults</span>
               <span class="fault-count-badge" id="inline-fault-count">0</span>
             </div>
-            <div class="gate-judge-faults-list" id="gate-judge-faults-list">
+            <div class="gate-judge-faults-list" id="gate-judge-faults-list" aria-live="polite">
               <div class="empty-state" id="no-faults-recorded-inline">
-                <span class="empty-icon">🚩</span>
+                <span class="empty-icon" aria-hidden="true">🚩</span>
                 <span data-i18n="noFaultsRecorded">No faults recorded</span>
                 <span class="empty-subtitle" data-i18n="cleanRunHint">Clean run so far</span>
               </div>
             </div>
           </div>
-
-          <!-- Inline Fault Entry Interface -->
-          <div class="gate-judge-entry-section">
-            <!-- Bib Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="selectBib">Select Bib</label>
-              <div class="inline-bib-selector" id="inline-bib-selector">
-                <!-- Populated dynamically -->
-              </div>
-              <div class="inline-bib-manual-row">
-                <span class="inline-bib-manual-label" data-i18n="orEnterManually">or enter:</span>
-                <input type="text" class="text-input inline-bib-input" id="inline-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---" aria-label="Bib number">
-              </div>
-            </div>
-
-            <!-- Gate Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="selectGate">Gate</label>
-              <div class="inline-gate-selector" id="inline-gate-selector">
-                <!-- Populated dynamically based on gate assignment -->
-              </div>
-            </div>
-
-            <!-- Fault Type Selection -->
-            <div class="inline-entry-row">
-              <label class="inline-entry-label" data-i18n="faultType">Fault Type</label>
-              <div class="inline-fault-types" id="inline-fault-types">
-                <button class="inline-fault-type-btn" data-fault="MG">
-                  <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
-                  <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
-                </button>
-                <button class="inline-fault-type-btn" data-fault="STR">
-                  <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
-                  <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
-                </button>
-                <button class="inline-fault-type-btn" data-fault="BR">
-                  <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
-                  <span class="fault-type-long" data-i18n="faultBR">Binding Release</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
         </div>
 
-        <!-- Action Buttons Row (Save Fault + Ready) -->
+        <!-- Footer: Save Fault + Ready (thumb-reachable at bottom) -->
         <div class="gate-judge-footer">
-          <button class="inline-save-fault-btn" id="inline-save-fault-btn" data-i18n="saveFault">Save Fault</button>
+          <button class="inline-save-fault-btn" id="inline-save-fault-btn" disabled data-i18n="saveFault">Save Fault</button>
           <button class="ready-toggle-btn" id="ready-toggle-btn" aria-pressed="false">
             <svg class="ready-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M20 6L9 17l-5-5"/>
@@ -487,9 +489,10 @@
           </div>
         </div>
 
-        <!-- Cloud Sync -->
-        <div class="settings-section">
-          <div class="settings-section-title" data-i18n="cloudSync">Cloud Sync</div>
+        <!-- Race Setup -->
+        <div class="settings-section race-setup-section">
+          <div class="settings-section-title" data-i18n="raceSetup">Race Setup</div>
+          <div class="settings-section-subtitle" data-i18n="raceSetupDesc">Required for multi-device timing and syncing.</div>
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="cloudSync">Cloud Sync</span>
@@ -543,6 +546,7 @@
         <div class="settings-section collapsible expanded" id="advanced-settings-section">
           <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings" role="button" tabindex="0" aria-expanded="true" aria-controls="advanced-settings-content">Advanced Settings</div>
           <div class="settings-section-content" id="advanced-settings-content">
+            <div class="settings-section-hint" data-i18n="advancedSettingsHint">These options can affect timing accuracy. Change only if needed.</div>
             <!-- GPS -->
             <div class="setting-row">
               <div class="setting-label">
@@ -687,8 +691,10 @@
 
         <!-- Version -->
         <div class="settings-section">
-          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
+            <span id="app-version-name" class="version-name"></span>
+            <div id="app-version-description" class="version-description"></div>
           </button>
         </div>
       </div>
@@ -764,11 +770,11 @@
       </div>
       <div class="modal-body">
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
+          <label for="edit-bib-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
           <input type="text" class="text-input" id="edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="status">Status</label>
+          <label for="edit-status-select" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="status">Status</label>
           <select class="filter-select" id="edit-status-select" style="width: 100%;">
             <option value="ok">OK</option>
             <option value="dns">DNS</option>
@@ -777,8 +783,8 @@
           </select>
         </div>
         <div style="margin-top: 16px;" data-advanced>
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
-          <div class="edit-run-selector" id="edit-run-selector">
+          <label id="edit-run-label" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
+          <div class="edit-run-selector" id="edit-run-selector" role="radiogroup" aria-labelledby="edit-run-label">
             <button class="edit-run-btn active" data-run="1" type="button">1</button>
             <button class="edit-run-btn" data-run="2" type="button">2</button>
           </div>
@@ -854,7 +860,7 @@
         </button>
       </div>
       <div class="photo-viewer-image-container">
-        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="">
+        <img id="photo-viewer-image" class="photo-viewer-image" src="" alt="Race photo">
       </div>
       <div class="photo-viewer-metadata">
         <span class="photo-viewer-bib" id="photo-viewer-bib">---</span>
@@ -920,7 +926,7 @@
         <h2 class="modal-title" id="race-management-modal-title" data-i18n="manageRaces">Manage Races</h2>
       </div>
       <div class="modal-body">
-        <div class="race-list" id="race-list" role="region" aria-live="polite">
+        <div class="race-list" id="race-list" role="region" aria-label="Race list" aria-live="polite">
           <div class="race-list-loading snowflake-loading" id="race-list-loading" aria-busy="true">
             <div class="snowflake-spinner">
               <span class="flake">❄</span>
@@ -930,7 +936,7 @@
             <span class="loading-text" data-i18n="loading">Loading...</span>
           </div>
           <div class="race-list-empty empty-state" id="race-list-empty" style="display: none;">
-            <span class="empty-icon">⛷️</span>
+            <span class="empty-icon" aria-hidden="true">⛷️</span>
             <span data-i18n="noRaces">No active races</span>
             <span class="empty-subtitle" data-i18n="noRacesHint">Create one in Settings</span>
           </div>
@@ -969,16 +975,16 @@
       </div>
       <div class="modal-body">
         <div id="current-pin-row" style="display: none; margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="currentPin">Current PIN</label>
+          <label for="current-pin-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="currentPin">Current PIN</label>
           <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="current-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
           <p class="admin-pin-error" id="current-pin-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="incorrectPin">Incorrect PIN</p>
         </div>
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="newPin">New PIN (4 digits)</label>
+          <label for="new-pin-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="newPin">New PIN (4 digits)</label>
           <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="new-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="confirmPin">Confirm PIN</label>
+          <label for="confirm-pin-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="confirmPin">Confirm PIN</label>
           <input type="tel" inputmode="numeric" pattern="[0-9]*" class="text-input" id="confirm-pin-input" placeholder="0000" maxlength="4" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.3em; width: 120px;">
           <p class="admin-pin-error" id="pin-mismatch-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="pinMismatch">PINs do not match</p>
           <p class="admin-pin-error" id="pin-format-error" style="display: none; color: var(--error); font-size: 0.875rem; margin-top: 8px;" data-i18n="pinFormatError">PIN must be exactly 4 digits</p>
@@ -1017,24 +1023,24 @@
         <p class="modal-text" data-i18n="gateAssignmentInstructions" style="margin-bottom: 16px;">Enter the gate range you are responsible for:</p>
         <div class="gate-range-inputs">
           <div class="gate-input-group">
-            <label data-i18n="gatesFrom">From</label>
+            <label for="gate-start-input" data-i18n="gatesFrom">From</label>
             <input type="number" class="text-input gate-input" id="gate-start-input" min="1" max="99" value="1">
           </div>
           <span class="gate-range-separator">–</span>
           <div class="gate-input-group">
-            <label data-i18n="gatesTo">To</label>
+            <label for="gate-end-input" data-i18n="gatesTo">To</label>
             <input type="number" class="text-input gate-input" id="gate-end-input" min="1" max="99" value="10">
           </div>
         </div>
         <!-- First Gate Color Selection -->
         <div class="first-gate-color-section" style="margin-top: 20px;">
           <label data-i18n="firstGateColor" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Color of first gate</label>
-          <div class="gate-color-selector" id="gate-color-selector">
-            <button type="button" class="gate-color-btn red active" data-color="red">
+          <div class="gate-color-selector" id="gate-color-selector" role="radiogroup" aria-label="First gate color">
+            <button type="button" class="gate-color-btn red active" data-color="red" role="radio" aria-checked="true">
               <span class="gate-color-dot" style="background: #ef4444;"></span>
               <span data-i18n="colorRed">Red</span>
             </button>
-            <button type="button" class="gate-color-btn blue" data-color="blue">
+            <button type="button" class="gate-color-btn blue" data-color="blue" role="radio" aria-checked="false">
               <span class="gate-color-dot" style="background: #3b82f6;"></span>
               <span data-i18n="colorBlue">Blue</span>
             </button>
@@ -1110,18 +1116,18 @@
       <div class="modal-body">
         <!-- Bib Input -->
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
+          <label for="fault-edit-bib-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="bib">Bib</label>
           <input type="text" class="text-input" id="fault-edit-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*">
         </div>
         <!-- Gate Input -->
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="gate">Gate</label>
+          <label for="fault-edit-gate-input" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="gate">Gate</label>
           <input type="number" class="text-input" id="fault-edit-gate-input" min="1" max="99" style="width: 80px;">
           <span class="fault-edit-gate-range" id="fault-edit-gate-range" style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 8px;"></span>
         </div>
         <!-- Fault Type -->
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultType">Fault Type</label>
+          <label for="fault-edit-type-select" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultType">Fault Type</label>
           <select class="filter-select" id="fault-edit-type-select" style="width: 100%;">
             <option value="MG" data-i18n="faultMG">Missed Gate</option>
             <option value="STR" data-i18n="faultSTR">Straddling</option>
@@ -1130,15 +1136,33 @@
         </div>
         <!-- Run Selector -->
         <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
-          <div class="edit-run-selector" id="fault-edit-run-selector">
+          <label id="fault-edit-run-label" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="run">Run</label>
+          <div class="edit-run-selector" id="fault-edit-run-selector" role="radiogroup" aria-labelledby="fault-edit-run-label">
             <button class="edit-run-btn active" data-run="1" type="button">1</button>
             <button class="edit-run-btn" data-run="2" type="button">2</button>
           </div>
         </div>
+        <!-- Notes -->
+        <div class="fault-edit-notes-section" style="margin-bottom: 16px;">
+          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Notes</label>
+          <div class="fault-edit-notes-row">
+            <textarea class="text-input fault-edit-notes" id="fault-edit-notes" maxlength="500" rows="2" data-i18n-placeholder="typeNote" placeholder="Type or speak your note..." aria-label="Note text"></textarea>
+            <button class="fault-edit-mic-btn" id="fault-edit-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <div class="fault-edit-notes-footer">
+            <span class="fault-edit-notes-char-count" id="fault-edit-notes-char-count">0/500</span>
+          </div>
+        </div>
         <!-- Version History -->
         <div class="fault-version-history" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--surface-elevated);">
-          <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="versionHistory">Version History</label>
+          <label for="fault-version-select" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="versionHistory">Version History</label>
           <select class="filter-select" id="fault-version-select" style="width: 100%;">
             <!-- Populated dynamically -->
           </select>
@@ -1172,12 +1196,82 @@
   </div>
 
   <!-- Fault Confirmation Overlay -->
-  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay">
+  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="fault-confirmation-title">
     <div class="fault-confirmation-content">
-      <div class="fault-confirmation-icon">⚠️</div>
-      <div class="fault-confirmation-bib">---</div>
+      <div class="fault-confirmation-icon" aria-hidden="true">✓</div>
+      <div class="fault-confirmation-bib" id="fault-confirmation-title">---</div>
       <div class="fault-confirmation-gate">Gate --</div>
       <div class="fault-confirmation-type">--</div>
+      <div class="fault-confirmation-actions">
+        <button class="fault-confirmation-btn note" id="fault-confirmation-add-note-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span data-i18n="addNote">Add Note</span>
+        </button>
+        <button class="fault-confirmation-btn done" id="fault-confirmation-done-btn" data-i18n="done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Note Modal -->
+  <div class="modal-overlay glass-enable-target" id="voice-note-modal" role="dialog" aria-modal="true" aria-labelledby="voice-note-modal-title">
+    <div class="modal-content glass-surface-1 voice-note-modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="voice-note-modal-title" data-i18n="recordNote">Record Note</h2>
+        <button class="modal-close-btn" id="voice-note-close-btn" aria-label="Close" data-i18n-aria-label="close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Listening Indicator -->
+        <div class="voice-note-listening-indicator" id="voice-note-listening-indicator" aria-live="polite">
+          <div class="voice-note-pulse-ring"></div>
+          <div class="voice-note-mic-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+          <span class="voice-note-status-text" data-i18n="listening">Listening...</span>
+        </div>
+
+        <!-- Note Textarea -->
+        <div class="voice-note-input-section">
+          <textarea
+            class="voice-note-textarea"
+            id="voice-note-textarea"
+            maxlength="500"
+            rows="4"
+            data-i18n-placeholder="typeNote"
+            placeholder="Type or speak your note..."
+            aria-label="Note text"
+            data-i18n-aria-label="noteTextLabel"
+          ></textarea>
+          <div class="voice-note-input-footer">
+            <span class="voice-note-char-count" id="voice-note-char-count">0/500</span>
+            <button class="voice-note-mic-btn" id="voice-note-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false" data-i18n-aria-label="recordVoiceNoteLabel">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="voice-note-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn primary" id="voice-note-save-btn" data-i18n="save">Save</button>
+      </div>
     </div>
   </div>
 
@@ -1191,7 +1285,9 @@
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
         <span class="progress-dot"></span>
+        <span class="progress-dot"></span>
       </div>
+      <div class="onboarding-progress-label" id="onboarding-progress-label" aria-live="polite"></div>
 
       <div class="onboarding-cards">
         <!-- Card 1: Welcome + Language -->
@@ -1278,12 +1374,12 @@
           <p data-i18n="onboardingGatesDesc">Enter the gate numbers you'll be watching. You can change this later.</p>
           <div class="onboarding-gate-inputs">
             <div class="gate-input-group">
-              <label data-i18n="gatesFrom">From</label>
+              <label for="onboarding-gate-start" data-i18n="gatesFrom">From</label>
               <input type="number" class="text-input gate-input" id="onboarding-gate-start" min="1" max="99" value="1">
             </div>
             <span class="gate-range-separator">–</span>
             <div class="gate-input-group">
-              <label data-i18n="gatesTo">To</label>
+              <label for="onboarding-gate-end" data-i18n="gatesTo">To</label>
               <input type="number" class="text-input gate-input" id="onboarding-gate-end" min="1" max="99" value="10">
             </div>
           </div>
