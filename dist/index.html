@@ -31,9 +31,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-DyFH6YZ5.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-Bqcxa0gL.css">
-<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <script type="module" crossorigin src="/assets/main-CF72W3Uy.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-c3SAP2Rp.css">
+<link rel="manifest" href="/manifest.json"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
   <a href="#main" class="skip-link">Skip to main content</a>
@@ -44,9 +44,9 @@
       <h1 class="header-title">Ski Race Timer</h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
-          <span class="sync-dot"></span>
+          <span class="sync-dot" aria-label="Sync status"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
-          <span class="sync-device-count" id="sync-device-count" style="display: none;"></span>
+          <span class="sync-device-count" id="sync-device-count" style="display: none;" aria-live="polite"></span>
           <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
               <path d="M20 6L9 17l-5-5"/>
@@ -55,8 +55,8 @@
           </span>
         </div>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
-          <span class="gps-dot"></span>
-          <span class="gps-status-text" data-i18n="gps">GPS</span>
+          <span class="gps-dot" aria-label="GPS status"></span>
+          <span class="gps-status-text" data-i18n="gpsInactive">GPS Inactive</span>
         </div>
         <div class="judge-ready-indicator" id="judge-ready-indicator" style="display: none;">
           <span class="judge-ready-dot"></span>
@@ -75,6 +75,12 @@
         <span class="entry-count-badge" id="entry-count-badge" style="display: none;" aria-live="polite">0</span>
       </div>
     </header>
+
+    <!-- Offline Banner -->
+    <div class="offline-banner hidden" id="offline-banner" role="alert" aria-live="polite">
+      <span id="offline-banner-text" data-i18n="offlineBanner">You are offline. Times will be saved locally.</span>
+      <button class="offline-banner-dismiss" id="offline-banner-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
 
     <!-- Main Content -->
     <main id="main">
@@ -222,6 +228,10 @@
             <div class="stat-item" data-advanced>
               <div class="stat-value" id="stat-finished">0</div>
               <div class="stat-label" data-i18n="finished">Finished</div>
+            </div>
+            <div class="stat-item stat-duplicates" id="stat-duplicates-item" style="display: none;">
+              <div class="stat-value stat-value-warn" id="stat-duplicates">0</div>
+              <div class="stat-label" data-i18n="multiDeviceDuplicate">Multi-device</div>
             </div>
           </div>
         </div>
@@ -454,45 +464,103 @@
 
       <!-- Settings View -->
       <div class="view settings-view">
-        <!-- Device Role (Prominent at top) -->
-        <div class="settings-section role-section">
-          <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
-          <div class="role-cards-settings" id="role-toggle" role="radiogroup" aria-label="Device role">
-            <button class="role-card-setting active" data-role="timer" role="radio" aria-checked="true">
-              <div class="role-card-icon" aria-hidden="true">⏱️</div>
-              <div class="role-card-content">
-                <span class="role-card-title" data-i18n="roleTimer">Timer</span>
-                <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
+        <!-- ===== Race Setup Group ===== -->
+        <div class="settings-group">
+          <h3 class="settings-group-title" data-i18n="settingsRaceSetup">Race Setup</h3>
+          <!-- Device Role -->
+          <div class="settings-section role-section">
+            <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
+            <div class="role-cards-settings" id="role-toggle" role="radiogroup" aria-label="Device role">
+              <button class="role-card-setting active" data-role="timer" role="radio" aria-checked="true">
+                <div class="role-card-icon" aria-hidden="true">⏱️</div>
+                <div class="role-card-content">
+                  <span class="role-card-title" data-i18n="roleTimer">Timer</span>
+                  <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
+                </div>
+              </button>
+              <button class="role-card-setting" data-role="gateJudge" role="radio" aria-checked="false">
+                <div class="role-card-icon" aria-hidden="true">🚩</div>
+                <div class="role-card-content">
+                  <span class="role-card-title" data-i18n="roleGateJudge">Gate Judge</span>
+                  <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
+                </div>
+              </button>
+            </div>
+          </div>
+          <!-- Race ID -->
+          <div class="settings-section race-setup-section">
+            <div class="setting-row" id="race-id-input-row-container">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="raceId">Race ID</span>
+                <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
+                  <svg class="race-exists-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span class="race-exists-text" id="race-exists-text"></span>
+                </span>
               </div>
-            </button>
-            <button class="role-card-setting" data-role="gateJudge" role="radio" aria-checked="false">
-              <div class="role-card-icon" aria-hidden="true">🚩</div>
-              <div class="role-card-content">
-                <span class="role-card-title" data-i18n="roleGateJudge">Gate Judge</span>
-                <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
+              <div class="race-id-input-row">
+                <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;" aria-label="Race ID">
+                <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </button>
+                <div class="recent-races-dropdown" id="settings-recent-races-dropdown" style="display:none"></div>
               </div>
-            </button>
+            </div>
+            <!-- Device Name -->
+            <div class="setting-row">
+              <div class="setting-label">
+                <span class="setting-title" data-i18n="deviceName">Device Name</span>
+              </div>
+              <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;" aria-label="Device name">
+            </div>
           </div>
         </div>
 
-        <!-- Mode Toggle (hidden - normal mode is now the default) -->
-        <div class="settings-section" style="display:none">
+        <!-- ===== Timing Group ===== -->
+        <div class="settings-group">
+          <h3 class="settings-group-title" data-i18n="settingsTimingGroup">Timing</h3>
+          <!-- GPS -->
           <div class="setting-row">
             <div class="setting-label">
-              <span class="setting-title" data-i18n="simpleMode">Simple Mode</span>
-              <span class="setting-description" data-i18n="simpleModeDesc">Simplified interface for basic timing</span>
+              <span class="setting-title" data-i18n="gps">GPS Sync</span>
+              <span class="setting-description" data-i18n="gpsDesc">Use GPS for accurate timestamps</span>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" id="simple-mode-toggle">
+              <input type="checkbox" id="gps-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Auto-increment -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="autoIncrement">Auto-increment Bib</span>
+              <span class="setting-description" data-i18n="autoIncrementDesc">Increase bib number after recording</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Photo Capture -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="photoCapture">Photo Capture</span>
+              <span class="setting-description" data-i18n="photoCaptureDesc">Capture photo on timestamp</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="photo-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>
         </div>
 
-        <!-- Race Setup -->
-        <div class="settings-section race-setup-section">
-          <div class="settings-section-title" data-i18n="raceSetup">Race Setup</div>
-          <div class="settings-section-subtitle" data-i18n="raceSetupDesc">Required for multi-device timing and syncing.</div>
+        <!-- ===== Sync Group ===== -->
+        <div class="settings-group">
+          <h3 class="settings-group-title" data-i18n="settingsSyncGroup">Sync</h3>
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="cloudSync">Cloud Sync</span>
@@ -502,33 +570,6 @@
               <input type="checkbox" id="sync-toggle">
               <span class="toggle-slider"></span>
             </label>
-          </div>
-          <div class="setting-row" id="race-id-input-row-container">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="raceId">Race ID</span>
-              <span class="race-exists-indicator" id="race-exists-indicator" style="display: none;">
-                <svg class="race-exists-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                <span class="race-exists-text" id="race-exists-text"></span>
-              </span>
-            </div>
-            <div class="race-id-input-row">
-              <input type="text" class="text-input" id="race-id-input" data-i18n-placeholder="raceIdPlaceholder" style="max-width: 120px;" aria-label="Race ID">
-              <button class="recent-races-btn" id="settings-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
-                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-              </button>
-              <div class="recent-races-dropdown" id="settings-recent-races-dropdown" style="display:none"></div>
-            </div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <span class="setting-title" data-i18n="deviceName">Device Name</span>
-            </div>
-            <input type="text" class="text-input" id="device-name-input" data-i18n-placeholder="deviceNamePlaceholder" style="max-width: 150px;" aria-label="Device name">
           </div>
           <div class="setting-row" id="sync-photos-row">
             <div class="setting-label">
@@ -542,94 +583,48 @@
           </div>
         </div>
 
-        <!-- Advanced Settings (Collapsible) -->
-        <div class="settings-section collapsible expanded" id="advanced-settings-section">
-          <div class="settings-section-title" id="advanced-settings-toggle" data-i18n="advancedSettings" role="button" tabindex="0" aria-expanded="true" aria-controls="advanced-settings-content">Advanced Settings</div>
-          <div class="settings-section-content" id="advanced-settings-content">
-            <div class="settings-section-hint" data-i18n="advancedSettingsHint">These options can affect timing accuracy. Change only if needed.</div>
-            <!-- GPS -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="gps">GPS Sync</span>
-                <span class="setting-description" data-i18n="gpsDesc">Use GPS for accurate timestamps</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="gps-toggle">
-                <span class="toggle-slider"></span>
-              </label>
+        <!-- ===== Feedback Group ===== -->
+        <div class="settings-group">
+          <h3 class="settings-group-title" data-i18n="settingsFeedbackGroup">Feedback</h3>
+          <!-- Haptic Feedback -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="hapticFeedback">Haptic Feedback</span>
+              <span class="setting-description" data-i18n="hapticFeedbackDesc">Vibration on actions</span>
             </div>
-            <!-- Auto-increment -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="autoIncrement">Auto-increment Bib</span>
-                <span class="setting-description" data-i18n="autoIncrementDesc">Increase bib number after recording</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="auto-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="haptic-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Sound Feedback -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="soundFeedback">Sound Feedback</span>
+              <span class="setting-description" data-i18n="soundFeedbackDesc">Audio confirmation</span>
             </div>
-            <!-- Haptic Feedback -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="hapticFeedback">Haptic Feedback</span>
-                <span class="setting-description" data-i18n="hapticFeedbackDesc">Vibration on actions</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="haptic-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sound-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Ambient Mode -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="ambientMode">Ambient Mode</span>
+              <span class="setting-description" data-i18n="ambientModeDesc">Auto-dim after 30s inactivity</span>
             </div>
-            <!-- Sound Feedback -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="soundFeedback">Sound Feedback</span>
-                <span class="setting-description" data-i18n="soundFeedbackDesc">Audio confirmation</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="sound-toggle">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            <!-- Ambient Mode -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="ambientMode">Ambient Mode</span>
-                <span class="setting-description" data-i18n="ambientModeDesc">Auto-dim after 30s inactivity</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="ambient-mode-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            <!-- Voice Mode -->
-            <div class="setting-row" id="voice-mode-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="voiceMode">Voice Mode</span>
-                <span class="setting-description" data-i18n="voiceModeDesc">Hands-free voice commands (requires internet)</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="voice-mode-toggle">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-            <!-- Photo Capture -->
-            <div class="setting-row">
-              <div class="setting-label">
-                <span class="setting-title" data-i18n="photoCapture">Photo Capture</span>
-                <span class="setting-description" data-i18n="photoCaptureDesc">Capture photo on timestamp</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="photo-toggle">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="ambient-mode-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 
-        <!-- Language -->
-        <div class="settings-section">
-          <div class="settings-section-title" data-i18n="language">Language</div>
+        <!-- ===== Display Group ===== -->
+        <div class="settings-group">
+          <h3 class="settings-group-title" data-i18n="settingsDisplayGroup">Display</h3>
+          <!-- Language -->
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="language">Language</span>
@@ -639,10 +634,29 @@
               <span class="lang-option" data-lang="en" role="radio" tabindex="0" aria-checked="false" aria-label="English">EN</span>
             </div>
           </div>
-        </div>
-
-        <!-- Tutorial -->
-        <div class="settings-section">
+          <!-- Mode Toggle (hidden - normal mode is now the default) -->
+          <div class="setting-row" style="display:none">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="simpleMode">Simple Mode</span>
+              <span class="setting-description" data-i18n="simpleModeDesc">Simplified interface for basic timing</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="simple-mode-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Voice Mode -->
+          <div class="setting-row" id="voice-mode-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="voiceMode">Voice Mode</span>
+              <span class="setting-description" data-i18n="voiceModeDesc">Hands-free voice commands (requires internet)</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="voice-mode-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <!-- Tutorial -->
           <div class="setting-row">
             <div class="setting-label">
               <span class="setting-title" data-i18n="showTutorial">Show Tutorial</span>
@@ -652,6 +666,20 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <span data-i18n="show">Show</span>
+            </button>
+          </div>
+          <!-- Keyboard Shortcuts -->
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="setting-title" data-i18n="keyboardShortcuts">Keyboard Shortcuts</span>
+              <span class="setting-description" data-i18n="keyboardShortcutsDesc">Show all keyboard shortcuts</span>
+            </div>
+            <button class="action-btn admin-action-btn" id="show-shortcuts-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/>
               </svg>
               <span data-i18n="show">Show</span>
             </button>
@@ -689,8 +717,8 @@
           </div>
         </div>
 
-        <!-- Version -->
-        <div class="settings-section">
+        <!-- Version (at the very bottom) -->
+        <div class="settings-section settings-version-section">
           <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
             <span id="app-version-name" class="version-name"></span>
@@ -1271,6 +1299,70 @@
       <div class="modal-footer">
         <button class="modal-btn secondary" id="voice-note-cancel-btn" data-i18n="cancel">Cancel</button>
         <button class="modal-btn primary" id="voice-note-save-btn" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div class="modal-overlay glass-enable-target" id="keyboard-shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="keyboard-shortcuts-modal-title">
+    <div class="modal-content glass-surface-1 shortcuts-modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="keyboard-shortcuts-modal-title" data-i18n="keyboardShortcuts">Keyboard Shortcuts</h2>
+        <button class="modal-close-btn" id="shortcuts-close-btn" aria-label="Close" data-i18n-aria-label="close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body shortcuts-body">
+        <!-- Timer Section -->
+        <div class="shortcuts-section">
+          <h3 class="shortcuts-section-title" data-i18n="shortcutSection_timer">Timer</h3>
+          <dl class="shortcuts-list">
+            <div class="shortcut-row"><dt><kbd>0</kbd>-<kbd>9</kbd></dt><dd data-i18n="shortcut_enterDigit">Enter bib digit</dd></div>
+            <div class="shortcut-row"><dt><kbd>S</kbd></dt><dd data-i18n="shortcut_selectStart">Select Start</dd></div>
+            <div class="shortcut-row"><dt><kbd>F</kbd></dt><dd data-i18n="shortcut_selectFinish">Select Finish</dd></div>
+            <div class="shortcut-row"><dt><kbd>Alt</kbd>+<kbd>1</kbd></dt><dd data-i18n="shortcut_selectRun1">Select Run 1</dd></div>
+            <div class="shortcut-row"><dt><kbd>Alt</kbd>+<kbd>2</kbd></dt><dd data-i18n="shortcut_selectRun2">Select Run 2</dd></div>
+            <div class="shortcut-row"><dt><kbd>Space</kbd> / <kbd>Enter</kbd></dt><dd data-i18n="shortcut_recordTime">Record timestamp</dd></div>
+            <div class="shortcut-row"><dt><kbd>Esc</kbd> / <kbd>Del</kbd></dt><dd data-i18n="shortcut_clearBib">Clear bib</dd></div>
+            <div class="shortcut-row"><dt><kbd>Backspace</kbd></dt><dd data-i18n="shortcut_deleteLastDigit">Delete last digit</dd></div>
+          </dl>
+        </div>
+        <!-- Gate Judge Section -->
+        <div class="shortcuts-section">
+          <h3 class="shortcuts-section-title" data-i18n="shortcutSection_gateJudge">Gate Judge</h3>
+          <dl class="shortcuts-list">
+            <div class="shortcut-row"><dt><kbd>M</kbd> / <kbd>G</kbd></dt><dd data-i18n="shortcut_missedGate">Missed Gate</dd></div>
+            <div class="shortcut-row"><dt><kbd>T</kbd></dt><dd data-i18n="shortcut_straddled">Straddled</dd></div>
+            <div class="shortcut-row"><dt><kbd>B</kbd> / <kbd>R</kbd></dt><dd data-i18n="shortcut_broken">Broken gate</dd></div>
+            <div class="shortcut-row"><dt><kbd>1</kbd>-<kbd>0</kbd></dt><dd data-i18n="shortcut_selectGate">Select gate</dd></div>
+            <div class="shortcut-row"><dt><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd data-i18n="shortcut_navigateBtns">Navigate buttons</dd></div>
+            <div class="shortcut-row"><dt><kbd>Space</kbd> / <kbd>Enter</kbd></dt><dd data-i18n="shortcut_confirmSelection">Confirm selection</dd></div>
+          </dl>
+        </div>
+        <!-- Results Section -->
+        <div class="shortcuts-section">
+          <h3 class="shortcuts-section-title" data-i18n="shortcutSection_results">Results</h3>
+          <dl class="shortcuts-list">
+            <div class="shortcut-row"><dt><kbd>&uarr;</kbd><kbd>&darr;</kbd></dt><dd data-i18n="shortcut_navigateItems">Navigate items</dd></div>
+            <div class="shortcut-row"><dt><kbd>Enter</kbd> / <kbd>E</kbd></dt><dd data-i18n="shortcut_editItem">Edit item</dd></div>
+            <div class="shortcut-row"><dt><kbd>Del</kbd> / <kbd>D</kbd></dt><dd data-i18n="shortcut_deleteItem">Delete item</dd></div>
+          </dl>
+        </div>
+        <!-- Global Section -->
+        <div class="shortcuts-section">
+          <h3 class="shortcuts-section-title" data-i18n="shortcutSection_global">Global</h3>
+          <dl class="shortcuts-list">
+            <div class="shortcut-row"><dt><kbd>Tab</kbd></dt><dd data-i18n="shortcut_moveTab">Move between tabs</dd></div>
+            <div class="shortcut-row"><dt><kbd>Esc</kbd></dt><dd data-i18n="shortcut_closeModal">Close modal</dd></div>
+            <div class="shortcut-row"><dt><kbd>&larr;</kbd><kbd>&rarr;</kbd></dt><dd data-i18n="shortcut_navigateInComponent">Navigate in component</dd></div>
+            <div class="shortcut-row"><dt><kbd>?</kbd></dt><dd data-i18n="shortcut_showShortcuts">Show shortcuts</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn primary" id="shortcuts-done-btn" data-i18n="done">Done</button>
       </div>
     </div>
   </div>
