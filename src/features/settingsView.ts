@@ -294,9 +294,11 @@ export function initSettingsView(): void {
             if (action === 'export') {
               exportResults();
               store.clearAll();
+              store.clearFaultEntries();
               await photoStorage.clearAll();
             } else if (action === 'delete') {
               store.clearAll();
+              store.clearFaultEntries();
               await photoStorage.clearAll();
             } else {
               // Cancelled - restore old race ID
@@ -308,6 +310,7 @@ export function initSettingsView(): void {
             const action = await requestRaceChangeDialog('unsynced', state.currentLang);
             if (action === 'delete') {
               store.clearAll();
+              store.clearFaultEntries();
               await photoStorage.clearAll();
             } else if (action === 'cancel') {
               // Cancelled - restore old race ID
