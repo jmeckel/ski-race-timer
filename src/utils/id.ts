@@ -1,11 +1,21 @@
 /**
+ * Generate a random hex string as fallback for crypto.randomUUID()
+ * Needed for Safari < 15.4 (older iPads)
+ */
+function randomHex(length: number): string {
+  const bytes = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').slice(0, length);
+}
+
+/**
  * Generate a unique entry ID using UUID v4 + timestamp
  * Format: {deviceId}-{timestamp}-{random}
  * This prevents collisions across devices even with simultaneous entries
  */
 export function generateEntryId(deviceId: string): string {
   const timestamp = Date.now();
-  const random = crypto.randomUUID().slice(0, 8);
+  const random = crypto.randomUUID?.().slice(0, 8) ?? randomHex(8);
   return `${deviceId}-${timestamp}-${random}`;
 }
 
@@ -88,7 +98,7 @@ export function migrateId(oldId: number | string, deviceId: string): string {
   }
 
   const timestamp = typeof oldId === 'number' ? oldId : parseInt(String(oldId), 10);
-  const random = crypto.randomUUID().slice(0, 8);
+  const random = crypto.randomUUID?.().slice(0, 8) ?? randomHex(8);
   return `${deviceId}-${timestamp}-${random}`;
 }
 
