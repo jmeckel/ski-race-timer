@@ -187,22 +187,21 @@ class GpsService {
             return;
           }
 
-          // Normal low-power vs high-accuracy switching (non-critical)
-          if (this.watchId !== null) {
-            const shouldUseLowPower = batteryService.isLowBattery();
-            if (shouldUseLowPower !== this.usingLowPowerMode) {
-              logger.debug(
-                `[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`,
-              );
-              navigator.geolocation.clearWatch(this.watchId);
-              const opts = this.getGpsOptions();
-              this.watchId = navigator.geolocation.watchPosition(
-                (position) => this.handlePosition(position),
-                (error) => this.handleError(error),
-                opts,
-              );
-            }
-          }
+          if (this.watchId === null) return;
+
+          const shouldUseLowPower = batteryService.isLowBattery();
+          if (shouldUseLowPower === this.usingLowPowerMode) return;
+
+          logger.debug(
+            `[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`,
+          );
+          navigator.geolocation.clearWatch(this.watchId);
+          const opts = this.getGpsOptions();
+          this.watchId = navigator.geolocation.watchPosition(
+            (position) => this.handlePosition(position),
+            (error) => this.handleError(error),
+            opts,
+          );
         });
       }
 
@@ -325,18 +324,11 @@ class GpsService {
    */
   private handleError(error: GeolocationPositionError): void {
     logger.error('GPS error:', error.message);
-
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        store.setGpsStatus('inactive');
-        this.stop();
-        break;
-      case error.POSITION_UNAVAILABLE:
-        store.setGpsStatus('searching');
-        break;
-      case error.TIMEOUT:
-        store.setGpsStatus('searching');
-        break;
+    if (error.code === error.PERMISSION_DENIED) {
+      store.setGpsStatus('inactive');
+      this.stop();
+    } else {
+      store.setGpsStatus('searching');
     }
   }
 

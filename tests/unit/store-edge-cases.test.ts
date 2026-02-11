@@ -192,18 +192,6 @@ describe('Store Edge Cases', () => {
       expect(goodListener).toHaveBeenCalled();
     });
 
-    it('should track failed listener count', () => {
-      const errorListener = vi.fn(() => {
-        throw new Error('Listener error');
-      });
-
-      store.subscribe(errorListener);
-      store.setBibInput('1');
-      store.setBibInput('2');
-      store.setBibInput('3');
-
-      expect(store.getListenerFailureCount()).toBeGreaterThanOrEqual(3);
-    });
   });
 
   describe('State serialization/deserialization round-trip', () => {

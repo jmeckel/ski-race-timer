@@ -58,25 +58,8 @@ export class RadialDialAnimation {
 
   /** Called when a drag starts. Cancels pending animations and resets velocity. */
   onDragStart(): void {
-    // Cancel any pending snap-back timeout
-    if (this.snapBackTimeoutId) {
-      clearTimeout(this.snapBackTimeoutId);
-      this.snapBackTimeoutId = null;
-    }
-
-    // Cancel any running snap-back animation
-    if (this.snapBackAnimationId) {
-      cancelAnimationFrame(this.snapBackAnimationId);
-      this.snapBackAnimationId = null;
-    }
-
+    this.cancelAllAnimations();
     this.velocity = 0;
-
-    if (this.spinAnimationId) {
-      cancelAnimationFrame(this.spinAnimationId);
-      this.spinAnimationId = null;
-    }
-
     this.accumulatedRotation = 0;
   }
 
@@ -111,20 +94,7 @@ export class RadialDialAnimation {
 
   /** Pause all animations (e.g., when page becomes hidden) */
   pauseAnimations(): void {
-    if (this.spinAnimationId) {
-      cancelAnimationFrame(this.spinAnimationId);
-      this.spinAnimationId = null;
-    }
-    if (this.snapBackAnimationId) {
-      cancelAnimationFrame(this.snapBackAnimationId);
-      this.snapBackAnimationId = null;
-    }
-    // Clear pending snap-back timeout to prevent it from scheduling
-    // a new RAF while the tab is hidden
-    if (this.snapBackTimeoutId !== null) {
-      clearTimeout(this.snapBackTimeoutId);
-      this.snapBackTimeoutId = null;
-    }
+    this.cancelAllAnimations();
   }
 
   // --- Flash animation ---
@@ -163,12 +133,7 @@ export class RadialDialAnimation {
    * @param el The element to flash
    */
   flashDigit(el: HTMLElement): void {
-    el.classList.add('flash');
-    const timeoutId = window.setTimeout(() => {
-      el.classList.remove('flash');
-      this.visualTimeoutIds.delete(timeoutId);
-    }, 150);
-    this.visualTimeoutIds.add(timeoutId);
+    this.flashClass(el, 'flash', 150);
   }
 
   /**
@@ -176,12 +141,7 @@ export class RadialDialAnimation {
    * @param el The element to add pressed class to
    */
   flashPressed(el: HTMLElement): void {
-    el.classList.add('pressed');
-    const timeoutId = window.setTimeout(() => {
-      el.classList.remove('pressed');
-      this.visualTimeoutIds.delete(timeoutId);
-    }, 150);
-    this.visualTimeoutIds.add(timeoutId);
+    this.flashClass(el, 'pressed', 150);
   }
 
   // --- Cleanup ---
@@ -191,6 +151,18 @@ export class RadialDialAnimation {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
 
+    this.cancelAllAnimations();
+
+    for (const timeoutId of this.visualTimeoutIds) {
+      clearTimeout(timeoutId);
+    }
+    this.visualTimeoutIds.clear();
+  }
+
+  // --- Private helpers ---
+
+  /** Cancel all pending RAF animations and snap-back timeout */
+  private cancelAllAnimations(): void {
     if (this.spinAnimationId) {
       cancelAnimationFrame(this.spinAnimationId);
       this.spinAnimationId = null;
@@ -203,12 +175,16 @@ export class RadialDialAnimation {
       clearTimeout(this.snapBackTimeoutId);
       this.snapBackTimeoutId = null;
     }
+  }
 
-    // Clear all visual effect timeouts
-    for (const timeoutId of this.visualTimeoutIds) {
-      clearTimeout(timeoutId);
-    }
-    this.visualTimeoutIds.clear();
+  /** Temporarily add a CSS class to an element, removing it after the given duration */
+  private flashClass(el: HTMLElement, className: string, duration: number): void {
+    el.classList.add(className);
+    const timeoutId = window.setTimeout(() => {
+      el.classList.remove(className);
+      this.visualTimeoutIds.delete(timeoutId);
+    }, duration);
+    this.visualTimeoutIds.add(timeoutId);
   }
 
   // --- Private animation methods ---

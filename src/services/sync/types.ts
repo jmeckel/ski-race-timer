@@ -3,6 +3,8 @@
  * Shared types and constants for the sync service
  */
 
+import type { BatteryLevel } from '../battery';
+
 // API configuration (v1)
 export const API_BASE = '/api/v1/sync';
 export const FAULTS_API_BASE = '/api/v1/faults';
@@ -77,6 +79,14 @@ export interface PollingConfig {
   threshold: number;
   baseInterval: number;
 }
+
+/** Battery-aware polling configurations indexed by battery level */
+export const BATTERY_POLLING_CONFIGS: Record<BatteryLevel, PollingConfig> = {
+  normal: { intervals: POLL_INTERVALS_IDLE, threshold: IDLE_THRESHOLD, baseInterval: POLL_INTERVAL_NORMAL },
+  medium: { intervals: POLL_INTERVALS_MEDIUM_BATTERY, threshold: IDLE_THRESHOLD_MEDIUM_BATTERY, baseInterval: POLL_INTERVALS_MEDIUM_BATTERY[0]! },
+  low: { intervals: POLL_INTERVALS_LOW_BATTERY, threshold: IDLE_THRESHOLD_LOW_BATTERY, baseInterval: POLL_INTERVALS_LOW_BATTERY[0]! },
+  critical: { intervals: POLL_INTERVALS_CRITICAL, threshold: IDLE_THRESHOLD_LOW_BATTERY, baseInterval: POLL_INTERVALS_CRITICAL[0]! },
+};
 
 /**
  * Broadcast message types for cross-tab communication

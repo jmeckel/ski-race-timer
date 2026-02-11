@@ -106,8 +106,25 @@ type StateListener = (
   changedKeys: (keyof AppState)[],
 ) => void;
 
-// Error callback for listener exceptions
-type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
+/**
+ * Parse JSON from a storage key, returning `fallback` on missing/invalid data.
+ * An optional `validate` function can narrow or transform the parsed value.
+ */
+function parseJson<T>(
+  key: string,
+  fallback: T,
+  validate?: (parsed: unknown) => T,
+): T {
+  try {
+    const raw = storage.getRaw(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return validate ? validate(parsed) : parsed;
+  } catch (e) {
+    logger.error(`Failed to parse ${key}:`, e);
+    return fallback;
+  }
+}
 
 class Store {
   private state: AppState;
@@ -121,8 +138,6 @@ class Store {
     keys: (keyof AppState)[];
     stateSnapshot: AppState;
   }[] = [];
-  private listenerErrorCallback: ListenerErrorCallback | null = null;
-  private failedListenerCount = 0;
 
   constructor() {
     this.state = this.loadInitialState();
@@ -139,46 +154,18 @@ class Store {
     }
 
     // Load and migrate data
-    const entriesJson = storage.getRaw(STORAGE_KEYS.ENTRIES);
-    const settingsJson = storage.getRaw(STORAGE_KEYS.SETTINGS);
-    const syncQueueJson = storage.getRaw(STORAGE_KEYS.SYNC_QUEUE);
-
-    let entries: Entry[] = [];
-    let settings = DEFAULT_SETTINGS;
-    let syncQueue: SyncQueueItem[] = [];
-
-    try {
-      if (entriesJson) {
-        const parsed = JSON.parse(entriesJson);
-        if (Array.isArray(parsed)) {
-          entries = parsed
-            .filter((e) => isValidEntry(e))
-            .map((e) => ({ ...e, run: e.run ?? 1 }));
-        }
-      }
-    } catch (e) {
-      logger.error('Failed to parse entries:', e);
-    }
-
-    try {
-      if (settingsJson) {
-        const parsed = JSON.parse(settingsJson);
-        settings = { ...DEFAULT_SETTINGS, ...parsed };
-      }
-    } catch (e) {
-      logger.error('Failed to parse settings:', e);
-    }
-
-    try {
-      if (syncQueueJson) {
-        const parsed = JSON.parse(syncQueueJson);
-        if (Array.isArray(parsed)) {
-          syncQueue = parsed;
-        }
-      }
-    } catch (e) {
-      logger.error('Failed to parse sync queue:', e);
-    }
+    const entries = parseJson<Entry[]>(STORAGE_KEYS.ENTRIES, [], (p) =>
+      Array.isArray(p)
+        ? p.filter((e) => isValidEntry(e)).map((e) => ({ ...e, run: e.run ?? 1 }))
+        : [],
+    );
+    const settings = parseJson<Settings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS, (p) => ({
+      ...DEFAULT_SETTINGS,
+      ...(p as object),
+    }));
+    const syncQueue = parseJson<SyncQueueItem[]>(STORAGE_KEYS.SYNC_QUEUE, [], (p) =>
+      Array.isArray(p) ? p : [],
+    );
 
     // Load other values
     const lang = (storage.getRaw(STORAGE_KEYS.LANG) || 'de') as Language;
@@ -195,37 +182,17 @@ class Store {
     // Load Gate Judge state
     const deviceRole = (storage.getRaw(STORAGE_KEYS.DEVICE_ROLE) ||
       'timer') as DeviceRole;
-    let gateAssignment: [number, number] | null = null;
-    let firstGateColor: GateColor = 'red';
-    let faultEntries: FaultEntry[] = [];
-
-    try {
-      const gateAssignmentJson = storage.getRaw(STORAGE_KEYS.GATE_ASSIGNMENT);
-      if (gateAssignmentJson) {
-        const parsed = JSON.parse(gateAssignmentJson);
-        if (Array.isArray(parsed) && parsed.length === 2) {
-          gateAssignment = parsed as [number, number];
-        }
-      }
-      const storedColor = storage.getRaw(STORAGE_KEYS.FIRST_GATE_COLOR);
-      if (storedColor === 'red' || storedColor === 'blue') {
-        firstGateColor = storedColor;
-      }
-    } catch (e) {
-      logger.error('Failed to parse gate assignment:', e);
-    }
-
-    try {
-      const faultEntriesJson = storage.getRaw(STORAGE_KEYS.FAULT_ENTRIES);
-      if (faultEntriesJson) {
-        const parsed = JSON.parse(faultEntriesJson);
-        if (Array.isArray(parsed)) {
-          faultEntries = parsed;
-        }
-      }
-    } catch (e) {
-      logger.error('Failed to parse fault entries:', e);
-    }
+    const gateAssignment = parseJson<[number, number] | null>(
+      STORAGE_KEYS.GATE_ASSIGNMENT,
+      null,
+      (p) => (Array.isArray(p) && p.length === 2 ? (p as [number, number]) : null),
+    );
+    const storedColor = storage.getRaw(STORAGE_KEYS.FIRST_GATE_COLOR);
+    const firstGateColor: GateColor =
+      storedColor === 'red' || storedColor === 'blue' ? storedColor : 'red';
+    const faultEntries = parseJson<FaultEntry[]>(STORAGE_KEYS.FAULT_ENTRIES, [], (p) =>
+      Array.isArray(p) ? p : [],
+    );
 
     return {
       currentView: deviceRole === 'gateJudge' ? 'gateJudge' : 'timer',
@@ -317,28 +284,12 @@ class Store {
             listener(stateSnapshot, keys);
           } catch (e) {
             logger.error('State listener error:', e);
-            this.failedListenerCount++;
-            if (this.listenerErrorCallback) {
-              try {
-                this.listenerErrorCallback(e, listener);
-              } catch {
-                // Ignore errors in error callback
-              }
-            }
           }
         }
       }
     } finally {
       this.isNotifying = false;
     }
-  }
-
-  onListenerError(callback: ListenerErrorCallback): void {
-    this.listenerErrorCallback = callback;
-  }
-
-  getListenerFailureCount(): number {
-    return this.failedListenerCount;
   }
 
   private setState(updates: Partial<AppState>, persist: boolean = true) {

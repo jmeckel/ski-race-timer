@@ -715,50 +715,6 @@ describe('Store - Additional Coverage', () => {
     });
   });
 
-  describe('Listener Error Callback', () => {
-    it('should call onListenerError callback when listener fails', () => {
-      const errorCallback = vi.fn();
-      store.onListenerError(errorCallback);
-
-      const badListener = vi.fn(() => {
-        throw new Error('listener crash');
-      });
-      store.subscribe(badListener);
-      store.setBibInput('1');
-
-      expect(errorCallback).toHaveBeenCalledWith(
-        expect.any(Error),
-        badListener,
-      );
-    });
-
-    it('should handle error in error callback gracefully', () => {
-      store.onListenerError(() => {
-        throw new Error('callback crash');
-      });
-
-      const badListener = vi.fn(() => {
-        throw new Error('listener crash');
-      });
-      store.subscribe(badListener);
-
-      // Should not throw even if error callback throws
-      expect(() => store.setBibInput('1')).not.toThrow();
-    });
-
-    it('should track failure count', () => {
-      const badListener = vi.fn(() => {
-        throw new Error('fail');
-      });
-      store.subscribe(badListener);
-
-      store.setBibInput('1');
-      store.setBibInput('2');
-
-      expect(store.getListenerFailureCount()).toBe(2);
-    });
-  });
-
   describe('Sync State - Extended', () => {
     it('should set last synced race ID', () => {
       store.setLastSyncedRaceId('RACE-2024');

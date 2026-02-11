@@ -10,10 +10,9 @@ import {
 } from '../battery';
 import { networkMonitor } from './networkMonitor';
 import {
+  BATTERY_POLLING_CONFIGS,
   type ConnectionQuality,
   IDLE_THRESHOLD,
-  IDLE_THRESHOLD_LOW_BATTERY,
-  IDLE_THRESHOLD_MEDIUM_BATTERY,
   POLL_INTERVAL_ERROR,
   POLL_INTERVAL_HIDDEN,
   POLL_INTERVAL_METERED_BASE,
@@ -21,10 +20,6 @@ import {
   POLL_INTERVAL_OFFLINE,
   POLL_INTERVAL_SLOW,
   POLL_INTERVAL_ULTRA_LOW_BATTERY,
-  POLL_INTERVALS_CRITICAL,
-  POLL_INTERVALS_IDLE,
-  POLL_INTERVALS_LOW_BATTERY,
-  POLL_INTERVALS_MEDIUM_BATTERY,
   POLL_INTERVALS_METERED,
   type PollingConfig,
 } from './types';
@@ -142,82 +137,29 @@ class PollingManager {
   getPollingConfig(): PollingConfig {
     const isMetered = networkMonitor.isMeteredConnection();
 
-    // Offline: use long interval just to check if back online
     if (this.currentConnectionQuality === 'offline') {
-      return {
-        intervals: [POLL_INTERVAL_OFFLINE],
-        threshold: 1,
-        baseInterval: POLL_INTERVAL_OFFLINE,
-      };
+      return { intervals: [POLL_INTERVAL_OFFLINE], threshold: 1, baseInterval: POLL_INTERVAL_OFFLINE };
     }
 
-    // Tab hidden: use reduced polling to save battery/data
     if (this.isTabHidden) {
-      return {
-        intervals: [POLL_INTERVAL_HIDDEN],
-        threshold: 1,
-        baseInterval: POLL_INTERVAL_HIDDEN,
-      };
+      return { intervals: [POLL_INTERVAL_HIDDEN], threshold: 1, baseInterval: POLL_INTERVAL_HIDDEN };
     }
 
-    // Ultra-low battery (<5%): effectively stop automatic polling (5 min interval)
-    // More aggressive than 'critical' (10%) to preserve remaining battery
+    // Ultra-low battery (<5%): more aggressive than 'critical' (10%) to preserve remaining battery
     if (this.currentBatteryRawLevel < 0.05 && !batteryService.isCharging()) {
-      return {
-        intervals: [POLL_INTERVAL_ULTRA_LOW_BATTERY],
-        threshold: 1,
-        baseInterval: POLL_INTERVAL_ULTRA_LOW_BATTERY,
-      };
+      return { intervals: [POLL_INTERVAL_ULTRA_LOW_BATTERY], threshold: 1, baseInterval: POLL_INTERVAL_ULTRA_LOW_BATTERY };
     }
 
-    // Battery critical takes highest priority (after offline/hidden)
-    if (this.currentBatteryLevel === 'critical') {
-      return {
-        intervals: POLL_INTERVALS_CRITICAL,
-        threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_CRITICAL[0]!, // 30s when active
-      };
-    }
-
-    // Slow connection (2g, slow-2g, saveData) uses longer intervals
-    if (this.currentConnectionQuality === 'slow') {
+    // Slow or metered network uses reduced intervals to save data
+    if (this.currentConnectionQuality === 'slow' || isMetered) {
       return {
         intervals: POLL_INTERVALS_METERED,
         threshold: IDLE_THRESHOLD,
-        baseInterval: POLL_INTERVAL_SLOW, // 30s when on slow connection
+        baseInterval: this.currentConnectionQuality === 'slow' ? POLL_INTERVAL_SLOW : POLL_INTERVAL_METERED_BASE,
       };
     }
 
-    // Metered network uses reduced intervals to save data
-    if (isMetered) {
-      return {
-        intervals: POLL_INTERVALS_METERED,
-        threshold: IDLE_THRESHOLD,
-        baseInterval: POLL_INTERVAL_METERED_BASE, // 30s when on cellular
-      };
-    }
-    // Low battery uses slower intervals
-    if (this.currentBatteryLevel === 'low') {
-      return {
-        intervals: POLL_INTERVALS_LOW_BATTERY,
-        threshold: IDLE_THRESHOLD_LOW_BATTERY,
-        baseInterval: POLL_INTERVALS_LOW_BATTERY[0]!, // 30s when active
-      };
-    }
-    // Medium battery uses slightly slower intervals
-    if (this.currentBatteryLevel === 'medium') {
-      return {
-        intervals: POLL_INTERVALS_MEDIUM_BATTERY,
-        threshold: IDLE_THRESHOLD_MEDIUM_BATTERY,
-        baseInterval: POLL_INTERVALS_MEDIUM_BATTERY[0]!, // 20s when active
-      };
-    }
-    // Normal mode
-    return {
-      intervals: POLL_INTERVALS_IDLE,
-      threshold: IDLE_THRESHOLD,
-      baseInterval: POLL_INTERVAL_NORMAL, // 15s when active
-    };
+    return BATTERY_POLLING_CONFIGS[this.currentBatteryLevel];
   }
 
   /**

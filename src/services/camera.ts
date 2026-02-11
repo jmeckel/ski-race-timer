@@ -35,6 +35,44 @@ class CameraService {
   private resumingStartedAt: number | null = null;
 
   /**
+   * Create or reuse a video element for camera capture.
+   * Uses the preview element if set, otherwise creates a hidden off-screen element.
+   */
+  private createVideoElement(): HTMLVideoElement {
+    if (this.previewElement) {
+      this.ownsVideoElement = false;
+      return this.previewElement;
+    }
+    const el = document.createElement('video');
+    el.setAttribute('autoplay', '');
+    el.setAttribute('playsinline', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    el.style.top = '-9999px';
+    document.body.appendChild(el);
+    this.ownsVideoElement = true;
+    return el;
+  }
+
+  /**
+   * Wait for the video element to load metadata and begin playback.
+   */
+  private waitForVideoReady(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.videoElement) {
+        reject(new Error('Video element not available'));
+        return;
+      }
+      this.videoElement.onloadedmetadata = () => {
+        this.videoElement!.play()
+          .then(() => resolve())
+          .catch(reject);
+      };
+      this.videoElement.onerror = () => reject(new Error('Video load error'));
+    });
+  }
+
+  /**
    * Initialize the camera service
    * Creates hidden video and canvas elements for photo capture
    */
@@ -50,20 +88,7 @@ class CameraService {
         throw new Error('Camera API not available');
       }
 
-      // Use preview element if provided, otherwise create hidden video element
-      if (this.previewElement) {
-        this.videoElement = this.previewElement;
-        this.ownsVideoElement = false;
-      } else {
-        this.videoElement = document.createElement('video');
-        this.videoElement.setAttribute('autoplay', '');
-        this.videoElement.setAttribute('playsinline', '');
-        this.videoElement.style.position = 'absolute';
-        this.videoElement.style.left = '-9999px';
-        this.videoElement.style.top = '-9999px';
-        document.body.appendChild(this.videoElement);
-        this.ownsVideoElement = true;
-      }
+      this.videoElement = this.createVideoElement();
 
       // Create hidden canvas for photo capture
       this.canvasElement = document.createElement('canvas');
@@ -74,19 +99,7 @@ class CameraService {
       this.stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONFIG);
       this.videoElement.srcObject = this.stream;
 
-      // Wait for video to be ready
-      await new Promise<void>((resolve, reject) => {
-        if (!this.videoElement) {
-          reject(new Error('Video element not available'));
-          return;
-        }
-        this.videoElement.onloadedmetadata = () => {
-          this.videoElement!.play()
-            .then(() => resolve())
-            .catch(reject);
-        };
-        this.videoElement.onerror = () => reject(new Error('Video load error'));
-      });
+      await this.waitForVideoReady();
 
       // Check if visibility changed during initialization
       if (this.pendingVisibilityChange === 'hidden') {
@@ -183,38 +196,14 @@ class CameraService {
 
     try {
       if (!this.videoElement) {
-        if (this.previewElement) {
-          this.videoElement = this.previewElement;
-          this.ownsVideoElement = false;
-        } else {
-          this.videoElement = document.createElement('video');
-          this.videoElement.setAttribute('autoplay', '');
-          this.videoElement.setAttribute('playsinline', '');
-          this.videoElement.style.position = 'absolute';
-          this.videoElement.style.left = '-9999px';
-          this.videoElement.style.top = '-9999px';
-          document.body.appendChild(this.videoElement);
-          this.ownsVideoElement = true;
-        }
+        this.videoElement = this.createVideoElement();
       }
 
       // Request camera access
       this.stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONFIG);
       this.videoElement.srcObject = this.stream;
 
-      // Wait for video to be ready
-      await new Promise<void>((resolve, reject) => {
-        if (!this.videoElement) {
-          reject(new Error('Video element not available'));
-          return;
-        }
-        this.videoElement.onloadedmetadata = () => {
-          this.videoElement!.play()
-            .then(() => resolve())
-            .catch(reject);
-        };
-        this.videoElement.onerror = () => reject(new Error('Video load error'));
-      });
+      await this.waitForVideoReady();
 
       // Check if visibility changed during reinitialization
       if (this.pendingVisibilityChange === 'hidden') {
@@ -328,10 +317,7 @@ class CameraService {
       }
     }
 
-    // Clean up canvas element reference
-    if (this.canvasElement) {
-      this.canvasElement = null;
-    }
+    this.canvasElement = null;
 
     // Remove visibility change handler
     if (this.visibilityHandler) {

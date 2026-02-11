@@ -53,28 +53,16 @@ function scheduleAudioSuspend(): void {
 function scaledVibrationPattern(
   pattern: number | number[],
 ): number | number[] | null {
-  const status = batteryService.getStatus();
+  const { batteryLevel } = batteryService.getStatus();
 
-  switch (status.batteryLevel) {
-    case 'critical':
-      return null; // Skip vibration entirely
-    case 'low': {
-      const scale = 0.5;
-      if (typeof pattern === 'number') {
-        return Math.round(pattern * scale);
-      }
-      return pattern.map((v) => Math.round(v * scale));
-    }
-    case 'medium': {
-      const scale = 0.75;
-      if (typeof pattern === 'number') {
-        return Math.round(pattern * scale);
-      }
-      return pattern.map((v) => Math.round(v * scale));
-    }
-    default:
-      return pattern;
-  }
+  if (batteryLevel === 'critical') return null;
+
+  const scale = batteryLevel === 'low' ? 0.5 : batteryLevel === 'medium' ? 0.75 : 1;
+  if (scale === 1) return pattern;
+
+  return typeof pattern === 'number'
+    ? Math.round(pattern * scale)
+    : pattern.map((v) => Math.round(v * scale));
 }
 
 /**
