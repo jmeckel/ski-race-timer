@@ -282,6 +282,11 @@ describe('App State Handlers', () => {
       };
       expect(ambientModeService.disable).toHaveBeenCalled();
     });
+
+    it('should call applyViewServices on view change (GPS/camera lifecycle)', () => {
+      mockState.value = { ...mockState.value, currentView: 'results' };
+      expect(applyViewServices).toHaveBeenCalled();
+    });
   });
 
   describe('bibInput changes', () => {

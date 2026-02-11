@@ -16,17 +16,19 @@ describe('i18n translations', () => {
     });
 
     it('should have every EN key present in DE', () => {
-      const missingInDe = enKeys.filter(
-        (key) => !(key in translations.de),
-      );
-      expect(missingInDe, `Keys missing in DE: ${missingInDe.join(', ')}`).toEqual([]);
+      const missingInDe = enKeys.filter((key) => !(key in translations.de));
+      expect(
+        missingInDe,
+        `Keys missing in DE: ${missingInDe.join(', ')}`,
+      ).toEqual([]);
     });
 
     it('should have every DE key present in EN', () => {
-      const missingInEn = deKeys.filter(
-        (key) => !(key in translations.en),
-      );
-      expect(missingInEn, `Orphaned DE keys not in EN: ${missingInEn.join(', ')}`).toEqual([]);
+      const missingInEn = deKeys.filter((key) => !(key in translations.en));
+      expect(
+        missingInEn,
+        `Orphaned DE keys not in EN: ${missingInEn.join(', ')}`,
+      ).toEqual([]);
     });
 
     it('should have exactly matching key sets', () => {
@@ -39,30 +41,44 @@ describe('i18n translations', () => {
       const emptyKeys = enKeys.filter(
         (key) => (translations.en as Record<string, string>)[key] === '',
       );
-      expect(emptyKeys, `EN keys with empty values: ${emptyKeys.join(', ')}`).toEqual([]);
+      expect(
+        emptyKeys,
+        `EN keys with empty values: ${emptyKeys.join(', ')}`,
+      ).toEqual([]);
     });
 
     it('should have no empty string values in DE', () => {
       const emptyKeys = deKeys.filter(
         (key) => (translations.de as Record<string, string>)[key] === '',
       );
-      expect(emptyKeys, `DE keys with empty values: ${emptyKeys.join(', ')}`).toEqual([]);
+      expect(
+        emptyKeys,
+        `DE keys with empty values: ${emptyKeys.join(', ')}`,
+      ).toEqual([]);
     });
   });
 
   describe('translation values are strings', () => {
     it('should have only string values in EN', () => {
       const nonStringKeys = enKeys.filter(
-        (key) => typeof (translations.en as Record<string, unknown>)[key] !== 'string',
+        (key) =>
+          typeof (translations.en as Record<string, unknown>)[key] !== 'string',
       );
-      expect(nonStringKeys, `EN keys with non-string values: ${nonStringKeys.join(', ')}`).toEqual([]);
+      expect(
+        nonStringKeys,
+        `EN keys with non-string values: ${nonStringKeys.join(', ')}`,
+      ).toEqual([]);
     });
 
     it('should have only string values in DE', () => {
       const nonStringKeys = deKeys.filter(
-        (key) => typeof (translations.de as Record<string, unknown>)[key] !== 'string',
+        (key) =>
+          typeof (translations.de as Record<string, unknown>)[key] !== 'string',
       );
-      expect(nonStringKeys, `DE keys with non-string values: ${nonStringKeys.join(', ')}`).toEqual([]);
+      expect(
+        nonStringKeys,
+        `DE keys with non-string values: ${nonStringKeys.join(', ')}`,
+      ).toEqual([]);
     });
   });
 

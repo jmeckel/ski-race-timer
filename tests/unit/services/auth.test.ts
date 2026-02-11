@@ -103,7 +103,9 @@ describe('hasAuthToken', () => {
   it('returns true for a JWT with no exp claim', () => {
     // Create a JWT without exp by overriding it to undefined
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ sub: 'test', iat: Math.floor(Date.now() / 1000) }));
+    const payload = btoa(
+      JSON.stringify({ sub: 'test', iat: Math.floor(Date.now() / 1000) }),
+    );
     const sig = btoa('fake-signature');
     const token = `${header}.${payload}.${sig}`;
     storageStore.set(AUTH_TOKEN_KEY, token);

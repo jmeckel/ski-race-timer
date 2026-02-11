@@ -413,9 +413,7 @@ describe('RadialDialInteraction', () => {
     });
 
     it('should use onDragEndWithMomentum for negative velocity exceeding threshold', () => {
-      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(
-        -0.8,
-      );
+      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(-0.8);
 
       simulateMouseDown(container, 380, 230);
       simulateMouseMove(380, 260);

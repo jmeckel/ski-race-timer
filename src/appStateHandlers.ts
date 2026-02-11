@@ -16,7 +16,11 @@ import {
   isRadialModeActive,
   updateRadialBib,
 } from './features/radialTimerView';
-import { getVirtualList, updateEntryCountBadge, updateStats } from './features/resultsView';
+import {
+  getVirtualList,
+  updateEntryCountBadge,
+  updateStats,
+} from './features/resultsView';
 import {
   applyGlassEffectSettings,
   updateRoleToggle,
@@ -196,6 +200,7 @@ export function initStateEffects(): () => void {
   disposers.push(
     effect(() => {
       const settings = $settings.value;
+      const currentView = $currentView.value; // Track unconditionally for applyViewServices
       updateSyncStatusIndicator();
       updateGpsIndicator();
       updateJudgeReadyStatus();
@@ -205,14 +210,14 @@ export function initStateEffects(): () => void {
       // Handle ambient mode setting changes
       if (settings.ambientMode) {
         ambientModeService.initialize();
-        if ($currentView.value === 'timer') {
+        if (currentView === 'timer') {
           ambientModeService.enable();
         }
       } else {
         ambientModeService.disable();
       }
 
-      // Apply view-specific services
+      // Apply view-specific services (depends on both settings and currentView)
       applyViewServices(store.getState());
     }),
   );

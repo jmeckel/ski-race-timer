@@ -44,7 +44,9 @@ import {
 
 /** Extract text content from Blob constructor arguments captured by spy */
 function extractBlobText(blobContent: BlobPart[]): string {
-  return blobContent.map((part) => (typeof part === 'string' ? part : '')).join('');
+  return blobContent
+    .map((part) => (typeof part === 'string' ? part : ''))
+    .join('');
 }
 
 describe('Export Edge Cases', () => {
@@ -60,14 +62,12 @@ describe('Export Edge Cases', () => {
 
     // Intercept Blob constructor to capture content strings
     OriginalBlob = globalThis.Blob;
-    const BlobSpy = vi.fn(
-      (parts?: BlobPart[], options?: BlobPropertyBag) => {
-        if (parts) {
-          capturedBlobContents.push(extractBlobText(parts));
-        }
-        return new OriginalBlob(parts, options);
-      },
-    );
+    const BlobSpy = vi.fn((parts?: BlobPart[], options?: BlobPropertyBag) => {
+      if (parts) {
+        capturedBlobContents.push(extractBlobText(parts));
+      }
+      return new OriginalBlob(parts, options);
+    });
     // Preserve prototype so instanceof checks still work
     BlobSpy.prototype = OriginalBlob.prototype;
     globalThis.Blob = BlobSpy as unknown as typeof Blob;

@@ -59,7 +59,10 @@ function createMockAnimationInstance() {
 function createMockInteractionInstance() {
   return {
     bindEvents: vi.fn(),
-    getDragState: vi.fn(() => ({ isDragging: false, hasDraggedSignificantly: false })),
+    getDragState: vi.fn(() => ({
+      isDragging: false,
+      hasDraggedSignificantly: false,
+    })),
     destroy: vi.fn(),
   };
 }
@@ -83,7 +86,10 @@ vi.mock('../../../src/components/RadialDialInteraction', () => {
 function createDialContainer(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'radial-dial';
-  Object.defineProperty(container, 'offsetWidth', { value: 460, configurable: true });
+  Object.defineProperty(container, 'offsetWidth', {
+    value: 460,
+    configurable: true,
+  });
 
   const dialNumbers = document.createElement('div');
   dialNumbers.className = 'dial-numbers';
@@ -130,10 +136,12 @@ describe('RadialDial Component', () => {
     };
     mocks.resizeCallback = null;
 
-    globalThis.ResizeObserver = vi.fn().mockImplementation((cb: ResizeObserverCallback) => {
-      mocks.resizeCallback = cb;
-      return mocks.resizeObserver;
-    });
+    globalThis.ResizeObserver = vi
+      .fn()
+      .mockImplementation((cb: ResizeObserverCallback) => {
+        mocks.resizeCallback = cb;
+        return mocks.resizeObserver;
+      });
 
     // Re-import to get fresh references
     const mod = await import('../../../src/components/RadialDial');
@@ -142,21 +150,27 @@ describe('RadialDial Component', () => {
     const animMod = await import('../../../src/components/RadialDialAnimation');
     RadialDialAnimation = animMod.RadialDialAnimation;
 
-    const intMod = await import('../../../src/components/RadialDialInteraction');
+    const intMod = await import(
+      '../../../src/components/RadialDialInteraction'
+    );
     RadialDialInteraction = intMod.RadialDialInteraction;
 
     // Re-apply mockImplementation because global setup.ts calls vi.clearAllMocks()
     // which strips the implementation set in the vi.mock factory
-    (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      () => mocks.animation,
-    );
-    (RadialDialInteraction as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      () => mocks.interaction,
-    );
+    (
+      RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+    ).mockImplementation(() => mocks.animation);
+    (
+      RadialDialInteraction as unknown as ReturnType<typeof vi.fn>
+    ).mockImplementation(() => mocks.interaction);
 
     const services = await import('../../../src/services');
-    feedbackDialDetent = services.feedbackDialDetent as unknown as ReturnType<typeof vi.fn>;
-    feedbackDialTap = services.feedbackDialTap as unknown as ReturnType<typeof vi.fn>;
+    feedbackDialDetent = services.feedbackDialDetent as unknown as ReturnType<
+      typeof vi.fn
+    >;
+    feedbackDialTap = services.feedbackDialTap as unknown as ReturnType<
+      typeof vi.fn
+    >;
 
     const loggerMod = await import('../../../src/utils/logger');
     loggerWarn = loggerMod.logger.warn as unknown as ReturnType<typeof vi.fn>;
@@ -179,7 +193,9 @@ describe('RadialDial Component', () => {
       // RadialDialAnimation should have been constructed
       expect(RadialDialAnimation).toHaveBeenCalledTimes(1);
       // The first arg is a callbacks object, second is config
-      const animCall = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+      const animCall = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0];
       expect(animCall[1]).toEqual({
         momentum: 1.5,
         friction: 0.97,
@@ -194,7 +210,9 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container);
 
-      const animCall = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+      const animCall = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0];
       expect(animCall[1]).toEqual({
         momentum: 1.5,
         friction: 0.97,
@@ -213,7 +231,9 @@ describe('RadialDial Component', () => {
         sensitivity: 30,
       });
 
-      const animCall = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+      const animCall = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0];
       expect(animCall[1]).toEqual({
         momentum: 2.0,
         friction: 0.95,
@@ -243,7 +263,9 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container);
 
-      expect(loggerWarn).toHaveBeenCalledWith('[RadialDial] Required elements not found');
+      expect(loggerWarn).toHaveBeenCalledWith(
+        '[RadialDial] Required elements not found',
+      );
       // Interaction module should NOT have been created since init returned early
       expect(RadialDialInteraction).not.toHaveBeenCalled();
 
@@ -276,8 +298,21 @@ describe('RadialDial Component', () => {
       const numberEls = container.querySelectorAll('.dial-number');
       expect(numberEls.length).toBe(10);
 
-      const digits = Array.from(numberEls).map((el) => el.getAttribute('data-num'));
-      expect(digits).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']);
+      const digits = Array.from(numberEls).map((el) =>
+        el.getAttribute('data-num'),
+      );
+      expect(digits).toEqual([
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        '0',
+      ]);
 
       dial.destroy();
     });
@@ -288,7 +323,9 @@ describe('RadialDial Component', () => {
       const dial = new RadialDial(container);
 
       // Container is 460px wide, so radius = 460 * 0.38 = 174.8, center = 230
-      const firstNumber = container.querySelector('.dial-number') as HTMLElement;
+      const firstNumber = container.querySelector(
+        '.dial-number',
+      ) as HTMLElement;
       expect(firstNumber).not.toBeNull();
 
       // First number (1) is at angle index 0: (0 * 36 - 90) degrees = -90deg
@@ -327,7 +364,10 @@ describe('RadialDial Component', () => {
       expect(numberEl).not.toBeNull();
 
       // Simulate Enter keydown
-      const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
       Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
       numberEl.dispatchEvent(event);
 
@@ -404,7 +444,9 @@ describe('RadialDial Component', () => {
 
       const ticks = container.querySelectorAll('.dial-tick');
       ticks.forEach((tick, i) => {
-        expect((tick as HTMLElement).style.transform).toBe(`rotate(${i * 6}deg)`);
+        expect((tick as HTMLElement).style.transform).toBe(
+          `rotate(${i * 6}deg)`,
+        );
       });
 
       dial.destroy();
@@ -483,7 +525,9 @@ describe('RadialDial Component', () => {
       const dial = new RadialDial(container, { onChange });
 
       // Get the onDigitChange callback that was passed to RadialDialAnimation
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       const onDigitChange = animCallbacks.onDigitChange;
 
       // Increment from default (empty -> 0 + 1 = 1)
@@ -501,7 +545,9 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container, { onChange });
 
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       const onDigitChange = animCallbacks.onDigitChange;
 
       // Decrement from 0: should clamp to 0
@@ -519,7 +565,9 @@ describe('RadialDial Component', () => {
       const dial = new RadialDial(container, { onChange });
       dial.setValue('999');
 
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       const onDigitChange = animCallbacks.onDigitChange;
 
       onDigitChange(1);
@@ -536,7 +584,9 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container, {});
 
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       const onDigitChange = animCallbacks.onDigitChange;
 
       // Increment from 0 -> 1, last digit is "1"
@@ -559,12 +609,16 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container);
 
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       const onRotationUpdate = animCallbacks.onRotationUpdate;
 
       onRotationUpdate(45);
 
-      const dialNumbers = container.querySelector('.dial-numbers') as HTMLElement;
+      const dialNumbers = container.querySelector(
+        '.dial-numbers',
+      ) as HTMLElement;
       expect(dialNumbers.style.transform).toBe('rotate(45deg)');
 
       // All spans should be counter-rotated
@@ -814,7 +868,9 @@ describe('RadialDial Component', () => {
       feedbackDialTap.mockClear();
 
       // Get the existing number innerHTML to compare later
-      const dialNumbers = container.querySelector('.dial-numbers') as HTMLElement;
+      const dialNumbers = container.querySelector(
+        '.dial-numbers',
+      ) as HTMLElement;
       const originalFirstChild = dialNumbers.firstChild;
 
       // Simulate resize with same width (460 matches initial offsetWidth)
@@ -844,7 +900,9 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container);
 
-      const dialNumbers = container.querySelector('.dial-numbers') as HTMLElement;
+      const dialNumbers = container.querySelector(
+        '.dial-numbers',
+      ) as HTMLElement;
       const originalFirstChild = dialNumbers.firstChild;
 
       if (mocks.resizeCallback) {
@@ -877,11 +935,15 @@ describe('RadialDial Component', () => {
 
       const dial = new RadialDial(container);
 
-      const dialNumbers = container.querySelector('.dial-numbers') as HTMLElement;
+      const dialNumbers = container.querySelector(
+        '.dial-numbers',
+      ) as HTMLElement;
       dialNumbers.classList.add('momentum');
 
       // Get the onAnimationComplete callback
-      const animCallbacks = (RadialDialAnimation as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const animCallbacks = (
+        RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       animCallbacks.onAnimationComplete();
 
       expect(dialNumbers.classList.contains('momentum')).toBe(false);

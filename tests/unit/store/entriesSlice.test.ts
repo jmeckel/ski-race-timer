@@ -177,10 +177,7 @@ describe('Entries Slice', () => {
     });
 
     it('should handle partial match (some IDs exist, some do not)', () => {
-      const entries = [
-        createEntry({ id: 'e1' }),
-        createEntry({ id: 'e2' }),
-      ];
+      const entries = [createEntry({ id: 'e1' }), createEntry({ id: 'e2' })];
       const result = deleteMultiple(entries, ['e1', 'nonexistent'], [], []);
 
       expect(result).not.toBeNull();
@@ -243,10 +240,7 @@ describe('Entries Slice', () => {
     });
 
     it('should push CLEAR_ALL action with all entries as data', () => {
-      const entries = [
-        createEntry({ id: 'e1' }),
-        createEntry({ id: 'e2' }),
-      ];
+      const entries = [createEntry({ id: 'e1' }), createEntry({ id: 'e2' })];
       const result = clearAll(entries, [], []);
 
       expect(result).not.toBeNull();
@@ -281,7 +275,13 @@ describe('Entries Slice', () => {
   describe('updateEntry', () => {
     it('should update an existing entry with partial fields', () => {
       const entries = [createEntry({ id: 'e1', bib: '001', status: 'ok' })];
-      const result = updateEntry(entries, 'e1', { bib: '099', status: 'dnf' }, [], []);
+      const result = updateEntry(
+        entries,
+        'e1',
+        { bib: '099', status: 'dnf' },
+        [],
+        [],
+      );
 
       expect(result).not.toBeNull();
       expect(result!.entries[0].bib).toBe('099');
@@ -290,7 +290,13 @@ describe('Entries Slice', () => {
 
     it('should return null when entry does not exist', () => {
       const entries = [createEntry({ id: 'e1' })];
-      const result = updateEntry(entries, 'nonexistent', { bib: '099' }, [], []);
+      const result = updateEntry(
+        entries,
+        'nonexistent',
+        { bib: '099' },
+        [],
+        [],
+      );
 
       expect(result).toBeNull();
     });
@@ -332,7 +338,13 @@ describe('Entries Slice', () => {
       const existingRedo: Action[] = [
         { type: 'ADD_ENTRY', data: createEntry(), timestamp: Date.now() },
       ];
-      const result = updateEntry(entries, 'e1', { bib: '099' }, [], existingRedo);
+      const result = updateEntry(
+        entries,
+        'e1',
+        { bib: '099' },
+        [],
+        existingRedo,
+      );
 
       expect(result).not.toBeNull();
       expect(result!.redoStack).toHaveLength(0);
@@ -730,10 +742,7 @@ describe('Entries Slice', () => {
     });
 
     it('should redo CLEAR_ALL by re-clearing all entries', () => {
-      const entries = [
-        createEntry({ id: 'e1' }),
-        createEntry({ id: 'e2' }),
-      ];
+      const entries = [createEntry({ id: 'e1' }), createEntry({ id: 'e2' })];
 
       const redoStack: Action[] = [
         { type: 'CLEAR_ALL', data: entries, timestamp: Date.now() },
@@ -1132,7 +1141,12 @@ describe('Entries Slice', () => {
         timestamp: '2024-01-15T10:00:00.000Z',
       });
 
-      const result = mergeCloudEntries([existing], [duplicate], [], 'dev_local');
+      const result = mergeCloudEntries(
+        [existing],
+        [duplicate],
+        [],
+        'dev_local',
+      );
 
       expect(result.addedCount).toBe(0);
       expect(result.entries).toHaveLength(1);
@@ -1315,9 +1329,7 @@ describe('Entries Slice', () => {
     });
 
     it('should remove entries matching deleted plain ids', () => {
-      const entries = [
-        createEntry({ id: 'e1', deviceId: 'dev_remote' }),
-      ];
+      const entries = [createEntry({ id: 'e1', deviceId: 'dev_remote' })];
 
       const result = removeDeletedCloudEntries(entries, ['e1']);
 
@@ -1357,10 +1369,7 @@ describe('Entries Slice', () => {
         createEntry({ id: 'e3', deviceId: 'dev_r3' }),
       ];
 
-      const result = removeDeletedCloudEntries(entries, [
-        'e1:dev_r1',
-        'e3',
-      ]);
+      const result = removeDeletedCloudEntries(entries, ['e1:dev_r1', 'e3']);
 
       expect(result.removedCount).toBe(2);
       expect(result.entries).toHaveLength(1);
@@ -1375,10 +1384,7 @@ describe('Entries Slice', () => {
       ];
 
       // e1 matched by key, e3 matched by plain id
-      const result = removeDeletedCloudEntries(entries, [
-        'e1:dev_a',
-        'e3',
-      ]);
+      const result = removeDeletedCloudEntries(entries, ['e1:dev_a', 'e3']);
 
       expect(result.removedCount).toBe(2);
       expect(result.entries).toHaveLength(1);

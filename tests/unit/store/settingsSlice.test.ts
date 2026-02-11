@@ -5,8 +5,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SETTINGS,
   type BooleanSettingKey,
+  DEFAULT_SETTINGS,
   toggleSetting,
   updateSettings,
 } from '../../../src/store/slices/settingsSlice';

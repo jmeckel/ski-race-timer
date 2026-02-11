@@ -142,9 +142,7 @@ describe('Race Condition: Sync Queue concurrent processing', () => {
       syncQueue: [{ entry, retryCount: 0, lastAttempt: 0 }],
     });
 
-    const sendCallback = vi.fn(() =>
-      Promise.reject(new Error('network down')),
-    );
+    const sendCallback = vi.fn(() => Promise.reject(new Error('network down')));
     queueProcessor.initialize(sendCallback);
 
     // processQueue should not leave the lock held even after rejection

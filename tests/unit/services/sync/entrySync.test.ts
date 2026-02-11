@@ -29,8 +29,7 @@ vi.mock('../../../../src/store', () => ({
     setSyncStatus: (...args: unknown[]) => mockSetSyncStatus(...args),
     setCloudDeviceCount: (...args: unknown[]) =>
       mockSetCloudDeviceCount(...args),
-    setCloudHighestBib: (...args: unknown[]) =>
-      mockSetCloudHighestBib(...args),
+    setCloudHighestBib: (...args: unknown[]) => mockSetCloudHighestBib(...args),
     mergeCloudEntries: (...args: unknown[]) => mockMergeCloudEntries(...args),
     removeDeletedCloudEntries: (...args: unknown[]) =>
       mockRemoveDeletedCloudEntries(...args),
@@ -48,9 +47,7 @@ vi.mock('../../../../src/utils/errors', () => ({
 }));
 
 vi.mock('../../../../src/utils/format', () => ({
-  getPointLabel: vi.fn((point: string) =>
-    point === 'S' ? 'Start' : 'Finish',
-  ),
+  getPointLabel: vi.fn((point: string) => (point === 'S' ? 'Start' : 'Finish')),
 }));
 
 vi.mock('../../../../src/utils/logger', () => ({
@@ -94,6 +91,12 @@ vi.mock('../../../../src/services/sync/types', () => ({
 // Import module-under-test AFTER mocks
 // ---------------------------------------------------------------------------
 
+// Import mocked modules for assertions
+import {
+  clearAuthToken,
+  dispatchAuthExpired,
+} from '../../../../src/services/auth';
+import { photoStorage } from '../../../../src/services/photoStorage';
 import {
   cleanupEntrySync,
   deleteEntryFromCloud,
@@ -103,10 +106,6 @@ import {
   pushLocalEntries,
   sendEntryToCloud,
 } from '../../../../src/services/sync/entrySync';
-
-// Import mocked modules for assertions
-import { clearAuthToken, dispatchAuthExpired } from '../../../../src/services/auth';
-import { photoStorage } from '../../../../src/services/photoStorage';
 import { fetchWithTimeout } from '../../../../src/utils/errors';
 import { addRecentRace } from '../../../../src/utils/recentRaces';
 import { isValidEntry } from '../../../../src/utils/validation';
@@ -372,7 +371,10 @@ describe('Entry Sync Module', () => {
     });
 
     it('should merge cloud entries into store', async () => {
-      const entries = [createEntry({ bib: '001' }), createEntry({ bib: '002' })];
+      const entries = [
+        createEntry({ bib: '001' }),
+        createEntry({ bib: '002' }),
+      ];
 
       mockFetch.mockResolvedValue(
         mockResponse({
@@ -1027,9 +1029,7 @@ describe('Entry Sync Module', () => {
     });
 
     it('should send entry and return true on success', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ success: true }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ success: true }));
 
       const entry = createEntry({ bib: '042' });
       const result = await sendEntryToCloud(entry);
@@ -1047,9 +1047,7 @@ describe('Entry Sync Module', () => {
     });
 
     it('should remove entry from sync queue on success', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ success: true }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ success: true }));
 
       const entry = createEntry({ id: 'entry-x' });
       await sendEntryToCloud(entry);
@@ -1058,9 +1056,7 @@ describe('Entry Sync Module', () => {
     });
 
     it('should call onResetFastPolling on success', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ success: true }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ success: true }));
 
       const entry = createEntry();
       await sendEntryToCloud(entry);
@@ -1115,7 +1111,9 @@ describe('Entry Sync Module', () => {
         settings: { ...baseState.settings, syncPhotos: true },
       });
 
-      (photoStorage.getPhoto as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (photoStorage.getPhoto as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       mockFetch.mockResolvedValue(mockResponse({ success: true }));
 
@@ -1318,9 +1316,7 @@ describe('Entry Sync Module', () => {
     it('should skip entries from other devices', async () => {
       mockGetState.mockReturnValue({
         ...baseState,
-        entries: [
-          createEntry({ deviceId: 'dev_other', syncedAt: undefined }),
-        ],
+        entries: [createEntry({ deviceId: 'dev_other', syncedAt: undefined })],
       });
 
       await pushLocalEntries();
@@ -1330,9 +1326,7 @@ describe('Entry Sync Module', () => {
     it('should skip already synced entries', async () => {
       mockGetState.mockReturnValue({
         ...baseState,
-        entries: [
-          createEntry({ deviceId: 'dev_local', syncedAt: Date.now() }),
-        ],
+        entries: [createEntry({ deviceId: 'dev_local', syncedAt: Date.now() })],
       });
 
       await pushLocalEntries();
@@ -1415,7 +1409,9 @@ describe('Entry Sync Module', () => {
         settings: { ...baseState.settings, syncPhotos: true },
       });
 
-      (photoStorage.hasPhoto as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+      (photoStorage.hasPhoto as ReturnType<typeof vi.fn>).mockResolvedValue(
+        true,
+      );
 
       const entryWithPhoto = createEntry({
         photo: 'data:image/jpeg;base64,/9j/some-photo-data-that-is-long',
@@ -1472,7 +1468,9 @@ describe('Entry Sync Module', () => {
         settings: { ...baseState.settings, syncPhotos: true },
       });
 
-      (photoStorage.savePhoto as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+      (photoStorage.savePhoto as ReturnType<typeof vi.fn>).mockResolvedValue(
+        false,
+      );
 
       const entryWithPhoto = createEntry({
         photo: 'data:image/jpeg;base64,/9j/long-enough-photo-data-here',
@@ -1548,9 +1546,7 @@ describe('Entry Sync Module', () => {
     });
 
     it('should handle null response data', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse(null),
-      );
+      mockFetch.mockResolvedValue(mockResponse(null));
 
       await fetchCloudEntries();
 
