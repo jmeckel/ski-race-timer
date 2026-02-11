@@ -19,6 +19,7 @@ import { closeModal, openModal } from './modals';
 
 // Module state
 let currentPhotoEntryId: string | null = null;
+let currentBlobUrl: string | null = null;
 
 /**
  * Open photo viewer modal
@@ -40,6 +41,12 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
   const state = store.getState();
   const lang = state.currentLang;
 
+  // Revoke previous blob URL to prevent memory leak
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+  }
+
   // Load photo from IndexedDB or use inline base64
   if (image) {
     // Set descriptive alt text
@@ -51,7 +58,15 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
       image.src = ''; // Clear while loading
       const photoData = await photoStorage.getPhoto(entry.id);
       if (photoData) {
-        image.src = `data:image/jpeg;base64,${photoData}`;
+        // Use blob URL instead of data URI for better memory management
+        const byteChars = atob(photoData);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) {
+          byteArray[i] = byteChars.charCodeAt(i);
+        }
+        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        currentBlobUrl = URL.createObjectURL(blob);
+        image.src = currentBlobUrl;
       } else {
         // Photo not found in IndexedDB
         logger.warn('Photo not found in IndexedDB for entry:', entry.id);
@@ -82,6 +97,12 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
  * Close photo viewer modal
  */
 export function closePhotoViewer(): void {
+  // Revoke blob URL to free memory
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+  }
+
   const modal = document.getElementById('photo-viewer-modal');
   closeModal(modal);
   currentPhotoEntryId = null;

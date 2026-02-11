@@ -78,6 +78,7 @@ vi.mock('../../src/i18n/translations', () => ({
 vi.mock('../../src/services', () => ({
   ambientModeService: { cleanup: vi.fn() },
   cameraService: { stop: vi.fn() },
+  cleanupFeedback: vi.fn(),
   feedbackWarning: vi.fn(),
   gpsService: { stop: vi.fn() },
   syncService: { cleanup: vi.fn() },

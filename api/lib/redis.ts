@@ -65,7 +65,10 @@ export function getRedis(): Redis {
     // Handle Redis connection events
     redis.on('error', (err: Error) => {
       // Sanitize error message to avoid leaking connection details (URLs, credentials)
-      const sanitized = err.message.replace(/rediss?:\/\/[^\s,)]+/gi, 'redis://***');
+      // Two-pass: first strip user:password@ segments, then replace any remaining full URLs
+      const sanitized = err.message
+        .replace(/rediss?:\/\/[^@]*@/gi, 'redis://***@')
+        .replace(/rediss?:\/\/[^\s,)]+/gi, 'redis://***');
       apiLogger.error('Redis connection error', { error: sanitized });
       redisError = err;
       lastErrorTime = Date.now();

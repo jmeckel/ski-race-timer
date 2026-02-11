@@ -90,6 +90,10 @@ describe('Photo Viewer Feature Module', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Mock URL.createObjectURL / revokeObjectURL for blob URL tests
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    globalThis.URL.revokeObjectURL = vi.fn();
+
     // Create modal DOM structure
     modal = document.createElement('div');
     modal.id = 'photo-viewer-modal';
@@ -168,7 +172,9 @@ describe('Photo Viewer Feature Module', () => {
       await openPhotoViewer(entry);
 
       expect(photoStorage.getPhoto).toHaveBeenCalledWith('entry-1');
-      expect(image.src).toContain('data:image/jpeg;base64,indexeddbphoto');
+      // Photo is now loaded via blob URL for proper memory management
+      expect(URL.createObjectURL).toHaveBeenCalled();
+      expect(image.src).toContain('blob:');
     });
 
     it('should warn and return when IndexedDB photo not found', async () => {

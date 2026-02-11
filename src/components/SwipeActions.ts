@@ -28,6 +28,7 @@ export class SwipeActions {
   private currentX = 0;
   private startTime = 0;
   private isHorizontalSwipe: boolean | null = null;
+  private pendingActionTimeoutId: number | null = null;
   private listeners = new ListenerManager();
 
   constructor(options: SwipeActionsOptions) {
@@ -223,19 +224,27 @@ export class SwipeActions {
 
     this.wrapper.style.transition = 'transform 0.2s ease-out';
 
+    // Clear any pending action from a previous swipe
+    if (this.pendingActionTimeoutId !== null) {
+      clearTimeout(this.pendingActionTimeoutId);
+      this.pendingActionTimeoutId = null;
+    }
+
     // Check if action should be triggered
     if (Math.abs(this.currentX) >= SWIPE_THRESHOLD || isQuickSwipe) {
       if (this.currentX < 0 && this.options.onSwipeLeft) {
         // Swipe left - delete
         this.wrapper.style.transform = `translateX(-${SWIPE_THRESHOLD}px)`;
-        setTimeout(() => {
+        this.pendingActionTimeoutId = window.setTimeout(() => {
+          this.pendingActionTimeoutId = null;
           this.options.onSwipeLeft?.();
           this.reset();
         }, 200);
       } else if (this.currentX > 0 && this.options.onSwipeRight) {
         // Swipe right - edit
         this.wrapper.style.transform = `translateX(${SWIPE_THRESHOLD}px)`;
-        setTimeout(() => {
+        this.pendingActionTimeoutId = window.setTimeout(() => {
+          this.pendingActionTimeoutId = null;
           this.options.onSwipeRight?.();
           this.reset();
         }, 200);
@@ -260,6 +269,10 @@ export class SwipeActions {
    * Cleanup
    */
   destroy(): void {
+    if (this.pendingActionTimeoutId !== null) {
+      clearTimeout(this.pendingActionTimeoutId);
+      this.pendingActionTimeoutId = null;
+    }
     this.listeners.removeAll();
 
     // Restore original structure

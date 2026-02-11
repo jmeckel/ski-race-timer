@@ -37,6 +37,7 @@ import { t } from './i18n/translations';
 import {
   ambientModeService,
   cameraService,
+  cleanupFeedback,
   feedbackWarning,
   gpsService,
   syncService,
@@ -353,4 +354,7 @@ export function handleBeforeUnload(): void {
 
   // MEMORY LEAK FIX: Resolve any pending PIN verification promise
   cleanupPinVerification();
+
+  // Cleanup audio context and pending idle timeout
+  cleanupFeedback();
 }

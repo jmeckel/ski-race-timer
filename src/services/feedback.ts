@@ -220,6 +220,21 @@ export function feedbackSync(): void {
 }
 
 /**
+ * Cleanup feedback resources (audio context, pending timeouts)
+ * Call on page unload to prevent memory leaks
+ */
+export function cleanupFeedback(): void {
+  if (audioIdleTimeoutId !== null) {
+    clearTimeout(audioIdleTimeoutId);
+    audioIdleTimeoutId = null;
+  }
+  if (audioContext) {
+    audioContext.close().catch(() => {});
+    audioContext = null;
+  }
+}
+
+/**
  * Resume AudioContext (needed after user interaction on mobile)
  */
 export async function resumeAudio(): Promise<void> {
