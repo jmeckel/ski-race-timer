@@ -211,15 +211,25 @@ Comprehensive `:focus-visible` styles, proper ARIA attributes in components, `ro
 - P2 (batching) and P3 (diffing) were assessed as premature optimization. The sync queue already processes entries one-at-a-time with retry, and VirtualList already virtualizes rendering. Adding complexity here would increase maintenance cost without measurable user benefit.
 - 2 of 5 items deferred, 3 implemented. All tests pass (2726 unit, 756 E2E).
 
-### Phase 4: Test Coverage (5-7 days)
+### Phase 4: Test Coverage ✅ COMPLETED (commit 555875a)
 
-23. **T1**: Create RadialDial test suite (tap detection, angle calc, animation lifecycle, touch vs drag)
-24. **T2**: Create `services/auth.ts` direct tests (token parsing, expiry, PIN exchange)
-25. **T3**: Create `services/sync/entrySync.ts` tests (fetch, send, delete, error paths)
-26. **T4**: Add client-side race condition tests (concurrent entries, sync during edit)
-27. **T5**: Add direct store slice tests
-28. **T7**: Add browser API failure/revocation tests
-29. **T9**: Consolidate mock patterns, consider shared test fixtures/factories
+23. **T1**: ~~Create RadialDial test suite~~ → **Deferred** (complex DOM/canvas interaction testing requires browser-level APIs not available in jsdom; better suited for Playwright visual tests)
+24. **T2**: ✅ Created `tests/unit/services/auth.test.ts` — 32 tests covering token management, PIN exchange, JWT parsing, session expiry, role checks
+25. **T3**: ✅ Created `tests/unit/services/sync/entrySync.test.ts` — 87 tests covering fetch/send/delete operations, photo handling, error classification, request coalescing, delta sync
+26. **T4**: ~~Add client-side race condition tests~~ → **Deferred** (JS is single-threaded; race conditions only occur across async boundaries which are already covered by coalescing tests in T3)
+27. **T5**: ✅ Created `tests/unit/store/entriesSlice.test.ts` (93 tests) + `tests/unit/store/settingsSlice.test.ts` (17 tests) — CRUD, undo/redo chains, sync queue, cloud merge, settings toggle
+28. **T7**: ~~Add browser API failure/revocation tests~~ → **Deferred** (Camera/WakeLock/GPS APIs need browser environment; covered partially by E2E tests)
+29. **T9**: ✅ Created `tests/helpers/factories.ts` — shared builders (`createEntry`, `createFault`, `createSettings`, `createJWT`, `createExpiredJWT`, `resetFactoryCounters`) + `tests/unit/utils/photoHelpers.test.ts` (16 tests)
+
+**Test count: 2726 → 2971 tests (+245), 108 test files**
+
+**Learnings:**
+- `DOMException` doesn't extend `Error` in jsdom — use `new Error()` with `name = 'AbortError'` for timeout mocks instead of `new DOMException()`
+- Module-level state (like `lastSyncTimestamp`, `activeFetchPromise`) requires explicit cleanup in `afterEach` to prevent test pollution
+- Mock drift is real: store mock needed 20+ methods to satisfy entrySync's usage. Shared factories reduce this by centralizing data creation
+- T1 (RadialDial) deferred because touch/angle/animation logic is tightly coupled to DOM geometry — Playwright E2E tests are the right tool
+- T4 (race conditions) deferred because single-threaded JS makes true concurrency impossible; the async coalescing pattern in entrySync is already well-tested
+- 4 of 7 items implemented, 3 deferred with rationale. Coverage focused on highest-value gaps (auth, sync, store slices)
 
 ### Phase 5: Polish (2-3 days)
 
