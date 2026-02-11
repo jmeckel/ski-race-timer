@@ -621,7 +621,7 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   letter-spacing: 0.1em;
   cursor: pointer;
   transition: all 0.15s;
-  min-height: 56px;
+  min-height: var(--btn-height-lg);
   /* Glass effect */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

@@ -9,6 +9,7 @@ import {
   store,
 } from '../store';
 import type { Entry, FaultEntry, Run } from '../types';
+import { SwipeActions } from './SwipeActions';
 import {
   // Template helpers
   deleteButton,
@@ -97,6 +98,7 @@ export class VirtualList {
   private expandedGroups: Set<string> = new Set();
   private visibleItems: Map<string, HTMLElement> = new Map();
   private itemListeners: Map<string, ItemListeners> = new Map(); // Track listeners per item
+  private swipeActions: Map<string, SwipeActions> = new Map();
   private scrollTop = 0;
   private containerHeight = 0;
   private options: VirtualListOptions;
@@ -391,12 +393,30 @@ export class VirtualList {
       this.expandedGroups.add(groupId);
     }
 
-    // Clear cache and re-render
-    for (const [id, item] of this.visibleItems) {
-      this.cleanupItemListeners(id, item);
-      item.remove();
+    // Only clear items belonging to the toggled group (other groups stay in DOM)
+    const group = this.groups.find((g) => g.id === groupId);
+    if (group) {
+      const groupItemIds = new Set<string>();
+      groupItemIds.add(`header-${groupId}`);
+      if (!group.isMultiItem) {
+        groupItemIds.add(`single-${groupId}`);
+      }
+      for (const entry of group.entries) {
+        groupItemIds.add(`sub-entry-${entry.id}`);
+      }
+      for (const fault of group.faults) {
+        groupItemIds.add(`sub-fault-${fault.id}`);
+      }
+
+      for (const itemId of groupItemIds) {
+        const item = this.visibleItems.get(itemId);
+        if (item) {
+          this.cleanupItemListeners(itemId, item);
+          item.remove();
+          this.visibleItems.delete(itemId);
+        }
+      }
     }
-    this.visibleItems.clear();
 
     this.updateContentHeight();
 
@@ -898,6 +918,16 @@ export class VirtualList {
     // Store listeners for cleanup
     this.itemListeners.set(itemId, listeners);
 
+    // Enable swipe gestures: right to edit, left to delete
+    this.swipeActions.set(
+      itemId,
+      new SwipeActions({
+        element: item,
+        onSwipeRight: () => this.options.onItemClick?.(entry, new MouseEvent('click')),
+        onSwipeLeft: () => this.options.onItemDelete?.(entry),
+      }),
+    );
+
     return item;
   }
 
@@ -1086,6 +1116,28 @@ export class VirtualList {
     // Store listeners for cleanup
     this.itemListeners.set(itemId, listeners);
 
+    // Enable swipe gestures: right to edit, left to delete
+    if (faults.length > 0) {
+      this.swipeActions.set(
+        itemId,
+        new SwipeActions({
+          element: item,
+          onSwipeRight: () => {
+            item.dispatchEvent(new CustomEvent('fault-edit-request', {
+              bubbles: true,
+              detail: { fault: faults[0] },
+            }));
+          },
+          onSwipeLeft: () => {
+            item.dispatchEvent(new CustomEvent('fault-delete-request', {
+              bubbles: true,
+              detail: { fault: faults[0] },
+            }));
+          },
+        }),
+      );
+    }
+
     return item;
   }
 
@@ -1204,6 +1256,16 @@ export class VirtualList {
 
     // Store listeners for cleanup
     this.itemListeners.set(itemId, listeners);
+
+    // Enable swipe gestures: right to edit, left to delete
+    this.swipeActions.set(
+      itemId,
+      new SwipeActions({
+        element: item,
+        onSwipeRight: () => this.options.onItemClick?.(entry, new MouseEvent('click')),
+        onSwipeLeft: () => this.options.onItemDelete?.(entry),
+      }),
+    );
 
     return item;
   }
@@ -1354,6 +1416,26 @@ export class VirtualList {
     // Store listeners for cleanup
     this.itemListeners.set(itemId, listeners);
 
+    // Enable swipe gestures: right to edit, left to delete
+    this.swipeActions.set(
+      itemId,
+      new SwipeActions({
+        element: item,
+        onSwipeRight: () => {
+          item.dispatchEvent(new CustomEvent('fault-edit-request', {
+            bubbles: true,
+            detail: { fault },
+          }));
+        },
+        onSwipeLeft: () => {
+          item.dispatchEvent(new CustomEvent('fault-delete-request', {
+            bubbles: true,
+            detail: { fault },
+          }));
+        },
+      }),
+    );
+
     return item;
   }
 
@@ -1496,6 +1578,13 @@ export class VirtualList {
    * Clean up event listeners for an item
    */
   private cleanupItemListeners(itemId: string, item: HTMLElement): void {
+    // Destroy SwipeActions instance before removing event listeners
+    const swipe = this.swipeActions.get(itemId);
+    if (swipe) {
+      swipe.destroy();
+      this.swipeActions.delete(itemId);
+    }
+
     const listeners = this.itemListeners.get(itemId);
     if (listeners) {
       // Main item listeners
@@ -1572,6 +1661,7 @@ export class VirtualList {
     }
     this.visibleItems.clear();
     this.itemListeners.clear();
+    this.swipeActions.clear();
 
     // Clear DOM
     this.scrollContainer.remove();

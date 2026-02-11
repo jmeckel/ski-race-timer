@@ -417,6 +417,11 @@
     animation: none !important;
   }
 
+  /* --- gate-judge.css: bib auto-fill flash --- */
+  .inline-bib-input.bib-auto-filled {
+    animation: none !important;
+  }
+
   /* --- onboarding.css: card slide-in --- */
   .onboarding-card {
     animation: none !important;

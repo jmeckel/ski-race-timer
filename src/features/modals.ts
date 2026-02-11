@@ -15,9 +15,20 @@ const FOCUSABLE_SELECTOR = [
 type FocusState = {
   previousFocus: HTMLElement | null;
   keydownHandler: (event: KeyboardEvent) => void;
+  clickOutsideHandler?: (event: MouseEvent) => void;
 };
 
 const focusStateMap = new WeakMap<HTMLElement, FocusState>();
+
+/** Modals that should NOT be dismissed by clicking outside (destructive/alert modals) */
+const NON_DISMISSABLE_MODALS = new Set([
+  'confirm-modal',
+  'fault-delete-modal',
+  'delete-race-confirm-modal',
+  'mark-deletion-modal',
+  'race-deleted-modal',
+  'onboarding-modal',
+]);
 
 function getFocusableElements(modal: HTMLElement): HTMLElement[] {
   return Array.from(
@@ -72,9 +83,23 @@ function trapFocus(modal: HTMLElement): void {
   };
 
   modal.addEventListener('keydown', keydownHandler);
+
+  // Click-outside dismissal: clicking the overlay (not content) closes the modal
+  let clickOutsideHandler: ((event: MouseEvent) => void) | undefined;
+  if (!NON_DISMISSABLE_MODALS.has(modal.id)) {
+    clickOutsideHandler = (event: MouseEvent) => {
+      // event.target === modal means the overlay itself was clicked, not its content
+      if (event.target === modal) {
+        closeModal(modal);
+      }
+    };
+    modal.addEventListener('click', clickOutsideHandler as EventListener);
+  }
+
   focusStateMap.set(modal, {
     previousFocus: document.activeElement as HTMLElement | null,
     keydownHandler,
+    clickOutsideHandler,
   });
 }
 
@@ -83,6 +108,9 @@ function releaseFocus(modal: HTMLElement): void {
   if (!state) return;
 
   modal.removeEventListener('keydown', state.keydownHandler);
+  if (state.clickOutsideHandler) {
+    modal.removeEventListener('click', state.clickOutsideHandler as EventListener);
+  }
   focusStateMap.delete(modal);
 
   const previousFocus = state.previousFocus;

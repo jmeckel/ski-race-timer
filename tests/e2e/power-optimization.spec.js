@@ -48,8 +48,12 @@ function mockBatteryAPI(page, { level = 1.0, charging = true } = {}) {
       // Expose mock battery globally for test manipulation
       window.__mockBattery = mockBattery;
 
-      // Override navigator.getBattery
-      navigator.getBattery = () => Promise.resolve(mockBattery);
+      // Override navigator.getBattery using Object.defineProperty for WebKit compatibility
+      Object.defineProperty(navigator, 'getBattery', {
+        value: () => Promise.resolve(mockBattery),
+        writable: true,
+        configurable: true,
+      });
     },
     { level, charging },
   );
@@ -74,8 +78,11 @@ test.describe('Power Saver - Battery API Integration', () => {
     await setupPage(page);
 
     // Battery at 15% not charging = low
-    // Wait for battery service init + subscriber notification
-    await page.waitForTimeout(500);
+    // Wait for battery service init + subscriber notification (WebKit CI needs longer)
+    await page.waitForFunction(
+      () => document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     const hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
@@ -89,7 +96,10 @@ test.describe('Power Saver - Battery API Integration', () => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
 
-    await page.waitForTimeout(500);
+    await page.waitForFunction(
+      () => document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     const hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
@@ -119,7 +129,10 @@ test.describe('Power Saver - Battery API Integration', () => {
     await setupPage(page);
 
     // Initially normal - no power saver
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      () => !document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
     let hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
     );
@@ -129,7 +142,10 @@ test.describe('Power Saver - Battery API Integration', () => {
     await page.evaluate(() => {
       window.__mockBattery._setLevel(0.15);
     });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      () => document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
@@ -140,7 +156,10 @@ test.describe('Power Saver - Battery API Integration', () => {
     await page.evaluate(() => {
       window.__mockBattery._setCharging(true);
     });
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      () => !document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
@@ -155,7 +174,10 @@ test.describe('Power Saver - CSS Animation Disabling', () => {
   }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(
+      () => document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     // Verify power-saver is active
     const hasPowerSaver = await page.evaluate(() =>
@@ -184,7 +206,10 @@ test.describe('Power Saver - CSS Animation Disabling', () => {
   }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
-    await page.waitForTimeout(500);
+    await page.waitForFunction(
+      () => document.body.classList.contains('power-saver'),
+      { timeout: 5000 },
+    );
 
     const animationRule = await page.evaluate(() => {
       const spinner = document.createElement('div');

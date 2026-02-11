@@ -354,8 +354,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: var(--btn-height-sm);
+  height: var(--btn-height-sm);
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -497,8 +497,8 @@
 }
 
 .penalty-adj-btn {
-  width: 36px;
-  height: 36px;
+  width: var(--btn-height-sm);
+  height: var(--btn-height-sm);
   border: 1px solid var(--surface-elevated);
   border-radius: 8px;
   background: var(--surface);

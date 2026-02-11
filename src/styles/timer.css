@@ -353,8 +353,8 @@
     background 0.15s ease,
     transform 0.1s ease,
     box-shadow 0.1s ease;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: var(--btn-height-md);
+  min-width: var(--btn-height-md);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 

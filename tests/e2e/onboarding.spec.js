@@ -5,12 +5,16 @@ test.describe('Onboarding Flow', () => {
   test.setTimeout(45000);
 
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage to trigger onboarding
+    // Navigate first, then clear localStorage and reload to trigger onboarding
+    // (addInitScript + localStorage.clear is unreliable on WebKit)
     await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.clear();
-    });
+    await page.evaluate(() => localStorage.clear());
     await page.reload();
+    // Wait for onboarding modal to become visible (WebKit needs extra time)
+    await page.waitForSelector('#onboarding-modal.show', {
+      state: 'visible',
+      timeout: 10000,
+    });
   });
 
   test('shows welcome screen on first visit', async ({ page }) => {

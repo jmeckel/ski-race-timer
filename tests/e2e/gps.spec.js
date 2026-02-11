@@ -117,9 +117,9 @@ test.describe('GPS Settings', () => {
     await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await navigateTo(page, 'settings');
 
-    // GPS should be checked
+    // GPS should be checked (WebKit needs extra time for settings view to hydrate)
     const gpsToggle = page.locator('#gps-toggle');
-    await expect(gpsToggle).toBeChecked();
+    await expect(gpsToggle).toBeChecked({ timeout: 5000 });
 
     // Now reload WITHOUT addInitScript to test real localStorage persistence
     // First save the current settings to localStorage (they should already be there)

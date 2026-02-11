@@ -1091,6 +1091,25 @@ export const $isSyncing = computed(
   () => store.$state.value.syncStatus === 'syncing',
 );
 
+// Fine-grained settings selectors — for targeted effects that only react to specific settings
+export const $settingsSync = computed(() => store.$state.value.settings.sync);
+export const $settingsSyncPhotos = computed(
+  () => store.$state.value.settings.syncPhotos,
+);
+export const $settingsGps = computed(() => store.$state.value.settings.gps);
+export const $settingsPhotoCapture = computed(
+  () => store.$state.value.settings.photoCapture,
+);
+export const $settingsGlassEffects = computed(
+  () => store.$state.value.settings.glassEffects,
+);
+export const $settingsOutdoorMode = computed(
+  () => store.$state.value.settings.outdoorMode,
+);
+export const $settingsAmbientMode = computed(
+  () => store.$state.value.settings.ambientMode,
+);
+
 // Derived computed selectors — memoized aggregate state
 export const $hasUnsyncedChanges = computed(() => {
   const state = store.$state.value;

@@ -434,17 +434,26 @@ test.describe('Race Management - Translations', () => {
   });
 
   test('should display German labels when language is DE', async ({ page }) => {
-    // Set language to German
     const langToggle = page.locator('#lang-toggle');
-    const deOption = langToggle.locator('[data-lang="de"]');
-    await deOption.click();
 
-    // Wait for translations to apply
-    await page.waitForTimeout(200);
+    // setupPage defaults to DE, so switch to EN first to ensure clicking DE triggers a real change
+    await langToggle.locator('[data-lang="en"]').click();
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-i18n="adminPin"]');
+        return el && el.textContent.includes('Race Management PIN');
+      },
+      { timeout: 5000 },
+    );
+
+    // Now switch to German
+    await langToggle.locator('[data-lang="de"]').click();
 
     // Check admin section labels (use .first() since there may be multiple elements)
     const adminPinTitle = page.locator('[data-i18n="adminPin"]').first();
-    await expect(adminPinTitle).toContainText('Rennverwaltungs-PIN');
+    await expect(adminPinTitle).toContainText('Rennverwaltungs-PIN', {
+      timeout: 5000,
+    });
 
     const manageRacesTitle = page.locator('[data-i18n="manageRaces"]').first();
     await expect(manageRacesTitle).toContainText('Rennen verwalten');

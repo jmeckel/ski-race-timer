@@ -32,6 +32,18 @@ let inlineSelectedGate = 0;
 let inlineSelectedFaultType: FaultType | null = null;
 
 /**
+ * Flash the bib input to visually cue an auto-fill event.
+ * Removes and re-adds the animation class to retrigger the CSS animation.
+ */
+function flashBibAutoFill(): void {
+  const el = document.getElementById('inline-bib-input');
+  if (!el) return;
+  el.classList.remove('bib-auto-filled');
+  void el.offsetWidth; // Force reflow to retrigger animation
+  el.classList.add('bib-auto-filled');
+}
+
+/**
  * Update active bibs list in Gate Judge view
  */
 export function updateActiveBibsList(): void {
@@ -200,6 +212,7 @@ export function updateInlineBibSelector(): void {
   // Auto-fill with most recent active bib if no bib selected yet
   if (!inlineSelectedBib && activeBibs.length > 0) {
     inlineSelectedBib = activeBibs[0]!;
+    flashBibAutoFill();
   }
 
   const bibInput = document.getElementById(
@@ -446,6 +459,7 @@ function autoSelectMostRecentBib(): void {
 
   // Auto-select most recent
   selectInlineBib(sorted[0]!);
+  flashBibAutoFill();
 }
 
 /**

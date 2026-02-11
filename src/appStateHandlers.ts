@@ -43,7 +43,13 @@ import {
   $isJudgeReady,
   $selectedPoint,
   $selectedRun,
-  $settings,
+  $settingsAmbientMode,
+  $settingsGlassEffects,
+  $settingsGps,
+  $settingsOutdoorMode,
+  $settingsPhotoCapture,
+  $settingsSync,
+  $settingsSyncPhotos,
   $syncStatus,
   $undoStack,
   effect,
@@ -176,13 +182,6 @@ export function initStateEffects(): () => void {
         wakeLockService.disable();
       }
 
-      // Ambient Mode: enable only on timer view when setting is enabled
-      if (currentView === 'timer' && $settings.value.ambientMode) {
-        ambientModeService.enable();
-      } else {
-        ambientModeService.disable();
-      }
-
       // VirtualList: pause when not on results view to save resources
       const virtualList = getVirtualList();
       if (virtualList) {
@@ -195,20 +194,52 @@ export function initStateEffects(): () => void {
     }),
   );
 
-  // --- Settings changes ---
+  // --- Settings changes (split into targeted effects for performance) ---
 
+  // 1. Sync indicator: tracks sync and syncPhotos settings
   disposers.push(
     effect(() => {
-      const settings = $settings.value;
-      const currentView = $currentView.value; // Track unconditionally for applyViewServices
+      void $settingsSync.value;
+      void $settingsSyncPhotos.value;
       updateSyncStatusIndicator();
-      updateGpsIndicator();
-      updateJudgeReadyStatus();
-      updatePhotoCaptureIndicator();
-      applyGlassEffectSettings();
+    }),
+  );
 
-      // Handle ambient mode setting changes
-      if (settings.ambientMode) {
+  // 2. GPS + view services: tracks GPS setting and current view
+  disposers.push(
+    effect(() => {
+      void $settingsGps.value;
+      void $currentView.value;
+      updateGpsIndicator();
+      applyViewServices(store.getState());
+    }),
+  );
+
+  // 3. Photo capture: tracks photoCapture setting and current view
+  disposers.push(
+    effect(() => {
+      void $settingsPhotoCapture.value;
+      void $currentView.value;
+      updatePhotoCaptureIndicator();
+      applyViewServices(store.getState());
+    }),
+  );
+
+  // 4. Glass effects: tracks glassEffects and outdoorMode settings
+  disposers.push(
+    effect(() => {
+      void $settingsGlassEffects.value;
+      void $settingsOutdoorMode.value;
+      applyGlassEffectSettings();
+    }),
+  );
+
+  // 5. Ambient mode: tracks ambientMode setting and current view
+  disposers.push(
+    effect(() => {
+      const ambientMode = $settingsAmbientMode.value;
+      const currentView = $currentView.value;
+      if (ambientMode) {
         ambientModeService.initialize();
         if (currentView === 'timer') {
           ambientModeService.enable();
@@ -216,9 +247,15 @@ export function initStateEffects(): () => void {
       } else {
         ambientModeService.disable();
       }
+    }),
+  );
 
-      // Apply view-specific services (depends on both settings and currentView)
-      applyViewServices(store.getState());
+  // 6. Judge ready: tracks sync and GPS settings
+  disposers.push(
+    effect(() => {
+      void $settingsSync.value;
+      void $settingsGps.value;
+      updateJudgeReadyStatus();
     }),
   );
 

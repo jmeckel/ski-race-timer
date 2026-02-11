@@ -68,10 +68,15 @@ vi.mock('../../src/utils/viewServices', () => ({
 const mockState = signal({
   currentView: 'timer' as string,
   currentLang: 'en',
-  settings: { sync: true, gps: true, ambientMode: false } as Record<
-    string,
-    unknown
-  >,
+  settings: {
+    sync: true,
+    syncPhotos: false,
+    gps: true,
+    photoCapture: false,
+    glassEffects: true,
+    outdoorMode: false,
+    ambientMode: false,
+  } as Record<string, unknown>,
   entries: [] as unknown[],
   faultEntries: [] as unknown[],
   bibInput: '',
@@ -101,7 +106,13 @@ vi.mock('../../src/store', () => ({
   $cloudDeviceCount: computed(() => mockState.value.cloudDeviceCount),
   $gpsStatus: computed(() => mockState.value.gpsStatus),
   $undoStack: computed(() => mockState.value.undoStack),
-  $settings: computed(() => mockState.value.settings),
+  $settingsSync: computed(() => mockState.value.settings.sync),
+  $settingsSyncPhotos: computed(() => mockState.value.settings.syncPhotos),
+  $settingsGps: computed(() => mockState.value.settings.gps),
+  $settingsPhotoCapture: computed(() => mockState.value.settings.photoCapture),
+  $settingsGlassEffects: computed(() => mockState.value.settings.glassEffects),
+  $settingsOutdoorMode: computed(() => mockState.value.settings.outdoorMode),
+  $settingsAmbientMode: computed(() => mockState.value.settings.ambientMode),
   effect,
 }));
 
@@ -147,10 +158,15 @@ describe('App State Handlers', () => {
   const defaultState = {
     currentView: 'timer' as string,
     currentLang: 'en',
-    settings: { sync: true, gps: true, ambientMode: false } as Record<
-      string,
-      unknown
-    >,
+    settings: {
+      sync: true,
+      syncPhotos: false,
+      gps: true,
+      photoCapture: false,
+      glassEffects: true,
+      outdoorMode: false,
+      ambientMode: false,
+    } as Record<string, unknown>,
     entries: [] as unknown[],
     faultEntries: [] as unknown[],
     bibInput: '',
@@ -203,22 +219,11 @@ describe('App State Handlers', () => {
       expect(wakeLockService.disable).toHaveBeenCalled();
     });
 
-    it('should enable ambient mode on timer view when ambient setting is on', () => {
-      mockState.value = {
-        ...mockState.value,
-        settings: { ...mockState.value.settings, ambientMode: true },
-      };
-      vi.clearAllMocks();
-      // Trigger currentView effect by changing view and back
+    it('should not handle ambient mode in view effect (handled by dedicated settings effect)', () => {
       mockState.value = { ...mockState.value, currentView: 'results' };
-      vi.clearAllMocks();
-      mockState.value = { ...mockState.value, currentView: 'timer' };
-      expect(ambientModeService.enable).toHaveBeenCalled();
-    });
-
-    it('should disable ambient mode when not on timer view', () => {
-      mockState.value = { ...mockState.value, currentView: 'results' };
-      expect(ambientModeService.disable).toHaveBeenCalled();
+      // Ambient mode is now managed by the dedicated ambient mode settings effect,
+      // not the view changes effect. Verify view effect doesn't call ambient service.
+      expect(ambientModeService.enable).not.toHaveBeenCalled();
     });
 
     it('should refresh status indicators on view change', () => {
@@ -244,25 +249,55 @@ describe('App State Handlers', () => {
     });
   });
 
-  describe('settings changes', () => {
-    it('should update all indicators on settings change', () => {
+  describe('settings changes (split effects)', () => {
+    it('should update sync indicator when sync setting changes', () => {
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, sync: false },
+      };
+      expect(updateSyncStatusIndicator).toHaveBeenCalled();
+    });
+
+    it('should update sync indicator when syncPhotos setting changes', () => {
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, syncPhotos: true },
+      };
+      expect(updateSyncStatusIndicator).toHaveBeenCalled();
+    });
+
+    it('should update GPS indicator and view services when GPS setting changes', () => {
       mockState.value = {
         ...mockState.value,
         settings: { ...mockState.value.settings, gps: false },
       };
-      expect(updateSyncStatusIndicator).toHaveBeenCalled();
       expect(updateGpsIndicator).toHaveBeenCalled();
-      expect(updateJudgeReadyStatus).toHaveBeenCalled();
+      expect(applyViewServices).toHaveBeenCalled();
+    });
+
+    it('should update photo capture indicator when photoCapture setting changes', () => {
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, photoCapture: true },
+      };
       expect(updatePhotoCaptureIndicator).toHaveBeenCalled();
+      expect(applyViewServices).toHaveBeenCalled();
+    });
+
+    it('should apply glass effects when glassEffects setting changes', () => {
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, glassEffects: false },
+      };
       expect(applyGlassEffectSettings).toHaveBeenCalled();
     });
 
-    it('should call applyViewServices on settings change', () => {
+    it('should apply glass effects when outdoorMode setting changes', () => {
       mockState.value = {
         ...mockState.value,
-        settings: { ...mockState.value.settings, gps: false },
+        settings: { ...mockState.value.settings, outdoorMode: true },
       };
-      expect(applyViewServices).toHaveBeenCalled();
+      expect(applyGlassEffectSettings).toHaveBeenCalled();
     });
 
     it('should initialize ambient mode when setting is enabled on timer view', () => {
@@ -276,11 +311,25 @@ describe('App State Handlers', () => {
     });
 
     it('should disable ambient mode when setting is off', () => {
+      // First enable ambient mode, then disable it
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, ambientMode: true },
+      };
+      vi.clearAllMocks();
       mockState.value = {
         ...mockState.value,
         settings: { ...mockState.value.settings, ambientMode: false },
       };
       expect(ambientModeService.disable).toHaveBeenCalled();
+    });
+
+    it('should update judge ready status when sync or GPS settings change', () => {
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, sync: false },
+      };
+      expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
 
     it('should call applyViewServices on view change (GPS/camera lifecycle)', () => {

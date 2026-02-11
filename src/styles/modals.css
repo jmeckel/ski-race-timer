@@ -466,8 +466,8 @@
 }
 
 .fault-gate-btn {
-  width: 44px;
-  height: 44px;
+  width: var(--btn-height-md);
+  height: var(--btn-height-md);
   border: 2px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface);
@@ -642,7 +642,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
   min-width: 100px;
-  min-height: 44px;
+  min-height: var(--btn-height-md);
   transition:
     background 0.2s ease,
     transform 0.1s ease;
