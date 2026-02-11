@@ -231,7 +231,7 @@ Comprehensive `:focus-visible` styles, proper ARIA attributes in components, `ro
 - T4 (race conditions) deferred because single-threaded JS makes true concurrency impossible; the async coalescing pattern in entrySync is already well-tested
 - 4 of 7 items implemented, 3 deferred with rationale. Coverage focused on highest-value gaps (auth, sync, store slices)
 
-### Phase 5: Polish ✅ COMPLETED (commit TBD)
+### Phase 5: Polish ✅ COMPLETED (commit 24d1e50)
 
 30. **A6**: ~~Extract VirtualList template generation~~ → **Deferred** (template functions already extracted to `src/utils/templates.ts`; remaining DOM creation + event binding in `createEntryItem()` is inherently coupled)
 31. **A9**: ✅ Converted barrel `src/utils/index.ts` from 6 `export *` to explicit named re-exports (~100 symbols) for better tree-shaking
