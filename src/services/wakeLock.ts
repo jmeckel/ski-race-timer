@@ -6,6 +6,7 @@
 
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
+import { batteryService } from '../services/battery';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
@@ -156,6 +157,12 @@ class WakeLockService {
   private async requestWakeLock(): Promise<boolean> {
     if (!this.isSupported() || this.wakeLock) {
       return !!this.wakeLock;
+    }
+
+    // Skip wake lock on critical battery to preserve power
+    if (batteryService.isCriticalBattery()) {
+      logger.debug('[WakeLock] Critical battery, skipping wake lock request');
+      return false;
     }
 
     try {

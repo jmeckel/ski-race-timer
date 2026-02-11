@@ -1,6 +1,6 @@
-import { batteryService } from './battery';
 import { store } from '../store';
 import { logger } from '../utils/logger';
+import { batteryService } from './battery';
 
 // Audio context for sound feedback
 let audioContext: AudioContext | null = null;
@@ -57,7 +57,8 @@ function scaledVibrationPattern(
 
   if (batteryLevel === 'critical') return null;
 
-  const scale = batteryLevel === 'low' ? 0.5 : batteryLevel === 'medium' ? 0.75 : 1;
+  const scale =
+    batteryLevel === 'low' ? 0.5 : batteryLevel === 'medium' ? 0.75 : 1;
   if (scale === 1) return pattern;
 
   return typeof pattern === 'number'

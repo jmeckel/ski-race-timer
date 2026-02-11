@@ -14,12 +14,12 @@ vi.mock('../../../src/utils/logger', () => ({
   },
 }));
 
+import { logger } from '../../../src/utils/logger';
 import {
   checkLocalStorageQuota,
   estimateLocalStorageUsage,
   logStorageUsage,
 } from '../../../src/utils/storageQuota';
-import { logger } from '../../../src/utils/logger';
 
 describe('Storage Quota Module - Extended', () => {
   beforeEach(() => {
@@ -92,16 +92,12 @@ describe('Storage Quota Module - Extended', () => {
 
     it('should include KB usage in log message', () => {
       logStorageUsage();
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('KB'),
-      );
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('KB'));
     });
 
     it('should include percentage in log message', () => {
       logStorageUsage();
-      expect(logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('%'),
-      );
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('%'));
     });
   });
 });

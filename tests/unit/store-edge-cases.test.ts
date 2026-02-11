@@ -191,7 +191,6 @@ describe('Store Edge Cases', () => {
       // Good listener should still receive notifications despite error listener
       expect(goodListener).toHaveBeenCalled();
     });
-
   });
 
   describe('State serialization/deserialization round-trip', () => {

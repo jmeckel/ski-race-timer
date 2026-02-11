@@ -310,7 +310,9 @@ describe('Gate Judge Module', () => {
       updateInlineFaultsList();
 
       expect(emptyState.style.display).toBe('none');
-      expect(listContainer.querySelectorAll('.gate-judge-fault-item').length).toBe(1);
+      expect(
+        listContainer.querySelectorAll('.gate-judge-fault-item').length,
+      ).toBe(1);
     });
 
     it('should update count badge', () => {

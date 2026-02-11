@@ -115,9 +115,9 @@ describe('Extended Validation Utilities', () => {
       expect(
         isValidFaultVersion({ ...validVersion, changeType: 'create' }),
       ).toBe(true);
-      expect(
-        isValidFaultVersion({ ...validVersion, changeType: 'edit' }),
-      ).toBe(true);
+      expect(isValidFaultVersion({ ...validVersion, changeType: 'edit' })).toBe(
+        true,
+      );
       expect(
         isValidFaultVersion({ ...validVersion, changeType: 'restore' }),
       ).toBe(true);
@@ -362,9 +362,9 @@ describe('Extended Validation Utilities', () => {
       expect(isValidFaultEntry({ ...validFaultEntry, gateNumber: 1.5 })).toBe(
         false,
       );
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, gateNumber: 'a' }),
-      ).toBe(false);
+      expect(isValidFaultEntry({ ...validFaultEntry, gateNumber: 'a' })).toBe(
+        false,
+      );
     });
 
     it('should reject invalid faultType', () => {
@@ -374,21 +374,21 @@ describe('Extended Validation Utilities', () => {
     });
 
     it('should accept all valid fault types', () => {
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, faultType: 'MG' }),
-      ).toBe(true);
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, faultType: 'STR' }),
-      ).toBe(true);
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, faultType: 'BR' }),
-      ).toBe(true);
+      expect(isValidFaultEntry({ ...validFaultEntry, faultType: 'MG' })).toBe(
+        true,
+      );
+      expect(isValidFaultEntry({ ...validFaultEntry, faultType: 'STR' })).toBe(
+        true,
+      );
+      expect(isValidFaultEntry({ ...validFaultEntry, faultType: 'BR' })).toBe(
+        true,
+      );
     });
 
     it('should reject invalid gateRange', () => {
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, gateRange: [1] }),
-      ).toBe(false);
+      expect(isValidFaultEntry({ ...validFaultEntry, gateRange: [1] })).toBe(
+        false,
+      );
       expect(
         isValidFaultEntry({ ...validFaultEntry, gateRange: 'invalid' }),
       ).toBe(false);
@@ -401,9 +401,9 @@ describe('Extended Validation Utilities', () => {
     });
 
     it('should reject invalid currentVersion', () => {
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, currentVersion: 0 }),
-      ).toBe(false);
+      expect(isValidFaultEntry({ ...validFaultEntry, currentVersion: 0 })).toBe(
+        false,
+      );
       expect(
         isValidFaultEntry({ ...validFaultEntry, currentVersion: -1 }),
       ).toBe(false);
@@ -518,9 +518,9 @@ describe('Extended Validation Utilities', () => {
       expect(
         isValidFaultEntry({ ...validFaultEntry, syncedAt: 'invalid' }),
       ).toBe(false);
-      expect(
-        isValidFaultEntry({ ...validFaultEntry, syncedAt: NaN }),
-      ).toBe(false);
+      expect(isValidFaultEntry({ ...validFaultEntry, syncedAt: NaN })).toBe(
+        false,
+      );
       expect(
         isValidFaultEntry({ ...validFaultEntry, syncedAt: Infinity }),
       ).toBe(false);
@@ -693,7 +693,7 @@ describe('Extended Validation Utilities', () => {
     });
 
     it('should remove quotes and ampersands', () => {
-      const result = sanitizeString("test'value\"with&chars");
+      const result = sanitizeString('test\'value"with&chars');
       expect(result).toBe('testvaluewithchars');
     });
 

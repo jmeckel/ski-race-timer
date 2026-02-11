@@ -58,13 +58,13 @@ vi.mock('../../../src/features/faults/faultOperations', () => ({
   createAndSyncFault: (...args: unknown[]) => mockCreateAndSyncFault(...args),
 }));
 
+import { showToast } from '../../../src/components';
 import {
   initFaultRecordingModal,
   openFaultRecordingModal,
   recordFault,
   recordFaultFromVoice,
 } from '../../../src/features/faults/faultModals';
-import { showToast } from '../../../src/components';
 import { closeModal, openModal } from '../../../src/features/modals';
 
 describe('Fault Modals Module', () => {

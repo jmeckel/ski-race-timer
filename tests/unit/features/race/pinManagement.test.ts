@@ -21,17 +21,14 @@ vi.mock('../../../../src/services', () => ({
   feedbackWarning: vi.fn(),
 }));
 
-const mockExchangePinForToken = vi.fn(() =>
-  Promise.resolve({ success: true }),
-);
+const mockExchangePinForToken = vi.fn(() => Promise.resolve({ success: true }));
 const mockHasAuthToken = vi.fn(() => false);
 const mockClearAuthToken = vi.fn();
 const mockGetAuthHeaders = vi.fn(() => ({ Authorization: 'Bearer token' }));
 
 vi.mock('../../../../src/services/auth', () => ({
   clearAuthToken: (...args: unknown[]) => mockClearAuthToken(...args),
-  exchangePinForToken: (...args: unknown[]) =>
-    mockExchangePinForToken(...args),
+  exchangePinForToken: (...args: unknown[]) => mockExchangePinForToken(...args),
   getAuthHeaders: (...args: unknown[]) => mockGetAuthHeaders(...args),
   hasAuthToken: (...args: unknown[]) => mockHasAuthToken(...args),
 }));
@@ -70,6 +67,7 @@ vi.mock('../../../../src/features/modals', () => ({
   openModal: vi.fn(),
 }));
 
+import { closeModal, openModal } from '../../../../src/features/modals';
 import {
   authenticateWithPin,
   cancelRaceJoinPinVerify,
@@ -82,7 +80,6 @@ import {
   verifyPinForChiefJudge,
   verifyPinForRaceJoin,
 } from '../../../../src/features/race/pinManagement';
-import { openModal, closeModal } from '../../../../src/features/modals';
 
 describe('PIN Management Module', () => {
   let container: HTMLDivElement;

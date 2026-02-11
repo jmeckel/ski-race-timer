@@ -29,7 +29,10 @@ vi.mock('../../../src/utils/logger', () => ({
   },
 }));
 
-import { cameraService, captureTimingPhoto } from '../../../src/services/camera';
+import {
+  cameraService,
+  captureTimingPhoto,
+} from '../../../src/services/camera';
 
 describe('Camera Service - Full Coverage', () => {
   beforeEach(() => {

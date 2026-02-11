@@ -44,7 +44,10 @@ vi.mock('../../src/i18n/translations', () => ({
 vi.mock('../../src/services', () => ({
   feedbackDelete: vi.fn(),
   feedbackUndo: vi.fn(),
-  photoStorage: { clearAll: vi.fn(() => Promise.resolve()), deletePhoto: vi.fn(() => Promise.resolve()) },
+  photoStorage: {
+    clearAll: vi.fn(() => Promise.resolve()),
+    deletePhoto: vi.fn(() => Promise.resolve()),
+  },
   syncService: { deleteEntryFromCloud: vi.fn() },
 }));
 
@@ -100,9 +103,12 @@ import {
   promptDelete,
 } from '../../src/appModalHandlers';
 import { closeAllModalsAnimated, openModal } from '../../src/features/modals';
-import { openModalWithContext } from '../../src/utils/modalHelpers';
-import { setModalContext, clearModalContext } from '../../src/utils/modalContext';
 import { t } from '../../src/i18n/translations';
+import {
+  clearModalContext,
+  setModalContext,
+} from '../../src/utils/modalContext';
+import { openModalWithContext } from '../../src/utils/modalHelpers';
 
 describe('App Modal Handlers Module', () => {
   let container: HTMLDivElement;
@@ -205,7 +211,16 @@ describe('App Modal Handlers Module', () => {
         status: 'ok' as const,
         deviceId: 'dev_1',
         deviceName: 'Timer 1',
-      } as { id: string; bib: string; point: 'F'; run?: number; timestamp: string; status: 'ok'; deviceId: string; deviceName: string };
+      } as {
+        id: string;
+        bib: string;
+        point: 'F';
+        run?: number;
+        timestamp: string;
+        status: 'ok';
+        deviceId: string;
+        deviceName: string;
+      };
 
       openEditModal(entry as any);
 

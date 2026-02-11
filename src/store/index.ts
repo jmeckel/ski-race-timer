@@ -156,15 +156,23 @@ class Store {
     // Load and migrate data
     const entries = parseJson<Entry[]>(STORAGE_KEYS.ENTRIES, [], (p) =>
       Array.isArray(p)
-        ? p.filter((e) => isValidEntry(e)).map((e) => ({ ...e, run: e.run ?? 1 }))
+        ? p
+            .filter((e) => isValidEntry(e))
+            .map((e) => ({ ...e, run: e.run ?? 1 }))
         : [],
     );
-    const settings = parseJson<Settings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS, (p) => ({
-      ...DEFAULT_SETTINGS,
-      ...(p as object),
-    }));
-    const syncQueue = parseJson<SyncQueueItem[]>(STORAGE_KEYS.SYNC_QUEUE, [], (p) =>
-      Array.isArray(p) ? p : [],
+    const settings = parseJson<Settings>(
+      STORAGE_KEYS.SETTINGS,
+      DEFAULT_SETTINGS,
+      (p) => ({
+        ...DEFAULT_SETTINGS,
+        ...(p as object),
+      }),
+    );
+    const syncQueue = parseJson<SyncQueueItem[]>(
+      STORAGE_KEYS.SYNC_QUEUE,
+      [],
+      (p) => (Array.isArray(p) ? p : []),
     );
 
     // Load other values
@@ -185,13 +193,16 @@ class Store {
     const gateAssignment = parseJson<[number, number] | null>(
       STORAGE_KEYS.GATE_ASSIGNMENT,
       null,
-      (p) => (Array.isArray(p) && p.length === 2 ? (p as [number, number]) : null),
+      (p) =>
+        Array.isArray(p) && p.length === 2 ? (p as [number, number]) : null,
     );
     const storedColor = storage.getRaw(STORAGE_KEYS.FIRST_GATE_COLOR);
     const firstGateColor: GateColor =
       storedColor === 'red' || storedColor === 'blue' ? storedColor : 'red';
-    const faultEntries = parseJson<FaultEntry[]>(STORAGE_KEYS.FAULT_ENTRIES, [], (p) =>
-      Array.isArray(p) ? p : [],
+    const faultEntries = parseJson<FaultEntry[]>(
+      STORAGE_KEYS.FAULT_ENTRIES,
+      [],
+      (p) => (Array.isArray(p) ? p : []),
     );
 
     return {

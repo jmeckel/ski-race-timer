@@ -56,20 +56,17 @@ vi.mock('../../../../src/features/modals', () => ({
   openModal: vi.fn(),
 }));
 
-const mockAuthenticateWithPin = vi.fn(() =>
-  Promise.resolve({ success: true }),
-);
+const mockAuthenticateWithPin = vi.fn(() => Promise.resolve({ success: true }));
 
 vi.mock('../../../../src/features/race/pinManagement', () => ({
-  authenticateWithPin: (...args: unknown[]) =>
-    mockAuthenticateWithPin(...args),
+  authenticateWithPin: (...args: unknown[]) => mockAuthenticateWithPin(...args),
 }));
 
+import { closeModal, openModal } from '../../../../src/features/modals';
 import {
   handleAdminPinVerify,
   initRaceAdmin,
 } from '../../../../src/features/race/raceAdmin';
-import { closeModal, openModal } from '../../../../src/features/modals';
 import { feedbackWarning } from '../../../../src/services';
 
 describe('Race Administration Module', () => {

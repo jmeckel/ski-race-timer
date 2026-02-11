@@ -79,6 +79,10 @@ vi.mock('../../../src/features/voiceNoteUI', () => ({
 }));
 
 import {
+  recordFaultFromVoice,
+  updateActiveBibsList,
+} from '../../../src/features/faults';
+import {
   cleanupGateJudgeView,
   handleGateJudgeVoiceIntent,
   updateGateJudgeRunSelection,
@@ -89,7 +93,6 @@ import {
   updateReadyButtonState,
 } from '../../../src/features/gateJudgeView';
 import { feedbackSuccess, syncService } from '../../../src/services';
-import { recordFaultFromVoice, updateActiveBibsList } from '../../../src/features/faults';
 
 describe('Gate Judge View Module', () => {
   let container: HTMLDivElement;

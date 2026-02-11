@@ -149,7 +149,11 @@ export async function sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
       `${FAULTS_API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           fault,
           deviceId: state.deviceId,
@@ -195,7 +199,11 @@ export async function deleteFaultFromCloudApi(
       `${FAULTS_API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           faultId,
           deviceId: faultDeviceId || state.deviceId,

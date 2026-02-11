@@ -178,7 +178,11 @@ export class RadialDialAnimation {
   }
 
   /** Temporarily add a CSS class to an element, removing it after the given duration */
-  private flashClass(el: HTMLElement, className: string, duration: number): void {
+  private flashClass(
+    el: HTMLElement,
+    className: string,
+    duration: number,
+  ): void {
     el.classList.add(className);
     const timeoutId = window.setTimeout(() => {
       el.classList.remove(className);

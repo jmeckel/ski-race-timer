@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 56px;
+  height: var(--btn-height-lg);
   background: var(--surface-elevated);
   border: 3px solid transparent;
   border-radius: var(--radius);
@@ -439,8 +439,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 44px;
+  min-width: var(--btn-height-md);
+  height: var(--btn-height-md);
   padding: 0 10px;
   background: var(--surface-elevated);
   border: 2px solid transparent;
@@ -465,7 +465,7 @@
 
 .inline-bib-input {
   width: 7ch;
-  height: 56px;
+  height: var(--btn-height-lg);
   text-align: center;
   font-family: "JetBrains Mono", monospace;
   font-size: 1.1rem;

@@ -36,7 +36,8 @@ const mockGetPendingDeletions = vi.fn(() => []);
 vi.mock('../../../src/store', () => ({
   store: {
     getState: () => mockGetState(),
-    getPendingDeletions: (...args: unknown[]) => mockGetPendingDeletions(...args),
+    getPendingDeletions: (...args: unknown[]) =>
+      mockGetPendingDeletions(...args),
     subscribe: vi.fn(() => vi.fn()),
     toggleChiefJudgeView: vi.fn(),
     setUsePenaltyMode: vi.fn(),

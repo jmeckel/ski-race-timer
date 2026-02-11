@@ -27,9 +27,7 @@ describe('Network Monitor', () => {
       configurable: true,
     });
 
-    const module = await import(
-      '../../../../src/services/sync/networkMonitor'
-    );
+    const module = await import('../../../../src/services/sync/networkMonitor');
     networkMonitor = module.networkMonitor;
   });
 

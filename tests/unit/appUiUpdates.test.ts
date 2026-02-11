@@ -66,10 +66,8 @@ import {
   updateViewVisibility,
   updateVoiceIndicator,
 } from '../../src/appUiUpdates';
+import { updateActiveBibsList } from '../../src/features/faults';
 import { isRadialModeActive } from '../../src/features/radialTimerView';
-import {
-  updateActiveBibsList,
-} from '../../src/features/faults';
 
 describe('App UI Updates Module', () => {
   let container: HTMLDivElement;

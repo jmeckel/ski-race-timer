@@ -58,8 +58,16 @@ export class RadialDialInteraction {
   /** Bind all interaction events. Called once during init. */
   bindEvents(): void {
     // Mouse events
-    this.listeners.add(this.container, 'mousedown', this.handleDragStart as EventListener);
-    this.listeners.add(window, 'mousemove', this.handleDragMove as EventListener);
+    this.listeners.add(
+      this.container,
+      'mousedown',
+      this.handleDragStart as EventListener,
+    );
+    this.listeners.add(
+      window,
+      'mousemove',
+      this.handleDragMove as EventListener,
+    );
     this.listeners.add(window, 'mouseup', this.handleDragEnd as EventListener);
 
     // Touch events
@@ -108,12 +116,8 @@ export class RadialDialInteraction {
     }
 
     const rect = this.container.getBoundingClientRect();
-    const clientX = isTouch
-      ? e.touches[0]!.clientX
-      : (e as MouseEvent).clientX;
-    const clientY = isTouch
-      ? e.touches[0]!.clientY
-      : (e as MouseEvent).clientY;
+    const clientX = isTouch ? e.touches[0]!.clientX : (e as MouseEvent).clientX;
+    const clientY = isTouch ? e.touches[0]!.clientY : (e as MouseEvent).clientY;
 
     // Check if in ring area (not center)
     const centerX = rect.left + rect.width / 2;
@@ -212,10 +216,7 @@ export class RadialDialInteraction {
 
     // Get angle of tap relative to center (in degrees, 0 = right, 90 = down)
     let tapAngle =
-      Math.atan2(
-        this.dragStartPos.y - centerY,
-        this.dragStartPos.x - centerX,
-      ) *
+      Math.atan2(this.dragStartPos.y - centerY, this.dragStartPos.x - centerX) *
       (180 / Math.PI);
 
     // Adjust for current rotation of the dial

@@ -62,7 +62,10 @@ class PollingManager {
         const crossedUltraLow =
           (previousRawLevel >= 0.05 && status.level < 0.05) ||
           (previousRawLevel < 0.05 && status.level >= 0.05);
-        if ((previousLevel !== status.batteryLevel || crossedUltraLow) && this.pollInterval) {
+        if (
+          (previousLevel !== status.batteryLevel || crossedUltraLow) &&
+          this.pollInterval
+        ) {
           this.applyBatteryAwarePolling();
         }
       },
@@ -138,16 +141,28 @@ class PollingManager {
     const isMetered = networkMonitor.isMeteredConnection();
 
     if (this.currentConnectionQuality === 'offline') {
-      return { intervals: [POLL_INTERVAL_OFFLINE], threshold: 1, baseInterval: POLL_INTERVAL_OFFLINE };
+      return {
+        intervals: [POLL_INTERVAL_OFFLINE],
+        threshold: 1,
+        baseInterval: POLL_INTERVAL_OFFLINE,
+      };
     }
 
     if (this.isTabHidden) {
-      return { intervals: [POLL_INTERVAL_HIDDEN], threshold: 1, baseInterval: POLL_INTERVAL_HIDDEN };
+      return {
+        intervals: [POLL_INTERVAL_HIDDEN],
+        threshold: 1,
+        baseInterval: POLL_INTERVAL_HIDDEN,
+      };
     }
 
     // Ultra-low battery (<5%): more aggressive than 'critical' (10%) to preserve remaining battery
     if (this.currentBatteryRawLevel < 0.05 && !batteryService.isCharging()) {
-      return { intervals: [POLL_INTERVAL_ULTRA_LOW_BATTERY], threshold: 1, baseInterval: POLL_INTERVAL_ULTRA_LOW_BATTERY };
+      return {
+        intervals: [POLL_INTERVAL_ULTRA_LOW_BATTERY],
+        threshold: 1,
+        baseInterval: POLL_INTERVAL_ULTRA_LOW_BATTERY,
+      };
     }
 
     // Slow or metered network uses reduced intervals to save data
@@ -155,7 +170,10 @@ class PollingManager {
       return {
         intervals: POLL_INTERVALS_METERED,
         threshold: IDLE_THRESHOLD,
-        baseInterval: this.currentConnectionQuality === 'slow' ? POLL_INTERVAL_SLOW : POLL_INTERVAL_METERED_BASE,
+        baseInterval:
+          this.currentConnectionQuality === 'slow'
+            ? POLL_INTERVAL_SLOW
+            : POLL_INTERVAL_METERED_BASE,
       };
     }
 

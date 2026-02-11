@@ -30,7 +30,10 @@ describe('StorageService', () => {
       storageService.storage.set('testKey', data);
       storageService.storage.flush();
 
-      const result = storageService.storage.get<{ name: string; count: number }>('testKey');
+      const result = storageService.storage.get<{
+        name: string;
+        count: number;
+      }>('testKey');
       expect(result).toEqual(data);
     });
 
@@ -86,7 +89,9 @@ describe('StorageService', () => {
       localStorage.setItem('cacheTest', JSON.stringify({ cached: true }));
 
       // First read - populates cache from localStorage
-      const result1 = storageService.storage.get<{ cached: boolean }>('cacheTest');
+      const result1 = storageService.storage.get<{ cached: boolean }>(
+        'cacheTest',
+      );
       expect(result1).toEqual({ cached: true });
 
       // Replace localStorage.getItem with a spy AFTER the first read
@@ -95,7 +100,9 @@ describe('StorageService', () => {
       localStorage.getItem = getItemSpy;
 
       // Second read - should come from cache
-      const result2 = storageService.storage.get<{ cached: boolean }>('cacheTest');
+      const result2 = storageService.storage.get<{ cached: boolean }>(
+        'cacheTest',
+      );
       expect(result2).toEqual({ cached: true });
 
       // localStorage.getItem should NOT have been called for the second read
@@ -180,7 +187,9 @@ describe('StorageService', () => {
       expect(storageService.storage.hasPendingWrites()).toBe(false);
 
       // Verify it was written to localStorage
-      expect(localStorage.getItem('flushed')).toBe(JSON.stringify({ key: 'value' }));
+      expect(localStorage.getItem('flushed')).toBe(
+        JSON.stringify({ key: 'value' }),
+      );
     });
 
     it('should batch multiple writes into a single flush', () => {
@@ -202,12 +211,18 @@ describe('StorageService', () => {
     it('should read existing localStorage data without migration', () => {
       // Simulate pre-existing data in localStorage
       localStorage.setItem('skiTimerDeviceId', 'dev_existing123');
-      localStorage.setItem('skiTimerSettings', JSON.stringify({ sync: true, gps: false }));
+      localStorage.setItem(
+        'skiTimerSettings',
+        JSON.stringify({ sync: true, gps: false }),
+      );
 
       const deviceId = storageService.storage.getRaw('skiTimerDeviceId');
       expect(deviceId).toBe('dev_existing123');
 
-      const settings = storageService.storage.get<{ sync: boolean; gps: boolean }>('skiTimerSettings');
+      const settings = storageService.storage.get<{
+        sync: boolean;
+        gps: boolean;
+      }>('skiTimerSettings');
       expect(settings).toEqual({ sync: true, gps: false });
     });
 
@@ -267,13 +282,17 @@ describe('StorageService', () => {
     });
 
     it('should rethrow first error from flush for caller handling', () => {
-      const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
-        throw new Error('QuotaExceededError');
-      });
+      const setItemSpy = vi
+        .spyOn(localStorage, 'setItem')
+        .mockImplementation(() => {
+          throw new Error('QuotaExceededError');
+        });
 
       storageService.storage.set('quotaTest', 'value');
       // flush() rethrows the first error so callers (e.g., the store) can handle it
-      expect(() => storageService.storage.flush()).toThrow('QuotaExceededError');
+      expect(() => storageService.storage.flush()).toThrow(
+        'QuotaExceededError',
+      );
 
       setItemSpy.mockRestore();
     });

@@ -24,7 +24,9 @@ export const IDLE_THRESHOLD = 6; // Number of no-change polls before starting to
 
 // Battery-aware polling configuration
 // More aggressive throttling when battery is low
-export const POLL_INTERVALS_MEDIUM_BATTERY = [20000, 30000, 45000, 60000, 90000]; // Medium battery: slightly slower
+export const POLL_INTERVALS_MEDIUM_BATTERY = [
+  20000, 30000, 45000, 60000, 90000,
+]; // Medium battery: slightly slower
 export const IDLE_THRESHOLD_MEDIUM_BATTERY = 4; // Start throttling a bit sooner on medium battery
 export const POLL_INTERVALS_LOW_BATTERY = [30000, 45000, 60000, 90000, 120000]; // Low battery: slower
 export const POLL_INTERVALS_CRITICAL = [30000, 60000]; // Critical: much slower
@@ -82,10 +84,26 @@ export interface PollingConfig {
 
 /** Battery-aware polling configurations indexed by battery level */
 export const BATTERY_POLLING_CONFIGS: Record<BatteryLevel, PollingConfig> = {
-  normal: { intervals: POLL_INTERVALS_IDLE, threshold: IDLE_THRESHOLD, baseInterval: POLL_INTERVAL_NORMAL },
-  medium: { intervals: POLL_INTERVALS_MEDIUM_BATTERY, threshold: IDLE_THRESHOLD_MEDIUM_BATTERY, baseInterval: POLL_INTERVALS_MEDIUM_BATTERY[0]! },
-  low: { intervals: POLL_INTERVALS_LOW_BATTERY, threshold: IDLE_THRESHOLD_LOW_BATTERY, baseInterval: POLL_INTERVALS_LOW_BATTERY[0]! },
-  critical: { intervals: POLL_INTERVALS_CRITICAL, threshold: IDLE_THRESHOLD_LOW_BATTERY, baseInterval: POLL_INTERVALS_CRITICAL[0]! },
+  normal: {
+    intervals: POLL_INTERVALS_IDLE,
+    threshold: IDLE_THRESHOLD,
+    baseInterval: POLL_INTERVAL_NORMAL,
+  },
+  medium: {
+    intervals: POLL_INTERVALS_MEDIUM_BATTERY,
+    threshold: IDLE_THRESHOLD_MEDIUM_BATTERY,
+    baseInterval: POLL_INTERVALS_MEDIUM_BATTERY[0]!,
+  },
+  low: {
+    intervals: POLL_INTERVALS_LOW_BATTERY,
+    threshold: IDLE_THRESHOLD_LOW_BATTERY,
+    baseInterval: POLL_INTERVALS_LOW_BATTERY[0]!,
+  },
+  critical: {
+    intervals: POLL_INTERVALS_CRITICAL,
+    threshold: IDLE_THRESHOLD_LOW_BATTERY,
+    baseInterval: POLL_INTERVALS_CRITICAL[0]!,
+  },
 };
 
 /**

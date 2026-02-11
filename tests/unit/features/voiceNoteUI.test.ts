@@ -39,7 +39,8 @@ vi.mock('../../../src/services/voiceNote', () => ({
     start: (...args: unknown[]) => mockVoiceNoteStart(...args),
     stop: (...args: unknown[]) => mockVoiceNoteStop(...args),
     initialize: (...args: unknown[]) => mockVoiceNoteInitialize(...args),
-    onStatusChange: (...args: unknown[]) => mockVoiceNoteOnStatusChange(...args),
+    onStatusChange: (...args: unknown[]) =>
+      mockVoiceNoteOnStatusChange(...args),
     onTranscript: (...args: unknown[]) => mockVoiceNoteOnTranscript(...args),
   },
 }));
@@ -77,6 +78,8 @@ vi.mock('../../../src/features/modals', () => ({
   openModal: vi.fn(),
 }));
 
+import { showToast } from '../../../src/components';
+import { openModal } from '../../../src/features/modals';
 import {
   cleanupVoiceNoteUI,
   closeVoiceNoteModal,
@@ -89,8 +92,6 @@ import {
   stopVoiceRecording,
   toggleVoiceRecording,
 } from '../../../src/features/voiceNoteUI';
-import { showToast } from '../../../src/components';
-import { openModal } from '../../../src/features/modals';
 import { voiceModeService } from '../../../src/services/voice';
 
 describe('Voice Note UI Module', () => {

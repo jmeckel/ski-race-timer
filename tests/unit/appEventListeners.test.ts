@@ -126,8 +126,16 @@ import {
   initVoiceMode,
 } from '../../src/appEventListeners';
 import { showToast } from '../../src/components';
-import { feedbackWarning, syncService, cameraService, gpsService, wakeLockService, ambientModeService, voiceModeService } from '../../src/services';
 import { cleanupPinVerification } from '../../src/features/race';
+import {
+  ambientModeService,
+  cameraService,
+  feedbackWarning,
+  gpsService,
+  syncService,
+  voiceModeService,
+  wakeLockService,
+} from '../../src/services';
 
 describe('App Event Listeners Module', () => {
   beforeEach(() => {
@@ -154,7 +162,11 @@ describe('App Event Listeners Module', () => {
 
       handleStorageError(event);
 
-      expect(showToast).toHaveBeenCalledWith('storageNearlyFull', 'error', 10000);
+      expect(showToast).toHaveBeenCalledWith(
+        'storageNearlyFull',
+        'error',
+        10000,
+      );
       expect(feedbackWarning).toHaveBeenCalled();
     });
 

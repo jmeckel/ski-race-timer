@@ -43,12 +43,12 @@ import {
   voiceModeService,
   wakeLockService,
 } from './services';
+import { storage } from './services/storage';
 import { store } from './store';
 import type { Entry, FaultEntry, Language, VoiceStatus } from './types';
 import { TOAST_DURATION } from './utils';
 import { ListenerManager } from './utils/listenerManager';
 import { logger } from './utils/logger';
-import { storage } from './services/storage';
 
 // Custom event listener references (stored for cleanup in handleBeforeUnload)
 const customEventListeners = new ListenerManager();

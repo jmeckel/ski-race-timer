@@ -77,15 +77,15 @@ vi.mock('../../src/utils/viewServices', () => ({
   applyViewServices: vi.fn(),
 }));
 
+import { initVoiceMode } from '../../src/appEventListeners';
 import { initServices } from '../../src/appInitServices';
+import { applySettings } from '../../src/features/settingsView';
 import {
   ambientModeService,
   syncService,
   wakeLockService,
 } from '../../src/services';
 import { hasAuthToken } from '../../src/services/sync';
-import { applySettings } from '../../src/features/settingsView';
-import { initVoiceMode } from '../../src/appEventListeners';
 import { applyViewServices } from '../../src/utils/viewServices';
 
 describe('App Init Services Module', () => {

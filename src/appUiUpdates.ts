@@ -139,7 +139,8 @@ export function updateSyncStatusIndicator(): void {
       disconnected: 'Off',
       connecting: 'Sync...',
     };
-    text.textContent = shortStatusText[state.syncStatus] || t(state.syncStatus, lang);
+    text.textContent =
+      shortStatusText[state.syncStatus] || t(state.syncStatus, lang);
   }
 
   // Update aria-label on container for accessibility in dot-only mode

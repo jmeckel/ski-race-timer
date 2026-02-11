@@ -126,16 +126,23 @@ vi.mock('../../src/version', () => ({
 }));
 
 import { initApp } from '../../src/app';
-import { initTabs, initClock, initNumberPad, initTimingPoints, initRunSelector, initTimestampButton } from '../../src/features/timerView';
-import { initResultsView } from '../../src/features/resultsView';
-import { initSettingsView } from '../../src/features/settingsView';
-import { initServices } from '../../src/appInitServices';
-import { updateUI } from '../../src/appUiUpdates';
 import { initCustomEventListeners } from '../../src/appEventListeners';
+import { initServices } from '../../src/appInitServices';
 import { initModals } from '../../src/appModalHandlers';
-import { initRaceManagement } from '../../src/features/race';
-import { initRippleEffects } from '../../src/features/ripple';
+import { updateUI } from '../../src/appUiUpdates';
 import { initOfflineBanner } from '../../src/features/offlineBanner';
+import { initRaceManagement } from '../../src/features/race';
+import { initResultsView } from '../../src/features/resultsView';
+import { initRippleEffects } from '../../src/features/ripple';
+import { initSettingsView } from '../../src/features/settingsView';
+import {
+  initClock,
+  initNumberPad,
+  initRunSelector,
+  initTabs,
+  initTimestampButton,
+  initTimingPoints,
+} from '../../src/features/timerView';
 
 describe('App Module', () => {
   let container: HTMLDivElement;
@@ -213,10 +220,14 @@ describe('App Module', () => {
     });
 
     it('should use radial timer when radial mode is active', async () => {
-      const { isRadialModeActive } = await import('../../src/features/radialTimerView');
+      const { isRadialModeActive } = await import(
+        '../../src/features/radialTimerView'
+      );
       vi.mocked(isRadialModeActive).mockReturnValue(true);
 
-      const { initRadialTimerView } = await import('../../src/features/radialTimerView');
+      const { initRadialTimerView } = await import(
+        '../../src/features/radialTimerView'
+      );
 
       initApp();
 

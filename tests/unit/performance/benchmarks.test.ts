@@ -6,13 +6,13 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entry } from '../../../src/types';
 import {
   escapeCSVField,
   formatDateForExport,
   formatTimeForRaceHorology,
 } from '../../../src/features/export';
 import * as entriesSlice from '../../../src/store/slices/entriesSlice';
+import type { Entry } from '../../../src/types';
 
 // Mock localStorage for store tests
 const localStorageMock = (() => {
@@ -135,7 +135,9 @@ describe('Performance Benchmarks', () => {
       const found = store.getState().entries.find((e) => e.id === targetId);
       const elapsed = performance.now() - start;
 
-      console.log(`  Finding entry by ID (500 entries): ${elapsed.toFixed(4)}ms`);
+      console.log(
+        `  Finding entry by ID (500 entries): ${elapsed.toFixed(4)}ms`,
+      );
       expect(elapsed).toBeLessThan(5);
       expect(found).toBeDefined();
       expect(found!.id).toBe(targetId);
@@ -241,7 +243,15 @@ describe('Performance Benchmarks', () => {
 
     it('should escape 1000 CSV fields with special characters in under 50ms', () => {
       const specialFields = Array.from({ length: 1000 }, (_, i) => {
-        const chars = ['=SUM(', '+cmd|', '-1+1', '@import', 'normal', '"quoted"', 'semi;colon'];
+        const chars = [
+          '=SUM(',
+          '+cmd|',
+          '-1+1',
+          '@import',
+          'normal',
+          '"quoted"',
+          'semi;colon',
+        ];
         return chars[i % chars.length]!;
       });
 
@@ -249,9 +259,7 @@ describe('Performance Benchmarks', () => {
       const escaped = specialFields.map(escapeCSVField);
       const elapsed = performance.now() - start;
 
-      console.log(
-        `  Escaping 1000 CSV fields: ${elapsed.toFixed(2)}ms`,
-      );
+      console.log(`  Escaping 1000 CSV fields: ${elapsed.toFixed(2)}ms`);
       expect(elapsed).toBeLessThan(50);
       expect(escaped.length).toBe(1000);
     });
@@ -392,9 +400,7 @@ describe('Performance Benchmarks', () => {
       expect(elapsed).toBeLessThan(20);
       // Verify sort order
       for (let i = 1; i < sorted.length; i++) {
-        expect(
-          new Date(sorted[i]!.timestamp).getTime(),
-        ).toBeGreaterThanOrEqual(
+        expect(new Date(sorted[i]!.timestamp).getTime()).toBeGreaterThanOrEqual(
           new Date(sorted[i - 1]!.timestamp).getTime(),
         );
       }
@@ -427,9 +433,7 @@ describe('Performance Benchmarks', () => {
       const searchTerm = '42';
 
       const start = performance.now();
-      const filtered = entries.filter((e) =>
-        e.bib.includes(searchTerm),
-      );
+      const filtered = entries.filter((e) => e.bib.includes(searchTerm));
       const elapsed = performance.now() - start;
 
       console.log(

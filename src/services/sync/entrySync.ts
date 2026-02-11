@@ -303,7 +303,11 @@ export async function deleteEntryFromCloud(
       `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           entryId,
           deviceId: entryDeviceId || state.deviceId,
@@ -351,7 +355,11 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
       `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           entry: entryToSync,
           deviceId: state.deviceId,

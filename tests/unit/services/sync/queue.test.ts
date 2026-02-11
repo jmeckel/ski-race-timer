@@ -107,9 +107,7 @@ describe('Queue Processor', () => {
       mockGetState.mockReturnValue({
         settings: { sync: false },
         raceId: 'RACE',
-        syncQueue: [
-          { entry: { id: '1' }, retryCount: 0, lastAttempt: 0 },
-        ],
+        syncQueue: [{ entry: { id: '1' }, retryCount: 0, lastAttempt: 0 }],
       });
 
       const callback = vi.fn(() => Promise.resolve(true));
@@ -123,9 +121,7 @@ describe('Queue Processor', () => {
       mockGetState.mockReturnValue({
         settings: { sync: true },
         raceId: '',
-        syncQueue: [
-          { entry: { id: '1' }, retryCount: 0, lastAttempt: 0 },
-        ],
+        syncQueue: [{ entry: { id: '1' }, retryCount: 0, lastAttempt: 0 }],
       });
 
       const callback = vi.fn(() => Promise.resolve(true));

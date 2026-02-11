@@ -51,7 +51,8 @@ test.describe('Visual Regression', () => {
   // WebKit is also skipped due to radial dial test driver issues.
   test.skip(
     ({ browserName, viewport }) =>
-      browserName === 'webkit' || (viewport && viewport.width > viewport.height),
+      browserName === 'webkit' ||
+      (viewport && viewport.width > viewport.height),
     'Visual regression runs on portrait Chromium only',
   );
 

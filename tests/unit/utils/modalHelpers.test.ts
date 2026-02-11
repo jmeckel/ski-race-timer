@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing
 vi.mock('../../../src/features/modals', () => ({
@@ -8,9 +8,9 @@ vi.mock('../../../src/utils/modalContext', () => ({
   setModalContext: vi.fn(),
 }));
 
-import { openModalWithContext } from '../../../src/utils/modalHelpers';
 import { openModal } from '../../../src/features/modals';
 import { setModalContext } from '../../../src/utils/modalContext';
+import { openModalWithContext } from '../../../src/utils/modalHelpers';
 
 describe('openModalWithContext', () => {
   beforeEach(() => {

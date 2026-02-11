@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { updateButtonGroupState } from '../../../src/utils/uiHelpers';
 
 describe('updateButtonGroupState', () => {
@@ -27,11 +27,15 @@ describe('updateButtonGroupState', () => {
   });
 
   it('handles null container gracefully', () => {
-    expect(() => updateButtonGroupState(null, '.run-btn', 'data-run', '1')).not.toThrow();
+    expect(() =>
+      updateButtonGroupState(null, '.run-btn', 'data-run', '1'),
+    ).not.toThrow();
   });
 
   it('handles no matching buttons', () => {
-    expect(() => updateButtonGroupState(container, '.nonexistent', 'data-run', '1')).not.toThrow();
+    expect(() =>
+      updateButtonGroupState(container, '.nonexistent', 'data-run', '1'),
+    ).not.toThrow();
   });
 
   it('removes active class when no value matches', () => {

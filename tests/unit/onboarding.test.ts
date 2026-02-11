@@ -25,7 +25,9 @@ vi.mock('../../src/services', () => ({
   feedbackTap: vi.fn(),
   syncService: {
     initialize: vi.fn(),
-    checkRaceExists: vi.fn(() => Promise.resolve({ exists: false, entryCount: 0 })),
+    checkRaceExists: vi.fn(() =>
+      Promise.resolve({ exists: false, entryCount: 0 }),
+    ),
   },
 }));
 
@@ -108,9 +110,9 @@ vi.mock('../../src/utils/templates', () => ({
   iconHourglass: vi.fn(() => '<svg>hourglass</svg>'),
 }));
 
-import { OnboardingController } from '../../src/onboarding';
-import { openModal, closeModal } from '../../src/features/modals';
 import { showToast } from '../../src/components';
+import { closeModal, openModal } from '../../src/features/modals';
+import { OnboardingController } from '../../src/onboarding';
 import { feedbackSuccess } from '../../src/services';
 import { store } from '../../src/store';
 
@@ -224,7 +226,9 @@ describe('OnboardingController', () => {
       const controller = new OnboardingController();
       controller.reset();
 
-      expect(mockStorageRemove).toHaveBeenCalledWith('skiTimerHasCompletedOnboarding');
+      expect(mockStorageRemove).toHaveBeenCalledWith(
+        'skiTimerHasCompletedOnboarding',
+      );
       expect(mockStorageFlush).toHaveBeenCalled();
     });
   });
@@ -439,8 +443,12 @@ describe('OnboardingController', () => {
       (controller as unknown as PrivateAccess).goToStep(2);
 
       // Step 1 card should be hidden, step 2 shown
-      const step1 = modal.querySelector('[data-step="1"]:not([data-path])') as HTMLElement;
-      const step2 = modal.querySelector('[data-step="2"]:not([data-path])') as HTMLElement;
+      const step1 = modal.querySelector(
+        '[data-step="1"]:not([data-path])',
+      ) as HTMLElement;
+      const step2 = modal.querySelector(
+        '[data-step="2"]:not([data-path])',
+      ) as HTMLElement;
       expect(step1.style.display).toBe('none');
       expect(step2.style.display).toBe('block');
     });
@@ -470,7 +478,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).goToStep(4);
 
-      const timerPath = modal.querySelector('[data-step="4"][data-path="timer"]') as HTMLElement;
+      const timerPath = modal.querySelector(
+        '[data-step="4"][data-path="timer"]',
+      ) as HTMLElement;
       expect(timerPath.style.display).toBe('block');
     });
 
@@ -483,7 +493,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).goToStep(4);
 
-      const judgePath = modal.querySelector('[data-step="4"][data-path="gateJudge"]') as HTMLElement;
+      const judgePath = modal.querySelector(
+        '[data-step="4"][data-path="gateJudge"]',
+      ) as HTMLElement;
       expect(judgePath.style.display).toBe('block');
     });
 
@@ -658,7 +670,9 @@ describe('OnboardingController', () => {
       controller.show();
       (controller as unknown as PrivateAccess).showSummary();
 
-      const badges = summary.querySelectorAll('.onboarding-summary-badge.enabled');
+      const badges = summary.querySelectorAll(
+        '.onboarding-summary-badge.enabled',
+      );
       expect(badges.length).toBeGreaterThan(0);
     });
   });
@@ -675,7 +689,9 @@ describe('OnboardingController', () => {
       await (controller as unknown as PrivateAccess).handleAction('back');
 
       // Should be on step 1 now
-      const step1 = modal.querySelector('[data-step="1"]:not([data-path])') as HTMLElement;
+      const step1 = modal.querySelector(
+        '[data-step="1"]:not([data-path])',
+      ) as HTMLElement;
       expect(step1.style.display).toBe('block');
     });
 
@@ -686,7 +702,9 @@ describe('OnboardingController', () => {
       await (controller as unknown as PrivateAccess).handleAction('skip');
 
       // Should be on step 2
-      const step2 = modal.querySelector('[data-step="2"]:not([data-path])') as HTMLElement;
+      const step2 = modal.querySelector(
+        '[data-step="2"]:not([data-path])',
+      ) as HTMLElement;
       expect(step2.style.display).toBe('block');
       expect(store.forceSave).toHaveBeenCalled();
     });
@@ -731,7 +749,9 @@ describe('OnboardingController', () => {
       // Navigate to step 2
       (controller as unknown as PrivateAccess).currentStep = 2;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(true);
     });
 
@@ -747,7 +767,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 3;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(false);
       expect(showToast).toHaveBeenCalled();
     });
@@ -763,7 +785,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 3;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(true);
     });
 
@@ -773,7 +797,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 4;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(true);
     });
 
@@ -794,7 +820,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 5;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(true);
     });
 
@@ -820,7 +848,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 5;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(false);
       expect(showToast).toHaveBeenCalled();
     });
@@ -847,7 +877,9 @@ describe('OnboardingController', () => {
 
       (controller as unknown as PrivateAccess).currentStep = 5;
 
-      const result = await (controller as unknown as PrivateAccess).validateCurrentStep();
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
       expect(result).toBe(true);
     });
   });
@@ -990,7 +1022,10 @@ describe('OnboardingController', () => {
       (controller as unknown as PrivateAccess).finalize();
 
       expect(store.forceSave).toHaveBeenCalled();
-      expect(mockStorageSetRaw).toHaveBeenCalledWith('skiTimerHasCompletedOnboarding', 'true');
+      expect(mockStorageSetRaw).toHaveBeenCalledWith(
+        'skiTimerHasCompletedOnboarding',
+        'true',
+      );
       expect(mockStorageFlush).toHaveBeenCalled();
       expect(closeModal).toHaveBeenCalled();
       expect(store.setView).toHaveBeenCalledWith('timer');
@@ -1067,7 +1102,10 @@ describe('OnboardingController', () => {
 
     it('should show found state when race exists', async () => {
       const { syncService } = await import('../../src/services');
-      vi.mocked(syncService.checkRaceExists).mockResolvedValueOnce({ exists: true, entryCount: 10 });
+      vi.mocked(syncService.checkRaceExists).mockResolvedValueOnce({
+        exists: true,
+        entryCount: 10,
+      });
 
       const { controller } = createControllerWithModal(container);
       controller.show();
@@ -1112,7 +1150,7 @@ describe('OnboardingController', () => {
 
       // No raceIdInput or statusEl
       await expect(
-        (controller as unknown as PrivateAccess).checkRaceExists()
+        (controller as unknown as PrivateAccess).checkRaceExists(),
       ).resolves.not.toThrow();
     });
   });
@@ -1122,18 +1160,24 @@ describe('OnboardingController', () => {
       const { controller } = createControllerWithModal(container);
       controller.show();
 
-      const result = await (controller as unknown as PrivateAccess).validatePin('1234');
+      const result = await (controller as unknown as PrivateAccess).validatePin(
+        '1234',
+      );
       expect(result).toBe(true);
     });
 
     it('should return true and show warning on network error', async () => {
       const { exchangePinForToken } = await import('../../src/services/sync');
-      vi.mocked(exchangePinForToken).mockRejectedValueOnce(new Error('Network error'));
+      vi.mocked(exchangePinForToken).mockRejectedValueOnce(
+        new Error('Network error'),
+      );
 
       const { controller } = createControllerWithModal(container);
       controller.show();
 
-      const result = await (controller as unknown as PrivateAccess).validatePin('1234');
+      const result = await (controller as unknown as PrivateAccess).validatePin(
+        '1234',
+      );
       expect(result).toBe(true);
       expect(showToast).toHaveBeenCalled();
     });

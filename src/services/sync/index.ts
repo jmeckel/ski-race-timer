@@ -326,7 +326,9 @@ class SyncService {
     try {
       const response = await fetchWithTimeout(
         `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`,
-        { headers: { 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() } },
+        {
+          headers: { 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
+        },
         5000,
       );
 

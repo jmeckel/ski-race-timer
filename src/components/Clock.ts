@@ -17,7 +17,12 @@ const FRAME_SKIP_CRITICAL = 7; // Skip 7 of 8 frames (~7.5fps)
  * Battery-aware: reduces frame rate when battery is low
  */
 /** Callback signature for time tick subscribers */
-export type ClockTickCallback = (hours: string, minutes: string, seconds: string, milliseconds: string) => void;
+export type ClockTickCallback = (
+  hours: string,
+  minutes: string,
+  seconds: string,
+  milliseconds: string,
+) => void;
 
 export class Clock {
   private container: HTMLElement;

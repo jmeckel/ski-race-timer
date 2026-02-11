@@ -72,10 +72,12 @@ vi.mock('../../../src/features/faults/faultOperations', () => ({
   createAndSyncFault: (...args: unknown[]) => mockCreateAndSyncFault(...args),
 }));
 
+import { showToast } from '../../../src/components';
 import {
   initInlineFaultEntry,
   openFaultDeleteConfirmation,
   refreshInlineFaultUI,
+  saveInlineFault,
   selectInlineBib,
   selectInlineGate,
   updateActiveBibsList,
@@ -83,9 +85,7 @@ import {
   updateInlineFaultsList,
   updateInlineGateSelector,
   updateInlineSaveButtonState,
-  saveInlineFault,
 } from '../../../src/features/faults/faultInlineEntry';
-import { showToast } from '../../../src/components';
 
 describe('Fault Inline Entry Module', () => {
   let container: HTMLDivElement;
@@ -137,8 +137,18 @@ describe('Fault Inline Entry Module', () => {
       mockGetState.mockReturnValue({
         ...mockGetState(),
         entries: [
-          { bib: '042', point: 'S', run: 1, timestamp: '2024-01-15T10:00:00.000Z' },
-          { bib: '043', point: 'S', run: 1, timestamp: '2024-01-15T10:01:00.000Z' },
+          {
+            bib: '042',
+            point: 'S',
+            run: 1,
+            timestamp: '2024-01-15T10:00:00.000Z',
+          },
+          {
+            bib: '043',
+            point: 'S',
+            run: 1,
+            timestamp: '2024-01-15T10:01:00.000Z',
+          },
         ],
       });
 

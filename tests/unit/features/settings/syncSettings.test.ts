@@ -26,7 +26,9 @@ vi.mock('../../../../src/services', () => ({
   syncService: {
     initialize: vi.fn(),
     cleanup: vi.fn(),
-    checkRaceExists: vi.fn(() => Promise.resolve({ exists: true, entryCount: 5 })),
+    checkRaceExists: vi.fn(() =>
+      Promise.resolve({ exists: true, entryCount: 5 }),
+    ),
   },
 }));
 

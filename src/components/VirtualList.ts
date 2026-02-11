@@ -1,6 +1,6 @@
 import { t } from '../i18n/translations';
-import { batteryService } from '../services/battery';
 import type { BatteryLevel } from '../services/battery';
+import { batteryService } from '../services/battery';
 import { store } from '../store';
 import type { Entry, FaultEntry, Run } from '../types';
 import {

@@ -68,6 +68,9 @@ vi.mock('../../../src/version', () => ({
   })),
 }));
 
+import { updateDeviceSettingsInputs } from '../../../src/features/settings/deviceSettings';
+import { updateDisplaySettingsInputs } from '../../../src/features/settings/displaySettings';
+import { updateSyncSettingsInputs } from '../../../src/features/settings/syncSettings';
 import {
   applyGlassEffectSettings,
   applySettings,
@@ -75,9 +78,6 @@ import {
   updateSettingsInputs,
   updateTranslations,
 } from '../../../src/features/settingsView';
-import { updateDisplaySettingsInputs } from '../../../src/features/settings/displaySettings';
-import { updateSyncSettingsInputs } from '../../../src/features/settings/syncSettings';
-import { updateDeviceSettingsInputs } from '../../../src/features/settings/deviceSettings';
 
 describe('Settings View Module', () => {
   let container: HTMLDivElement;
@@ -281,9 +281,9 @@ describe('Settings View Module', () => {
 
       applyGlassEffectSettings();
 
-      expect(
-        document.documentElement.classList.contains('outdoor-mode'),
-      ).toBe(true);
+      expect(document.documentElement.classList.contains('outdoor-mode')).toBe(
+        true,
+      );
     });
 
     it('should remove outdoor-mode class when outdoor mode disabled', () => {
@@ -291,9 +291,9 @@ describe('Settings View Module', () => {
 
       applyGlassEffectSettings();
 
-      expect(
-        document.documentElement.classList.contains('outdoor-mode'),
-      ).toBe(false);
+      expect(document.documentElement.classList.contains('outdoor-mode')).toBe(
+        false,
+      );
     });
 
     it('should always add no-motion-effects class (battery saving)', () => {

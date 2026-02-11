@@ -27,7 +27,7 @@
   /* Text */
   --text-primary: #ffffff; /* Pure white for max contrast */
   --text-secondary: #d0d0d0; /* Brighter secondary text for outdoor */
-  --text-tertiary: #909090; /* Brighter tertiary text for outdoor */
+  --text-tertiary: #a0a0a0; /* Brighter tertiary text for outdoor (WCAG AA ~4.6:1) */
 
   /* Status Colors */
   --success: #10b981; /* Matches finish color */
