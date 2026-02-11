@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Onboarding Flow', () => {
   // Multi-step flows need more time in CI
@@ -30,11 +30,15 @@ test.describe('Onboarding Flow', () => {
 
     // Click English
     await page.click('.lang-btn[data-lang="en"]');
-    await expect(page.locator('.lang-btn[data-lang="en"]')).toHaveClass(/selected/);
+    await expect(page.locator('.lang-btn[data-lang="en"]')).toHaveClass(
+      /selected/,
+    );
 
     // Click German
     await page.click('.lang-btn[data-lang="de"]');
-    await expect(page.locator('.lang-btn[data-lang="de"]')).toHaveClass(/selected/);
+    await expect(page.locator('.lang-btn[data-lang="de"]')).toHaveClass(
+      /selected/,
+    );
   });
 
   test('shows role selection on step 2', async ({ page }) => {
@@ -50,10 +54,14 @@ test.describe('Onboarding Flow', () => {
 
     // Check both role options are present
     await expect(page.locator('.role-card[data-role="timer"]')).toBeVisible();
-    await expect(page.locator('.role-card[data-role="gateJudge"]')).toBeVisible();
+    await expect(
+      page.locator('.role-card[data-role="gateJudge"]'),
+    ).toBeVisible();
 
     // Timer should be selected by default
-    await expect(page.locator('.role-card[data-role="timer"]')).toHaveClass(/selected/);
+    await expect(page.locator('.role-card[data-role="timer"]')).toHaveClass(
+      /selected/,
+    );
   });
 
   test('can select Gate Judge role', async ({ page }) => {
@@ -66,8 +74,12 @@ test.describe('Onboarding Flow', () => {
 
     // Click Gate Judge
     await page.click('.role-card[data-role="gateJudge"]');
-    await expect(page.locator('.role-card[data-role="gateJudge"]')).toHaveClass(/selected/);
-    await expect(page.locator('.role-card[data-role="timer"]')).not.toHaveClass(/selected/);
+    await expect(page.locator('.role-card[data-role="gateJudge"]')).toHaveClass(
+      /selected/,
+    );
+    await expect(page.locator('.role-card[data-role="timer"]')).not.toHaveClass(
+      /selected/,
+    );
   });
 
   test('Timer path shows photo capture step', async ({ page }) => {
@@ -121,7 +133,9 @@ test.describe('Onboarding Flow', () => {
     await page.locator('[data-step="3"] [data-action="next"]').click();
 
     // Step 4: Photo capture - click next
-    await page.locator('[data-step="4"][data-path="timer"] [data-action="next"]').click();
+    await page
+      .locator('[data-step="4"][data-path="timer"] [data-action="next"]')
+      .click();
 
     // Step 5: Race setup - skip
     await page.locator('[data-step="5"] [data-action="skip"]').click();
@@ -154,7 +168,9 @@ test.describe('Onboarding Flow', () => {
     // Step 4: Gate assignment - fill and click next
     await page.fill('#onboarding-gate-start', '5');
     await page.fill('#onboarding-gate-end', '12');
-    await page.locator('[data-step="4"][data-path="gateJudge"] [data-action="next"]').click();
+    await page
+      .locator('[data-step="4"][data-path="gateJudge"] [data-action="next"]')
+      .click();
 
     // Step 5: Race setup - skip
     await page.locator('[data-step="5"] [data-action="skip"]').click();

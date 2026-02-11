@@ -2,7 +2,7 @@
  * Test Setup - Mocks for browser APIs and test utilities
  */
 
-import { vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -21,19 +21,19 @@ const localStorageMock = (() => {
     get length() {
       return Object.keys(store).length;
     },
-    key: vi.fn((index) => Object.keys(store)[index] || null)
+    key: vi.fn((index) => Object.keys(store)[index] || null),
   };
 })();
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock navigator.vibrate
 Object.defineProperty(navigator, 'vibrate', {
   value: vi.fn(() => true),
-  writable: true
+  writable: true,
 });
 
 // Mock navigator.geolocation
@@ -47,9 +47,9 @@ const geolocationMock = {
         altitude: null,
         altitudeAccuracy: null,
         heading: null,
-        speed: null
+        speed: null,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }),
   watchPosition: vi.fn((success, error) => {
@@ -57,18 +57,18 @@ const geolocationMock = {
       coords: {
         latitude: 47.0,
         longitude: 11.0,
-        accuracy: 10
+        accuracy: 10,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
     return 1; // Return watch ID
   }),
-  clearWatch: vi.fn()
+  clearWatch: vi.fn(),
 };
 
 Object.defineProperty(navigator, 'geolocation', {
   value: geolocationMock,
-  writable: true
+  writable: true,
 });
 
 // Mock AudioContext
@@ -84,7 +84,7 @@ class AudioContextMock {
       frequency: { value: 440 },
       type: 'sine',
       start: vi.fn(),
-      stop: vi.fn()
+      stop: vi.fn(),
     };
   }
 
@@ -94,8 +94,8 @@ class AudioContextMock {
       gain: {
         value: 1,
         setValueAtTime: vi.fn(),
-        exponentialRampToValueAtTime: vi.fn()
-      }
+        exponentialRampToValueAtTime: vi.fn(),
+      },
     };
   }
 
@@ -133,8 +133,8 @@ globalThis.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
     status: 200,
-    json: () => Promise.resolve({ entries: [], lastUpdated: null })
-  })
+    json: () => Promise.resolve({ entries: [], lastUpdated: null }),
+  }),
 );
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
@@ -176,7 +176,7 @@ export {
   geolocationMock,
   AudioContextMock,
   BroadcastChannelMock,
-  FileReaderMock
+  FileReaderMock,
 };
 
 // Test helper utilities
@@ -188,7 +188,7 @@ export const createMockEntry = (overrides = {}) => ({
   status: 'ok',
   deviceId: 'test-device',
   deviceName: 'Test Device',
-  ...overrides
+  ...overrides,
 });
 
 export const createMockSettings = (overrides = {}) => ({
@@ -197,18 +197,19 @@ export const createMockSettings = (overrides = {}) => ({
   sound: false,
   sync: false,
   gps: false,
-  ...overrides
+  ...overrides,
 });
 
 // Wait for async operations
-export const waitFor = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+export const waitFor = (ms = 0) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 // Simulate user events
 export const simulateClick = (element) => {
   const event = new MouseEvent('click', {
     bubbles: true,
     cancelable: true,
-    view: window
+    view: window,
   });
   element.dispatchEvent(event);
 };
@@ -217,7 +218,7 @@ export const simulateKeydown = (element, key) => {
   const event = new KeyboardEvent('keydown', {
     key,
     bubbles: true,
-    cancelable: true
+    cancelable: true,
   });
   element.dispatchEvent(event);
 };

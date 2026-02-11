@@ -4,17 +4,30 @@
  * Tests for keyboard navigation, ARIA attributes, focus management, and screen reader support
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  setupPageFullMode,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 test.describe('Keyboard Navigation - Timer View', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
-  test('should navigate dial numbers with Tab', async ({ page, browserName }) => {
+  test('should navigate dial numbers with Tab', async ({
+    page,
+    browserName,
+  }) => {
     // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(browserName === 'webkit', 'Safari has different keyboard navigation behavior');
+    test.skip(
+      browserName === 'webkit',
+      'Safari has different keyboard navigation behavior',
+    );
 
     // Focus first number on dial
     await page.locator('.dial-number[data-num="1"]').focus();
@@ -34,7 +47,9 @@ test.describe('Keyboard Navigation - Timer View', () => {
     await page.keyboard.press('Enter');
 
     // Confirmation should appear
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
   });
 
   test('should record timestamp with Space key', async ({ page }) => {
@@ -42,15 +57,23 @@ test.describe('Keyboard Navigation - Timer View', () => {
     await page.keyboard.press('Space');
 
     // Confirmation should appear
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
   });
 
   test('should enter numbers via click', async ({ page, browserName }) => {
     // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-    test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+    test.skip(
+      browserName === 'webkit',
+      'WebKit test driver issue with radial dial in landscape',
+    );
 
     // Wait for dial numbers to be rendered (Safari needs extra time in landscape)
-    await page.waitForSelector('.dial-number[data-num="1"]', { state: 'visible', timeout: 5000 });
+    await page.waitForSelector('.dial-number[data-num="1"]', {
+      state: 'visible',
+      timeout: 5000,
+    });
 
     // Click dial number
     await page.click('.dial-number[data-num="1"]');
@@ -61,10 +84,16 @@ test.describe('Keyboard Navigation - Timer View', () => {
 
   test('should clear bib with clear button', async ({ page, browserName }) => {
     // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-    test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+    test.skip(
+      browserName === 'webkit',
+      'WebKit test driver issue with radial dial in landscape',
+    );
 
     // Wait for dial numbers to be rendered
-    await page.waitForSelector('.dial-number[data-num="5"]', { state: 'visible', timeout: 5000 });
+    await page.waitForSelector('.dial-number[data-num="5"]', {
+      state: 'visible',
+      timeout: 5000,
+    });
 
     // Enter a bib via dial
     await page.click('.dial-number[data-num="5"]');
@@ -129,7 +158,10 @@ test.describe('Keyboard Navigation - Settings View', () => {
 
 test.describe('Keyboard Navigation - Results View', () => {
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -144,7 +176,10 @@ test.describe('Keyboard Navigation - Results View', () => {
 
   test('should navigate results with Tab', async ({ page, browserName }) => {
     // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(browserName === 'webkit', 'Safari has different keyboard navigation behavior');
+    test.skip(
+      browserName === 'webkit',
+      'Safari has different keyboard navigation behavior',
+    );
 
     // Tab through the page until we find a focusable element
     let foundFocusable = false;
@@ -174,7 +209,10 @@ test.describe('Keyboard Navigation - Results View', () => {
 
 test.describe('Modal Accessibility', () => {
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -203,7 +241,9 @@ test.describe('Modal Accessibility', () => {
     await expect(cancelBtn).toBeVisible();
 
     // Modal should have input or select elements
-    const hasInputs = await page.locator('#edit-modal input, #edit-modal select, #edit-modal button').count();
+    const hasInputs = await page
+      .locator('#edit-modal input, #edit-modal select, #edit-modal button')
+      .count();
     expect(hasInputs).toBeGreaterThan(0);
   });
 
@@ -243,7 +283,9 @@ test.describe('ARIA Attributes', () => {
     expect(role).toBe('list');
   });
 
-  test('should have proper ARIA attributes on confirmation overlay', async ({ page }) => {
+  test('should have proper ARIA attributes on confirmation overlay', async ({
+    page,
+  }) => {
     // Trigger confirmation overlay by recording via radial dial
     await page.click('#radial-time-btn');
 
@@ -265,7 +307,9 @@ test.describe('ARIA Attributes', () => {
   test('should have proper button roles', async ({ page }) => {
     // Check radial time button
     const timestampBtn = page.locator('#radial-time-btn');
-    const tagName = await timestampBtn.evaluate(el => el.tagName.toLowerCase());
+    const tagName = await timestampBtn.evaluate((el) =>
+      el.tagName.toLowerCase(),
+    );
 
     // Should be a button element
     expect(tagName).toBe('button');
@@ -275,7 +319,7 @@ test.describe('ARIA Attributes', () => {
     await navigateTo(page, 'settings');
 
     // Enable sync to show input
-    if (!await isToggleOn(page, '#sync-toggle')) {
+    if (!(await isToggleOn(page, '#sync-toggle'))) {
       await clickToggle(page, '#sync-toggle');
     }
 
@@ -302,7 +346,7 @@ test.describe('Focus Visibility', () => {
     await page.locator('#radial-time-btn').focus();
 
     // Should have visible focus indicator
-    const outline = await page.locator('#radial-time-btn').evaluate(el => {
+    const outline = await page.locator('#radial-time-btn').evaluate((el) => {
       const style = getComputedStyle(el);
       return style.outline !== 'none' || style.boxShadow !== 'none';
     });
@@ -317,7 +361,7 @@ test.describe('Focus Visibility', () => {
     await page.locator('#sync-toggle').focus();
 
     // Should have visible focus
-    const hasOutline = await page.locator('#sync-toggle').evaluate(el => {
+    const hasOutline = await page.locator('#sync-toggle').evaluate((el) => {
       const style = getComputedStyle(el);
       return style.outline !== 'none';
     });
@@ -359,9 +403,15 @@ test.describe('Tab Order', () => {
     expect(tabbableElements.length).toBeGreaterThan(5);
   });
 
-  test('should not skip important interactive elements', async ({ page, browserName }) => {
+  test('should not skip important interactive elements', async ({
+    page,
+    browserName,
+  }) => {
     // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(browserName === 'webkit', 'Safari has different keyboard navigation behavior');
+    test.skip(
+      browserName === 'webkit',
+      'Safari has different keyboard navigation behavior',
+    );
 
     // Tab through entire page
     const visited = new Set();
@@ -470,7 +520,9 @@ test.describe('Mobile Accessibility', () => {
     expect(box?.height).toBeGreaterThanOrEqual(minSize);
   });
 
-  test('should have sufficient spacing between touch targets', async ({ page }) => {
+  test('should have sufficient spacing between touch targets', async ({
+    page,
+  }) => {
     // Dial numbers are arranged in a circle, check they don't overlap
     const btn1 = page.locator('.dial-number[data-num="1"]');
     const btn2 = page.locator('.dial-number[data-num="2"]');
@@ -484,7 +536,7 @@ test.describe('Mobile Accessibility', () => {
       const cy1 = box1.y + box1.height / 2;
       const cx2 = box2.x + box2.width / 2;
       const cy2 = box2.y + box2.height / 2;
-      const distance = Math.sqrt(Math.pow(cx2 - cx1, 2) + Math.pow(cy2 - cy1, 2));
+      const distance = Math.sqrt((cx2 - cx1) ** 2 + (cy2 - cy1) ** 2);
 
       // Distance between adjacent numbers should be sufficient for touch
       expect(distance).toBeGreaterThan(20);

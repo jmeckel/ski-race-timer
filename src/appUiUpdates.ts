@@ -118,28 +118,51 @@ export function updateSyncStatusIndicator(): void {
       dot.classList.add('offline');
     }
     // Set aria-label for the dot based on sync status
-    const syncLabel = state.syncStatus === 'connected'
-      ? t('syncOnline', lang)
-      : state.syncStatus === 'error'
-        ? t('syncError', lang)
-        : state.syncStatus === 'offline'
-          ? t('syncOffline', lang)
-          : t('syncing', lang);
+    const syncLabel =
+      state.syncStatus === 'connected'
+        ? t('syncOnline', lang)
+        : state.syncStatus === 'error'
+          ? t('syncError', lang)
+          : state.syncStatus === 'offline'
+            ? t('syncOffline', lang)
+            : t('syncing', lang);
     dot.setAttribute('aria-label', syncLabel);
   }
 
+  // Use short status text to prevent layout shifts from varying text widths
   if (text) {
-    text.textContent = t(state.syncStatus, lang);
+    const shortStatusText: Record<string, string> = {
+      connected: 'Synced',
+      syncing: 'Sync...',
+      error: 'Error',
+      offline: 'Off',
+      disconnected: 'Off',
+      connecting: 'Sync...',
+    };
+    text.textContent = shortStatusText[state.syncStatus] || t(state.syncStatus, lang);
   }
 
-  // Show device count when connected
+  // Update aria-label on container for accessibility in dot-only mode
+  if (indicator) {
+    const syncLabel =
+      state.syncStatus === 'connected'
+        ? `${t('syncOnline', lang)}${state.cloudDeviceCount > 0 ? ` - ${state.cloudDeviceCount} ${t('devices', lang)}` : ''}`
+        : state.syncStatus === 'error'
+          ? t('syncError', lang)
+          : state.syncStatus === 'offline'
+            ? t('syncOffline', lang)
+            : t('syncing', lang);
+    indicator.setAttribute('aria-label', syncLabel);
+  }
+
+  // Show device count when connected - use abbreviated format for consistent width
   if (deviceCountEl) {
     if (state.syncStatus === 'connected' && state.cloudDeviceCount > 0) {
-      deviceCountEl.textContent = `${state.cloudDeviceCount} ${t('devices', lang)}`;
+      deviceCountEl.textContent = `${state.cloudDeviceCount} dev`;
       deviceCountEl.style.display = 'inline';
       deviceCountEl.classList.add('status-active');
     } else if (state.syncStatus === 'error' || state.syncStatus === 'offline') {
-      deviceCountEl.textContent = t('syncOffline', lang);
+      deviceCountEl.textContent = 'Off';
       deviceCountEl.style.display = 'inline';
       deviceCountEl.classList.remove('status-active');
     } else {
@@ -174,29 +197,42 @@ export function updateGpsIndicator(): void {
     }
     // 'inactive' status = no class = red (GPS not working or permission denied)
     const lang = state.currentLang;
-    const ariaKey = state.gpsStatus === 'active' || state.gpsStatus === 'paused'
-      ? 'gpsActive'
-      : state.gpsStatus === 'searching'
-        ? 'gpsSearching'
-        : 'gpsInactive';
+    const ariaKey =
+      state.gpsStatus === 'active' || state.gpsStatus === 'paused'
+        ? 'gpsActive'
+        : state.gpsStatus === 'searching'
+          ? 'gpsSearching'
+          : 'gpsInactive';
     dot.setAttribute('aria-label', t(ariaKey, lang));
   }
 
+  // Use short GPS labels to prevent layout shifts
   if (text) {
-    const lang = state.currentLang;
     if (state.gpsStatus === 'active' || state.gpsStatus === 'paused') {
-      text.textContent = t('gpsActive', lang);
+      text.textContent = 'GPS';
       text.classList.add('status-active');
       text.classList.remove('status-inactive', 'status-searching');
     } else if (state.gpsStatus === 'searching') {
-      text.textContent = t('gpsSearching', lang);
+      text.textContent = 'GPS...';
       text.classList.add('status-searching');
       text.classList.remove('status-active', 'status-inactive');
     } else {
-      text.textContent = t('gpsInactive', lang);
+      text.textContent = 'GPS Off';
       text.classList.add('status-inactive');
       text.classList.remove('status-active', 'status-searching');
     }
+  }
+
+  // Update aria-label for full-text accessibility in dot-only mode
+  if (indicator) {
+    const lang = state.currentLang;
+    const ariaKey =
+      state.gpsStatus === 'active' || state.gpsStatus === 'paused'
+        ? 'gpsActive'
+        : state.gpsStatus === 'searching'
+          ? 'gpsSearching'
+          : 'gpsInactive';
+    indicator.setAttribute('aria-label', t(ariaKey, lang));
   }
 }
 

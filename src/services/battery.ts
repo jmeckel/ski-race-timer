@@ -7,10 +7,11 @@
 import { logger } from '../utils/logger';
 
 // Battery thresholds
-const BATTERY_LOW = 0.2; // 20%
-const BATTERY_CRITICAL = 0.1; // 10%
+const BATTERY_MEDIUM = 0.3; // 30%
+const BATTERY_LOW = 0.15; // 15%
+const BATTERY_CRITICAL = 0.05; // 5%
 
-export type BatteryLevel = 'normal' | 'low' | 'critical';
+export type BatteryLevel = 'normal' | 'medium' | 'low' | 'critical';
 
 export interface BatteryStatus {
   level: number; // 0.0 - 1.0
@@ -91,6 +92,8 @@ class BatteryService {
         batteryLevel = 'critical';
       } else if (level <= BATTERY_LOW) {
         batteryLevel = 'low';
+      } else if (level <= BATTERY_MEDIUM) {
+        batteryLevel = 'medium';
       }
     }
 
@@ -149,7 +152,8 @@ class BatteryService {
   }
 
   /**
-   * Check if battery is low (not charging and below threshold)
+   * Check if battery is low (not charging and below low threshold)
+   * Returns true for 'low' and 'critical' levels (not 'medium')
    */
   isLowBattery(): boolean {
     return (

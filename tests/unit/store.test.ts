@@ -4,7 +4,7 @@
  *        UI state, settings, cloud merge, export/import
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Settings } from '../../src/types';
 
 // Mock localStorage
@@ -25,12 +25,12 @@ const localStorageMock = (() => {
       return Object.keys(store).length;
     },
     key: vi.fn((index: number) => Object.keys(store)[index] || null),
-    _getStore: () => store
+    _getStore: () => store,
   };
 })();
 
 Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 });
 
 // Helper to create a valid entry
@@ -44,7 +44,7 @@ function createValidEntry(overrides: Partial<Entry> = {}): Entry {
     status: 'ok',
     deviceId: 'dev_test',
     deviceName: 'Timer 1',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -84,7 +84,10 @@ describe('Store', () => {
       const state = store.getState();
 
       expect(state.deviceId).toMatch(/^dev_/);
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerDeviceId', expect.any(String));
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'skiTimerDeviceId',
+        expect.any(String),
+      );
     });
 
     it('should load existing device ID from storage', async () => {
@@ -103,13 +106,16 @@ describe('Store', () => {
       expect(state.settings.sound).toBe(false);
       expect(state.settings.sync).toBe(false);
       expect(state.settings.gps).toBe(true);
-      expect(state.settings.simple).toBe(false);  // Normal mode is default
+      expect(state.settings.simple).toBe(false); // Normal mode is default
       expect(state.settings.photoCapture).toBe(false);
     });
 
     it('should load saved settings from storage', async () => {
       const savedSettings: Partial<Settings> = { auto: false, haptic: false };
-      localStorageMock.setItem('skiTimerSettings', JSON.stringify(savedSettings));
+      localStorageMock.setItem(
+        'skiTimerSettings',
+        JSON.stringify(savedSettings),
+      );
       vi.resetModules();
       const { store: newStore } = await import('../../src/store/index');
 
@@ -119,20 +125,24 @@ describe('Store', () => {
     });
 
     it('should load saved entries from storage', async () => {
-      const entries = [createValidEntry({ id: 'dev_test-1704067200000-entry1' })];
+      const entries = [
+        createValidEntry({ id: 'dev_test-1704067200000-entry1' }),
+      ];
       localStorageMock.setItem('skiTimerEntries', JSON.stringify(entries));
       vi.resetModules();
       const { store: newStore } = await import('../../src/store/index');
 
       expect(newStore.getState().entries).toHaveLength(1);
-      expect(newStore.getState().entries[0].id).toBe('dev_test-1704067200000-entry1');
+      expect(newStore.getState().entries[0].id).toBe(
+        'dev_test-1704067200000-entry1',
+      );
     });
 
     it('should filter out invalid entries when loading', async () => {
       const entries = [
         createValidEntry({ id: 'dev_test-1704067200000-valid' }),
         { invalid: true },
-        null
+        null,
       ];
       localStorageMock.setItem('skiTimerEntries', JSON.stringify(entries));
       vi.resetModules();
@@ -267,7 +277,9 @@ describe('Store', () => {
       });
 
       it('should push to undo stack', () => {
-        const entry = createValidEntry({ id: 'dev_test-1704067200000-delete2' });
+        const entry = createValidEntry({
+          id: 'dev_test-1704067200000-delete2',
+        });
         store.addEntry(entry);
         store.deleteEntry('dev_test-1704067200000-delete2');
 
@@ -278,18 +290,29 @@ describe('Store', () => {
 
     describe('deleteMultiple', () => {
       it('should delete multiple entries', () => {
-        const entry1 = createValidEntry({ id: 'dev_test-1704067200000-multi1' });
-        const entry2 = createValidEntry({ id: 'dev_test-1704067200001-multi2' });
-        const entry3 = createValidEntry({ id: 'dev_test-1704067200002-multi3' });
+        const entry1 = createValidEntry({
+          id: 'dev_test-1704067200000-multi1',
+        });
+        const entry2 = createValidEntry({
+          id: 'dev_test-1704067200001-multi2',
+        });
+        const entry3 = createValidEntry({
+          id: 'dev_test-1704067200002-multi3',
+        });
 
         store.addEntry(entry1);
         store.addEntry(entry2);
         store.addEntry(entry3);
 
-        store.deleteMultiple(['dev_test-1704067200000-multi1', 'dev_test-1704067200002-multi3']);
+        store.deleteMultiple([
+          'dev_test-1704067200000-multi1',
+          'dev_test-1704067200002-multi3',
+        ]);
 
         expect(store.getState().entries).toHaveLength(1);
-        expect(store.getState().entries[0].id).toBe('dev_test-1704067200001-multi2');
+        expect(store.getState().entries[0].id).toBe(
+          'dev_test-1704067200001-multi2',
+        );
       });
 
       it('should clear select mode after deletion', () => {
@@ -307,8 +330,12 @@ describe('Store', () => {
 
     describe('clearAll', () => {
       it('should clear all entries', () => {
-        store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-clear1' }));
-        store.addEntry(createValidEntry({ id: 'dev_test-1704067200001-clear2' }));
+        store.addEntry(
+          createValidEntry({ id: 'dev_test-1704067200000-clear1' }),
+        );
+        store.addEntry(
+          createValidEntry({ id: 'dev_test-1704067200001-clear2' }),
+        );
 
         store.clearAll();
 
@@ -325,7 +352,10 @@ describe('Store', () => {
 
     describe('updateEntry', () => {
       it('should update an entry', () => {
-        const entry = createValidEntry({ id: 'dev_test-1704067200000-update', bib: '001' });
+        const entry = createValidEntry({
+          id: 'dev_test-1704067200000-update',
+          bib: '001',
+        });
         store.addEntry(entry);
 
         store.updateEntry('dev_test-1704067200000-update', { bib: '999' });
@@ -334,7 +364,9 @@ describe('Store', () => {
       });
 
       it('should preserve other entry fields', () => {
-        const entry = createValidEntry({ id: 'dev_test-1704067200000-preserve' });
+        const entry = createValidEntry({
+          id: 'dev_test-1704067200000-preserve',
+        });
         store.addEntry(entry);
 
         store.updateEntry('dev_test-1704067200000-preserve', { bib: '999' });
@@ -394,19 +426,27 @@ describe('Store', () => {
     });
 
     it('should undo delete entry', () => {
-      const entry = createValidEntry({ id: 'dev_test-1704067200000-undodelete' });
+      const entry = createValidEntry({
+        id: 'dev_test-1704067200000-undodelete',
+      });
       store.addEntry(entry);
       store.deleteEntry('dev_test-1704067200000-undodelete');
 
       store.undo();
 
       expect(store.getState().entries).toHaveLength(1);
-      expect(store.getState().entries[0].id).toBe('dev_test-1704067200000-undodelete');
+      expect(store.getState().entries[0].id).toBe(
+        'dev_test-1704067200000-undodelete',
+      );
     });
 
     it('should undo clear all', () => {
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-undoclear1' }));
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200001-undoclear2' }));
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200000-undoclear1' }),
+      );
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200001-undoclear2' }),
+      );
       store.clearAll();
 
       store.undo();
@@ -423,12 +463,16 @@ describe('Store', () => {
     });
 
     it('should clear redo stack on new action', () => {
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-clearredo1' }));
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200000-clearredo1' }),
+      );
       store.undo();
 
       expect(store.canRedo()).toBe(true);
 
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200001-clearredo2' }));
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200001-clearredo2' }),
+      );
 
       expect(store.canRedo()).toBe(false);
     });
@@ -462,20 +506,26 @@ describe('Store', () => {
     });
 
     it('should update sync queue item', () => {
-      const entry = createValidEntry({ id: 'dev_test-1704067200000-updatequeue' });
+      const entry = createValidEntry({
+        id: 'dev_test-1704067200000-updatequeue',
+      });
       store.addToSyncQueue(entry);
 
       store.updateSyncQueueItem('dev_test-1704067200000-updatequeue', {
         retryCount: 3,
-        lastAttempt: Date.now()
+        lastAttempt: Date.now(),
       });
 
       expect(store.getState().syncQueue[0].retryCount).toBe(3);
     });
 
     it('should clear sync queue', () => {
-      store.addToSyncQueue(createValidEntry({ id: 'dev_test-1704067200000-clear1' }));
-      store.addToSyncQueue(createValidEntry({ id: 'dev_test-1704067200001-clear2' }));
+      store.addToSyncQueue(
+        createValidEntry({ id: 'dev_test-1704067200000-clear1' }),
+      );
+      store.addToSyncQueue(
+        createValidEntry({ id: 'dev_test-1704067200001-clear2' }),
+      );
 
       store.clearSyncQueue();
 
@@ -539,11 +589,15 @@ describe('Store', () => {
       store.addEntry(entry);
 
       store.toggleEntrySelection('dev_test-1704067200000-toggle');
-      expect(store.getState().selectedEntries.has('dev_test-1704067200000-toggle')).toBe(true);
+      expect(
+        store.getState().selectedEntries.has('dev_test-1704067200000-toggle'),
+      ).toBe(true);
       expect(store.getState().selectMode).toBe(true);
 
       store.toggleEntrySelection('dev_test-1704067200000-toggle');
-      expect(store.getState().selectedEntries.has('dev_test-1704067200000-toggle')).toBe(false);
+      expect(
+        store.getState().selectedEntries.has('dev_test-1704067200000-toggle'),
+      ).toBe(false);
     });
 
     it('should select all entries', () => {
@@ -557,7 +611,9 @@ describe('Store', () => {
     });
 
     it('should clear selection', () => {
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-clearsel' }));
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200000-clearsel' }),
+      );
       store.toggleEntrySelection('dev_test-1704067200000-clearsel');
 
       store.clearSelection();
@@ -624,7 +680,7 @@ describe('Store', () => {
       store.addConnectedDevice({
         id: 'dev_other123',
         name: 'Other Timer',
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
       });
 
       expect(store.getState().connectedDevices.has('dev_other123')).toBe(true);
@@ -634,12 +690,14 @@ describe('Store', () => {
       store.addConnectedDevice({
         id: 'dev_remove123',
         name: 'Remove Timer',
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
       });
 
       store.removeConnectedDevice('dev_remove123');
 
-      expect(store.getState().connectedDevices.has('dev_remove123')).toBe(false);
+      expect(store.getState().connectedDevices.has('dev_remove123')).toBe(
+        false,
+      );
     });
 
     it('should set cloud device count', () => {
@@ -708,13 +766,13 @@ describe('Store', () => {
     it('should merge cloud entries', () => {
       const localEntry = createValidEntry({
         id: 'dev_local-1704067200000-local',
-        deviceId: store.getState().deviceId
+        deviceId: store.getState().deviceId,
       });
       store.addEntry(localEntry);
 
       const cloudEntry = createValidEntry({
         id: 'dev_cloud-1704067200001-cloud',
-        deviceId: 'dev_cloud'
+        deviceId: 'dev_cloud',
       });
 
       const added = store.mergeCloudEntries([cloudEntry]);
@@ -726,7 +784,7 @@ describe('Store', () => {
     it('should skip entries from same device', () => {
       const cloudEntry = createValidEntry({
         id: 'dev_same-1704067200000-same',
-        deviceId: store.getState().deviceId
+        deviceId: store.getState().deviceId,
       });
 
       const added = store.mergeCloudEntries([cloudEntry]);
@@ -737,7 +795,7 @@ describe('Store', () => {
     it('should skip duplicate entries', () => {
       const cloudEntry = createValidEntry({
         id: 'dev_dup-1704067200000-dup',
-        deviceId: 'dev_cloud'
+        deviceId: 'dev_cloud',
       });
 
       store.mergeCloudEntries([cloudEntry]);
@@ -758,21 +816,22 @@ describe('Store', () => {
       const entry1 = createValidEntry({
         id: 'dev_cloud1-1704067200001-late',
         deviceId: 'dev_cloud1',
-        timestamp: '2024-01-01T12:00:01.000Z'
+        timestamp: '2024-01-01T12:00:01.000Z',
       });
 
       const entry2 = createValidEntry({
         id: 'dev_cloud2-1704067200000-early',
         deviceId: 'dev_cloud2',
-        timestamp: '2024-01-01T12:00:00.000Z'
+        timestamp: '2024-01-01T12:00:00.000Z',
       });
 
       store.mergeCloudEntries([entry1]);
       store.mergeCloudEntries([entry2]);
 
       const entries = store.getState().entries;
-      expect(new Date(entries[0].timestamp).getTime())
-        .toBeLessThan(new Date(entries[1].timestamp).getTime());
+      expect(new Date(entries[0].timestamp).getTime()).toBeLessThan(
+        new Date(entries[1].timestamp).getTime(),
+      );
     });
   });
 
@@ -794,7 +853,7 @@ describe('Store', () => {
       const importData = JSON.stringify({
         version: 2,
         entries: [createValidEntry({ id: 'dev_import-1704067200000-import' })],
-        settings: { auto: true }
+        settings: { auto: true },
       });
 
       const result = store.importData(importData);
@@ -804,15 +863,17 @@ describe('Store', () => {
     });
 
     it('should not overwrite existing entries on import', () => {
-      const existingEntry = createValidEntry({ id: 'dev_test-1704067200000-existing' });
+      const existingEntry = createValidEntry({
+        id: 'dev_test-1704067200000-existing',
+      });
       store.addEntry(existingEntry);
 
       const importData = JSON.stringify({
         version: 2,
         entries: [
           createValidEntry({ id: 'dev_test-1704067200000-existing' }),
-          createValidEntry({ id: 'dev_import-1704067200001-new' })
-        ]
+          createValidEntry({ id: 'dev_import-1704067200001-new' }),
+        ],
       });
 
       const result = store.importData(importData);
@@ -837,21 +898,27 @@ describe('Store', () => {
 
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'skiTimerEntries',
-        expect.any(String)
+        expect.any(String),
       );
     });
 
     it('should debounce multiple rapid changes', () => {
       const entriesSetItemCalls = () =>
         localStorageMock.setItem.mock.calls.filter(
-          (call: [string, string]) => call[0] === 'skiTimerEntries'
+          (call: [string, string]) => call[0] === 'skiTimerEntries',
         ).length;
 
       const initialCalls = entriesSetItemCalls();
 
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200000-debounce1' }));
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200001-debounce2' }));
-      store.addEntry(createValidEntry({ id: 'dev_test-1704067200002-debounce3' }));
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200000-debounce1' }),
+      );
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200001-debounce2' }),
+      );
+      store.addEntry(
+        createValidEntry({ id: 'dev_test-1704067200002-debounce3' }),
+      );
 
       vi.advanceTimersByTime(50);
       expect(entriesSetItemCalls()).toBe(initialCalls);
@@ -869,7 +936,7 @@ describe('Store', () => {
       vi.advanceTimersByTime(150);
 
       const setItemKeys = localStorageMock.setItem.mock.calls.map(
-        (call: [string, string]) => call[0]
+        (call: [string, string]) => call[0],
       );
 
       // Should save entries
@@ -891,7 +958,7 @@ describe('Store', () => {
       vi.advanceTimersByTime(150);
 
       const setItemKeys = localStorageMock.setItem.mock.calls.map(
-        (call: [string, string]) => call[0]
+        (call: [string, string]) => call[0],
       );
 
       // Should save settings

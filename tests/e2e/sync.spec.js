@@ -6,8 +6,16 @@
  * Run with: SYNC_TESTS=1 npm run test:e2e -- --grep "Cloud Sync"
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, setupPageWithSync, clickToggle, isToggleOn, navigateTo, enterBib, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  enterBib,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  setupPageWithSync,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 // Skip sync tests unless SYNC_TESTS env var is set
 const skipSyncTests = !process.env.SYNC_TESTS;
@@ -50,7 +58,9 @@ async function dismissRaceChangeModal(page) {
       await page.waitForTimeout(300);
     } else {
       // Fallback to cancel if keep button not visible
-      const cancelBtn = page.locator('#race-change-modal [data-action="cancel"]');
+      const cancelBtn = page.locator(
+        '#race-change-modal [data-action="cancel"]',
+      );
       if (await cancelBtn.isVisible()) {
         await cancelBtn.click();
         await page.waitForTimeout(300);
@@ -76,7 +86,10 @@ async function addTestEntry(page, bib = '001') {
 
 test.describe('Cloud Sync', () => {
   // Skip sync tests unless SYNC_TESTS env var is set (requires backend server)
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server. Set SYNC_TESTS=1 to run.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server. Set SYNC_TESTS=1 to run.',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -135,12 +148,18 @@ test.describe('Cloud Sync', () => {
       await enableSync(page, 'valid-race-123');
 
       // Valid race ID should be accepted
-      await expect(page.locator('#race-id-input')).toHaveValue('valid-race-123');
+      await expect(page.locator('#race-id-input')).toHaveValue(
+        'valid-race-123',
+      );
     });
 
-    test('should allow alphanumeric race IDs with hyphens', async ({ page }) => {
+    test('should allow alphanumeric race IDs with hyphens', async ({
+      page,
+    }) => {
       await enableSync(page, 'RACE-2024-SLALOM');
-      await expect(page.locator('#race-id-input')).toHaveValue('RACE-2024-SLALOM');
+      await expect(page.locator('#race-id-input')).toHaveValue(
+        'RACE-2024-SLALOM',
+      );
     });
   });
 
@@ -248,7 +267,10 @@ test.describe('Cloud Sync', () => {
 });
 
 test.describe('Sync Settings Persistence', () => {
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server.',
+  );
 
   test('should be able to enable sync', async ({ page }) => {
     await setupPage(page);
@@ -283,7 +305,10 @@ test.describe('Sync Settings Persistence', () => {
 });
 
 test.describe('Sync Integration', () => {
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server.',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -321,14 +346,19 @@ test.describe('Sync Integration', () => {
 // ============================================
 
 test.describe('Cloud Sync Improvements', () => {
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server.',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
   test.describe('Device Counter in Status Bar', () => {
-    test('should show device count badge when sync is connected', async ({ page }) => {
+    test('should show device count badge when sync is connected', async ({
+      page,
+    }) => {
       await enableSync(page, 'DEVICE-COUNT-TEST-' + Date.now());
 
       // Wait for sync to attempt connection
@@ -346,7 +376,10 @@ test.describe('Cloud Sync Improvements', () => {
       await expect(deviceCount).toHaveCount(1);
     });
 
-    test('should update device count when multiple devices sync', async ({ page, context }) => {
+    test('should update device count when multiple devices sync', async ({
+      page,
+      context,
+    }) => {
       const raceId = 'MULTI-DEVICE-TEST-' + Date.now();
 
       // Enable sync on first page
@@ -375,7 +408,10 @@ test.describe('Cloud Sync Improvements', () => {
   });
 
   test.describe('Case-insensitive Race ID', () => {
-    test('should sync entries between uppercase and lowercase race IDs', async ({ page, context }) => {
+    test('should sync entries between uppercase and lowercase race IDs', async ({
+      page,
+      context,
+    }) => {
       const baseRaceId = 'CASE-TEST-' + Date.now();
 
       // First device uses uppercase
@@ -419,11 +455,15 @@ test.describe('Cloud Sync Improvements', () => {
       await page2.close();
     });
 
-    test('should preserve race ID input casing for display', async ({ page }) => {
+    test('should preserve race ID input casing for display', async ({
+      page,
+    }) => {
       await enableSync(page, 'MyMixedCaseRace');
 
       // Verify the input shows exactly what was entered
-      await expect(page.locator('#race-id-input')).toHaveValue('MyMixedCaseRace');
+      await expect(page.locator('#race-id-input')).toHaveValue(
+        'MyMixedCaseRace',
+      );
     });
   });
 
@@ -433,7 +473,7 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Enable sync first
       const toggle = page.locator('#sync-toggle');
-      const isOn = await toggle.evaluate(el => el.checked);
+      const isOn = await toggle.evaluate((el) => el.checked);
       if (!isOn) {
         await clickToggle(page, '#sync-toggle');
       }
@@ -448,7 +488,7 @@ test.describe('Cloud Sync Improvements', () => {
 
       // Enable sync
       const toggle = page.locator('#sync-toggle');
-      const isOn = await toggle.evaluate(el => el.checked);
+      const isOn = await toggle.evaluate((el) => el.checked);
       if (!isOn) {
         await clickToggle(page, '#sync-toggle');
       }
@@ -499,7 +539,9 @@ test.describe('Cloud Sync Improvements', () => {
   });
 
   test.describe('Bib Counter Sync', () => {
-    test('should auto-increment bib correctly with local entries', async ({ page }) => {
+    test('should auto-increment bib correctly with local entries', async ({
+      page,
+    }) => {
       await enableSync(page, 'BIB-SYNC-TEST-' + Date.now());
 
       // Record first entry
@@ -511,7 +553,10 @@ test.describe('Cloud Sync Improvements', () => {
       await expect(bibDisplay).toContainText('002');
     });
 
-    test('should sync bib counter across devices when both record entries', async ({ page, context }) => {
+    test('should sync bib counter across devices when both record entries', async ({
+      page,
+      context,
+    }) => {
       const raceId = 'BIB-MULTI-TEST-' + Date.now();
 
       await enableSync(page, raceId);
@@ -552,7 +597,7 @@ test.describe('Cloud Sync Improvements', () => {
       await expect(photoToggle).toHaveCount(1);
 
       // Enable photo capture
-      const isOn = await photoToggle.evaluate(el => el.checked);
+      const isOn = await photoToggle.evaluate((el) => el.checked);
       if (!isOn) {
         await clickToggle(page, '#photo-toggle');
       }
@@ -560,7 +605,9 @@ test.describe('Cloud Sync Improvements', () => {
       await expect(photoToggle).toBeChecked();
     });
 
-    test('should be able to toggle photo capture on and off', async ({ page }) => {
+    test('should be able to toggle photo capture on and off', async ({
+      page,
+    }) => {
       await navigateTo(page, 'settings');
 
       // Get photo toggle
@@ -582,7 +629,7 @@ test.describe('Cloud Sync Improvements', () => {
       await navigateTo(page, 'settings');
 
       const photoToggle = page.locator('#photo-toggle');
-      const isOn = await photoToggle.evaluate(el => el.checked);
+      const isOn = await photoToggle.evaluate((el) => el.checked);
       if (!isOn) {
         await clickToggle(page, '#photo-toggle');
       }
@@ -603,7 +650,10 @@ test.describe('Cloud Sync Improvements', () => {
 // ============================================
 
 test.describe('Verification Steps', () => {
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server.',
+  );
 
   test('Verification: Device counter shows and updates', async ({ page }) => {
     // Open app with sync enabled
@@ -661,7 +711,7 @@ test.describe('Verification Steps', () => {
 
     // Enable sync
     const toggle = page.locator('#sync-toggle');
-    const isOn = await toggle.evaluate(el => el.checked);
+    const isOn = await toggle.evaluate((el) => el.checked);
     if (!isOn) {
       await clickToggle(page, '#sync-toggle');
     }
@@ -685,7 +735,7 @@ test.describe('Verification Steps', () => {
     // Enable auto-increment (should be on by default)
     await navigateTo(page, 'settings');
     const autoToggle = page.locator('#auto-toggle');
-    const isOn = await autoToggle.evaluate(el => el.checked);
+    const isOn = await autoToggle.evaluate((el) => el.checked);
     if (!isOn) {
       await clickToggle(page, '#auto-toggle');
     }
@@ -709,13 +759,18 @@ test.describe('Verification Steps', () => {
 // ============================================
 
 test.describe('Delete Sync', () => {
-  test.skip(({ browserName }) => skipSyncTests, 'Sync tests require backend server.');
+  test.skip(
+    ({ browserName }) => skipSyncTests,
+    'Sync tests require backend server.',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
-  test('should delete entry locally and remove from results', async ({ page }) => {
+  test('should delete entry locally and remove from results', async ({
+    page,
+  }) => {
     // Enable sync
     const uniqueRaceId = 'DELETE-TEST-' + Date.now();
     await enableSync(page, uniqueRaceId);

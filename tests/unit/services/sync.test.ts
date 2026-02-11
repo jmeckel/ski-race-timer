@@ -3,7 +3,7 @@
  * Tests: initialization, BroadcastChannel, polling, cloud sync, queue processing
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '../../../src/types';
 
 // Mock localStorage
@@ -24,19 +24,19 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(() => null)
+  key: vi.fn(() => null),
 };
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock fetch
 const mockFetch = vi.fn();
 Object.defineProperty(globalThis, 'fetch', {
   value: mockFetch,
-  writable: true
+  writable: true,
 });
 
 // Mock BroadcastChannel
@@ -55,7 +55,7 @@ class MockBroadcastChannel {
 Object.defineProperty(globalThis, 'BroadcastChannel', {
   value: MockBroadcastChannel,
   writable: true,
-  configurable: true
+  configurable: true,
 });
 
 // Helper to create a valid entry
@@ -68,7 +68,7 @@ function createValidEntry(overrides: Partial<Entry> = {}): Entry {
     status: 'ok',
     deviceId: 'dev_test',
     deviceName: 'Timer 1',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -121,20 +121,28 @@ describe('Token Management Functions', () => {
   describe('setAuthToken', () => {
     it('should store token in localStorage', () => {
       setAuthToken('test-jwt-token');
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerAuthToken', 'test-jwt-token');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'skiTimerAuthToken',
+        'test-jwt-token',
+      );
     });
 
     it('should overwrite existing token', () => {
       setAuthToken('first-token');
       setAuthToken('second-token');
-      expect(localStorageMock.setItem).toHaveBeenLastCalledWith('skiTimerAuthToken', 'second-token');
+      expect(localStorageMock.setItem).toHaveBeenLastCalledWith(
+        'skiTimerAuthToken',
+        'second-token',
+      );
     });
   });
 
   describe('clearAuthToken', () => {
     it('should remove token from localStorage', () => {
       clearAuthToken();
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('skiTimerAuthToken');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'skiTimerAuthToken',
+      );
     });
   });
 
@@ -146,10 +154,11 @@ describe('Token Management Functions', () => {
     it('should return success with token on valid PIN', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          token: 'jwt-token-12345'
-        })
+        json: () =>
+          Promise.resolve({
+            success: true,
+            token: 'jwt-token-12345',
+          }),
       });
 
       const result = await exchangePinForToken('1234');
@@ -161,33 +170,38 @@ describe('Token Management Functions', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: '1234' })
-        })
+          body: JSON.stringify({ pin: '1234' }),
+        }),
       );
     });
 
     it('should store token in localStorage on success', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          token: 'jwt-token-12345'
-        })
+        json: () =>
+          Promise.resolve({
+            success: true,
+            token: 'jwt-token-12345',
+          }),
       });
 
       await exchangePinForToken('1234');
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerAuthToken', 'jwt-token-12345');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'skiTimerAuthToken',
+        'jwt-token-12345',
+      );
     });
 
     it('should return isNewPin flag for first-time setup', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          token: 'jwt-token-12345',
-          isNewPin: true
-        })
+        json: () =>
+          Promise.resolve({
+            success: true,
+            token: 'jwt-token-12345',
+            isNewPin: true,
+          }),
       });
 
       const result = await exchangePinForToken('1234');
@@ -199,9 +213,10 @@ describe('Token Management Functions', () => {
     it('should return error for invalid PIN', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        json: () => Promise.resolve({
-          error: 'Invalid PIN'
-        })
+        json: () =>
+          Promise.resolve({
+            error: 'Invalid PIN',
+          }),
       });
 
       const result = await exchangePinForToken('0000');
@@ -222,10 +237,11 @@ describe('Token Management Functions', () => {
     it('should handle missing token in response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          success: true
-          // token missing
-        })
+        json: () =>
+          Promise.resolve({
+            success: true,
+            // token missing
+          }),
       });
 
       const result = await exchangePinForToken('1234');
@@ -248,7 +264,7 @@ describe('Sync Service', () => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+      json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
     });
 
     // Reset module for clean state
@@ -311,12 +327,13 @@ describe('Sync Service', () => {
   describe('fetchCloudEntries', () => {
     it('should fetch entries from cloud', async () => {
       const cloudEntries = [
-        createValidEntry({ id: 'dev_cloud-123-abc', deviceId: 'dev_cloud' })
+        createValidEntry({ id: 'dev_cloud-123-abc', deviceId: 'dev_cloud' }),
       ];
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ entries: cloudEntries, lastUpdated: Date.now() })
+        json: () =>
+          Promise.resolve({ entries: cloudEntries, lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -324,7 +341,7 @@ describe('Sync Service', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/sync?raceId=RACE001'),
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -341,7 +358,7 @@ describe('Sync Service', () => {
     it('should handle HTTP error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
       });
 
       syncService.initialize();
@@ -354,7 +371,7 @@ describe('Sync Service', () => {
     it('should handle invalid response format', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON'))
+        json: () => Promise.reject(new Error('Invalid JSON')),
       });
 
       syncService.initialize();
@@ -369,7 +386,7 @@ describe('Sync Service', () => {
     it('should send entry to cloud', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -384,16 +401,18 @@ describe('Sync Service', () => {
         expect.stringContaining('/api/v1/sync?raceId='),
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.any(String)
-        })
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+          }),
+          body: expect.any(String),
+        }),
       );
     });
 
     it('should return false on error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -459,7 +478,7 @@ describe('Sync Service', () => {
     it('should poll for updates at regular intervals', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -483,7 +502,7 @@ describe('Sync Service', () => {
     it('should slow down polling after errors', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -526,7 +545,7 @@ describe('Sync Service', () => {
     it('should broadcast and send entry', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -545,7 +564,7 @@ describe('Sync Service', () => {
     it('should return exists=true for existing race', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ exists: true, entryCount: 5 })
+        json: () => Promise.resolve({ exists: true, entryCount: 5 }),
       });
 
       const result = await syncService.checkRaceExists('EXISTING-RACE');
@@ -554,14 +573,14 @@ describe('Sync Service', () => {
       expect(result.entryCount).toBe(5);
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('checkOnly=true'),
-        expect.anything()
+        expect.anything(),
       );
     });
 
     it('should return exists=false for new race', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ exists: false, entryCount: 0 })
+        json: () => Promise.resolve({ exists: false, entryCount: 0 }),
       });
 
       const result = await syncService.checkRaceExists('NEW-RACE');
@@ -582,7 +601,7 @@ describe('Sync Service', () => {
     it('should return exists=false for HTTP error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
       });
 
       const result = await syncService.checkRaceExists('SERVER-ERROR-RACE');
@@ -604,12 +623,13 @@ describe('Sync Service', () => {
     it('should handle deviceCount in fetch response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          entries: [],
-          lastUpdated: Date.now(),
-          deviceCount: 3,
-          highestBib: 10
-        })
+        json: () =>
+          Promise.resolve({
+            entries: [],
+            lastUpdated: Date.now(),
+            deviceCount: 3,
+            highestBib: 10,
+          }),
       });
 
       syncService.initialize();
@@ -622,7 +642,7 @@ describe('Sync Service', () => {
     it('should handle photoSkipped in POST response', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -630,14 +650,15 @@ describe('Sync Service', () => {
       const entry = createValidEntry();
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          entries: [],
-          lastUpdated: Date.now(),
-          deviceCount: 1,
-          highestBib: 42,
-          photoSkipped: true
-        })
+        json: () =>
+          Promise.resolve({
+            success: true,
+            entries: [],
+            lastUpdated: Date.now(),
+            deviceCount: 1,
+            highestBib: 42,
+            photoSkipped: true,
+          }),
       });
 
       const result = await syncService.sendEntryToCloud(entry);
@@ -650,7 +671,7 @@ describe('Sync Service', () => {
     it('should include deviceId and deviceName in fetch URL', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() })
+        json: () => Promise.resolve({ entries: [], lastUpdated: Date.now() }),
       });
 
       syncService.initialize();
@@ -672,11 +693,12 @@ describe('Sync Service', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          deleted: true,
-          deletedAt: 1705123456789,
-          message: 'Race deleted by administrator'
-        })
+        json: () =>
+          Promise.resolve({
+            deleted: true,
+            deletedAt: 1705123456789,
+            message: 'Race deleted by administrator',
+          }),
       });
 
       syncService.initialize();
@@ -685,7 +707,8 @@ describe('Sync Service', () => {
       // Should have dispatched race-deleted event
       const calls = dispatchEventSpy.mock.calls;
       const raceDeletedEvent = calls.find(
-        call => call[0] instanceof CustomEvent && call[0].type === 'race-deleted'
+        (call) =>
+          call[0] instanceof CustomEvent && call[0].type === 'race-deleted',
       );
 
       expect(raceDeletedEvent).toBeDefined();
@@ -703,11 +726,12 @@ describe('Sync Service', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          deleted: true,
-          deletedAt: Date.now(),
-          message: 'Race deleted'
-        })
+        json: () =>
+          Promise.resolve({
+            deleted: true,
+            deletedAt: Date.now(),
+            message: 'Race deleted',
+          }),
       });
 
       syncService.initialize();
@@ -720,12 +744,13 @@ describe('Sync Service', () => {
     it('should not process entries when race is deleted', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          deleted: true,
-          deletedAt: Date.now(),
-          entries: [createValidEntry()], // Should be ignored
-          lastUpdated: Date.now()
-        })
+        json: () =>
+          Promise.resolve({
+            deleted: true,
+            deletedAt: Date.now(),
+            entries: [createValidEntry()], // Should be ignored
+            lastUpdated: Date.now(),
+          }),
       });
 
       syncService.initialize();
@@ -740,11 +765,12 @@ describe('Sync Service', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          entries: [createValidEntry()],
-          lastUpdated: Date.now(),
-          deviceCount: 1
-        })
+        json: () =>
+          Promise.resolve({
+            entries: [createValidEntry()],
+            lastUpdated: Date.now(),
+            deviceCount: 1,
+          }),
       });
 
       syncService.initialize();
@@ -753,7 +779,8 @@ describe('Sync Service', () => {
       // Should NOT have dispatched race-deleted event
       const calls = dispatchEventSpy.mock.calls;
       const raceDeletedEvent = calls.find(
-        call => call[0] instanceof CustomEvent && call[0].type === 'race-deleted'
+        (call) =>
+          call[0] instanceof CustomEvent && call[0].type === 'race-deleted',
       );
 
       expect(raceDeletedEvent).toBeUndefined();

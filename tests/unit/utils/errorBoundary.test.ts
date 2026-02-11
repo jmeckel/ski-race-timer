@@ -5,7 +5,7 @@
  *        showErrorOverlay, trackError, shouldShowErrorUI, escapeHtml
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the dependencies
 const mockShowToast = vi.fn();
@@ -15,8 +15,8 @@ vi.mock('../../../src/components', () => ({
 
 vi.mock('../../../src/store', () => ({
   store: {
-    getState: () => ({ currentLang: 'en' })
-  }
+    getState: () => ({ currentLang: 'en' }),
+  },
 }));
 
 const mockLogError = vi.fn();
@@ -27,7 +27,7 @@ vi.mock('../../../src/utils/errors', () => ({
 }));
 
 vi.mock('../../../src/i18n/translations', () => ({
-  t: (key: string) => key
+  t: (key: string) => key,
 }));
 
 // Helper type for the module
@@ -59,21 +59,30 @@ describe('Error Boundary Utility', () => {
     it('should set up window error handler', () => {
       const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
       mod.initGlobalErrorHandlers();
-      expect(addEventListenerSpy).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'error',
+        expect.any(Function),
+      );
       addEventListenerSpy.mockRestore();
     });
 
     it('should set up unhandled rejection handler', () => {
       const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
       mod.initGlobalErrorHandlers();
-      expect(addEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'unhandledrejection',
+        expect.any(Function),
+      );
       addEventListenerSpy.mockRestore();
     });
 
     it('should set up critical-error handler', () => {
       const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
       mod.initGlobalErrorHandlers();
-      expect(addEventListenerSpy).toHaveBeenCalledWith('critical-error', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'critical-error',
+        expect.any(Function),
+      );
       addEventListenerSpy.mockRestore();
     });
   });
@@ -83,7 +92,10 @@ describe('Error Boundary Utility', () => {
       const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
       mod.initGlobalErrorHandlers();
       mod.cleanupGlobalErrorHandlers();
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'error',
+        expect.any(Function),
+      );
       removeEventListenerSpy.mockRestore();
     });
 
@@ -91,7 +103,10 @@ describe('Error Boundary Utility', () => {
       const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
       mod.initGlobalErrorHandlers();
       mod.cleanupGlobalErrorHandlers();
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'unhandledrejection',
+        expect.any(Function),
+      );
       removeEventListenerSpy.mockRestore();
     });
 
@@ -99,7 +114,10 @@ describe('Error Boundary Utility', () => {
       const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
       mod.initGlobalErrorHandlers();
       mod.cleanupGlobalErrorHandlers();
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('critical-error', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'critical-error',
+        expect.any(Function),
+      );
       removeEventListenerSpy.mockRestore();
     });
   });
@@ -300,9 +318,11 @@ describe('Error Boundary Utility', () => {
 
     it('should allow showing overlay again after dismiss', () => {
       // First overlay
-      window.dispatchEvent(new CustomEvent('critical-error', {
-        detail: { error: new Error('first') },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('critical-error', {
+          detail: { error: new Error('first') },
+        }),
+      );
       expect(document.getElementById('error-boundary-overlay')).not.toBeNull();
 
       // Dismiss
@@ -310,25 +330,31 @@ describe('Error Boundary Utility', () => {
       expect(document.getElementById('error-boundary-overlay')).toBeNull();
 
       // Second overlay should appear
-      window.dispatchEvent(new CustomEvent('critical-error', {
-        detail: { error: new Error('second') },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('critical-error', {
+          detail: { error: new Error('second') },
+        }),
+      );
       expect(document.getElementById('error-boundary-overlay')).not.toBeNull();
     });
 
     it('should contain dismiss and reload buttons', () => {
-      window.dispatchEvent(new CustomEvent('critical-error', {
-        detail: { error: new Error('test') },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('critical-error', {
+          detail: { error: new Error('test') },
+        }),
+      );
 
       expect(document.getElementById('error-dismiss-btn')).not.toBeNull();
       expect(document.getElementById('error-reload-btn')).not.toBeNull();
     });
 
     it('should escape HTML in error messages to prevent XSS', () => {
-      window.dispatchEvent(new CustomEvent('critical-error', {
-        detail: { error: new Error('<script>alert("xss")</script>') },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('critical-error', {
+          detail: { error: new Error('<script>alert("xss")</script>') },
+        }),
+      );
 
       const overlay = document.getElementById('error-boundary-overlay');
       expect(overlay).not.toBeNull();
@@ -338,9 +364,11 @@ describe('Error Boundary Utility', () => {
 
     it('should truncate long error messages', () => {
       const longMessage = 'A'.repeat(300);
-      window.dispatchEvent(new CustomEvent('critical-error', {
-        detail: { error: new Error(longMessage) },
-      }));
+      window.dispatchEvent(
+        new CustomEvent('critical-error', {
+          detail: { error: new Error(longMessage) },
+        }),
+      );
 
       const overlay = document.getElementById('error-boundary-overlay');
       expect(overlay).not.toBeNull();
@@ -357,13 +385,21 @@ describe('Error Boundary Utility', () => {
   describe('withErrorBoundary', () => {
     it('should return wrapped function', () => {
       const fn = vi.fn().mockResolvedValue('success');
-      const wrapped = mod.withErrorBoundary(fn, 'TestComponent', 'testOperation');
+      const wrapped = mod.withErrorBoundary(
+        fn,
+        'TestComponent',
+        'testOperation',
+      );
       expect(typeof wrapped).toBe('function');
     });
 
     it('should execute wrapped function and return result', async () => {
       const fn = vi.fn().mockResolvedValue('success');
-      const wrapped = mod.withErrorBoundary(fn, 'TestComponent', 'testOperation');
+      const wrapped = mod.withErrorBoundary(
+        fn,
+        'TestComponent',
+        'testOperation',
+      );
       const result = await wrapped();
       expect(result).toBe('success');
       expect(fn).toHaveBeenCalled();
@@ -371,7 +407,11 @@ describe('Error Boundary Utility', () => {
 
     it('should pass arguments to wrapped function', async () => {
       const fn = vi.fn().mockResolvedValue('ok');
-      const wrapped = mod.withErrorBoundary(fn, 'TestComponent', 'testOperation');
+      const wrapped = mod.withErrorBoundary(
+        fn,
+        'TestComponent',
+        'testOperation',
+      );
       await wrapped('arg1', 'arg2');
       expect(fn).toHaveBeenCalledWith('arg1', 'arg2');
     });
@@ -379,7 +419,11 @@ describe('Error Boundary Utility', () => {
     it('should re-throw error after logging', async () => {
       const error = new Error('test error');
       const fn = vi.fn().mockRejectedValue(error);
-      const wrapped = mod.withErrorBoundary(fn, 'TestComponent', 'testOperation');
+      const wrapped = mod.withErrorBoundary(
+        fn,
+        'TestComponent',
+        'testOperation',
+      );
       await expect(wrapped()).rejects.toThrow('test error');
     });
 
@@ -474,7 +518,11 @@ describe('Error Boundary Utility', () => {
 
       // Wait for the promise rejection to be handled
       await vi.waitFor(() => {
-        expect(mockLogError).toHaveBeenCalledWith('AsyncComp', 'asyncOp', error);
+        expect(mockLogError).toHaveBeenCalledWith(
+          'AsyncComp',
+          'asyncOp',
+          error,
+        );
       });
     });
 
@@ -499,18 +547,22 @@ describe('Error Boundary Utility', () => {
     it('should track errors within time window', () => {
       // 2 errors should not trigger overlay
       for (let i = 0; i < 2; i++) {
-        window.dispatchEvent(new ErrorEvent('error', {
-          message: `Error ${i}`,
-          error: new Error(`error ${i}`),
-        }));
+        window.dispatchEvent(
+          new ErrorEvent('error', {
+            message: `Error ${i}`,
+            error: new Error(`error ${i}`),
+          }),
+        );
       }
       expect(document.getElementById('error-boundary-overlay')).toBeNull();
 
       // 3rd error should trigger overlay
-      window.dispatchEvent(new ErrorEvent('error', {
-        message: 'Error 3',
-        error: new Error('error 3'),
-      }));
+      window.dispatchEvent(
+        new ErrorEvent('error', {
+          message: 'Error 3',
+          error: new Error('error 3'),
+        }),
+      );
       expect(document.getElementById('error-boundary-overlay')).not.toBeNull();
     });
   });

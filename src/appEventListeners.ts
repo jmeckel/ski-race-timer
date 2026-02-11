@@ -48,6 +48,7 @@ import type { Entry, FaultEntry, Language, VoiceStatus } from './types';
 import { TOAST_DURATION } from './utils';
 import { ListenerManager } from './utils/listenerManager';
 import { logger } from './utils/logger';
+import { storage } from './services/storage';
 
 // Custom event listener references (stored for cleanup in handleBeforeUnload)
 const customEventListeners = new ListenerManager();
@@ -285,6 +286,13 @@ export function handleStorageWarning(
  * Handle page unload - cleanup to prevent memory leaks
  */
 export function handleBeforeUnload(): void {
+  // Flush pending storage writes before cleanup to prevent data loss
+  try {
+    storage.flush();
+  } catch (e) {
+    logger.warn('Storage flush error on unload:', e);
+  }
+
   // Cleanup timer components (both modes)
   try {
     destroyClock();

@@ -22,18 +22,25 @@ export const IDLE_THRESHOLD = 6; // Number of no-change polls before starting to
 
 // Battery-aware polling configuration
 // More aggressive throttling when battery is low
+export const POLL_INTERVALS_MEDIUM_BATTERY = [20000, 30000, 45000, 60000, 90000]; // Medium battery: slightly slower
+export const IDLE_THRESHOLD_MEDIUM_BATTERY = 4; // Start throttling a bit sooner on medium battery
 export const POLL_INTERVALS_LOW_BATTERY = [30000, 45000, 60000, 90000, 120000]; // Low battery: slower
 export const POLL_INTERVALS_CRITICAL = [30000, 60000]; // Critical: much slower
 export const IDLE_THRESHOLD_LOW_BATTERY = 3; // Start throttling sooner on low battery
 
+// Ultra-low battery polling configuration
+// When battery is below 5%, effectively stop automatic polling (5 min interval)
+export const POLL_INTERVAL_ULTRA_LOW_BATTERY = 300000; // 5 minutes
+
 // Network-aware polling configuration
 // Reduce sync frequency on metered connections (cellular) to save data
-export const POLL_INTERVALS_METERED = [15000, 20000, 30000, 45000, 60000]; // Metered: slower to save data
-export const POLL_INTERVAL_METERED_BASE = 15000; // 15s base when on metered connection
+// Each poll triggers a 2-3s cellular radio wake-up, so 30s base saves significant battery
+export const POLL_INTERVALS_METERED = [30000, 45000, 60000, 90000, 120000]; // Metered: slower to save data
+export const POLL_INTERVAL_METERED_BASE = 30000; // 30s base when on metered connection
 
 // Connection quality-aware polling configuration
 // Slow connections (2g, slow-2g, saveData) use longer intervals
-export const POLL_INTERVAL_SLOW = 15000; // 15s base when on slow connection
+export const POLL_INTERVAL_SLOW = 30000; // 30s base when on slow connection
 // Offline uses long interval just to check if back online
 export const POLL_INTERVAL_OFFLINE = 60000; // 60s when offline
 // Hidden tab uses reduced polling to save battery/data

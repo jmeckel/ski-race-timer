@@ -3,8 +3,11 @@
  * Tests: initialization, swipe gestures, action callbacks, reset
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SwipeActions, enableSwipeActions } from '../../../src/components/SwipeActions';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  enableSwipeActions,
+  SwipeActions,
+} from '../../../src/components/SwipeActions';
 
 describe('SwipeActions Component', () => {
   let element: HTMLElement;
@@ -63,14 +66,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 200, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 200, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move left
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 50, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 50, clientY: 100 } as Touch],
+        }),
+      );
 
       expect(wrapper.style.transform).not.toBe('translateX(0)');
 
@@ -82,14 +89,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 50, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 50, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move right
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 200, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 200, clientY: 100 } as Touch],
+        }),
+      );
 
       expect(wrapper.style.transform).not.toBe('translateX(0)');
 
@@ -101,14 +112,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 50 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 50 } as Touch],
+        }),
+      );
 
       // Move down (vertical)
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 200 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 200 } as Touch],
+        }),
+      );
 
       // End touch
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -126,14 +141,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 200, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 200, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move left past threshold (80px)
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 50, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 50, clientY: 100 } as Touch],
+        }),
+      );
 
       // End touch
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -150,14 +169,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 50, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 50, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move right past threshold
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 200, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 200, clientY: 100 } as Touch],
+        }),
+      );
 
       // End touch
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -174,14 +197,18 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Start touch
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 100 } as Touch],
+        }),
+      );
 
       // Very small swipe (less than 10px to determine direction)
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 95, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 95, clientY: 100 } as Touch],
+        }),
+      );
 
       // End touch
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -200,12 +227,16 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Perform swipe
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 200, clientY: 100 } as Touch]
-      }));
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 50, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 200, clientY: 100 } as Touch],
+        }),
+      );
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 50, clientY: 100 } as Touch],
+        }),
+      );
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
 
       await vi.advanceTimersByTimeAsync(250);
@@ -222,12 +253,16 @@ describe('SwipeActions Component', () => {
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
       // Very small movement - not enough to determine direction
-      wrapper.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
-      }));
-      wrapper.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 98, clientY: 100 } as Touch]
-      }));
+      wrapper.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 100 } as Touch],
+        }),
+      );
+      wrapper.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 98, clientY: 100 } as Touch],
+        }),
+      );
       wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
 
       // Should be at initial position (may be reset via transition)

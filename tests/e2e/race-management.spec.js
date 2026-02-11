@@ -5,8 +5,14 @@
  * NOTE: Some tests require a backend server running for PIN and race list APIs.
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  setupPageFullMode,
+} from './helpers.js';
 
 // Skip tests that require backend API
 const skipBackendTests = !process.env.BACKEND_TESTS;
@@ -56,7 +62,9 @@ test.describe('Race Management - Admin PIN', () => {
     await goToSettings(page);
   }
 
-  test('should open change PIN modal when clicking set PIN button', async ({ page }) => {
+  test('should open change PIN modal when clicking set PIN button', async ({
+    page,
+  }) => {
     await clearPinAndSetup(page);
     await page.click('#change-pin-btn');
 
@@ -74,7 +82,10 @@ test.describe('Race Management - Admin PIN', () => {
 
     // Verify no PIN is set
     const status = await page.locator('#admin-pin-status').textContent();
-    if (status?.toLowerCase().includes('set') || status?.toLowerCase().includes('gesetzt')) {
+    if (
+      status?.toLowerCase().includes('set') ||
+      status?.toLowerCase().includes('gesetzt')
+    ) {
       // Skip if PIN is already set (can't clear it properly)
       test.skip();
       return;
@@ -91,7 +102,9 @@ test.describe('Race Management - Admin PIN', () => {
 
     // Wait and verify PIN was stored
     await page.waitForTimeout(500);
-    const storedPin = await page.evaluate(() => localStorage.getItem('skiTimerAdminPin'));
+    const storedPin = await page.evaluate(() =>
+      localStorage.getItem('skiTimerAdminPin'),
+    );
     expect(storedPin).toBeTruthy();
   });
 
@@ -126,7 +139,9 @@ test.describe('Race Management - Admin PIN', () => {
     await page.waitForTimeout(500);
 
     // Verify auth token exists (PIN was set successfully)
-    const authToken = await page.evaluate(() => localStorage.getItem('skiTimerAuthToken'));
+    const authToken = await page.evaluate(() =>
+      localStorage.getItem('skiTimerAuthToken'),
+    );
     expect(authToken).toBeTruthy();
 
     // Navigate away and back (instead of reload which triggers addInitScript)
@@ -134,7 +149,9 @@ test.describe('Race Management - Admin PIN', () => {
     await navigateTo(page, 'settings');
 
     // Verify auth token persists after navigation
-    const authTokenAfter = await page.evaluate(() => localStorage.getItem('skiTimerAuthToken'));
+    const authTokenAfter = await page.evaluate(() =>
+      localStorage.getItem('skiTimerAuthToken'),
+    );
     expect(authTokenAfter).toBeTruthy();
 
     // Status should still show PIN is set
@@ -147,7 +164,9 @@ test.describe('Race Management - Admin PIN', () => {
 
     // Check if PIN is already set
     const status = await page.locator('#admin-pin-status').textContent();
-    const pinAlreadySet = status?.toLowerCase().includes('set') || status?.toLowerCase().includes('gesetzt');
+    const pinAlreadySet =
+      status?.toLowerCase().includes('set') ||
+      status?.toLowerCase().includes('gesetzt');
 
     if (pinAlreadySet) {
       // Skip when PIN is set - can't test mismatch without knowing current PIN
@@ -164,7 +183,9 @@ test.describe('Race Management - Admin PIN', () => {
 
     // Error should be visible (wait a bit for validation)
     await page.waitForTimeout(300);
-    const mismatchVisible = await page.locator('#pin-mismatch-error').isVisible();
+    const mismatchVisible = await page
+      .locator('#pin-mismatch-error')
+      .isVisible();
     expect(mismatchVisible).toBeTruthy();
   });
 });
@@ -178,7 +199,7 @@ test.describe('Race Management - PIN Verification Modal', () => {
       const hash = (str) => {
         let h = 0;
         for (let i = 0; i < str.length; i++) {
-          h = ((h << 5) - h) + str.charCodeAt(i);
+          h = (h << 5) - h + str.charCodeAt(i);
           h = h & h;
         }
         return h.toString(36);
@@ -190,7 +211,9 @@ test.describe('Race Management - PIN Verification Modal', () => {
     await goToSettings(page);
   });
 
-  test('should show PIN verification modal when clicking manage races', async ({ page }) => {
+  test('should show PIN verification modal when clicking manage races', async ({
+    page,
+  }) => {
     await page.click('#manage-races-btn');
 
     // PIN modal should be visible
@@ -198,7 +221,9 @@ test.describe('Race Management - PIN Verification Modal', () => {
     await expect(pinModal).toHaveClass(/show/);
   });
 
-  test('should have PIN input focused in verification modal', async ({ page }) => {
+  test('should have PIN input focused in verification modal', async ({
+    page,
+  }) => {
     await page.click('#manage-races-btn');
 
     const pinVerifyInput = page.locator('#admin-pin-verify-input');
@@ -287,7 +312,10 @@ test.describe('Race Management - PIN Verification Modal', () => {
 });
 
 test.describe('Race Management - Race List Modal', () => {
-  test.skip(({ browserName }) => skipBackendTests, 'Requires backend server for race list API');
+  test.skip(
+    ({ browserName }) => skipBackendTests,
+    'Requires backend server for race list API',
+  );
 
   test.beforeEach(async ({ page }) => {
     // Set up admin PIN and open race management modal
@@ -296,7 +324,7 @@ test.describe('Race Management - Race List Modal', () => {
       const hash = (str) => {
         let h = 0;
         for (let i = 0; i < str.length; i++) {
-          h = ((h << 5) - h) + str.charCodeAt(i);
+          h = (h << 5) - h + str.charCodeAt(i);
           h = h & h;
         }
         return h.toString(36);
@@ -327,7 +355,9 @@ test.describe('Race Management - Race List Modal', () => {
   });
 
   test('should have close button', async ({ page }) => {
-    const closeBtn = page.locator('#race-management-modal [data-action="cancel"]');
+    const closeBtn = page.locator(
+      '#race-management-modal [data-action="cancel"]',
+    );
     await expect(closeBtn).toBeVisible();
 
     await closeBtn.click();
@@ -373,7 +403,9 @@ test.describe('Race Management - Delete Confirmation Modal', () => {
   });
 
   test('should have cancel and delete buttons', async ({ page }) => {
-    const cancelBtn = page.locator('#delete-race-confirm-modal [data-action="cancel"]');
+    const cancelBtn = page.locator(
+      '#delete-race-confirm-modal [data-action="cancel"]',
+    );
     const deleteBtn = page.locator('#confirm-delete-race-btn');
 
     await expect(cancelBtn).toBeAttached();
@@ -388,7 +420,9 @@ test.describe('Race Management - Translations', () => {
     await navigateTo(page, 'settings');
   });
 
-  test('should display English labels when language is EN', async ({ page }) => {
+  test('should display English labels when language is EN', async ({
+    page,
+  }) => {
     // Set language to English
     const langToggle = page.locator('#lang-toggle');
     const enOption = langToggle.locator('[data-lang="en"]');
@@ -442,7 +476,9 @@ test.describe('Race Management - Accessibility', () => {
     await expect(page.locator('#change-pin-modal')).toHaveClass(/show/);
   });
 
-  test('manage races button should be keyboard accessible', async ({ page }) => {
+  test('manage races button should be keyboard accessible', async ({
+    page,
+  }) => {
     const manageBtn = page.locator('#manage-races-btn');
 
     // Should be focusable

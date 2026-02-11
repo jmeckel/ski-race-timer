@@ -30,8 +30,8 @@ export function createRipple(
     event instanceof TouchEvent &&
     event.touches.length > 0
   ) {
-    x = event.touches[0].clientX - rect.left;
-    y = event.touches[0].clientY - rect.top;
+    x = event.touches[0]!.clientX - rect.left;
+    y = event.touches[0]!.clientY - rect.top;
   } else if (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent) {
     x = event.clientX - rect.left;
     y = event.clientY - rect.top;

@@ -3,13 +3,13 @@
  * Tests: openModal, closeModal, closeAllModalsAnimated, isAnyModalOpen, getOpenModal
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  openModal,
-  closeModal,
   closeAllModalsAnimated,
+  closeModal,
+  getOpenModal,
   isAnyModalOpen,
-  getOpenModal
+  openModal,
 } from '../../../src/features/modals';
 
 describe('Modal Feature Module', () => {
@@ -83,18 +83,28 @@ describe('Modal Feature Module', () => {
       const last = modal1.querySelector('#last-btn');
 
       (last as HTMLElement).focus();
-      last?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+      last?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }),
+      );
       expect(document.activeElement).toBe(first);
 
       (first as HTMLElement).focus();
-      first?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+      first?.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          shiftKey: true,
+          bubbles: true,
+        }),
+      );
       expect(document.activeElement).toBe(last);
     });
 
     it('should close modal on Escape', () => {
       openModal(modal1);
       vi.runAllTimers();
-      modal1.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      modal1.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
       expect(modal1.classList.contains('closing')).toBe(true);
     });
   });

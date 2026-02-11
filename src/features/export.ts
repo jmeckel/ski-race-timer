@@ -398,7 +398,7 @@ export function exportFaultSummaryWhatsApp(): void {
   );
 
   const formatBibFaults = (key: string, racerFaults: FaultEntry[]): string => {
-    const [bib] = key.split('-');
+    const [bib] = key.split('-') as [string];
     const paddedBib = bib.padStart(3, '0');
     const gateList = racerFaults
       .sort((a, b) => a.gateNumber - b.gateNumber)
@@ -427,7 +427,7 @@ export function exportFaultSummaryWhatsApp(): void {
     run1Bibs
       .sort(
         (a, b) =>
-          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+          parseInt(a[0].split('-')[0]!, 10) - parseInt(b[0].split('-')[0]!, 10),
       )
       .forEach(([key, racerFaults]) => {
         lines.push(formatBibFaults(key, racerFaults));
@@ -446,7 +446,7 @@ export function exportFaultSummaryWhatsApp(): void {
     run2Bibs
       .sort(
         (a, b) =>
-          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+          parseInt(a[0].split('-')[0]!, 10) - parseInt(b[0].split('-')[0]!, 10),
       )
       .forEach(([key, racerFaults]) => {
         lines.push(formatBibFaults(key, racerFaults));
@@ -536,10 +536,10 @@ export function exportChiefSummary(): void {
     runBibs
       .sort(
         (a, b) =>
-          parseInt(a[0].split('-')[0], 10) - parseInt(b[0].split('-')[0], 10),
+          parseInt(a[0].split('-')[0]!, 10) - parseInt(b[0].split('-')[0]!, 10),
       )
       .forEach(([key, racerFaults]) => {
-        const [bib] = key.split('-');
+        const [bib] = key.split('-') as [string];
         const paddedBib = bib.padStart(5);
         const faultStr = racerFaults
           .sort((a, b) => a.gateNumber - b.gateNumber)

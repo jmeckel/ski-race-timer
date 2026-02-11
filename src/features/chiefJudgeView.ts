@@ -429,13 +429,13 @@ export function updateFaultSummaryPanel(): void {
   const sortedEntries = Array.from(faultsByBib.entries()).sort((a, b) => {
     const [keyA] = a;
     const [keyB] = b;
-    const bibA = parseInt(keyA.split('-')[0], 10) || 0;
-    const bibB = parseInt(keyB.split('-')[0], 10) || 0;
+    const bibA = parseInt(keyA.split('-')[0]!, 10) || 0;
+    const bibB = parseInt(keyB.split('-')[0]!, 10) || 0;
     return bibA - bibB;
   });
 
   for (const [key, racerFaults] of sortedEntries) {
-    const [bib, runStr] = key.split('-');
+    const [bib, runStr] = key.split('-') as [string, string];
     const run = parseInt(runStr, 10) as Run;
 
     const isFinalized = store.isRacerFinalized(bib, run);

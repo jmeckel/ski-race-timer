@@ -4,7 +4,7 @@
  * Tests for validation functions from the API (api/sync.js)
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ============================================
 // Function Implementations (matching api/sync.js)
@@ -26,7 +26,8 @@ function isValidEntry(entry) {
   if (entry.bib && entry.bib.length > 10) return false;
   if (!['S', 'F'].includes(entry.point)) return false;
   if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
-  if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status)) return false;
+  if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status))
+    return false;
   return true;
 }
 
@@ -50,7 +51,7 @@ function safeJsonParse(str, defaultValue) {
 // Entry duplicate check (from index.html)
 function checkDuplicate(entries, bib, point) {
   if (!bib) return false;
-  return entries.some(e => e.bib === bib && e.point === point);
+  return entries.some((e) => e.bib === bib && e.point === point);
 }
 
 // ============================================
@@ -135,7 +136,7 @@ describe('isValidEntry', () => {
     bib: '001',
     point: 'S',
     timestamp: '2024-01-01T12:00:00.000Z',
-    status: 'ok'
+    status: 'ok',
   };
 
   describe('valid entries', () => {
@@ -156,13 +157,13 @@ describe('isValidEntry', () => {
     });
 
     it('should accept all valid timing points', () => {
-      ['S', 'F'].forEach(point => {
+      ['S', 'F'].forEach((point) => {
         expect(isValidEntry({ ...validEntry, point })).toBe(true);
       });
     });
 
     it('should accept all valid status values', () => {
-      ['ok', 'dns', 'dnf', 'dsq'].forEach(status => {
+      ['ok', 'dns', 'dnf', 'dsq'].forEach((status) => {
         expect(isValidEntry({ ...validEntry, status })).toBe(true);
       });
     });
@@ -261,7 +262,9 @@ describe('sanitizeString', () => {
   });
 
   it('should remove HTML tags', () => {
-    expect(sanitizeString('<script>alert(1)</script>', 100)).toBe('scriptalert(1)/script');
+    expect(sanitizeString('<script>alert(1)</script>', 100)).toBe(
+      'scriptalert(1)/script',
+    );
   });
 
   it('should preserve other special characters', () => {
@@ -283,7 +286,9 @@ describe('safeJsonParse', () => {
   });
 
   it('should return default for invalid JSON', () => {
-    expect(safeJsonParse('invalid', { default: true })).toEqual({ default: true });
+    expect(safeJsonParse('invalid', { default: true })).toEqual({
+      default: true,
+    });
   });
 
   it('should return default for null', () => {
@@ -314,7 +319,7 @@ describe('checkDuplicate', () => {
     { bib: '001', point: 'S' },
     { bib: '001', point: 'F' },
     { bib: '002', point: 'S' },
-    { bib: null, point: 'S' }
+    { bib: null, point: 'S' },
   ];
 
   it('should return true for existing bib+point combination', () => {
@@ -353,7 +358,7 @@ describe('Integration: Validation Chain', () => {
       bib: '042',
       point: 'S',
       timestamp: new Date().toISOString(),
-      status: 'ok'
+      status: 'ok',
     };
     const deviceName = 'Timer <1>';
 

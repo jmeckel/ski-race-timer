@@ -2,12 +2,17 @@
  * RadialDial Component
  * iPod-style rotating dial for bib number input
  * Supports both tap-to-enter and spin-to-increment interactions
+ *
+ * Delegates interaction handling to RadialDialInteraction and
+ * animation management to RadialDialAnimation.
  */
 
 import { t } from '../i18n/translations';
 import { feedbackDialDetent, feedbackDialTap } from '../services';
 import { store } from '../store';
 import { logger } from '../utils/logger';
+import { RadialDialAnimation } from './RadialDialAnimation';
+import { RadialDialInteraction } from './RadialDialInteraction';
 
 export interface RadialDialOptions {
   onChange?: (value: string) => void;
@@ -22,27 +27,19 @@ export class RadialDial {
   private dialRing: HTMLElement | null = null;
   private options: Required<RadialDialOptions>;
 
-  // State
-  private rotation = 0;
-  private velocity = 0;
-  private isDragging = false;
-  private lastAngle = 0;
-  private lastDragTime = 0;
-  private accumulatedRotation = 0;
-  private spinAnimationId: number | null = null;
-  private snapBackAnimationId: number | null = null;
-  private snapBackTimeoutId: number | null = null;
+  // Sub-modules
+  private interaction: RadialDialInteraction | null = null;
+  private animation: RadialDialAnimation;
+
+  // Layout state
   private resizeObserver: ResizeObserver | null = null;
   private lastContainerWidth = 0;
-  private visualTimeoutIds: Set<number> = new Set(); // Track short visual effect timeouts
-  private dragStartPos: { x: number; y: number } | null = null;
-  private hasDraggedSignificantly = false;
-  private lastTouchTime = 0; // To prevent synthetic mouse events after touch
   private numberKeydownListeners: Map<HTMLElement, (e: Event) => void> =
     new Map(); // Track for cleanup
   private cachedNumberSpans: HTMLElement[] = []; // Cached for hot-path animation
   private cachedNumberElements: Map<string, HTMLElement> = new Map(); // digit -> element map
   private isDestroyed = false;
+  private visibilityHandler: (() => void) | null = null;
 
   // Bib value
   private bibValue = '';
@@ -55,6 +52,22 @@ export class RadialDial {
       friction: options.friction ?? 0.97,
       sensitivity: options.sensitivity ?? 24,
     };
+
+    // Initialize animation module
+    this.animation = new RadialDialAnimation(
+      {
+        onRotationUpdate: (rotation: number) =>
+          this.updateDialRotation(rotation),
+        onDigitChange: (direction: number) => this.adjustBib(direction),
+        onAnimationComplete: () =>
+          this.dialNumbers?.classList.remove('momentum'),
+      },
+      {
+        momentum: this.options.momentum,
+        friction: this.options.friction,
+        sensitivity: this.options.sensitivity,
+      },
+    );
 
     this.init();
   }
@@ -143,30 +156,56 @@ export class RadialDial {
       this.options.onChange(this.bibValue);
       feedbackDialTap();
 
-      el.classList.add('pressed');
-      const timeoutId = window.setTimeout(() => {
-        el.classList.remove('pressed');
-        this.visualTimeoutIds.delete(timeoutId);
-      }, 150);
-      this.visualTimeoutIds.add(timeoutId);
+      this.animation.flashPressed(el);
     }
   }
 
   private bindEvents(): void {
-    // Bind drag events to the container itself (not gesture area)
-    // This ensures we catch drags even when touching the numbers
-    this.container.addEventListener('mousedown', this.handleDragStart);
-    window.addEventListener('mousemove', this.handleDragMove);
-    window.addEventListener('mouseup', this.handleDragEnd);
+    // Initialize interaction module with callbacks
+    this.interaction = new RadialDialInteraction(this.container, {
+      onDragStart: () => {
+        // Notify animation module to cancel pending animations and reset state
+        this.animation.onDragStart();
 
-    // Touch events
-    this.container.addEventListener('touchstart', this.handleDragStart, {
-      passive: false,
+        // Reset momentum class and re-add for new interaction
+        this.dialNumbers?.classList.remove('momentum');
+        this.dialNumbers?.classList.add('momentum');
+      },
+      onNumberTap: (num: number) => {
+        // Find the element to flash
+        const numberEl = this.dialNumbers?.querySelector(
+          `[data-num="${num}"]`,
+        ) as HTMLElement | null;
+        if (numberEl) {
+          this.handleNumberTap(num, numberEl);
+        }
+      },
+      onDragMove: (deltaAngle: number, deltaTime: number) => {
+        this.animation.onDragMove(deltaAngle, deltaTime);
+      },
+      onDragEndWithMomentum: () => {
+        this.animation.startMomentumSpin();
+      },
+      onDragEndAsTap: () => {
+        this.dialNumbers?.classList.remove('momentum');
+      },
+      onDragEndCommon: () => {
+        this.dialNumbers?.classList.remove('momentum');
+        this.animation.onDragEndNoMomentum();
+      },
+      getRotation: () => this.animation.getRotation(),
+      getVelocity: () => this.animation.getVelocity(),
     });
-    window.addEventListener('touchmove', this.handleDragMove, {
-      passive: false,
-    });
-    window.addEventListener('touchend', this.handleDragEnd);
+
+    this.interaction.bindEvents();
+
+    // Pause animations when page is hidden to save battery
+    this.visibilityHandler = () => {
+      if (document.hidden) {
+        this.animation.pauseAnimations();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
 
     // Re-layout when container size actually changes (fires after layout)
     this.lastContainerWidth = this.container.offsetWidth;
@@ -182,253 +221,6 @@ export class RadialDial {
     this.resizeObserver.observe(this.container);
   }
 
-  private handleDragStart = (e: MouseEvent | TouchEvent): void => {
-    const isTouch = 'touches' in e;
-
-    // Ignore synthetic mouse events after touch
-    if (!isTouch && Date.now() - this.lastTouchTime < 500) {
-      return;
-    }
-
-    if (isTouch) {
-      this.lastTouchTime = Date.now();
-    }
-
-    const rect = this.container.getBoundingClientRect();
-    const clientX = isTouch ? e.touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = isTouch ? e.touches[0].clientY : (e as MouseEvent).clientY;
-
-    // Check if in ring area (not center)
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dist = Math.sqrt((clientX - centerX) ** 2 + (clientY - centerY) ** 2);
-
-    // Don't start drag if in center area (allow buttons to work)
-    // dial-center is 52% of container, so radius is 26%
-    if (dist < rect.width * 0.27) return;
-    // Don't start drag if outside the dial
-    if (dist > rect.width * 0.5) return;
-
-    // Cancel any pending snap-back timeout
-    if (this.snapBackTimeoutId) {
-      clearTimeout(this.snapBackTimeoutId);
-      this.snapBackTimeoutId = null;
-    }
-
-    // Cancel any running snap-back animation
-    if (this.snapBackAnimationId) {
-      cancelAnimationFrame(this.snapBackAnimationId);
-      this.snapBackAnimationId = null;
-    }
-
-    // Track start position to detect taps vs drags
-    this.dragStartPos = { x: clientX, y: clientY };
-    this.hasDraggedSignificantly = false;
-    this.isDragging = true;
-    this.velocity = 0;
-
-    if (this.spinAnimationId) {
-      cancelAnimationFrame(this.spinAnimationId);
-      this.spinAnimationId = null;
-    }
-
-
-    this.lastAngle = this.getAngle(clientX, clientY, rect);
-    this.lastDragTime = Date.now();
-    this.accumulatedRotation = 0;
-
-    // Reset momentum class and re-add for new interaction
-    this.dialNumbers?.classList.remove('momentum');
-    this.dialNumbers?.classList.add('momentum');
-  };
-
-  private handleDragMove = (e: MouseEvent | TouchEvent): void => {
-    if (!this.isDragging) return;
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    // Check if we've moved enough to consider this a drag (not a tap)
-    if (this.dragStartPos && !this.hasDraggedSignificantly) {
-      const moveDistance = Math.sqrt(
-        (clientX - this.dragStartPos.x) ** 2 +
-          (clientY - this.dragStartPos.y) ** 2,
-      );
-      if (moveDistance > 10) {
-        this.hasDraggedSignificantly = true;
-      } else {
-        return; // Not enough movement yet, might be a tap
-      }
-    }
-
-    e.preventDefault();
-
-    const rect = this.container.getBoundingClientRect();
-    const currentAngle = this.getAngle(clientX, clientY, rect);
-    let deltaAngle = currentAngle - this.lastAngle;
-
-    // Handle wrap-around
-    if (deltaAngle > 180) deltaAngle -= 360;
-    if (deltaAngle < -180) deltaAngle += 360;
-
-    const now = Date.now();
-    const deltaTime = Math.max(now - this.lastDragTime, 1);
-
-    // Update velocity
-    this.velocity = (deltaAngle / deltaTime) * 16 * this.options.momentum;
-
-    // Update rotation
-    this.rotation += deltaAngle;
-    this.accumulatedRotation += deltaAngle;
-    this.updateDialRotation();
-
-    // Check for digit change
-    if (Math.abs(this.accumulatedRotation) >= this.options.sensitivity) {
-      const direction = this.accumulatedRotation > 0 ? 1 : -1;
-      this.adjustBib(direction);
-      this.accumulatedRotation =
-        this.accumulatedRotation % this.options.sensitivity;
-    }
-
-    this.lastAngle = currentAngle;
-    this.lastDragTime = now;
-  };
-
-  private handleDragEnd = (): void => {
-    if (!this.isDragging) return;
-    this.isDragging = false;
-
-    // If we didn't drag significantly, treat as a tap
-    if (!this.hasDraggedSignificantly && this.dragStartPos) {
-      // Calculate which number was tapped based on angle
-      const rect = this.container.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      // Get angle of tap relative to center (in degrees, 0 = right, 90 = down)
-      let tapAngle =
-        Math.atan2(
-          this.dragStartPos.y - centerY,
-          this.dragStartPos.x - centerX,
-        ) *
-        (180 / Math.PI);
-
-      // Adjust for current rotation of the dial
-      tapAngle -= this.rotation;
-
-      // Normalize to 0-360
-      tapAngle = ((tapAngle % 360) + 360) % 360;
-
-      // Numbers are positioned at angles: 1=(-54°), 2=(-18°), 3=(18°), etc.
-      // Starting from angle -90 (top), each number is 36° apart
-      // Number positions: 1@-54°, 2@-18°, 3@18°, 4@54°, 5@90°, 6@126°, 7@162°, 8@198°, 9@234°, 0@270°
-      // Convert to 0-360: 1@306°, 2@342°, 3@18°, 4@54°, 5@90°, 6@126°, 7@162°, 8@198°, 9@234°, 0@270°
-
-      // Find closest number based on angle
-      const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
-      let closestNum = 0;
-      let closestDiff = 360;
-
-      numbers.forEach((num, i) => {
-        // Each number is at angle (i * 36 - 90) degrees from top
-        const numAngle = (i * 36 - 90 + 360) % 360;
-        let diff = Math.abs(tapAngle - numAngle);
-        if (diff > 180) diff = 360 - diff;
-
-        if (diff < closestDiff && diff < 20) {
-          // 20° tolerance (half of 36° spacing)
-          closestDiff = diff;
-          closestNum = num;
-        }
-      });
-
-      if (closestDiff < 20) {
-        // Find the element to flash
-        const numberEl = this.dialNumbers?.querySelector(
-          `[data-num="${closestNum}"]`,
-        ) as HTMLElement | null;
-        if (numberEl) {
-          this.handleNumberTap(closestNum, numberEl);
-        }
-      }
-
-      this.dragStartPos = null;
-      this.dialNumbers?.classList.remove('momentum');
-      return;
-    }
-
-    this.dragStartPos = null;
-
-    // Continue with momentum
-    if (Math.abs(this.velocity) > 0.5) {
-
-      this.spinWithMomentum();
-    } else {
-      this.dialNumbers?.classList.remove('momentum');
-      this.scheduleSnapBack();
-    }
-  };
-
-  private spinWithMomentum = (): void => {
-    if (Math.abs(this.velocity) < 0.2) {
-  
-      this.velocity = 0;
-      this.dialNumbers?.classList.remove('momentum');
-      this.scheduleSnapBack();
-      return;
-    }
-
-    // Apply rotation
-    this.rotation += this.velocity;
-    this.accumulatedRotation += this.velocity;
-    this.updateDialRotation();
-
-    // Check for digit change
-    if (Math.abs(this.accumulatedRotation) >= this.options.sensitivity) {
-      const direction = this.accumulatedRotation > 0 ? 1 : -1;
-      this.adjustBib(direction);
-      this.accumulatedRotation =
-        this.accumulatedRotation % this.options.sensitivity;
-    }
-
-    // Apply friction
-    this.velocity *= this.options.friction;
-
-    this.spinAnimationId = requestAnimationFrame(this.spinWithMomentum);
-  };
-
-  private scheduleSnapBack(): void {
-    // Clear any existing snap-back timeout
-    if (this.snapBackTimeoutId) {
-      clearTimeout(this.snapBackTimeoutId);
-    }
-
-    // Schedule snap-back after a short delay
-    this.snapBackTimeoutId = window.setTimeout(() => {
-      this.snapBack();
-    }, 800); // 800ms delay before snapping back
-  }
-
-  private snapBack = (): void => {
-    // Animate rotation back to 0
-    const snapSpeed = 0.15; // How fast to snap back (0-1)
-
-    if (Math.abs(this.rotation) < 1) {
-      this.rotation = 0;
-      this.updateDialRotation();
-      // Clean up state when snap-back completes
-      this.snapBackAnimationId = null;
-  
-      this.dialNumbers?.classList.remove('momentum');
-      return;
-    }
-
-    this.rotation *= 1 - snapSpeed;
-    this.updateDialRotation();
-
-    this.snapBackAnimationId = requestAnimationFrame(this.snapBack);
-  };
-
   private adjustBib(direction: number): void {
     let num = parseInt(this.bibValue || '0', 10);
     num += direction;
@@ -442,27 +234,16 @@ export class RadialDial {
     const lastDigit = String(num % 10);
     const digitEl = this.cachedNumberElements.get(lastDigit);
     if (digitEl) {
-      digitEl.classList.add('flash');
-      const timeoutId = window.setTimeout(() => {
-        digitEl.classList.remove('flash');
-        this.visualTimeoutIds.delete(timeoutId);
-      }, 150);
-      this.visualTimeoutIds.add(timeoutId);
+      this.animation.flashDigit(digitEl);
     }
   }
 
-  private getAngle(x: number, y: number, rect: DOMRect): number {
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    return Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
-  }
-
-  private updateDialRotation(): void {
+  private updateDialRotation(rotation: number): void {
     if (!this.dialNumbers) return;
-    this.dialNumbers.style.transform = `rotate(${this.rotation}deg)`;
+    this.dialNumbers.style.transform = `rotate(${rotation}deg)`;
 
     // Counter-rotate text to stay upright (uses cached elements for O(1) access)
-    const counterRotation = `rotate(${-this.rotation}deg)`;
+    const counterRotation = `rotate(${-rotation}deg)`;
     for (const span of this.cachedNumberSpans) {
       span.style.transform = counterRotation;
     }
@@ -482,67 +263,35 @@ export class RadialDial {
   }
 
   flash(): void {
-    this.dialRing?.classList.add('flash');
-
-    // Flash numbers in sequence
-    this.dialNumbers?.querySelectorAll('.dial-number').forEach((n, i) => {
-      const outerTimeoutId = window.setTimeout(() => {
-        this.visualTimeoutIds.delete(outerTimeoutId);
-        n.classList.add('flash');
-        const innerTimeoutId = window.setTimeout(() => {
-          n.classList.remove('flash');
-          this.visualTimeoutIds.delete(innerTimeoutId);
-        }, 200);
-        this.visualTimeoutIds.add(innerTimeoutId);
-      }, i * 40);
-      this.visualTimeoutIds.add(outerTimeoutId);
-    });
-
-    const ringTimeoutId = window.setTimeout(() => {
-      this.dialRing?.classList.remove('flash');
-      this.visualTimeoutIds.delete(ringTimeoutId);
-    }, 1200);
-    this.visualTimeoutIds.add(ringTimeoutId);
+    this.animation.flash(this.dialRing, this.dialNumbers);
   }
 
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
 
-    if (this.spinAnimationId) {
-      cancelAnimationFrame(this.spinAnimationId);
+    // Destroy sub-modules
+    this.animation.destroy();
+    if (this.interaction) {
+      this.interaction.destroy();
+      this.interaction = null;
     }
-    if (this.snapBackAnimationId) {
-      cancelAnimationFrame(this.snapBackAnimationId);
-    }
-    if (this.snapBackTimeoutId) {
-      clearTimeout(this.snapBackTimeoutId);
-    }
+
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
 
-    // Clear all visual effect timeouts
-    for (const timeoutId of this.visualTimeoutIds) {
-      clearTimeout(timeoutId);
+    // Remove visibility handler
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
     }
-    this.visualTimeoutIds.clear();
 
     // Remove number element keydown listeners (prevents memory leak)
     for (const [el, handler] of this.numberKeydownListeners) {
       el.removeEventListener('keydown', handler);
     }
     this.numberKeydownListeners.clear();
-
-    // Remove container event listeners (prevents memory leak)
-    this.container.removeEventListener('mousedown', this.handleDragStart);
-    this.container.removeEventListener('touchstart', this.handleDragStart);
-
-    // Remove window event listeners
-    window.removeEventListener('mousemove', this.handleDragMove);
-    window.removeEventListener('mouseup', this.handleDragEnd);
-    window.removeEventListener('touchmove', this.handleDragMove);
-    window.removeEventListener('touchend', this.handleDragEnd);
   }
 }

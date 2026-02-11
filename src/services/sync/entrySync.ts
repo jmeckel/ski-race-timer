@@ -32,6 +32,7 @@ export interface EntrySyncCallbacks {
 
 let callbacks: EntrySyncCallbacks | null = null;
 let lastSyncTimestamp = 0;
+let activeFetchPromise: Promise<void> | null = null;
 
 /**
  * Initialize entry sync with callbacks
@@ -59,6 +60,14 @@ async function processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
     if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
       // Entry has full photo data from cloud
       if (state.settings.syncPhotos) {
+        // Skip download if photo is already cached in IndexedDB
+        const alreadyCached = await photoStorage.hasPhoto(entry.id);
+        if (alreadyCached) {
+          // Photo already stored locally — just set the marker, skip the save
+          processedEntries.push({ ...entry, photo: 'indexeddb' });
+          continue;
+        }
+
         // Save to IndexedDB when photo sync is enabled
         const saved = await photoStorage.savePhoto(entry.id, entry.photo);
         if (saved) {
@@ -83,11 +92,30 @@ async function processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
 }
 
 /**
- * Fetch entries from cloud
+ * Fetch entries from cloud.
+ * Uses request coalescing to prevent overlapping fetches when polling
+ * triggers while a previous request is still in flight.
  */
 export async function fetchCloudEntries(): Promise<void> {
   const state = store.getState();
   if (!state.settings.sync || !state.raceId) return;
+
+  // Coalesce: reuse in-flight request instead of firing a duplicate
+  if (activeFetchPromise) return activeFetchPromise;
+
+  activeFetchPromise = fetchCloudEntriesImpl();
+  try {
+    await activeFetchPromise;
+  } finally {
+    activeFetchPromise = null;
+  }
+}
+
+/**
+ * Internal implementation of cloud entry fetch
+ */
+async function fetchCloudEntriesImpl(): Promise<void> {
+  const state = store.getState();
 
   // Set syncing status to show activity indicator
   const previousStatus = state.syncStatus;
@@ -102,10 +130,19 @@ export async function fetchCloudEntries(): Promise<void> {
       deviceId: state.deviceId,
       deviceName: state.deviceName,
     });
+
+    // Delta sync: only fetch entries modified since last successful sync
+    // On first sync (lastSyncTimestamp === 0), fetch everything
+    if (lastSyncTimestamp > 0) {
+      params.set('since', String(lastSyncTimestamp));
+    }
     const response = await fetchWithTimeout(
       `${API_BASE}?${params}`,
       {
-        headers: getAuthHeaders(),
+        headers: {
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
       },
       FETCH_TIMEOUT,
     );
@@ -266,7 +303,7 @@ export async function deleteEntryFromCloud(
       `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
         body: JSON.stringify({
           entryId,
           deviceId: entryDeviceId || state.deviceId,
@@ -314,7 +351,7 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
       `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() },
         body: JSON.stringify({
           entry: entryToSync,
           deviceId: state.deviceId,
@@ -403,4 +440,5 @@ export async function pushLocalEntries(): Promise<void> {
 export function cleanupEntrySync(): void {
   callbacks = null;
   lastSyncTimestamp = 0;
+  activeFetchPromise = null;
 }

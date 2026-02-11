@@ -3,8 +3,16 @@
  * Tests for the main timing functionality
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, setupPageFullMode, clickToggle, recordTimestamp, enterBib, waitForConfirmationToHide, navigateTo } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  enterBib,
+  navigateTo,
+  recordTimestamp,
+  setupPage,
+  setupPageFullMode,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 test.describe('Timer View', () => {
   test.beforeEach(async ({ page }) => {
@@ -50,12 +58,21 @@ test.describe('Timer View', () => {
   });
 
   test.describe('Bib Number Input', () => {
-    test('should enter bib number via radial dial', async ({ page, browserName }) => {
+    test('should enter bib number via radial dial', async ({
+      page,
+      browserName,
+    }) => {
       // Skip on Safari landscape - WebKit test driver has issues with dial clicks
       // Real Safari works fine (verified manually)
-      test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+      test.skip(
+        browserName === 'webkit',
+        'WebKit test driver issue with radial dial in landscape',
+      );
 
-      await page.waitForSelector('.dial-number[data-num="1"]', { state: 'visible', timeout: 5000 });
+      await page.waitForSelector('.dial-number[data-num="1"]', {
+        state: 'visible',
+        timeout: 5000,
+      });
       await page.click('.dial-number[data-num="1"]');
       await page.click('.dial-number[data-num="2"]');
       await page.click('.dial-number[data-num="3"]');
@@ -65,9 +82,15 @@ test.describe('Timer View', () => {
     });
 
     test('should limit bib to 3 digits', async ({ page, browserName }) => {
-      test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+      test.skip(
+        browserName === 'webkit',
+        'WebKit test driver issue with radial dial in landscape',
+      );
 
-      await page.waitForSelector('.dial-number[data-num="1"]', { state: 'visible', timeout: 5000 });
+      await page.waitForSelector('.dial-number[data-num="1"]', {
+        state: 'visible',
+        timeout: 5000,
+      });
       await page.click('.dial-number[data-num="1"]');
       await page.click('.dial-number[data-num="2"]');
       await page.click('.dial-number[data-num="3"]');
@@ -77,10 +100,19 @@ test.describe('Timer View', () => {
       await expect(bibDisplay).toContainText('123');
     });
 
-    test('should clear bib with clear button', async ({ page, browserName }) => {
-      test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+    test('should clear bib with clear button', async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(
+        browserName === 'webkit',
+        'WebKit test driver issue with radial dial in landscape',
+      );
 
-      await page.waitForSelector('.dial-number[data-num="1"]', { state: 'visible', timeout: 5000 });
+      await page.waitForSelector('.dial-number[data-num="1"]', {
+        state: 'visible',
+        timeout: 5000,
+      });
       await page.click('.dial-number[data-num="1"]');
       await page.click('.dial-number[data-num="2"]');
       await page.click('#radial-clear-btn');
@@ -89,10 +121,19 @@ test.describe('Timer View', () => {
       await expect(bibDisplay).toContainText('---');
     });
 
-    test('should delete last digit with keyboard backspace', async ({ page, browserName }) => {
-      test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+    test('should delete last digit with keyboard backspace', async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(
+        browserName === 'webkit',
+        'WebKit test driver issue with radial dial in landscape',
+      );
 
-      await page.waitForSelector('.dial-number[data-num="1"]', { state: 'visible', timeout: 5000 });
+      await page.waitForSelector('.dial-number[data-num="1"]', {
+        state: 'visible',
+        timeout: 5000,
+      });
       await page.click('.dial-number[data-num="1"]');
       await page.click('.dial-number[data-num="2"]');
       await page.click('.dial-number[data-num="3"]');
@@ -108,15 +149,21 @@ test.describe('Timer View', () => {
       await enterBib(page, 42);
       await page.click('#radial-time-btn');
 
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
     });
 
     test('should record timestamp without bib number', async ({ page }) => {
       await page.click('#radial-time-btn');
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
     });
 
-    test('should show confirmation overlay after recording', async ({ page }) => {
+    test('should show confirmation overlay after recording', async ({
+      page,
+    }) => {
       await page.click('#radial-time-btn');
 
       const overlay = page.locator('#radial-confirmation-overlay');
@@ -126,9 +173,15 @@ test.describe('Timer View', () => {
       await expect(overlay).not.toHaveClass(/show/);
     });
 
-    test('should auto-increment bib after recording', async ({ page, browserName }) => {
+    test('should auto-increment bib after recording', async ({
+      page,
+      browserName,
+    }) => {
       // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-      test.skip(browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+      test.skip(
+        browserName === 'webkit',
+        'WebKit test driver issue with radial dial in landscape',
+      );
 
       await enterBib(page, 1);
       await page.click('#radial-time-btn');
@@ -160,7 +213,9 @@ test.describe('Timer View', () => {
     test('should record timestamp with Enter key', async ({ page }) => {
       await page.focus('#radial-time-btn');
       await page.keyboard.press('Enter');
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
     });
   });
 
@@ -194,8 +249,12 @@ test.describe('Timer View - Full Mode', () => {
 
   test.describe('Timing Point Selection', () => {
     test('should show both Start and Finish buttons', async ({ page }) => {
-      await expect(page.locator('.radial-point-btn[data-point="S"]')).toBeVisible();
-      await expect(page.locator('.radial-point-btn[data-point="F"]')).toBeVisible();
+      await expect(
+        page.locator('.radial-point-btn[data-point="S"]'),
+      ).toBeVisible();
+      await expect(
+        page.locator('.radial-point-btn[data-point="F"]'),
+      ).toBeVisible();
     });
 
     test('should select Start point', async ({ page }) => {
@@ -218,8 +277,12 @@ test.describe('Timer View - Full Mode', () => {
     });
 
     test('should show both Run 1 and Run 2 buttons', async ({ page }) => {
-      await expect(page.locator('#radial-run-selector [data-run="1"]')).toBeVisible();
-      await expect(page.locator('#radial-run-selector [data-run="2"]')).toBeVisible();
+      await expect(
+        page.locator('#radial-run-selector [data-run="1"]'),
+      ).toBeVisible();
+      await expect(
+        page.locator('#radial-run-selector [data-run="2"]'),
+      ).toBeVisible();
     });
 
     test('should default to Run 1', async ({ page }) => {
@@ -257,7 +320,9 @@ test.describe('Timer View - Full Mode', () => {
       await expect(entryRun).toContainText('L2');
     });
 
-    test('should allow same bib for different runs without duplicate warning', async ({ page }) => {
+    test('should allow same bib for different runs without duplicate warning', async ({
+      page,
+    }) => {
       // Record entry for Run 1
       await enterBib(page, 1);
       await page.click('#radial-time-btn');
@@ -271,7 +336,9 @@ test.describe('Timer View - Full Mode', () => {
 
       // Radial mode doesn't show duplicate warning in the same overlay
       // The confirmation overlay should still appear
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
     });
   });
 });
@@ -281,7 +348,9 @@ test.describe('Timer View - Duplicate Warning', () => {
     await setupPage(page);
   });
 
-  test('should record duplicate entry (radial mode records without warning)', async ({ page }) => {
+  test('should record duplicate entry (radial mode records without warning)', async ({
+    page,
+  }) => {
     // Record first entry with bib 001
     await page.click('.dial-number[data-num="0"]');
     await page.click('.dial-number[data-num="0"]');
@@ -297,6 +366,8 @@ test.describe('Timer View - Duplicate Warning', () => {
     await page.click('#radial-time-btn');
 
     // Radial mode shows confirmation overlay (warning feedback is via different visual cues)
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
   });
 });

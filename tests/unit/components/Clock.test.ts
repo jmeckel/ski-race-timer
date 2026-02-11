@@ -3,7 +3,7 @@
  * Tests: initialization, start/stop, time updates, GPS integration
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -12,38 +12,20 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(() => null)
+  key: vi.fn(() => null),
 };
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock requestAnimationFrame
 let rafCallback: FrameRequestCallback | null = null;
 let rafId = 0;
 
-const mockRequestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-  rafCallback = callback;
-  return ++rafId;
-});
-
-const mockCancelAnimationFrame = vi.fn((id: number) => {
-  if (id === rafId) {
-    rafCallback = null;
-  }
-});
-
-Object.defineProperty(globalThis, 'requestAnimationFrame', {
-  value: mockRequestAnimationFrame,
-  writable: true
-});
-
-Object.defineProperty(globalThis, 'cancelAnimationFrame', {
-  value: mockCancelAnimationFrame,
-  writable: true
-});
+let mockRequestAnimationFrame: ReturnType<typeof vi.fn>;
+let mockCancelAnimationFrame: ReturnType<typeof vi.fn>;
 
 describe('Clock Component', () => {
   let Clock: typeof import('../../../src/components/Clock').Clock;
@@ -54,6 +36,29 @@ describe('Clock Component', () => {
     vi.clearAllMocks();
     rafCallback = null;
     rafId = 0;
+
+    // Set up RAF mocks in each test (re-applied after vi.resetModules)
+    mockRequestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      rafCallback = callback;
+      return ++rafId;
+    });
+    mockCancelAnimationFrame = vi.fn((id: number) => {
+      if (id === rafId) {
+        rafCallback = null;
+      }
+    });
+    globalThis.requestAnimationFrame =
+      mockRequestAnimationFrame as unknown as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame =
+      mockCancelAnimationFrame as unknown as typeof cancelAnimationFrame;
+
+    // jsdom 25+ reports document.hidden as true by default.
+    // Override so Clock.start() doesn't immediately cancel the RAF.
+    Object.defineProperty(document, 'hidden', {
+      value: false,
+      writable: true,
+      configurable: true,
+    });
 
     // Create container
     container = document.createElement('div');
@@ -121,7 +126,9 @@ describe('Clock Component', () => {
       const afterSecondStart = mockRequestAnimationFrame.mock.calls.length;
 
       // Second start should not add more RAF calls than the first
-      expect(afterSecondStart - afterFirstStart).toBeLessThanOrEqual(afterFirstStart - initialCallCount);
+      expect(afterSecondStart - afterFirstStart).toBeLessThanOrEqual(
+        afterFirstStart - initialCallCount,
+      );
 
       clock.destroy();
     });
@@ -137,7 +144,7 @@ describe('Clock Component', () => {
 
       const digits = container.querySelectorAll('.clock-digit');
       // At least some digits should have content
-      const hasContent = Array.from(digits).some(d => d.textContent !== '');
+      const hasContent = Array.from(digits).some((d) => d.textContent !== '');
       expect(hasContent).toBe(true);
 
       clock.destroy();
@@ -222,7 +229,7 @@ describe('Clock Component', () => {
       }
 
       const digits = container.querySelectorAll('.clock-digit');
-      const initialValues = Array.from(digits).map(d => d.textContent);
+      const initialValues = Array.from(digits).map((d) => d.textContent);
 
       // Advance time and tick again
       vi.advanceTimersByTime(100);
@@ -231,7 +238,7 @@ describe('Clock Component', () => {
       }
 
       // Only millisecond digits should have changed
-      const newValues = Array.from(digits).map(d => d.textContent);
+      const newValues = Array.from(digits).map((d) => d.textContent);
 
       // Hour and minute digits should be the same (most of the time)
       expect(initialValues.slice(0, 6)).toEqual(newValues.slice(0, 6));

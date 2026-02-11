@@ -1,10 +1,11 @@
+import { batteryService } from './battery';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
 // Audio context for sound feedback
 let audioContext: AudioContext | null = null;
 let audioIdleTimeoutId: number | null = null;
-const AUDIO_IDLE_TIMEOUT = 30000; // 30 seconds before suspending
+const AUDIO_IDLE_TIMEOUT = 5000; // 5 seconds before suspending (saves ~10mW)
 
 /**
  * Get or create AudioContext (lazy initialization)
@@ -44,15 +45,52 @@ function scheduleAudioSuspend(): void {
 }
 
 /**
+ * Scale a vibration pattern based on battery level.
+ * - medium: reduce duration by 25%
+ * - low: reduce duration by 50%
+ * - critical: disable vibration entirely
+ */
+function scaledVibrationPattern(
+  pattern: number | number[],
+): number | number[] | null {
+  const status = batteryService.getStatus();
+
+  switch (status.batteryLevel) {
+    case 'critical':
+      return null; // Skip vibration entirely
+    case 'low': {
+      const scale = 0.5;
+      if (typeof pattern === 'number') {
+        return Math.round(pattern * scale);
+      }
+      return pattern.map((v) => Math.round(v * scale));
+    }
+    case 'medium': {
+      const scale = 0.75;
+      if (typeof pattern === 'number') {
+        return Math.round(pattern * scale);
+      }
+      return pattern.map((v) => Math.round(v * scale));
+    }
+    default:
+      return pattern;
+  }
+}
+
+/**
  * Vibrate device with pattern
+ * Battery-aware: reduces duration on medium/low battery, disables on critical
  */
 export function vibrate(pattern: number | number[]): void {
   const settings = store.getState().settings;
   if (!settings.haptic) return;
 
+  const scaled = scaledVibrationPattern(pattern);
+  if (scaled === null) return; // Critical battery - skip vibration
+
   if (navigator.vibrate) {
     try {
-      navigator.vibrate(pattern);
+      navigator.vibrate(scaled);
     } catch (error) {
       logger.warn('Vibration failed:', error);
     }

@@ -3,10 +3,10 @@
  * Handles the radial dial timer interface with iPod-style spin input
  */
 
+import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
 import {
-  batteryService,
   captureTimingPhoto,
   feedbackSuccess,
   feedbackTap,
@@ -15,14 +15,17 @@ import {
   photoStorage,
   syncService,
 } from '../services';
-import { store } from '../store';
-import type { Entry, Run, TimingPoint } from '../types';
 import {
-  escapeHtml,
-  getElement,
-  getPointLabel,
-  logWarning,
-} from '../utils';
+  $cloudDeviceCount,
+  $entries,
+  $gpsStatus,
+  $settings,
+  $syncStatus,
+  effect,
+  store,
+} from '../store';
+import type { Entry, Run, TimingPoint } from '../types';
+import { escapeHtml, getElement, getPointLabel, logWarning } from '../utils';
 import { formatTime } from '../utils/format';
 import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
@@ -31,29 +34,16 @@ import {
   isDuplicateEntry,
 } from '../utils/timestampRecorder';
 
-// Battery-aware frame throttling (mirrors Clock.ts pattern)
-const FRAME_SKIP_NORMAL = 0;
-const FRAME_SKIP_LOW = 1; // 30fps
-const FRAME_SKIP_CRITICAL = 3; // 15fps
-
-const FRAME_SKIP_BY_LEVEL: Record<string, number> = {
-  normal: FRAME_SKIP_NORMAL,
-  low: FRAME_SKIP_LOW,
-  critical: FRAME_SKIP_CRITICAL,
-};
-
 // Module-level listener manager for lifecycle cleanup
 const listeners = new ListenerManager();
 
 // Module state
 let radialDial: RadialDial | null = null;
-let clockAnimationId: number | null = null;
-let clockFrameSkip = FRAME_SKIP_NORMAL;
-let clockCurrentFrame = 0;
+let radialClock: Clock | null = null;
+let clockTickUnsubscribe: (() => void) | null = null;
 let frozenTime: string | null = null;
 let isInitialized = false;
-let storeUnsubscribe: (() => void) | null = null;
-let batteryUnsubscribe: (() => void) | null = null;
+let effectDisposers: (() => void)[] = [];
 
 /**
  * Initialize the radial timer view
@@ -84,105 +74,94 @@ export function initRadialTimerView(): void {
   updateRadialSyncStatus();
   updateRadialStatsDisplay();
 
-  // Subscribe to store changes
-  storeUnsubscribe = store.subscribe((_state, changedKeys) => {
-    if (changedKeys.includes('settings')) {
+  // Subscribe to store changes via signal effects (auto-tracks dependencies)
+  effectDisposers = [
+    effect(() => {
+      // Re-run when settings change (gps/sync toggles affect status indicators)
+      void $settings.value;
       updateRadialGpsStatus();
       updateRadialSyncStatus();
-    }
-    if (
-      changedKeys.includes('syncStatus') ||
-      changedKeys.includes('cloudDeviceCount')
-    ) {
+    }),
+    effect(() => {
+      // Re-run when sync status or device count changes
+      void $syncStatus.value;
+      void $cloudDeviceCount.value;
       updateRadialSyncStatus();
-    }
-    if (changedKeys.includes('selectedPoint')) {
+    }),
+    effect(() => {
+      void store.$state.value.selectedPoint;
       updateRadialTimingPointSelection();
-    }
-    if (changedKeys.includes('selectedRun')) {
+    }),
+    effect(() => {
+      void store.$state.value.selectedRun;
       updateRadialRunSelection();
-    }
-    if (changedKeys.includes('entries')) {
+    }),
+    effect(() => {
+      void $entries.value;
       updateRadialStatsDisplay();
-    }
-    if (changedKeys.includes('gpsStatus')) {
+    }),
+    effect(() => {
+      void $gpsStatus.value;
       updateRadialGpsStatus();
-    }
-  });
+    }),
+  ];
 
   isInitialized = true;
   logger.debug('[RadialTimerView] Initialized successfully');
 }
 
 /**
- * Initialize the radial clock display
- * Uses requestAnimationFrame with battery-aware frame skipping (mirrors Clock.ts)
+ * Initialize the radial clock display.
+ * Reuses the shared Clock component's RAF loop and battery-aware frame skipping
+ * instead of maintaining a separate animation loop.
+ * The Clock instance renders into the (hidden) clock-container; we subscribe
+ * to its onTick callback to update the radial time display elements.
  */
 function initRadialClock(): void {
-  const updateClock = () => {
+  // Clean up existing clock if re-initializing
+  if (clockTickUnsubscribe) {
+    clockTickUnsubscribe();
+    clockTickUnsubscribe = null;
+  }
+  if (radialClock) {
+    radialClock.destroy();
+    radialClock = null;
+  }
+
+  // Cache radial time display elements
+  const hmEl = getElement('radial-time-hm');
+  const secEl = getElement('radial-time-seconds');
+  const subEl = getElement('radial-time-subseconds');
+
+  // Create a Clock instance using the existing (hidden in radial mode) clock-container.
+  // The Clock handles its own RAF loop, visibility pausing, and battery-aware throttling.
+  const container = getElement('clock-container');
+  if (!container) {
+    logger.debug('[RadialTimerView] clock-container not found, cannot init radial clock');
+    return;
+  }
+
+  radialClock = new Clock(container);
+
+  // Subscribe to tick updates to drive the radial time display
+  clockTickUnsubscribe = radialClock.onTick((h, m, s, ms) => {
     if (frozenTime) return;
-
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-
-    const hmEl = getElement('radial-time-hm');
-    const secEl = getElement('radial-time-seconds');
-    const subEl = getElement('radial-time-subseconds');
-
     if (hmEl) hmEl.textContent = `${h}:${m}`;
     if (secEl) secEl.textContent = s;
     if (subEl) subEl.textContent = ms;
-  };
-
-  const tick = () => {
-    // Battery-aware frame skipping (matches Clock.ts pattern)
-    clockCurrentFrame++;
-    const shouldUpdate =
-      clockFrameSkip === 0 || clockCurrentFrame % (clockFrameSkip + 1) === 0;
-
-    if (shouldUpdate) {
-      updateClock();
-    }
-
-    clockAnimationId = requestAnimationFrame(tick);
-  };
-
-  // Cancel existing animation if re-initializing
-  if (clockAnimationId !== null) {
-    cancelAnimationFrame(clockAnimationId);
-  }
-
-  // Subscribe to battery changes for adaptive frame rate
-  batteryService
-    .initialize()
-    .then(() => {
-      batteryUnsubscribe = batteryService.subscribe((status) => {
-        clockFrameSkip = FRAME_SKIP_BY_LEVEL[status.batteryLevel];
-      });
-    })
-    .catch(() => {
-      // Battery API unavailable - use normal frame rate
-    });
-
-  // Pause when page is hidden, resume when visible
-  listeners.add(document, 'visibilitychange', () => {
-    if (document.hidden) {
-      if (clockAnimationId !== null) {
-        cancelAnimationFrame(clockAnimationId);
-        clockAnimationId = null;
-      }
-    } else {
-      if (clockAnimationId === null) {
-        clockAnimationId = requestAnimationFrame(tick);
-      }
-    }
   });
 
-  updateClock();
-  clockAnimationId = requestAnimationFrame(tick);
+  // Perform an initial update before the first tick fires
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const secs = String(now.getSeconds()).padStart(2, '0');
+  const msecs = String(now.getMilliseconds()).padStart(3, '0');
+  if (hmEl) hmEl.textContent = `${hours}:${mins}`;
+  if (secEl) secEl.textContent = secs;
+  if (subEl) subEl.textContent = msecs;
+
+  radialClock.start();
 }
 
 /**
@@ -642,7 +621,7 @@ function updateRadialStatsDisplay(): void {
 
   // Last recorded
   if (entries.length > 0) {
-    const lastEntry = entries[entries.length - 1];
+    const lastEntry = entries[entries.length - 1]!;
     const lastBibEl = getElement('radial-last-bib');
     const lastPointEl = getElement('radial-last-point');
     const lastTimeEl = getElement('radial-last-time');
@@ -666,19 +645,19 @@ function updateRadialStatsDisplay(): void {
  * Cleanup radial timer view
  */
 export function destroyRadialTimerView(): void {
-  if (storeUnsubscribe) {
-    storeUnsubscribe();
-    storeUnsubscribe = null;
+  for (const dispose of effectDisposers) {
+    dispose();
+  }
+  effectDisposers = [];
+
+  if (clockTickUnsubscribe) {
+    clockTickUnsubscribe();
+    clockTickUnsubscribe = null;
   }
 
-  if (clockAnimationId !== null) {
-    cancelAnimationFrame(clockAnimationId);
-    clockAnimationId = null;
-  }
-
-  if (batteryUnsubscribe) {
-    batteryUnsubscribe();
-    batteryUnsubscribe = null;
+  if (radialClock) {
+    radialClock.destroy();
+    radialClock = null;
   }
 
   listeners.removeAll();

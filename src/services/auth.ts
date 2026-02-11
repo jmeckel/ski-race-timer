@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { storage } from './storage';
 
 export const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 
@@ -11,7 +12,7 @@ export const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
  * Get auth headers for API requests
  */
 export function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = storage.getRaw(AUTH_TOKEN_KEY);
   if (token) {
     return { Authorization: `Bearer ${token}` };
   }
@@ -22,14 +23,14 @@ export function getAuthHeaders(): HeadersInit {
  * Check if we have a valid (non-expired) auth token
  */
 export function hasAuthToken(): boolean {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = storage.getRaw(AUTH_TOKEN_KEY);
   if (!token) return false;
 
   // Check JWT expiry if token is parseable
   try {
     const parts = token.split('.');
     if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1]));
+      const payload = JSON.parse(atob(parts[1]!));
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         return false;
       }
@@ -44,21 +45,23 @@ export function hasAuthToken(): boolean {
  * Store auth token
  */
 export function setAuthToken(token: string): void {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  storage.setRaw(AUTH_TOKEN_KEY, token);
+  storage.flush();
 }
 
 /**
  * Clear auth token (on expiry or logout)
  */
 export function clearAuthToken(): void {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  storage.remove(AUTH_TOKEN_KEY);
+  storage.flush();
 }
 
 /**
  * Get the stored auth token
  */
 export function getAuthToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return storage.getRaw(AUTH_TOKEN_KEY);
 }
 
 // Token exchange timeout in milliseconds
@@ -156,7 +159,7 @@ export function getTokenRole(): string | null {
     if (parts.length !== 3) return null;
 
     // Decode base64 payload
-    const payload = JSON.parse(atob(parts[1]));
+    const payload = JSON.parse(atob(parts[1]!));
     return payload.role || null;
   } catch {
     return null;

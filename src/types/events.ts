@@ -8,14 +8,9 @@
  * custom events. Runtime behavior is not affected by this file.
  */
 
-import type {
-  Entry,
-  FaultEntry,
-  Language,
-  TimingPoint,
-} from './index';
-import type { ErrorContext } from '../utils/errors';
 import type { ConfirmModalAction } from '../features/resultsView';
+import type { ErrorContext } from '../utils/errors';
+import type { Entry, FaultEntry, Language, TimingPoint } from './index';
 
 // ===== Window-level Custom Events =====
 // Dispatched via window.dispatchEvent(new CustomEvent(...))

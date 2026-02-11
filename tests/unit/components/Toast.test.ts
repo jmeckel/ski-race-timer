@@ -3,8 +3,8 @@
  * Tests: show, queue, types, escape HTML, clear
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Toast, getToast, showToast } from '../../../src/components/Toast';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getToast, showToast, Toast } from '../../../src/components/Toast';
 
 describe('Toast Component', () => {
   let container: HTMLElement | null;
@@ -139,14 +139,18 @@ describe('Toast Component', () => {
       toast.show('Message 2', { duration: 1000 });
 
       vi.advanceTimersByTime(0);
-      expect(document.querySelector('.toast')?.textContent).toContain('Message 1');
+      expect(document.querySelector('.toast')?.textContent).toContain(
+        'Message 1',
+      );
 
       // First toast dismisses
       vi.advanceTimersByTime(1200);
 
       // Second toast appears
       vi.advanceTimersByTime(0);
-      expect(document.querySelector('.toast')?.textContent).toContain('Message 2');
+      expect(document.querySelector('.toast')?.textContent).toContain(
+        'Message 2',
+      );
 
       toast.clear();
     });
@@ -183,13 +187,17 @@ describe('Toast Component', () => {
     it('should show toast on custom event', () => {
       const toast = new Toast();
 
-      window.dispatchEvent(new CustomEvent('show-toast', {
-        detail: { message: 'Event message', type: 'info' }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: 'Event message', type: 'info' },
+        }),
+      );
 
       vi.advanceTimersByTime(0);
 
-      expect(document.querySelector('.toast')?.textContent).toContain('Event message');
+      expect(document.querySelector('.toast')?.textContent).toContain(
+        'Event message',
+      );
 
       toast.clear();
     });

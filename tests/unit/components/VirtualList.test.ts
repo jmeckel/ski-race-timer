@@ -3,7 +3,7 @@
  * Tests: initialization, rendering, filtering, scrolling, item interactions
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '../../../src/types';
 
 // Mock localStorage
@@ -13,12 +13,12 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(() => null)
+  key: vi.fn(() => null),
 };
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock ResizeObserver
@@ -40,7 +40,7 @@ class MockResizeObserver {
 
 Object.defineProperty(globalThis, 'ResizeObserver', {
   value: MockResizeObserver,
-  writable: true
+  writable: true,
 });
 
 // Helper to create entries
@@ -52,7 +52,7 @@ function createEntry(index: number): Entry {
     timestamp: new Date(1704067200000 + index * 1000).toISOString(),
     status: 'ok',
     deviceId: 'dev_test',
-    deviceName: 'Timer 1'
+    deviceName: 'Timer 1',
   };
 }
 
@@ -84,7 +84,9 @@ describe('VirtualList Component', () => {
     it('should create scroll container', () => {
       const list = new VirtualList({ container });
 
-      expect(container.querySelector('.virtual-scroll-container')).not.toBeNull();
+      expect(
+        container.querySelector('.virtual-scroll-container'),
+      ).not.toBeNull();
 
       list.destroy();
     });
@@ -116,7 +118,9 @@ describe('VirtualList Component', () => {
 
       list.setEntries(entries);
 
-      const content = container.querySelector('.virtual-scroll-content') as HTMLElement;
+      const content = container.querySelector(
+        '.virtual-scroll-content',
+      ) as HTMLElement;
       expect(parseInt(content.style.height)).toBe(100 * 72); // ITEM_HEIGHT = 72
 
       list.destroy();
@@ -185,11 +189,7 @@ describe('VirtualList Component', () => {
   describe('applyFilters', () => {
     it('should filter by search term', () => {
       const list = new VirtualList({ container });
-      const entries = [
-        createEntry(1),
-        createEntry(12),
-        createEntry(123)
-      ];
+      const entries = [createEntry(1), createEntry(12), createEntry(123)];
 
       list.setEntries(entries);
       list.applyFilters('001');
@@ -204,7 +204,7 @@ describe('VirtualList Component', () => {
       const entries = [
         { ...createEntry(1), point: 'S' as const },
         { ...createEntry(2), point: 'F' as const },
-        { ...createEntry(3), point: 'F' as const }
+        { ...createEntry(3), point: 'F' as const },
       ];
 
       list.setEntries(entries);
@@ -220,7 +220,7 @@ describe('VirtualList Component', () => {
       const entries = [
         { ...createEntry(1), status: 'ok' as const },
         { ...createEntry(2), status: 'dns' as const },
-        { ...createEntry(3), status: 'dnf' as const }
+        { ...createEntry(3), status: 'dnf' as const },
       ];
 
       list.setEntries(entries);
@@ -236,7 +236,7 @@ describe('VirtualList Component', () => {
       const entries = [
         { ...createEntry(1), point: 'F' as const, status: 'ok' as const },
         { ...createEntry(2), point: 'F' as const, status: 'dns' as const },
-        { ...createEntry(3), point: 'S' as const, status: 'ok' as const }
+        { ...createEntry(3), point: 'S' as const, status: 'ok' as const },
       ];
 
       list.setEntries(entries);
@@ -359,7 +359,9 @@ describe('VirtualList Component', () => {
 
       list.setEntries([entry]);
 
-      const deleteBtn = container.querySelector('.result-delete') as HTMLElement;
+      const deleteBtn = container.querySelector(
+        '.result-delete',
+      ) as HTMLElement;
       deleteBtn.click();
 
       expect(onItemDelete).toHaveBeenCalledWith(entry);
@@ -374,7 +376,9 @@ describe('VirtualList Component', () => {
 
       list.setEntries([entry]);
 
-      const photoBtn = container.querySelector('.result-photo-btn') as HTMLElement;
+      const photoBtn = container.querySelector(
+        '.result-photo-btn',
+      ) as HTMLElement;
       photoBtn.click();
 
       expect(onViewPhoto).toHaveBeenCalledWith(entry);
@@ -390,7 +394,9 @@ describe('VirtualList Component', () => {
 
       list.setEntries([entry]);
 
-      const photoBtn = container.querySelector('.result-photo-btn') as HTMLElement;
+      const photoBtn = container.querySelector(
+        '.result-photo-btn',
+      ) as HTMLElement;
       photoBtn.click();
 
       expect(onViewPhoto).toHaveBeenCalledWith(entry);
@@ -407,13 +413,18 @@ describe('VirtualList Component', () => {
 
       list.setEntries(entries);
 
-      const scrollContainer = container.querySelector('.virtual-scroll-container') as HTMLElement;
+      const scrollContainer = container.querySelector(
+        '.virtual-scroll-container',
+      ) as HTMLElement;
       // Mock scrollTo since jsdom doesn't implement it
       scrollContainer.scrollTo = vi.fn();
 
       list.scrollToTop();
 
-      expect(scrollContainer.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+      expect(scrollContainer.scrollTo).toHaveBeenCalledWith({
+        top: 0,
+        behavior: 'smooth',
+      });
 
       list.destroy();
     });
@@ -424,7 +435,9 @@ describe('VirtualList Component', () => {
 
       list.setEntries(entries);
 
-      const scrollContainer = container.querySelector('.virtual-scroll-container') as HTMLElement;
+      const scrollContainer = container.querySelector(
+        '.virtual-scroll-container',
+      ) as HTMLElement;
       // Mock scrollTo since jsdom doesn't implement it
       scrollContainer.scrollTo = vi.fn();
 

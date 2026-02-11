@@ -55,13 +55,13 @@ export function attachRecentRaceItemHandlers(
         case 'ArrowDown':
           event.preventDefault();
           if (index < itemsArray.length - 1) {
-            itemsArray[index + 1].focus();
+            itemsArray[index + 1]!.focus();
           }
           break;
         case 'ArrowUp':
           event.preventDefault();
           if (index > 0) {
-            itemsArray[index - 1].focus();
+            itemsArray[index - 1]!.focus();
           }
           break;
         case 'Escape':

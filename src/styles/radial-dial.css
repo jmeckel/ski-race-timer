@@ -99,10 +99,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   font-weight: 700;
   color: var(--text-primary);
   min-width: 100px;
-}
 
-.radial-bib-value.active {
-  color: var(--primary);
+  &.active {
+    color: var(--primary);
+  }
 }
 
 .radial-bib-cursor {
@@ -156,15 +156,15 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 2px 8px
     color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
-}
 
-.radial-clear-btn:active {
-  background: linear-gradient(
-    135deg,
-    var(--radial-clear-color) 0%,
-    var(--radial-clear-color-dark) 100%
-  );
-  transform: scale(0.95);
+  &:active {
+    background: linear-gradient(
+      135deg,
+      var(--radial-clear-color) 0%,
+      var(--radial-clear-color-dark) 100%
+    );
+    transform: scale(0.95);
+  }
 }
 
 /* Top Right: Status Corner - Hidden, using header status instead */
@@ -186,22 +186,22 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   border-radius: 50%;
   background: var(--success);
   box-shadow: 0 0 8px var(--success);
-}
 
-.radial-status-dot.warning {
-  background: var(--warning);
-  box-shadow: 0 0 8px var(--warning);
-  animation: pulse 2s infinite;
-}
+  &.warning {
+    background: var(--warning);
+    box-shadow: 0 0 8px var(--warning);
+    animation: pulse 2s infinite;
+  }
 
-.radial-status-dot.error {
-  background: var(--error);
-  box-shadow: 0 0 8px var(--error);
-}
+  &.error {
+    background: var(--error);
+    box-shadow: 0 0 8px var(--error);
+  }
 
-.radial-status-dot.inactive {
-  background: var(--text-tertiary);
-  box-shadow: none;
+  &.inactive {
+    background: var(--text-tertiary);
+    box-shadow: none;
+  }
 }
 
 /* Center Area - Dial */
@@ -244,10 +244,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   box-shadow:
     inset 0 0 30px rgba(0, 0, 0, 0.3),
     0 0 20px rgba(0, 0, 0, 0.2);
-}
 
-.dial-ring.flash {
-  animation: dialFlash 0.3s ease-out;
+  &.flash {
+    animation: dialFlash 0.3s ease-out;
+  }
 }
 
 @keyframes dialFlash {
@@ -280,13 +280,13 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   top: 8px;
   transform-origin: 0 calc(50cqi - 8px);
   opacity: 0.5;
-}
 
-.dial-tick.major {
-  height: 12px;
-  width: 3px;
-  background: var(--text-secondary);
-  opacity: 0.8;
+  &.major {
+    height: 12px;
+    width: 3px;
+    background: var(--text-secondary);
+    opacity: 0.8;
+  }
 }
 
 /* Rotating Numbers */
@@ -294,10 +294,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   position: absolute;
   inset: 0;
   transition: transform 0.05s linear;
-}
 
-.dial-numbers.momentum {
-  transition: none;
+  &.momentum {
+    transition: none;
+  }
 }
 
 .dial-number {
@@ -323,47 +323,47 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.15s ease;
-}
 
-.dial-number span {
-  transition: transform 0.05s linear;
-}
+  & span {
+    transition: transform 0.05s linear;
+  }
 
-.dial-number:active,
-.dial-number.pressed {
-  color: var(--primary);
-  background: rgba(56, 189, 248, 0.15);
-  border-color: var(--primary);
-  transform: translate(-50%, -50%) scale(1.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 20px rgba(56, 189, 248, 0.3);
-}
+  &:active,
+  &.pressed {
+    color: var(--primary);
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--primary);
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 20px rgba(56, 189, 248, 0.3);
+  }
 
-/* Keyboard focus indicator - visible ring for accessibility */
-.dial-number:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    0 0 0 3px rgba(56, 189, 248, 0.5);
-}
+  /* Keyboard focus indicator - visible ring for accessibility */
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 0 3px rgba(56, 189, 248, 0.5);
+  }
 
-.dial-number:focus-visible {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    0 0 0 3px rgba(56, 189, 248, 0.6);
-}
+  &:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 0 3px rgba(56, 189, 248, 0.6);
+  }
 
-.dial-number.flash {
-  color: var(--primary);
-  border-color: var(--primary);
-  text-shadow: 0 0 20px var(--primary);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+  &.flash {
+    color: var(--primary);
+    border-color: var(--primary);
+    text-shadow: 0 0 20px var(--primary);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+  }
 }
 
 /* Gesture Area */
@@ -373,10 +373,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   border-radius: 50%;
   cursor: grab;
   z-index: 5;
-}
 
-.dial-gesture-area:active {
-  cursor: grabbing;
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 /* Center Cutout */
@@ -406,15 +406,15 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   align-items: center;
   gap: 0;
   pointer-events: none;
-}
 
-.radial-time-display.flash {
-  animation: timeFlash 0.3s ease-out;
-}
+  &.flash {
+    animation: timeFlash 0.3s ease-out;
+  }
 
-.radial-time-display.frozen .radial-time-seconds {
-  color: var(--primary);
-  text-shadow: 0 0 30px var(--primary);
+  &.frozen .radial-time-seconds {
+    color: var(--primary);
+    text-shadow: 0 0 30px var(--primary);
+  }
 }
 
 @keyframes timeFlash {
@@ -478,28 +478,28 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   transition: all 0.2s;
   pointer-events: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
 
-.radial-point-btn.active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(56, 189, 248, 0.15);
-}
+  &.active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(56, 189, 248, 0.15);
+  }
 
-.radial-point-btn.start.active {
-  border-color: var(--radial-start-color);
-  color: var(--radial-start-color);
-  background: color-mix(in srgb, var(--radial-start-color) 20%, transparent);
-  box-shadow: 0 0 12px
-    color-mix(in srgb, var(--radial-start-color) 40%, transparent);
-}
+  &.start.active {
+    border-color: var(--radial-start-color);
+    color: var(--radial-start-color);
+    background: color-mix(in srgb, var(--radial-start-color) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--radial-start-color) 40%, transparent);
+  }
 
-.radial-point-btn.finish.active {
-  border-color: var(--radial-finish-color);
-  color: var(--radial-finish-color);
-  background: color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
-  box-shadow: 0 0 12px
-    color-mix(in srgb, var(--radial-finish-color) 40%, transparent);
+  &.finish.active {
+    border-color: var(--radial-finish-color);
+    color: var(--radial-finish-color);
+    background: color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--radial-finish-color) 40%, transparent);
+  }
 }
 
 /* Run Selector - Right side inside dial center */
@@ -529,13 +529,13 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   transition: all 0.2s;
   pointer-events: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
 
-.radial-run-btn.active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(56, 189, 248, 0.15);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  &.active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(56, 189, 248, 0.15);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  }
 }
 
 /* Bottom Row - Stats and Time Button */
@@ -579,16 +579,16 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
-}
 
-.radial-stats-point.start {
-  background: rgba(249, 115, 22, 0.2);
-  color: var(--start-color);
-}
+  &.start {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--start-color);
+  }
 
-.radial-stats-point.finish {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--finish-color);
+  &.finish {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--finish-color);
+  }
 }
 
 .radial-stats-time {
@@ -637,22 +637,22 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     0 -4px 20px color-mix(in srgb, var(--radial-finish-color) 30%, transparent);
-}
 
-.radial-time-btn:active {
-  background: linear-gradient(
-    135deg,
-    var(--radial-finish-color-dark) 0%,
-    var(--radial-clear-border) 100%
-  );
-  transform: scale(0.98);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 -2px 10px color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
-}
+  &:active {
+    background: linear-gradient(
+      135deg,
+      var(--radial-finish-color-dark) 0%,
+      var(--radial-clear-border) 100%
+    );
+    transform: scale(0.98);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 -2px 10px color-mix(in srgb, var(--radial-finish-color) 20%, transparent);
+  }
 
-.radial-time-btn.flash {
-  animation: btnFlash 0.3s ease-out;
+  &.flash {
+    animation: btnFlash 0.3s ease-out;
+  }
 }
 
 @keyframes btnFlash {
@@ -697,10 +697,10 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   pointer-events: none;
   transition: opacity 0.3s;
   z-index: 100;
-}
 
-.radial-confirmation-overlay.show {
-  opacity: 1;
+  &.show {
+    opacity: 1;
+  }
 }
 
 .radial-confirmation-check {
@@ -729,21 +729,20 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   padding: 4px 12px;
   border-radius: 4px;
   margin-top: 12px;
-}
 
-.radial-confirmation-point.start {
-  background: rgba(74, 222, 128, 0.2);
-  color: var(--start-color);
-}
+  &.start {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--start-color);
+  }
 
-.radial-confirmation-point.finish {
-  background: rgba(251, 146, 60, 0.2);
-  color: var(--finish-color);
+  &.finish {
+    background: rgba(251, 146, 60, 0.2);
+    color: var(--finish-color);
+  }
 }
 
 /* Responsive adjustments */
 @media (max-width: 500px) {
-
   .radial-timing-point {
     left: 5%;
   }
@@ -759,7 +758,6 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   .radial-time-subseconds {
     font-size: 32px;
   }
-
 }
 
 @media (max-height: 700px) and (orientation: portrait) {

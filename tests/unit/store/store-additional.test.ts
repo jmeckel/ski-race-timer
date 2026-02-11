@@ -7,7 +7,7 @@
  *        removeDeletedCloudEntries, removeDeletedCloudFaults, markFaultSynced
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, FaultEntry } from '../../../src/types';
 
 // Mock localStorage
@@ -52,7 +52,9 @@ function createValidEntry(overrides: Partial<Entry> = {}): Entry {
 }
 
 // Helper to create a valid fault entry
-function createFaultEntry(overrides: Partial<FaultEntry> = {}): Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'> {
+function createFaultEntry(
+  overrides: Partial<FaultEntry> = {},
+): Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'> {
   return {
     id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     bib: '042',
@@ -222,26 +224,32 @@ describe('Store - Additional Coverage', () => {
 
     it('should get active bibs for a run', () => {
       // Racer 042 started run 1
-      store.addEntry(createValidEntry({
-        id: 'dev_test-1-s042',
-        bib: '042',
-        point: 'S',
-        run: 1,
-      }));
+      store.addEntry(
+        createValidEntry({
+          id: 'dev_test-1-s042',
+          bib: '042',
+          point: 'S',
+          run: 1,
+        }),
+      );
       // Racer 043 started run 1
-      store.addEntry(createValidEntry({
-        id: 'dev_test-2-s043',
-        bib: '043',
-        point: 'S',
-        run: 1,
-      }));
+      store.addEntry(
+        createValidEntry({
+          id: 'dev_test-2-s043',
+          bib: '043',
+          point: 'S',
+          run: 1,
+        }),
+      );
       // Racer 042 finished run 1
-      store.addEntry(createValidEntry({
-        id: 'dev_test-3-f042',
-        bib: '042',
-        point: 'F',
-        run: 1,
-      }));
+      store.addEntry(
+        createValidEntry({
+          id: 'dev_test-3-f042',
+          bib: '042',
+          point: 'F',
+          run: 1,
+        }),
+      );
 
       const activeBibs = store.getActiveBibs(1);
       expect(activeBibs).toEqual(['043']);
@@ -252,18 +260,22 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should filter active bibs by run', () => {
-      store.addEntry(createValidEntry({
-        id: 'dev_test-1-s042r1',
-        bib: '042',
-        point: 'S',
-        run: 1,
-      }));
-      store.addEntry(createValidEntry({
-        id: 'dev_test-2-s043r2',
-        bib: '043',
-        point: 'S',
-        run: 2,
-      }));
+      store.addEntry(
+        createValidEntry({
+          id: 'dev_test-1-s042r1',
+          bib: '042',
+          point: 'S',
+          run: 1,
+        }),
+      );
+      store.addEntry(
+        createValidEntry({
+          id: 'dev_test-2-s043r2',
+          bib: '043',
+          point: 'S',
+          run: 2,
+        }),
+      );
 
       expect(store.getActiveBibs(1)).toEqual(['042']);
       expect(store.getActiveBibs(2)).toEqual(['043']);
@@ -281,7 +293,9 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load gate assignment from storage', async () => {
-      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([4, 12]);
+      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([
+        4, 12,
+      ]);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -289,7 +303,9 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle invalid gate assignment in storage', async () => {
-      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([4]);
+      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([
+        4,
+      ]);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -313,21 +329,24 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load fault entries from storage', async () => {
-      const faults = [{
-        id: 'fault-1',
-        bib: '042',
-        run: 1,
-        gateNumber: 5,
-        faultType: 'MG',
-        timestamp: new Date().toISOString(),
-        deviceId: 'dev_judge1',
-        deviceName: 'Judge 1',
-        gateRange: [4, 12],
-        currentVersion: 1,
-        versionHistory: [],
-        markedForDeletion: false,
-      }];
-      localStorageMock._getStore()['skiTimerFaultEntries'] = JSON.stringify(faults);
+      const faults = [
+        {
+          id: 'fault-1',
+          bib: '042',
+          run: 1,
+          gateNumber: 5,
+          faultType: 'MG',
+          timestamp: new Date().toISOString(),
+          deviceId: 'dev_judge1',
+          deviceName: 'Judge 1',
+          gateRange: [4, 12],
+          currentVersion: 1,
+          versionHistory: [],
+          markedForDeletion: false,
+        },
+      ];
+      localStorageMock._getStore()['skiTimerFaultEntries'] =
+        JSON.stringify(faults);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -405,10 +424,9 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should return false when updating non-existent fault with history', () => {
-      const result = store.updateFaultEntryWithHistory(
-        'nonexistent',
-        { bib: '099' },
-      );
+      const result = store.updateFaultEntryWithHistory('nonexistent', {
+        bib: '099',
+      });
       expect(result).toBe(false);
     });
 
@@ -417,19 +435,25 @@ describe('Store - Additional Coverage', () => {
       store.addFaultEntry(fault);
       store.markFaultForDeletion('fault-marked-1');
 
-      const result = store.updateFaultEntryWithHistory(
-        'fault-marked-1',
-        { bib: '099' },
-      );
+      const result = store.updateFaultEntryWithHistory('fault-marked-1', {
+        bib: '099',
+      });
       expect(result).toBe(false);
     });
 
     it('should restore a fault to a previous version', () => {
-      const fault = createFaultEntry({ id: 'fault-restore-1', bib: '042', gateNumber: 5 });
+      const fault = createFaultEntry({
+        id: 'fault-restore-1',
+        bib: '042',
+        gateNumber: 5,
+      });
       store.addFaultEntry(fault);
 
       // Update to version 2
-      store.updateFaultEntryWithHistory('fault-restore-1', { bib: '099', gateNumber: 8 });
+      store.updateFaultEntryWithHistory('fault-restore-1', {
+        bib: '099',
+        gateNumber: 8,
+      });
 
       // Restore to version 1
       const result = store.restoreFaultVersion('fault-restore-1', 1);
@@ -461,7 +485,9 @@ describe('Store - Additional Coverage', () => {
 
       expect(result).toBe(true);
       expect(store.getState().faultEntries[0].markedForDeletion).toBe(true);
-      expect(store.getState().faultEntries[0].markedForDeletionBy).toBeDefined();
+      expect(
+        store.getState().faultEntries[0].markedForDeletionBy,
+      ).toBeDefined();
     });
 
     it('should return false when marking non-existent fault for deletion', () => {
@@ -505,7 +531,9 @@ describe('Store - Additional Coverage', () => {
 
       expect(result).toBe(true);
       expect(store.getState().faultEntries[0].markedForDeletion).toBe(false);
-      expect(store.getState().faultEntries[0].markedForDeletionAt).toBeUndefined();
+      expect(
+        store.getState().faultEntries[0].markedForDeletionAt,
+      ).toBeUndefined();
     });
 
     it('should return false when rejecting non-existent fault deletion', () => {
@@ -534,9 +562,15 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should get faults for bib and run', () => {
-      store.addFaultEntry(createFaultEntry({ id: 'fault-bib-1', bib: '042', run: 1 }));
-      store.addFaultEntry(createFaultEntry({ id: 'fault-bib-2', bib: '042', run: 2 }));
-      store.addFaultEntry(createFaultEntry({ id: 'fault-bib-3', bib: '043', run: 1 }));
+      store.addFaultEntry(
+        createFaultEntry({ id: 'fault-bib-1', bib: '042', run: 1 }),
+      );
+      store.addFaultEntry(
+        createFaultEntry({ id: 'fault-bib-2', bib: '042', run: 2 }),
+      );
+      store.addFaultEntry(
+        createFaultEntry({ id: 'fault-bib-3', bib: '043', run: 1 }),
+      );
 
       const faults = store.getFaultsForBib('042', 1);
       expect(faults).toHaveLength(1);
@@ -597,8 +631,12 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should remove deleted cloud faults', () => {
-      store.addFaultEntry(createFaultEntry({ id: 'fault-remdel-1', deviceId: 'dev_other' }));
-      store.addFaultEntry(createFaultEntry({ id: 'fault-remdel-2', deviceId: 'dev_other' }));
+      store.addFaultEntry(
+        createFaultEntry({ id: 'fault-remdel-1', deviceId: 'dev_other' }),
+      );
+      store.addFaultEntry(
+        createFaultEntry({ id: 'fault-remdel-2', deviceId: 'dev_other' }),
+      );
 
       const count = store.removeDeletedCloudFaults(['fault-remdel-1']);
       expect(count).toBe(1);
@@ -644,7 +682,9 @@ describe('Store - Additional Coverage', () => {
       // Advancing timers should not cause duplicate save
       const callCountAfterForce = localStorageMock.setItem.mock.calls.length;
       vi.advanceTimersByTime(200);
-      expect(localStorageMock.setItem.mock.calls.length).toBe(callCountAfterForce);
+      expect(localStorageMock.setItem.mock.calls.length).toBe(
+        callCountAfterForce,
+      );
     });
   });
 
@@ -854,8 +894,9 @@ describe('Store - Additional Coverage', () => {
       expect(result.success).toBe(true);
 
       const entries = store.getState().entries;
-      expect(new Date(entries[0].timestamp).getTime())
-        .toBeLessThanOrEqual(new Date(entries[1].timestamp).getTime());
+      expect(new Date(entries[0].timestamp).getTime()).toBeLessThanOrEqual(
+        new Date(entries[1].timestamp).getTime(),
+      );
     });
 
     it('should handle import with zero new entries', () => {
@@ -892,7 +933,9 @@ describe('Store - Additional Coverage', () => {
       store.setGateAssignment(null);
       vi.advanceTimersByTime(150);
 
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('skiTimerGateAssignment');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'skiTimerGateAssignment',
+      );
     });
 
     it('should persist first gate color', () => {
@@ -939,12 +982,15 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load sync queue from storage', async () => {
-      const syncQueue = [{
-        entry: createValidEntry({ id: 'dev_test-1-loadq' }),
-        retryCount: 2,
-        lastAttempt: Date.now(),
-      }];
-      localStorageMock._getStore()['skiTimerSyncQueue'] = JSON.stringify(syncQueue);
+      const syncQueue = [
+        {
+          entry: createValidEntry({ id: 'dev_test-1-loadq' }),
+          retryCount: 2,
+          lastAttempt: Date.now(),
+        },
+      ];
+      localStorageMock._getStore()['skiTimerSyncQueue'] =
+        JSON.stringify(syncQueue);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -961,7 +1007,9 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle non-array sync queue in storage', async () => {
-      localStorageMock._getStore()['skiTimerSyncQueue'] = JSON.stringify({ not: 'array' });
+      localStorageMock._getStore()['skiTimerSyncQueue'] = JSON.stringify({
+        not: 'array',
+      });
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -1163,7 +1211,9 @@ describe('Store - Additional Coverage', () => {
 
   describe('Entries with non-array data in storage', () => {
     it('should handle non-array entries in localStorage', async () => {
-      localStorageMock._getStore()['skiTimerEntries'] = JSON.stringify({ not: 'array' });
+      localStorageMock._getStore()['skiTimerEntries'] = JSON.stringify({
+        not: 'array',
+      });
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -1171,7 +1221,9 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle non-array fault entries in localStorage', async () => {
-      localStorageMock._getStore()['skiTimerFaultEntries'] = JSON.stringify({ not: 'array' });
+      localStorageMock._getStore()['skiTimerFaultEntries'] = JSON.stringify({
+        not: 'array',
+      });
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -1185,7 +1237,10 @@ describe('Store - Additional Coverage', () => {
 
       expect(state.deviceName).toBeDefined();
       expect(state.deviceName.length).toBeGreaterThan(0);
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('skiTimerDeviceName', expect.any(String));
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'skiTimerDeviceName',
+        expect.any(String),
+      );
     });
 
     it('should load existing device name from storage', async () => {

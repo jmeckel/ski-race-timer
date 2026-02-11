@@ -9,9 +9,9 @@
  *   node scripts/clean-redis.mjs --all     # Delete everything including PINs
  */
 
-import Redis from 'ioredis';
 import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import Redis from 'ioredis';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 // Load .env.local manually (no dotenv dependency needed)
@@ -25,7 +25,9 @@ try {
       process.env[match[1]] = match[2];
     }
   }
-} catch { /* .env.local not found - rely on existing env vars */ }
+} catch {
+  /* .env.local not found - rely on existing env vars */
+}
 
 const REDIS_URL = process.env.REDIS_URL;
 if (!REDIS_URL) {
@@ -39,7 +41,7 @@ const deleteAll = args.includes('--all');
 
 const redis = new Redis(REDIS_URL, {
   maxRetriesPerRequest: 3,
-  connectTimeout: 10000
+  connectTimeout: 10000,
 });
 
 async function scanAllKeys() {
@@ -62,10 +64,15 @@ try {
   }
 
   // Categorize keys
-  const pinKeys = allKeys.filter(k => k.startsWith('admin:'));
-  const raceKeys = allKeys.filter(k => k.startsWith('race:'));
-  const rateLimitKeys = allKeys.filter(k => k.startsWith('reset-pin:'));
-  const otherKeys = allKeys.filter(k => !k.startsWith('admin:') && !k.startsWith('race:') && !k.startsWith('reset-pin:'));
+  const pinKeys = allKeys.filter((k) => k.startsWith('admin:'));
+  const raceKeys = allKeys.filter((k) => k.startsWith('race:'));
+  const rateLimitKeys = allKeys.filter((k) => k.startsWith('reset-pin:'));
+  const otherKeys = allKeys.filter(
+    (k) =>
+      !k.startsWith('admin:') &&
+      !k.startsWith('race:') &&
+      !k.startsWith('reset-pin:'),
+  );
 
   console.log(`\nFound ${allKeys.length} keys in Redis:\n`);
 
@@ -90,14 +97,14 @@ try {
   }
 
   if (!doDelete) {
-    console.log('\nDry run. Use --delete to remove race data, or --all to remove everything.');
+    console.log(
+      '\nDry run. Use --delete to remove race data, or --all to remove everything.',
+    );
     process.exit(0);
   }
 
   // Determine which keys to delete
-  const keysToDelete = deleteAll
-    ? allKeys
-    : [...raceKeys, ...rateLimitKeys];
+  const keysToDelete = deleteAll ? allKeys : [...raceKeys, ...rateLimitKeys];
 
   if (keysToDelete.length === 0) {
     console.log('\nNo keys to delete.');
@@ -109,7 +116,9 @@ try {
   console.log('Done.');
 
   if (!deleteAll && pinKeys.length > 0) {
-    console.log(`\nKept ${pinKeys.length} admin/PIN key(s). Use --all to remove those too.`);
+    console.log(
+      `\nKept ${pinKeys.length} admin/PIN key(s). Use --all to remove those too.`,
+    );
   }
 } catch (error) {
   console.error('Error:', error.message);

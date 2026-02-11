@@ -4,8 +4,13 @@
  * Tests for offline capabilities, data persistence, and service worker
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, clickToggle, navigateTo, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  navigateTo,
+  setupPage,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 // Helper to add test entries via radial dial
 async function addTestEntries(page, count = 3) {
@@ -25,7 +30,10 @@ test.describe('Data Persistence', () => {
   test.setTimeout(30000);
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -44,7 +52,10 @@ test.describe('Data Persistence', () => {
     await expect(page.locator('#stat-total')).toHaveText('2');
   });
 
-  test('should persist entries across browser close', async ({ page, context }) => {
+  test('should persist entries across browser close', async ({
+    page,
+    context,
+  }) => {
     // Add entries
     await addTestEntries(page, 2);
 
@@ -57,12 +68,14 @@ test.describe('Data Persistence', () => {
     await navigateTo(newPage, 'results');
     await expect(newPage.locator('#stat-total')).toHaveText('2');
   });
-
 });
 
 test.describe('LocalStorage Operations', () => {
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test('should save entries to localStorage', async ({ page }) => {
     await setupPage(page);
@@ -119,7 +132,9 @@ test.describe('LocalStorage Operations', () => {
     await page.click('#radial-time-btn');
 
     // Should show confirmation (app recovered)
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
   });
 
   test('should handle missing localStorage gracefully', async ({ page }) => {
@@ -145,7 +160,10 @@ test.describe('Offline Functionality', () => {
   test.setTimeout(30000);
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -240,7 +258,7 @@ test.describe('Service Worker', () => {
       const registrations = await navigator.serviceWorker.getRegistrations();
       return {
         hasSupport: true,
-        registered: registrations.length > 0
+        registered: registrations.length > 0,
       };
     });
 
@@ -269,7 +287,7 @@ test.describe('Service Worker', () => {
       const cacheNames = await caches.keys();
       return {
         hasSupport: true,
-        hasCaches: cacheNames.length > 0
+        hasCaches: cacheNames.length > 0,
       };
     });
 
@@ -291,7 +309,10 @@ test.describe('Edge Cases', () => {
   test.setTimeout(30000);
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -320,7 +341,7 @@ test.describe('Edge Cases', () => {
     await expect(timestampButton).toBeVisible();
     await Promise.all([
       timestampButton.click({ force: true }),
-      page.click('[data-view="results"]')
+      page.click('[data-view="results"]'),
     ]);
 
     await page.waitForTimeout(1000);

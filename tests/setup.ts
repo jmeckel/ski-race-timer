@@ -3,39 +3,45 @@
  * Additional setup for TypeScript tests
  */
 
-import { vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 // Mock crypto.randomUUID for consistent testing
-const mockUUID = vi.fn(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-  const r = Math.random() * 16 | 0;
-  const v = c === 'x' ? r : (r & 0x3 | 0x8);
-  return v.toString(16);
-}));
+const mockUUID = vi.fn(() =>
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  }),
+);
 
 Object.defineProperty(globalThis.crypto, 'randomUUID', {
   value: mockUUID,
-  writable: true
+  writable: true,
 });
 
 // Mock MediaDevices for camera tests
 const mockMediaStream = {
-  getTracks: vi.fn(() => [{
-    stop: vi.fn(),
-    kind: 'video',
-    enabled: true
-  }])
+  getTracks: vi.fn(() => [
+    {
+      stop: vi.fn(),
+      kind: 'video',
+      enabled: true,
+    },
+  ]),
 };
 
 const mockMediaDevices = {
   getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream)),
-  enumerateDevices: vi.fn(() => Promise.resolve([
-    { kind: 'videoinput', deviceId: 'camera1', label: 'Back Camera' }
-  ]))
+  enumerateDevices: vi.fn(() =>
+    Promise.resolve([
+      { kind: 'videoinput', deviceId: 'camera1', label: 'Back Camera' },
+    ]),
+  ),
 };
 
 Object.defineProperty(navigator, 'mediaDevices', {
   value: mockMediaDevices,
-  writable: true
+  writable: true,
 });
 
 // Mock HTMLVideoElement for camera tests
@@ -65,7 +71,7 @@ class MockHTMLCanvasElement {
       fillStyle: '',
       fillRect: vi.fn(),
       font: '',
-      fillText: vi.fn()
+      fillText: vi.fn(),
     };
   }
 
@@ -75,8 +81,10 @@ class MockHTMLCanvasElement {
 }
 
 // Add to global
-(globalThis as unknown as Record<string, unknown>).MockHTMLVideoElement = MockHTMLVideoElement;
-(globalThis as unknown as Record<string, unknown>).MockHTMLCanvasElement = MockHTMLCanvasElement;
+(globalThis as unknown as Record<string, unknown>).MockHTMLVideoElement =
+  MockHTMLVideoElement;
+(globalThis as unknown as Record<string, unknown>).MockHTMLCanvasElement =
+  MockHTMLCanvasElement;
 
 // Reset mocks before each test
 beforeEach(() => {
@@ -94,5 +102,5 @@ export {
   mockMediaStream,
   mockMediaDevices,
   MockHTMLVideoElement,
-  MockHTMLCanvasElement
+  MockHTMLCanvasElement,
 };

@@ -4,14 +4,24 @@
  * Tests for language switching between German and English
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, setupPageEnglish, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  setupPageEnglish,
+  setupPageFullMode,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 // Helper to set language
 async function setLanguage(page, lang) {
   await navigateTo(page, 'settings');
   const langToggle = page.locator('#lang-toggle');
-  const activeLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+  const activeLang = await langToggle
+    .locator('.lang-option.active')
+    .getAttribute('data-lang');
 
   // Click the language option we want if not already active
   if (activeLang !== lang) {
@@ -42,17 +52,20 @@ test.describe('Language Toggle', () => {
     const langToggle = page.locator('#lang-toggle');
 
     // Get initial active language
-    const initialActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+    const initialActiveLang = await langToggle
+      .locator('.lang-option.active')
+      .getAttribute('data-lang');
 
     // Click the inactive language option
     const targetLang = initialActiveLang === 'de' ? 'en' : 'de';
     await langToggle.locator(`.lang-option[data-lang="${targetLang}"]`).click();
 
     // Active language should have changed
-    const newActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+    const newActiveLang = await langToggle
+      .locator('.lang-option.active')
+      .getAttribute('data-lang');
     expect(newActiveLang).not.toBe(initialActiveLang);
   });
-
 });
 
 test.describe('German Language (Default)', () => {

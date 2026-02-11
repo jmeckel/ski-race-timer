@@ -28,7 +28,7 @@ function getFocusableElements(modal: HTMLElement): HTMLElement[] {
 function focusFirstElement(modal: HTMLElement): void {
   const focusables = getFocusableElements(modal);
   if (focusables.length > 0) {
-    focusables[0].focus();
+    focusables[0]!.focus();
     return;
   }
 
@@ -53,8 +53,8 @@ function trapFocus(modal: HTMLElement): void {
       return;
     }
 
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
+    const first = focusables[0]!;
+    const last = focusables[focusables.length - 1]!;
     const active = document.activeElement as HTMLElement | null;
 
     if (event.shiftKey) {

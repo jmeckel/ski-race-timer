@@ -3,7 +3,7 @@
  * Tests: initialization, pull gesture, refresh callback, reset
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PullToRefresh } from '../../../src/components/PullToRefresh';
 
 describe('PullToRefresh Component', () => {
@@ -46,7 +46,9 @@ describe('PullToRefresh Component', () => {
       container.innerHTML = '<div>Content</div>';
       const ptr = new PullToRefresh({ container, onRefresh });
 
-      expect(container.firstChild).toBe(container.querySelector('.pull-indicator'));
+      expect(container.firstChild).toBe(
+        container.querySelector('.pull-indicator'),
+      );
 
       ptr.destroy();
     });
@@ -57,7 +59,7 @@ describe('PullToRefresh Component', () => {
       const ptr = new PullToRefresh({ container, onRefresh });
 
       const touchStart = new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
+        touches: [{ clientX: 100, clientY: 100 } as Touch],
       });
 
       container.dispatchEvent(touchStart);
@@ -71,16 +73,22 @@ describe('PullToRefresh Component', () => {
       scrollableParent.scrollTop = 0;
 
       // Start touch
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move down
-      container.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 200 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 200 } as Touch],
+        }),
+      );
 
-      const indicator = container.querySelector('.pull-indicator') as HTMLElement;
+      const indicator = container.querySelector(
+        '.pull-indicator',
+      ) as HTMLElement;
       expect(indicator.style.transform).not.toBe('translateY(0)');
 
       ptr.destroy();
@@ -91,19 +99,27 @@ describe('PullToRefresh Component', () => {
       scrollableParent.scrollTop = 100;
 
       // Start touch
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 100 } as Touch],
+        }),
+      );
 
       // Move down
-      container.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 200 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 200 } as Touch],
+        }),
+      );
 
-      const indicator = container.querySelector('.pull-indicator') as HTMLElement;
+      const indicator = container.querySelector(
+        '.pull-indicator',
+      ) as HTMLElement;
       // Indicator should not have moved or should be at initial position
       // Initial position is empty string or translateY(0px) or translateY(0)
-      expect(['', 'translateY(0)', 'translateY(0px)']).toContain(indicator.style.transform);
+      expect(['', 'translateY(0)', 'translateY(0px)']).toContain(
+        indicator.style.transform,
+      );
 
       ptr.destroy();
     });
@@ -115,14 +131,18 @@ describe('PullToRefresh Component', () => {
       scrollableParent.scrollTop = 0;
 
       // Start touch
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 0 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 0 } as Touch],
+        }),
+      );
 
       // Pull down past threshold (80px * resistance 2.5 = 200px)
-      container.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 250 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 250 } as Touch],
+        }),
+      );
 
       // Release
       container.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -139,14 +159,18 @@ describe('PullToRefresh Component', () => {
       scrollableParent.scrollTop = 0;
 
       // Start touch
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 0 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 0 } as Touch],
+        }),
+      );
 
       // Small pull
-      container.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 50 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 50 } as Touch],
+        }),
+      );
 
       // Release
       container.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
@@ -175,14 +199,18 @@ describe('PullToRefresh Component', () => {
       scrollableParent.scrollTop = 0;
 
       // Start touch
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 0 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 0 } as Touch],
+        }),
+      );
 
       // Pull down past threshold
-      container.dispatchEvent(new TouchEvent('touchmove', {
-        touches: [{ clientX: 100, clientY: 250 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchmove', {
+          touches: [{ clientX: 100, clientY: 250 } as Touch],
+        }),
+      );
 
       const text = container.querySelector('.pull-text');
       // Store defaults to German - check for localized text
@@ -206,9 +234,11 @@ describe('PullToRefresh Component', () => {
       ptr.destroy();
 
       // Trigger events - should not cause errors
-      container.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [{ clientX: 100, clientY: 100 } as Touch]
-      }));
+      container.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [{ clientX: 100, clientY: 100 } as Touch],
+        }),
+      );
       container.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
 
       expect(onRefresh).not.toHaveBeenCalled();

@@ -363,11 +363,11 @@ describe('Wake Lock Service', () => {
   });
 
   describe('idle timeout', () => {
-    it('should release wake lock after 30 minutes of inactivity', async () => {
+    it('should release wake lock after 10 minutes of inactivity', async () => {
       await wakeLockService.enable();
 
-      // Advance 30 minutes + check interval
-      vi.advanceTimersByTime(30 * 60 * 1000 + 60 * 1000);
+      // Advance 10 minutes + check interval
+      vi.advanceTimersByTime(10 * 60 * 1000 + 60 * 1000);
 
       expect(mockSentinel.release).toHaveBeenCalled();
     });
@@ -377,7 +377,7 @@ describe('Wake Lock Service', () => {
 
       await wakeLockService.enable();
 
-      vi.advanceTimersByTime(30 * 60 * 1000 + 60 * 1000);
+      vi.advanceTimersByTime(10 * 60 * 1000 + 60 * 1000);
 
       expect(showToast).toHaveBeenCalledWith(
         expect.any(String),
@@ -389,16 +389,16 @@ describe('Wake Lock Service', () => {
     it('should not release if user interacts within timeout', async () => {
       await wakeLockService.enable();
 
-      // Advance 20 minutes
-      vi.advanceTimersByTime(20 * 60 * 1000);
+      // Advance 5 minutes
+      vi.advanceTimersByTime(5 * 60 * 1000);
 
       // Simulate interaction
       wakeLockService.resetIdleTimer();
 
-      // Advance another 20 minutes (40 from start, but only 20 from last interaction)
-      vi.advanceTimersByTime(20 * 60 * 1000);
+      // Advance another 5 minutes (10 from start, but only 5 from last interaction)
+      vi.advanceTimersByTime(5 * 60 * 1000);
 
-      // Should not have been released (not yet 30 min from last interaction)
+      // Should not have been released (not yet 10 min from last interaction)
       expect(mockSentinel.release).not.toHaveBeenCalled();
     });
 

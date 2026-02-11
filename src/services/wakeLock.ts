@@ -9,8 +9,9 @@ import { t } from '../i18n/translations';
 import { store } from '../store';
 import { logger } from '../utils/logger';
 
-// Idle timeout: 30 minutes
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+// Idle timeout: 10 minutes (most timing gaps between runs are under 10 min;
+// the wake lock auto-reacquires on any user interaction)
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 // Check interval: 60 seconds
 const IDLE_CHECK_INTERVAL_MS = 60 * 1000;
 

@@ -123,7 +123,11 @@ export class Toast {
   /**
    * Create toast element
    */
-  private createToast(message: string, type: ToastType, action?: ToastAction): HTMLElement {
+  private createToast(
+    message: string,
+    type: ToastType,
+    action?: ToastAction,
+  ): HTMLElement {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
 
@@ -189,7 +193,8 @@ export class Toast {
         e.preventDefault();
         action.callback();
         // Dismiss toast immediately after action
-        const dismiss = (toast as unknown as Record<string, () => void>)._dismiss;
+        const dismiss = (toast as unknown as Record<string, () => void>)
+          ._dismiss;
         if (dismiss) dismiss();
       });
       toast.appendChild(actionBtn);
@@ -226,7 +231,10 @@ export class Toast {
 
       if (shouldShowNotification) {
         // Show a brief "copied" feedback - use a shorter duration
-        this.show(t('copied', store.getState().currentLang), { type: 'success', duration: 1500 });
+        this.show(t('copied', store.getState().currentLang), {
+          type: 'success',
+          duration: 1500,
+        });
       }
     } catch {
       // Clipboard API not available or failed - silent fail

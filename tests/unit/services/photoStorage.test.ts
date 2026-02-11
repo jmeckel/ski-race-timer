@@ -3,7 +3,7 @@
  * Tests IndexedDB-based photo storage functionality
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock IndexedDB
 const mockStoreData = new Map<string, unknown>();
@@ -15,7 +15,7 @@ const mockStore = {
       onsuccess: null as (() => void) | null,
       onerror: null as (() => void) | null,
       error: null,
-      result: undefined
+      result: undefined,
     };
     setTimeout(() => {
       mockStoreData.set(record.entryId, record);
@@ -28,7 +28,7 @@ const mockStore = {
       onsuccess: null as (() => void) | null,
       onerror: null as (() => void) | null,
       error: null,
-      result: mockStoreData.get(key)
+      result: mockStoreData.get(key),
     };
     setTimeout(() => {
       request.result = mockStoreData.get(key);
@@ -40,7 +40,7 @@ const mockStore = {
     const request = {
       onsuccess: null as (() => void) | null,
       onerror: null as (() => void) | null,
-      error: null
+      error: null,
     };
     setTimeout(() => {
       mockStoreData.delete(key);
@@ -52,7 +52,7 @@ const mockStore = {
     const request = {
       onsuccess: null as (() => void) | null,
       onerror: null as (() => void) | null,
-      error: null
+      error: null,
     };
     setTimeout(() => {
       mockStoreData.clear();
@@ -65,7 +65,7 @@ const mockStore = {
       onsuccess: null as (() => void) | null,
       onerror: null as (() => void) | null,
       error: null,
-      result: mockStoreData.size
+      result: mockStoreData.size,
     };
     setTimeout(() => {
       request.result = mockStoreData.size;
@@ -73,22 +73,24 @@ const mockStore = {
     }, 0);
     return request;
   }),
-  createIndex: vi.fn()
+  createIndex: vi.fn(),
 };
 
 const mockTransaction = {
   objectStore: vi.fn(() => mockStore),
   oncomplete: null as (() => void) | null,
-  onerror: null as (() => void) | null
+  onerror: null as (() => void) | null,
 };
 
 const mockDb = {
   transaction: vi.fn(() => mockTransaction),
   createObjectStore: vi.fn(() => mockStore),
   objectStoreNames: {
-    contains: vi.fn(() => false)
+    contains: vi.fn(() => false),
   },
-  close: vi.fn(() => { mockDbClosed = true; })
+  close: vi.fn(() => {
+    mockDbClosed = true;
+  }),
 };
 
 const mockOpenRequest = {
@@ -96,7 +98,7 @@ const mockOpenRequest = {
   onerror: null as (() => void) | null,
   onupgradeneeded: null as ((event: unknown) => void) | null,
   result: mockDb,
-  error: null
+  error: null,
 };
 
 // Mock window.indexedDB
@@ -110,9 +112,9 @@ Object.defineProperty(globalThis, 'indexedDB', {
         if (mockOpenRequest.onsuccess) mockOpenRequest.onsuccess();
       }, 0);
       return mockOpenRequest;
-    })
+    }),
   },
-  writable: true
+  writable: true,
 });
 
 // Mock localStorage
@@ -122,12 +124,12 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(() => null)
+  key: vi.fn(() => null),
 };
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 describe('PhotoStorage Service', () => {
@@ -207,7 +209,7 @@ describe('PhotoStorage Service', () => {
       mockStore.put({
         entryId: testEntryId,
         photo: testPhoto,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       expect(mockStore.put).toHaveBeenCalled();
@@ -242,7 +244,7 @@ describe('PhotoStorage - Edge Cases', () => {
 
     Object.defineProperty(globalThis, 'indexedDB', {
       value: undefined,
-      writable: true
+      writable: true,
     });
 
     vi.resetModules();
@@ -255,7 +257,7 @@ describe('PhotoStorage - Edge Cases', () => {
     // Restore
     Object.defineProperty(globalThis, 'indexedDB', {
       value: originalIndexedDB,
-      writable: true
+      writable: true,
     });
   });
 
@@ -374,7 +376,7 @@ describe('PhotoStorage - Queue Serialization', () => {
     const results = await Promise.all([save1, save2, save3]);
 
     // Each result should be a boolean indicating success
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(typeof result).toBe('boolean');
     });
   });
@@ -386,14 +388,16 @@ describe('PhotoStorage - Queue Serialization', () => {
     // Make many rapid concurrent saves
     const saves = [];
     for (let i = 0; i < 10; i++) {
-      saves.push(module.photoStorage.savePhoto(`entry-${i}`, `photo-data-${i}`));
+      saves.push(
+        module.photoStorage.savePhoto(`entry-${i}`, `photo-data-${i}`),
+      );
     }
 
     // All should complete without throwing
     const results = await Promise.allSettled(saves);
 
     // All should fulfill (not reject)
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result.status).toBe('fulfilled');
     });
   });

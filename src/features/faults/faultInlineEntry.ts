@@ -199,7 +199,7 @@ export function updateInlineBibSelector(): void {
 
   // Auto-fill with most recent active bib if no bib selected yet
   if (!inlineSelectedBib && activeBibs.length > 0) {
-    inlineSelectedBib = activeBibs[0];
+    inlineSelectedBib = activeBibs[0]!;
   }
 
   const bibInput = document.getElementById(
@@ -239,7 +239,7 @@ export function updateInlineGateSelector(): void {
 
   const state = store.getState();
   const lang = state.currentLang;
-  const [start, end] = state.gateAssignment || [1, 10];
+  const [start, end] = (state.gateAssignment || [1, 10]) as [number, number];
 
   container.innerHTML = '';
 
@@ -302,27 +302,27 @@ export function updateInlineGateSelector(): void {
         case 'ArrowLeft':
           e.preventDefault();
           if (currentIndex > 0) {
-            buttons[currentIndex - 1].focus();
+            buttons[currentIndex - 1]!.focus();
           }
           break;
         case 'ArrowRight':
           e.preventDefault();
           if (currentIndex < buttons.length - 1) {
-            buttons[currentIndex + 1].focus();
+            buttons[currentIndex + 1]!.focus();
           }
           break;
         case 'ArrowUp':
           e.preventDefault();
           // Move up one row (5 columns)
           if (currentIndex >= 5) {
-            buttons[currentIndex - 5].focus();
+            buttons[currentIndex - 5]!.focus();
           }
           break;
         case 'ArrowDown':
           e.preventDefault();
           // Move down one row (5 columns)
           if (currentIndex + 5 < buttons.length) {
-            buttons[currentIndex + 5].focus();
+            buttons[currentIndex + 5]!.focus();
           }
           break;
         default:
@@ -445,7 +445,7 @@ function autoSelectMostRecentBib(): void {
   });
 
   // Auto-select most recent
-  selectInlineBib(sorted[0]);
+  selectInlineBib(sorted[0]!);
 }
 
 /**

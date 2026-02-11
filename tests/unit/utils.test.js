@@ -5,7 +5,7 @@
  * Functions are reimplemented here to match the inline code in index.html.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { localStorageMock } from '../setup.js';
 
 // ============================================
@@ -33,7 +33,7 @@ function formatDate(date, lang = 'en') {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 }
 
@@ -60,13 +60,13 @@ function generateDeviceId() {
 }
 
 function getPointColor(point) {
-  const colors = { 'S': 'var(--success)', 'F': 'var(--secondary)' };
+  const colors = { S: 'var(--success)', F: 'var(--secondary)' };
   return colors[point] || 'var(--text-secondary)';
 }
 
 const translations = {
   en: { timer: 'Timer', results: 'Results', settings: 'Settings' },
-  de: { timer: 'Timer', results: 'Ergebnisse', settings: 'Einstellungen' }
+  de: { timer: 'Timer', results: 'Ergebnisse', settings: 'Einstellungen' },
 };
 
 function t(key, lang = 'en') {
@@ -80,7 +80,7 @@ function t(key, lang = 'en') {
 describe('escapeHtml', () => {
   it('should escape HTML special characters', () => {
     expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-      '&lt;script&gt;alert("xss")&lt;/script&gt;'
+      '&lt;script&gt;alert("xss")&lt;/script&gt;',
     );
   });
 

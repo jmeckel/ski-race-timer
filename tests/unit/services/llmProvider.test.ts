@@ -2,7 +2,7 @@
  * LLM Provider Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { processVoiceCommandWithTimeout } from '../../../src/services/llmProvider';
 import type { VoiceContext } from '../../../src/types';
 
@@ -10,12 +10,12 @@ describe('LLM Provider', () => {
   const mockContext: VoiceContext = {
     role: 'timer',
     language: 'de',
-    currentRun: 1
+    currentRun: 1,
   };
 
   const mockConfig = {
     endpoint: 'https://api.example.com/v1/messages',
-    apiKey: 'test-api-key'
+    apiKey: 'test-api-key',
   };
 
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe('LLM Provider', () => {
         'Zeit',
         mockContext,
         mockConfig,
-        1000
+        1000,
       );
 
       expect(result.action).toBe('unknown');
@@ -43,16 +43,18 @@ describe('LLM Provider', () => {
     });
 
     it('should return unknown intent on timeout', async () => {
-      const mockFetch = vi.fn().mockImplementation(() =>
-        new Promise((resolve) => setTimeout(resolve, 5000))
-      );
+      const mockFetch = vi
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(resolve, 5000)),
+        );
       vi.stubGlobal('fetch', mockFetch);
 
       const result = await processVoiceCommandWithTimeout(
         'Zeit',
         mockContext,
         mockConfig,
-        100 // Very short timeout
+        100, // Very short timeout
       );
 
       expect(result.action).toBe('unknown');
@@ -61,15 +63,18 @@ describe('LLM Provider', () => {
     it('should call fetch with correct parameters', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          content: [{
-            text: JSON.stringify({
-              action: 'record_time',
-              confidence: 0.95,
-              confirmationNeeded: false
-            })
-          }]
-        })
+        json: () =>
+          Promise.resolve({
+            content: [
+              {
+                text: JSON.stringify({
+                  action: 'record_time',
+                  confidence: 0.95,
+                  confirmationNeeded: false,
+                }),
+              },
+            ],
+          }),
       });
       vi.stubGlobal('fetch', mockFetch);
 
@@ -77,7 +82,7 @@ describe('LLM Provider', () => {
         'Zeit',
         mockContext,
         mockConfig,
-        5000
+        5000,
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -86,24 +91,27 @@ describe('LLM Provider', () => {
           method: 'POST',
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${mockConfig.apiKey}`
-          })
-        })
+            Authorization: `Bearer ${mockConfig.apiKey}`,
+          }),
+        }),
       );
     });
 
     it('should parse valid LLM response', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          content: [{
-            text: JSON.stringify({
-              action: 'record_time',
-              confidence: 0.95,
-              confirmationNeeded: false
-            })
-          }]
-        })
+        json: () =>
+          Promise.resolve({
+            content: [
+              {
+                text: JSON.stringify({
+                  action: 'record_time',
+                  confidence: 0.95,
+                  confirmationNeeded: false,
+                }),
+              },
+            ],
+          }),
       });
       vi.stubGlobal('fetch', mockFetch);
 
@@ -111,7 +119,7 @@ describe('LLM Provider', () => {
         'Zeit',
         mockContext,
         mockConfig,
-        5000
+        5000,
       );
 
       expect(result.action).toBe('record_time');
@@ -125,22 +133,25 @@ describe('LLM Provider', () => {
         language: 'en',
         currentRun: 2,
         activeBibs: ['001', '002', '003'],
-        gateRange: [5, 10]
+        gateRange: [5, 10],
       };
 
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          content: [{
-            text: JSON.stringify({
-              action: 'record_fault',
-              confidence: 0.9,
-              params: { bib: '045', gate: 7, faultType: 'MG' },
-              confirmationNeeded: true,
-              confirmationPrompt: 'Bib 45, Gate 7, Missed Gate?'
-            })
-          }]
-        })
+        json: () =>
+          Promise.resolve({
+            content: [
+              {
+                text: JSON.stringify({
+                  action: 'record_fault',
+                  confidence: 0.9,
+                  params: { bib: '045', gate: 7, faultType: 'MG' },
+                  confirmationNeeded: true,
+                  confirmationPrompt: 'Bib 45, Gate 7, Missed Gate?',
+                }),
+              },
+            ],
+          }),
       });
       vi.stubGlobal('fetch', mockFetch);
 
@@ -148,7 +159,7 @@ describe('LLM Provider', () => {
         'Bib 45 missed gate 7',
         gateJudgeContext,
         mockConfig,
-        5000
+        5000,
       );
 
       expect(result.action).toBe('record_fault');

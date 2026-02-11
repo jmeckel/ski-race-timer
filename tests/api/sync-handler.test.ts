@@ -47,6 +47,16 @@ vi.mock('../../api/lib/jwt.js', () => ({
 
 vi.mock('../../api/lib/validation.js', () => ({
   isValidRaceId: vi.fn((id: string) => /^[a-zA-Z0-9_-]+$/.test(id) && id.length <= 50),
+  isValidEntry: vi.fn((entry: any) => {
+    if (!entry || typeof entry !== 'object') return false;
+    if (typeof entry.id !== 'string' && typeof entry.id !== 'number') return false;
+    if (typeof entry.id === 'string' && entry.id.length === 0) return false;
+    if (typeof entry.id === 'number' && entry.id <= 0) return false;
+    if (!['S', 'F'].includes(entry.point)) return false;
+    if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
+    if (entry.status && !['ok', 'dns', 'dnf', 'dsq', 'flt'].includes(entry.status)) return false;
+    return true;
+  }),
   checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 99, reset: 9999, limit: 100 }),
   MAX_DEVICE_NAME_LENGTH: 100,
   VALID_FAULT_TYPES: ['MG', 'STR', 'BR'],
@@ -89,6 +99,8 @@ vi.mock('../../api/lib/response.js', () => ({
     if (str === null || str === undefined || str === '') return defaultValue;
     try { return JSON.parse(str); } catch { return defaultValue; }
   }),
+  generateETag: vi.fn(() => '"mock-etag"'),
+  checkIfNoneMatch: vi.fn(() => false),
 }));
 
 vi.mock('../../api/lib/apiLogger.js', () => ({

@@ -1,9 +1,22 @@
 /**
- * Shared API Validation Utilities
- * Extracted from sync.js and faults.js to eliminate duplication
+ * API Validation Utilities
+ * Core validation (isValidRaceId, isValidEntry, etc.) imported from shared/validation.ts
  */
 
 import type Redis from 'ioredis';
+
+// Re-export shared validation functions and constants
+export {
+  isValidRaceId,
+  isValidEntry,
+  isValidDeviceId,
+  VALID_POINTS,
+  VALID_STATUSES,
+  VALID_FAULT_TYPES,
+  MAX_RACE_ID_LENGTH,
+  MAX_BIB_LENGTH,
+  MAX_DEVICE_NAME_LENGTH,
+} from '../../shared/validation.js';
 
 /** Valid fault type codes */
 export type FaultType = 'MG' | 'STR' | 'BR';
@@ -34,23 +47,6 @@ export interface RateLimitResult {
   error?: string;
 }
 
-// Shared constants
-export const MAX_RACE_ID_LENGTH: number = 50;
-export const MAX_DEVICE_NAME_LENGTH: number = 100;
-
-// Fault type constants
-export const VALID_FAULT_TYPES: readonly FaultType[] = ['MG', 'STR', 'BR'];
-
-/**
- * Validate race ID format.
- * Race IDs are CASE-INSENSITIVE - they are normalized to lowercase internally.
- */
-export function isValidRaceId(raceId: unknown): raceId is string {
-  if (!raceId || typeof raceId !== 'string') return false;
-  if (raceId.length > MAX_RACE_ID_LENGTH) return false;
-  return /^[a-zA-Z0-9_-]+$/.test(raceId);
-}
-
 /**
  * Check rate limit using Redis
  * @param client - Redis client
@@ -69,7 +65,7 @@ export async function checkRateLimit(client: Redis, ip: string, method: string, 
     multi.incr(key);
     multi.expire(key, config.window + 10);
     const results = await multi.exec();
-    const count = (results as [Error | null, unknown][])[0][1] as number;
+    const count = (results?.[0]?.[1] as number) ?? 0;
 
     return {
       allowed: count <= limit,

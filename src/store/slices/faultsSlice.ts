@@ -124,7 +124,7 @@ export function updateFaultEntry(
   if (index === -1) return null;
 
   const newFaultEntries = [...faultEntries];
-  newFaultEntries[index] = { ...newFaultEntries[index], ...updates };
+  newFaultEntries[index] = { ...newFaultEntries[index]!, ...updates };
   return newFaultEntries;
 }
 
@@ -153,7 +153,7 @@ export function updateFaultEntryWithHistory(
   const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
-  const oldFault = faultEntries[index];
+  const oldFault = faultEntries[index]!;
   if (oldFault.markedForDeletion) return null;
 
   const newVersion = oldFault.currentVersion + 1;
@@ -192,7 +192,7 @@ export function restoreFaultVersion(
   const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
-  const oldFault = faultEntries[index];
+  const oldFault = faultEntries[index]!;
   if (oldFault.markedForDeletion) return null;
 
   const versionToRestore = oldFault.versionHistory?.find(
@@ -212,7 +212,7 @@ export function restoreFaultVersion(
 
   const newFaultEntries = [...faultEntries];
   newFaultEntries[index] = {
-    ...oldFault,
+    ...oldFault!,
     bib: versionToRestore.data.bib,
     run: versionToRestore.data.run,
     gateNumber: versionToRestore.data.gateNumber,
@@ -244,7 +244,7 @@ export function markFaultForDeletion(
 
   const newFaultEntries = [...faultEntries];
   newFaultEntries[index] = {
-    ...newFaultEntries[index],
+    ...newFaultEntries[index]!,
     markedForDeletion: true,
     markedForDeletionAt: new Date().toISOString(),
     markedForDeletionBy: deviceName,
@@ -290,7 +290,7 @@ export function rejectFaultDeletion(
   const index = faultEntries.findIndex((f) => f.id === id);
   if (index === -1) return null;
 
-  const oldFault = faultEntries[index];
+  const oldFault = faultEntries[index]!;
   const newVersion = oldFault.currentVersion + 1;
   const rejectionVersionRecord = createFaultVersion(
     newVersion,
@@ -303,7 +303,7 @@ export function rejectFaultDeletion(
 
   const newFaultEntries = [...faultEntries];
   newFaultEntries[index] = {
-    ...newFaultEntries[index],
+    ...newFaultEntries[index]!,
     markedForDeletion: false,
     markedForDeletionAt: undefined,
     markedForDeletionBy: undefined,
@@ -346,7 +346,7 @@ export function markFaultSynced(
   if (index === -1) return faultEntries;
 
   const newFaultEntries = [...faultEntries];
-  newFaultEntries[index] = { ...newFaultEntries[index], syncedAt: Date.now() };
+  newFaultEntries[index] = { ...newFaultEntries[index]!, syncedAt: Date.now() };
   return newFaultEntries;
 }
 

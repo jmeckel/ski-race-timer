@@ -105,7 +105,7 @@ export function generateDeviceName(): string {
   const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const number = Math.floor(Math.random() * 100); // 0-99
-  return `${capitalize(adjective)} ${capitalize(noun)} ${number}`;
+  return `${capitalize(adjective!)} ${capitalize(noun!)} ${number}`;
 }
 
 /**

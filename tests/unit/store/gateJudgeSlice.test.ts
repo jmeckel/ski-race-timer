@@ -5,26 +5,26 @@
  *        penalty settings, active bibs
  */
 
-import { describe, it, expect } from 'vitest';
-import type { Entry } from '../../../src/types';
+import { describe, expect, it } from 'vitest';
 import {
-  setDeviceRole,
-  setGateAssignment,
-  setFirstGateColor,
-  getGateColor,
-  setSelectedFaultBib,
-  setJudgeReady,
-  toggleJudgeReady,
-  setChiefJudgeView,
-  toggleChiefJudgeView,
-  finalizeRacer,
-  unfinalizeRacer,
-  isRacerFinalized,
   clearFinalizedRacers,
-  setPenaltySeconds,
-  setUsePenaltyMode,
+  finalizeRacer,
   getActiveBibs,
+  getGateColor,
+  isRacerFinalized,
+  setChiefJudgeView,
+  setDeviceRole,
+  setFirstGateColor,
+  setGateAssignment,
+  setJudgeReady,
+  setPenaltySeconds,
+  setSelectedFaultBib,
+  setUsePenaltyMode,
+  toggleChiefJudgeView,
+  toggleJudgeReady,
+  unfinalizeRacer,
 } from '../../../src/store/slices/gateJudgeSlice';
+import type { Entry } from '../../../src/types';
 
 // Helper to create entries for getActiveBibs testing
 function createEntry(overrides: Partial<Entry> = {}): Entry {

@@ -3,7 +3,7 @@
  * Tests for the VoiceNoteService including recording lifecycle and callbacks
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock SpeechRecognition
 class MockSpeechRecognition {
@@ -33,8 +33,11 @@ let mockRecognition: MockSpeechRecognition;
 
 beforeEach(() => {
   mockRecognition = new MockSpeechRecognition();
-  (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(() => mockRecognition);
-  (window as unknown as Record<string, unknown>).webkitSpeechRecognition = vi.fn(() => mockRecognition);
+  (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
+    () => mockRecognition,
+  );
+  (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
+    vi.fn(() => mockRecognition);
 });
 
 afterEach(() => {
@@ -45,34 +48,46 @@ afterEach(() => {
 describe('VoiceNoteService', () => {
   describe('isSupported', () => {
     it('should return true when SpeechRecognition is available', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       expect(voiceNoteService.isSupported()).toBe(true);
     });
   });
 
   describe('initial state', () => {
     it('should have idle status initially', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       expect(voiceNoteService.getStatus()).toBe('idle');
     });
 
     it('should not be recording initially', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       expect(voiceNoteService.isRecording()).toBe(false);
     });
   });
 
   describe('start', () => {
     it('should start recognition and return true', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const result = voiceNoteService.start();
       expect(result).toBe(true);
       expect(mockRecognition.start).toHaveBeenCalled();
     });
 
     it('should return false if recognition throws', async () => {
-      mockRecognition.start.mockImplementation(() => { throw new Error('fail'); });
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      mockRecognition.start.mockImplementation(() => {
+        throw new Error('fail');
+      });
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const result = voiceNoteService.start();
       expect(result).toBe(false);
     });
@@ -80,7 +95,9 @@ describe('VoiceNoteService', () => {
 
   describe('stop', () => {
     it('should stop recognition', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       voiceNoteService.start();
       voiceNoteService.stop();
       expect(mockRecognition.stop).toHaveBeenCalled();
@@ -90,7 +107,9 @@ describe('VoiceNoteService', () => {
 
   describe('abort', () => {
     it('should abort recognition', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       voiceNoteService.start();
       voiceNoteService.abort();
       expect(mockRecognition.abort).toHaveBeenCalled();
@@ -100,7 +119,9 @@ describe('VoiceNoteService', () => {
 
   describe('status callbacks', () => {
     it('should notify on status change', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const callback = vi.fn();
       voiceNoteService.onStatusChange(callback);
 
@@ -112,7 +133,9 @@ describe('VoiceNoteService', () => {
     });
 
     it('should unsubscribe correctly', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const callback = vi.fn();
       const unsub = voiceNoteService.onStatusChange(callback);
       unsub();
@@ -126,7 +149,9 @@ describe('VoiceNoteService', () => {
 
   describe('transcript callbacks', () => {
     it('should return an unsubscribe function', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const callback = vi.fn();
       const unsub = voiceNoteService.onTranscript(callback);
       expect(typeof unsub).toBe('function');
@@ -137,7 +162,9 @@ describe('VoiceNoteService', () => {
   describe('max duration timeout', () => {
     it('should auto-stop after max duration', async () => {
       vi.useFakeTimers();
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
 
       voiceNoteService.start();
       // MAX_DURATION_MS is 30000
@@ -151,7 +178,9 @@ describe('VoiceNoteService', () => {
 
   describe('error handling', () => {
     it('should set error status on not-allowed error', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const callback = vi.fn();
       voiceNoteService.onStatusChange(callback);
 
@@ -162,7 +191,9 @@ describe('VoiceNoteService', () => {
     });
 
     it('should set idle status on no-speech error', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       const callback = vi.fn();
       voiceNoteService.onStatusChange(callback);
 
@@ -178,7 +209,9 @@ describe('VoiceNoteService', () => {
 
   describe('destroy', () => {
     it('should prevent further starts after destroy', async () => {
-      const { voiceNoteService } = await import('../../../src/services/voiceNote');
+      const { voiceNoteService } = await import(
+        '../../../src/services/voiceNote'
+      );
       voiceNoteService.destroy();
       const result = voiceNoteService.start();
       expect(result).toBe(false);

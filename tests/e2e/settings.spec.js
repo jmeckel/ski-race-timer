@@ -3,8 +3,8 @@
  * Tests for app settings and configuration
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, clickToggle, isToggleOn, navigateTo } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import { clickToggle, isToggleOn, navigateTo, setupPage } from './helpers.js';
 
 test.describe('Settings View', () => {
   test.beforeEach(async ({ page }) => {
@@ -51,12 +51,16 @@ test.describe('Settings View', () => {
   test.describe('Language Settings', () => {
     test('should toggle language', async ({ page }) => {
       const langToggle = page.locator('#lang-toggle');
-      const initialActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+      const initialActiveLang = await langToggle
+        .locator('.lang-option.active')
+        .getAttribute('data-lang');
 
       const inactiveOption = langToggle.locator('.lang-option:not(.active)');
       await inactiveOption.click();
 
-      const newActiveLang = await langToggle.locator('.lang-option.active').getAttribute('data-lang');
+      const newActiveLang = await langToggle
+        .locator('.lang-option.active')
+        .getAttribute('data-lang');
       expect(newActiveLang).not.toBe(initialActiveLang);
     });
   });
@@ -130,12 +134,12 @@ test.describe('Settings - Keyboard Accessibility', () => {
 
   test('should toggle with Space key', async ({ page }) => {
     const toggle = page.locator('#sound-toggle');
-    const before = await toggle.evaluate(el => el.checked);
+    const before = await toggle.evaluate((el) => el.checked);
 
     await toggle.focus();
     await page.keyboard.press('Space');
 
-    const after = await toggle.evaluate(el => el.checked);
+    const after = await toggle.evaluate((el) => el.checked);
     expect(after).not.toBe(before);
   });
 
@@ -143,7 +147,7 @@ test.describe('Settings - Keyboard Accessibility', () => {
     const toggle = page.locator('#haptic-toggle');
     await toggle.focus();
 
-    const outline = await toggle.evaluate(el => getComputedStyle(el).outline);
+    const outline = await toggle.evaluate((el) => getComputedStyle(el).outline);
     expect(outline).not.toBe('none');
   });
 });

@@ -61,5 +61,7 @@ export function checkLocalStorageQuota(): StorageQuotaResult {
 export function logStorageUsage(): void {
   const { usageBytes, usagePercent } = checkLocalStorageQuota();
   const usageKB = (usageBytes / 1024).toFixed(1);
-  logger.debug(`[Storage] localStorage usage: ${usageKB} KB (${usagePercent}% of ~5MB)`);
+  logger.debug(
+    `[Storage] localStorage usage: ${usageKB} KB (${usagePercent}% of ~5MB)`,
+  );
 }

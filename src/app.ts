@@ -1,24 +1,16 @@
 import {
   handleBeforeUnload,
-  handleStorageError,
-  handleStorageWarning,
   initCustomEventListeners,
-  initVoiceMode,
 } from './appEventListeners';
+import { initServices } from './appInitServices';
 import { initModals } from './appModalHandlers';
-import { closeModal, isAnyModalOpen, openModal } from './features/modals';
 // Extracted app modules
 import { handleStateChange } from './appStateHandlers';
 import { updateUI } from './appUiUpdates';
 import { showToast } from './components';
-import { initChiefJudgeToggle } from './features/chiefJudgeView';
-import { initGateJudgeView } from './features/gateJudgeView';
+import { closeModal, isAnyModalOpen, openModal } from './features/modals';
 import { initOfflineBanner } from './features/offlineBanner';
-import {
-  handleAuthExpired,
-  handleRaceDeleted,
-  initRaceManagement,
-} from './features/race';
+import { initRaceManagement } from './features/race';
 import {
   initRadialTimerView,
   isRadialModeActive,
@@ -26,11 +18,7 @@ import {
 import { initResultsView } from './features/resultsView';
 // Feature modules
 import { initRippleEffects } from './features/ripple';
-import {
-  applySettings,
-  initSettingsView,
-  updateTranslations,
-} from './features/settingsView';
+import { initSettingsView, updateTranslations } from './features/settingsView';
 import {
   initClock,
   initNumberPad,
@@ -41,18 +29,13 @@ import {
 } from './features/timerView';
 import { t } from './i18n/translations';
 import { OnboardingController } from './onboarding';
-import {
-  ambientModeService,
-  feedbackTap,
-  gpsService,
-  resumeAudio,
-  syncService,
-  wakeLockService,
-} from './services';
-import { hasAuthToken } from './services/sync';
-import { store } from './store';
-import { applyViewServices } from './utils/viewServices';
+import { feedbackTap } from './services';
+import { $deviceRole, effect, store } from './store';
+import { ListenerManager } from './utils/listenerManager';
+import { logger } from './utils/logger';
 import { getVersionInfo } from './version';
+
+const listeners = new ListenerManager();
 
 // DOM Elements cache
 let onboardingController: OnboardingController | null = null;
@@ -79,7 +62,7 @@ export function initApp(): void {
   // Version info button - copy debug info to clipboard
   const versionInfoBtn = document.getElementById('version-info-btn');
   if (versionInfoBtn) {
-    versionInfoBtn.addEventListener('click', async () => {
+    listeners.add(versionInfoBtn, 'click', async () => {
       const state = store.getState();
       const vInfo = getVersionInfo(__APP_VERSION__);
       const versionLabel = vInfo
@@ -129,8 +112,33 @@ export function initApp(): void {
   // Initialize views (now using CustomEvents instead of callbacks)
   initResultsView();
   initSettingsView();
-  initGateJudgeView();
-  initChiefJudgeToggle();
+
+  // Lazy-load gate judge views (only init when role is gateJudge)
+  const initRoleViews = () => {
+    import('./features/gateJudgeView')
+      .then((m) => m.initGateJudgeView())
+      .catch((err) => logger.error('Failed to load gateJudgeView:', err));
+    import('./features/chiefJudgeView')
+      .then((m) => m.initChiefJudgeToggle())
+      .catch((err) => logger.error('Failed to load chiefJudgeView:', err));
+  };
+
+  const role = store.getState().deviceRole;
+  if (role === 'gateJudge') {
+    initRoleViews();
+  }
+
+  // Handle runtime role changes - load views dynamically via signal effect
+  let lastRole = role;
+  effect(() => {
+    const currentRole = $deviceRole.value;
+    if (currentRole !== lastRole) {
+      lastRole = currentRole;
+      if (currentRole === 'gateJudge') {
+        initRoleViews();
+      }
+    }
+  });
 
   // Set up CustomEvent listeners for decoupled module communication
   initCustomEventListeners();
@@ -142,91 +150,14 @@ export function initApp(): void {
   // Subscribe to state changes
   store.subscribe(handleStateChange);
 
-  // Initialize services based on settings
-  const settings = store.getState().settings;
-  // Auto-start sync if enabled, race ID exists, AND user has valid auth token
-  // Token proves user previously authenticated - no PIN needed on restart
-  if (settings.sync && store.getState().raceId) {
-    if (hasAuthToken()) {
-      // Valid token exists - auto-start sync
-      syncService.initialize();
-    } else {
-      // No token - disable sync, user must re-authenticate
-      store.updateSettings({ sync: false });
-      const syncToggle = document.getElementById(
-        'sync-toggle',
-      ) as HTMLInputElement;
-      if (syncToggle) syncToggle.checked = false;
-      setTimeout(() => {
-        const lang = store.getState().currentLang;
-        showToast(t('syncRequiresPin', lang), 'info', 5000);
-      }, 500);
-    }
-  }
-  applyViewServices(store.getState());
-
-  // Listen for race deleted events from sync service
-  window.addEventListener('race-deleted', handleRaceDeleted as EventListener);
-
-  // Listen for auth expired events from sync service
-  window.addEventListener('auth-expired', handleAuthExpired as EventListener);
-
-  // Listen for storage errors and warnings
-  window.addEventListener('storage-error', handleStorageError as EventListener);
-  window.addEventListener(
-    'storage-warning',
-    handleStorageWarning as EventListener,
-  );
-
-  // Resume audio context on first interaction
-  document.addEventListener('click', resumeAudio, { once: true });
-  document.addEventListener('touchstart', resumeAudio, { once: true });
+  // Initialize services (sync, GPS, wake lock, ambient mode, voice)
+  initServices();
 
   // Cleanup on page unload to prevent memory leaks
-  window.addEventListener('beforeunload', handleBeforeUnload);
+  listeners.add(window, 'beforeunload', handleBeforeUnload);
 
-  // Apply initial state
-  applySettings();
+  // Apply initial UI state
   updateUI();
-
-  // Enable wake lock if starting on timer view
-  // This keeps the screen on during active timing
-  const initialState = store.getState();
-  if (initialState.currentView === 'timer') {
-    wakeLockService.enable();
-  }
-
-  // Initialize ambient mode if enabled
-  if (initialState.settings.ambientMode) {
-    ambientModeService.initialize();
-    // Enable on timer view
-    if (initialState.currentView === 'timer') {
-      ambientModeService.enable();
-    }
-  }
-
-  // Subscribe to ambient mode state changes - toggle body class and pause GPS
-  ambientModeService.subscribe((state) => {
-    document.body.classList.toggle('ambient-mode', state.isActive);
-    if (state.triggeredBy) {
-      document.body.dataset.ambientTrigger = state.triggeredBy;
-    } else {
-      delete document.body.dataset.ambientTrigger;
-    }
-
-    // Pause/resume GPS during ambient mode to save battery
-    const appState = store.getState();
-    if (appState.settings.gps) {
-      if (state.isActive) {
-        gpsService.pause();
-      } else if (appState.currentView === 'timer') {
-        gpsService.start();
-      }
-    }
-  });
-
-  // Initialize voice mode service (requires LLM API configuration)
-  initVoiceMode();
 
   // Initialize onboarding for first-time users
   onboardingController = new OnboardingController();
@@ -242,7 +173,7 @@ export function initApp(): void {
   // "Show Tutorial" button handler
   const showTutorialBtn = document.getElementById('show-tutorial-btn');
   if (showTutorialBtn) {
-    showTutorialBtn.addEventListener('click', () => {
+    listeners.add(showTutorialBtn, 'click', () => {
       if (onboardingController) {
         onboardingController.reset();
         onboardingController.show();
@@ -258,26 +189,31 @@ export function initApp(): void {
   const shortcutsDoneBtn = document.getElementById('shortcuts-done-btn');
 
   if (showShortcutsBtn && shortcutsModal) {
-    showShortcutsBtn.addEventListener('click', () => {
+    listeners.add(showShortcutsBtn, 'click', () => {
       openModal(shortcutsModal);
       feedbackTap();
     });
   }
   if (shortcutsCloseBtn && shortcutsModal) {
-    shortcutsCloseBtn.addEventListener('click', () => closeModal(shortcutsModal));
+    listeners.add(shortcutsCloseBtn, 'click', () => closeModal(shortcutsModal));
   }
   if (shortcutsDoneBtn && shortcutsModal) {
-    shortcutsDoneBtn.addEventListener('click', () => closeModal(shortcutsModal));
+    listeners.add(shortcutsDoneBtn, 'click', () => closeModal(shortcutsModal));
   }
 
   // Global ? key to open keyboard shortcuts
-  document.addEventListener('keydown', (e: KeyboardEvent) => {
+  listeners.add(document, 'keydown', ((e: KeyboardEvent) => {
     if (e.key === '?' && !isAnyModalOpen()) {
       // Don't trigger when typing in an input/textarea
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      )
+        return;
       e.preventDefault();
       if (shortcutsModal) openModal(shortcutsModal);
     }
-  });
+  }) as EventListener);
 }

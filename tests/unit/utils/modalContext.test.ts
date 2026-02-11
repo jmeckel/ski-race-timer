@@ -3,11 +3,11 @@
  * Tests: setModalContext(), getModalContext(), clearModalContext()
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  setModalContext,
-  getModalContext,
   clearModalContext,
+  getModalContext,
+  setModalContext,
 } from '../../../src/utils/modalContext';
 
 describe('Modal Context Utility', () => {

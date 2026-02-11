@@ -3,6 +3,7 @@
  * Swipe left to reveal delete, swipe right to reveal edit
  */
 
+import { ListenerManager } from '../utils/listenerManager';
 import { iconEdit, iconTrash } from '../utils/templates';
 
 const SWIPE_THRESHOLD = 80; // Pixels to swipe to trigger action
@@ -27,6 +28,7 @@ export class SwipeActions {
   private currentX = 0;
   private startTime = 0;
   private isHorizontalSwipe: boolean | null = null;
+  private listeners = new ListenerManager();
 
   constructor(options: SwipeActionsOptions) {
     this.options = options;
@@ -128,23 +130,38 @@ export class SwipeActions {
    * Bind touch events
    */
   private bindEvents(): void {
-    this.wrapper.addEventListener('touchstart', this.onTouchStart, {
-      passive: true,
-    });
-    this.wrapper.addEventListener('touchmove', this.onTouchMove, {
-      passive: false,
-    });
-    this.wrapper.addEventListener('touchend', this.onTouchEnd, {
-      passive: true,
-    });
+    this.listeners.add(
+      this.wrapper,
+      'touchstart',
+      this.onTouchStart as EventListener,
+      {
+        passive: true,
+      },
+    );
+    this.listeners.add(
+      this.wrapper,
+      'touchmove',
+      this.onTouchMove as EventListener,
+      {
+        passive: false,
+      },
+    );
+    this.listeners.add(
+      this.wrapper,
+      'touchend',
+      this.onTouchEnd as EventListener,
+      {
+        passive: true,
+      },
+    );
   }
 
   /**
    * Handle touch start
    */
   private onTouchStart = (e: TouchEvent): void => {
-    this.startX = e.touches[0].clientX;
-    this.startY = e.touches[0].clientY;
+    this.startX = e.touches[0]!.clientX;
+    this.startY = e.touches[0]!.clientY;
     this.currentX = 0;
     this.startTime = Date.now();
     this.isHorizontalSwipe = null;
@@ -155,8 +172,8 @@ export class SwipeActions {
    * Handle touch move
    */
   private onTouchMove = (e: TouchEvent): void => {
-    const deltaX = e.touches[0].clientX - this.startX;
-    const deltaY = e.touches[0].clientY - this.startY;
+    const deltaX = e.touches[0]!.clientX - this.startX;
+    const deltaY = e.touches[0]!.clientY - this.startY;
 
     // Determine swipe direction on first significant movement
     if (this.isHorizontalSwipe === null) {
@@ -226,9 +243,7 @@ export class SwipeActions {
    * Cleanup
    */
   destroy(): void {
-    this.wrapper.removeEventListener('touchstart', this.onTouchStart);
-    this.wrapper.removeEventListener('touchmove', this.onTouchMove);
-    this.wrapper.removeEventListener('touchend', this.onTouchEnd);
+    this.listeners.removeAll();
 
     // Restore original structure
     while (this.wrapper.firstChild) {

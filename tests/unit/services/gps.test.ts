@@ -3,7 +3,7 @@
  * Tests: start, stop, position handling, accuracy, toggle
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -12,12 +12,12 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(() => null)
+  key: vi.fn(() => null),
 };
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-  writable: true
+  writable: true,
 });
 
 // Mock geolocation - setup once at module level
@@ -28,7 +28,7 @@ const mockGetCurrentPosition = vi.fn();
 const mockGeolocation = {
   watchPosition: mockWatchPosition,
   clearWatch: mockClearWatch,
-  getCurrentPosition: mockGetCurrentPosition
+  getCurrentPosition: mockGetCurrentPosition,
 };
 
 // Set up navigator.geolocation once
@@ -36,13 +36,17 @@ if (!navigator.geolocation) {
   Object.defineProperty(navigator, 'geolocation', {
     value: mockGeolocation,
     writable: true,
-    configurable: true
+    configurable: true,
   });
 } else {
   // Replace methods on existing object
-  (navigator.geolocation as unknown as typeof mockGeolocation).watchPosition = mockWatchPosition;
-  (navigator.geolocation as unknown as typeof mockGeolocation).clearWatch = mockClearWatch;
-  (navigator.geolocation as unknown as typeof mockGeolocation).getCurrentPosition = mockGetCurrentPosition;
+  (navigator.geolocation as unknown as typeof mockGeolocation).watchPosition =
+    mockWatchPosition;
+  (navigator.geolocation as unknown as typeof mockGeolocation).clearWatch =
+    mockClearWatch;
+  (
+    navigator.geolocation as unknown as typeof mockGeolocation
+  ).getCurrentPosition = mockGetCurrentPosition;
 }
 
 describe('GPS Service', () => {
@@ -84,8 +88,8 @@ describe('GPS Service', () => {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 10000
-        }
+          maximumAge: 10000,
+        },
       );
     });
 
@@ -128,9 +132,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       gpsService.stop();
@@ -151,9 +155,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       gpsService.pause();
@@ -175,9 +179,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       successCallback(position);
@@ -193,7 +197,7 @@ describe('GPS Service', () => {
         message: 'User denied geolocation',
         PERMISSION_DENIED: 1,
         POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3
+        TIMEOUT: 3,
       });
 
       expect(mockClearWatch).toHaveBeenCalled();
@@ -207,7 +211,7 @@ describe('GPS Service', () => {
         message: 'Position unavailable',
         PERMISSION_DENIED: 1,
         POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3
+        TIMEOUT: 3,
       });
 
       // Should keep trying (searching status)
@@ -222,7 +226,7 @@ describe('GPS Service', () => {
         message: 'Timeout',
         PERMISSION_DENIED: 1,
         POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3
+        TIMEOUT: 3,
       });
 
       // Should keep trying
@@ -242,9 +246,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       const coords = gpsService.getCoordinates();
@@ -252,7 +256,7 @@ describe('GPS Service', () => {
       expect(coords).toEqual({
         latitude: 47.123,
         longitude: 8.456,
-        accuracy: 10
+        accuracy: 10,
       });
     });
 
@@ -274,9 +278,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: now
+        timestamp: now,
       });
 
       expect(gpsService.getTimestamp()).toBe(now);
@@ -299,9 +303,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       expect(gpsService.getAccuracyStatus()).toBe('good');
@@ -318,9 +322,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       expect(gpsService.getAccuracyStatus()).toBe('fair');
@@ -337,9 +341,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       expect(gpsService.getAccuracyStatus()).toBe('poor');
@@ -366,9 +370,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       expect(gpsService.isActive()).toBe(true);
@@ -408,9 +412,9 @@ describe('GPS Service', () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       mockGetCurrentPosition.mockImplementation((success) => {
@@ -430,7 +434,7 @@ describe('GPS Service', () => {
           message: 'Error',
           PERMISSION_DENIED: 1,
           POSITION_UNAVAILABLE: 2,
-          TIMEOUT: 3
+          TIMEOUT: 3,
         });
       });
 

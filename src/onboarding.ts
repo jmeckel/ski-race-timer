@@ -2,6 +2,7 @@ import { showToast } from './components';
 import { closeModal, openModal } from './features/modals';
 import { t } from './i18n/translations';
 import { feedbackSuccess, feedbackTap, syncService } from './services';
+import { storage } from './services/storage';
 import { exchangePinForToken, hasAuthToken } from './services/sync';
 import { store } from './store';
 import type { DeviceRole, Language, RaceInfo } from './types';
@@ -68,7 +69,7 @@ export class OnboardingController {
    * Check if onboarding should be shown
    */
   shouldShow(): boolean {
-    return localStorage.getItem(ONBOARDING_STORAGE_KEY) !== 'true';
+    return storage.getRaw(ONBOARDING_STORAGE_KEY) !== 'true';
   }
 
   /**
@@ -155,7 +156,8 @@ export class OnboardingController {
    * Reset onboarding status (for replay from settings)
    */
   reset(): void {
-    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    storage.remove(ONBOARDING_STORAGE_KEY);
+    storage.flush();
   }
 
   /**
@@ -343,7 +345,7 @@ export class OnboardingController {
    * Returns races filtered to today only, formatted as RecentRace
    */
   private async fetchRacesFromApi(): Promise<RecentRace[]> {
-    const token = localStorage.getItem('skiTimerAuthToken');
+    const token = storage.getRaw('skiTimerAuthToken');
     if (!token) {
       return [];
     }
@@ -459,7 +461,8 @@ export class OnboardingController {
    */
   private finalize(): void {
     store.forceSave();
-    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    storage.setRaw(ONBOARDING_STORAGE_KEY, 'true');
+    storage.flush();
     closeModal(this.modal);
 
     // Navigate to appropriate view based on role

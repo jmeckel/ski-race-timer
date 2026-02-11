@@ -3,24 +3,27 @@
  * Tests: getRecentRaces, addRecentRace, getTodaysRecentRaces, clearRecentRaces
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { storage } from '../../../src/services/storage';
 import {
-  getRecentRaces,
   addRecentRace,
+  clearRecentRaces,
+  getRecentRaces,
   getTodaysRecentRaces,
-  clearRecentRaces
 } from '../../../src/utils/recentRaces';
 
 describe('Recent Races Utility', () => {
   const STORAGE_KEY = 'skiTimerRecentRaces';
 
   beforeEach(() => {
-    // Clear localStorage before each test
+    // Clear localStorage AND the in-memory storage cache before each test
     localStorage.clear();
+    storage.clearCache();
   });
 
   afterEach(() => {
     localStorage.clear();
+    storage.clearCache();
     vi.useRealTimers();
   });
 
@@ -31,7 +34,7 @@ describe('Recent Races Utility', () => {
 
     it('should return stored races', () => {
       const races = [
-        { raceId: 'RACE-001', createdAt: Date.now(), lastUpdated: Date.now() }
+        { raceId: 'RACE-001', createdAt: Date.now(), lastUpdated: Date.now() },
       ];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(races));
       expect(getRecentRaces()).toEqual(races);
@@ -93,9 +96,16 @@ describe('Recent Races Utility', () => {
 
     it('should preserve createdAt when updating existing race', () => {
       const originalCreatedAt = Date.now() - 10000;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([
-        { raceId: 'RACE-001', createdAt: originalCreatedAt, lastUpdated: originalCreatedAt }
-      ]));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([
+          {
+            raceId: 'RACE-001',
+            createdAt: originalCreatedAt,
+            lastUpdated: originalCreatedAt,
+          },
+        ]),
+      );
 
       addRecentRace('RACE-001', Date.now(), 20);
 
@@ -123,9 +133,12 @@ describe('Recent Races Utility', () => {
       const now = Date.now();
 
       // Manually set a race with yesterday's createdAt but today's lastUpdated
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([
-        { raceId: 'UPDATED-TODAY', createdAt: yesterday, lastUpdated: now }
-      ]));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([
+          { raceId: 'UPDATED-TODAY', createdAt: yesterday, lastUpdated: now },
+        ]),
+      );
 
       const todaysRaces = getTodaysRecentRaces();
       expect(todaysRaces.length).toBe(1);
@@ -133,12 +146,19 @@ describe('Recent Races Utility', () => {
 
     it('should filter out races from previous days', () => {
       // Create a race from 2 days ago (definitely yesterday)
-      const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000);
+      const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
 
       // Store race created 2 days ago with lastUpdated also 2 days ago
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([
-        { raceId: 'OLD-RACE', createdAt: twoDaysAgo, lastUpdated: twoDaysAgo }
-      ]));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([
+          {
+            raceId: 'OLD-RACE',
+            createdAt: twoDaysAgo,
+            lastUpdated: twoDaysAgo,
+          },
+        ]),
+      );
 
       const todaysRaces = getTodaysRecentRaces();
       expect(todaysRaces.length).toBe(0);

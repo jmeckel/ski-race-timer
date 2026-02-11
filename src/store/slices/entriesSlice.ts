@@ -109,7 +109,7 @@ export function updateEntry(
   const index = entries.findIndex((e) => e.id === id);
   if (index === -1) return null;
 
-  const oldEntry = entries[index];
+  const oldEntry = entries[index]!;
   const newEntry = { ...oldEntry, ...updates };
 
   const newUndoStack = pushUndo(undoStack, {

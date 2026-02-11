@@ -28,8 +28,8 @@ import {
   formatTime as formatTimeDisplay,
   getPointColor,
 } from '../utils/format';
-import { logger } from '../utils/logger';
 import { ListenerManager } from '../utils/listenerManager';
+import { logger } from '../utils/logger';
 import {
   createTimestampEntry,
   isDuplicateEntry,
@@ -135,7 +135,7 @@ export function initTabs(): void {
       }
 
       if (newIndex !== currentIndex) {
-        const newTab = tabs[newIndex];
+        const newTab = tabs[newIndex]!;
         newTab.focus();
         newTab.click();
       }

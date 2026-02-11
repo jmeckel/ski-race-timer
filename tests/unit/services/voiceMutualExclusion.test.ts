@@ -4,7 +4,7 @@
  * over the SpeechRecognition API resource
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock SpeechRecognition - track instance count to detect conflicts
 let recognitionInstances: MockSpeechRecognition[] = [];
@@ -53,14 +53,19 @@ class MockSpeechRecognition {
   removeEventListener = vi.fn();
   dispatchEvent = vi.fn(() => true);
 
-  get isActive() { return this._active; }
+  get isActive() {
+    return this._active;
+  }
 }
 
 beforeEach(() => {
   recognitionInstances = [];
   activeRecognitions = 0;
-  (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(() => new MockSpeechRecognition());
-  (window as unknown as Record<string, unknown>).webkitSpeechRecognition = vi.fn(() => new MockSpeechRecognition());
+  (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
+    () => new MockSpeechRecognition(),
+  );
+  (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
+    vi.fn(() => new MockSpeechRecognition());
   (window as unknown as Record<string, unknown>).speechSynthesis = {
     speak: vi.fn(),
     cancel: vi.fn(),
@@ -70,7 +75,7 @@ beforeEach(() => {
     onvoiceschanged: null,
     paused: false,
     pending: false,
-    speaking: false
+    speaking: false,
   };
 });
 
@@ -83,7 +88,11 @@ describe('Voice Services Mutual Exclusion', () => {
   it('pausing voice mode should stop its recognition', async () => {
     const { voiceModeService } = await import('../../../src/services/voice');
 
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
 
     // Voice mode recognition instance (first one created)
@@ -99,9 +108,15 @@ describe('Voice Services Mutual Exclusion', () => {
 
   it('voice note can start after voice mode is paused', async () => {
     const { voiceModeService } = await import('../../../src/services/voice');
-    const { voiceNoteService } = await import('../../../src/services/voiceNote');
+    const { voiceNoteService } = await import(
+      '../../../src/services/voiceNote'
+    );
 
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
 
     // Pause voice mode first
@@ -119,7 +134,11 @@ describe('Voice Services Mutual Exclusion', () => {
     vi.useFakeTimers();
     const { voiceModeService } = await import('../../../src/services/voice');
 
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
 
     const voiceModeRecognition = recognitionInstances[0];
@@ -128,7 +147,7 @@ describe('Voice Services Mutual Exclusion', () => {
     voiceModeRecognition.start.mockClear();
 
     voiceModeService.resume();
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(600);
 
     expect(voiceModeRecognition.start).toHaveBeenCalled();
 
@@ -140,7 +159,11 @@ describe('Voice Services Mutual Exclusion', () => {
     vi.useFakeTimers();
     const { voiceModeService } = await import('../../../src/services/voice');
 
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
 
     const voiceModeRecognition = recognitionInstances[0];
@@ -162,10 +185,16 @@ describe('Voice Services Mutual Exclusion', () => {
   it('complete flow: voice mode -> pause -> voice note -> stop -> resume', async () => {
     vi.useFakeTimers();
     const { voiceModeService } = await import('../../../src/services/voice');
-    const { voiceNoteService } = await import('../../../src/services/voiceNote');
+    const { voiceNoteService } = await import(
+      '../../../src/services/voiceNote'
+    );
 
     // 1. Start voice mode
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
     expect(voiceModeService.isActive()).toBe(true);
 
@@ -186,7 +215,7 @@ describe('Voice Services Mutual Exclusion', () => {
     voiceModeService.resume();
     expect(voiceModeService.isPausedState()).toBe(false);
 
-    vi.advanceTimersByTime(150);
+    vi.advanceTimersByTime(600);
     expect(voiceModeRecognition.start).toHaveBeenCalled();
 
     vi.useRealTimers();
@@ -212,7 +241,11 @@ describe('Voice Services Mutual Exclusion', () => {
   it('disabling voice mode clears paused state', async () => {
     const { voiceModeService } = await import('../../../src/services/voice');
 
-    voiceModeService.initialize({ provider: 'openai', apiKey: 'test', model: 'gpt-4' });
+    voiceModeService.initialize({
+      provider: 'openai',
+      apiKey: 'test',
+      model: 'gpt-4',
+    });
     voiceModeService.enable();
     voiceModeService.pause();
     expect(voiceModeService.isPausedState()).toBe(true);

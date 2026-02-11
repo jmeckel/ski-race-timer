@@ -3,7 +3,7 @@
  * Tests: renderRecentRaceItem(), renderRecentRaceItems(), attachRecentRaceItemHandlers()
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('../../../src/store', () => ({
@@ -22,12 +22,12 @@ vi.mock('../../../src/i18n/translations', () => ({
   }),
 }));
 
+import type { RecentRace } from '../../../src/utils/recentRaces';
 import {
+  attachRecentRaceItemHandlers,
   renderRecentRaceItem,
   renderRecentRaceItems,
-  attachRecentRaceItemHandlers,
 } from '../../../src/utils/recentRacesUi';
-import type { RecentRace } from '../../../src/utils/recentRaces';
 
 describe('Recent Races UI', () => {
   const makeRace = (overrides: Partial<RecentRace> = {}): RecentRace => ({
@@ -74,7 +74,9 @@ describe('Recent Races UI', () => {
     });
 
     it('should escape HTML in race ID', () => {
-      const html = renderRecentRaceItem(makeRace({ raceId: '<script>alert(1)</script>' }));
+      const html = renderRecentRaceItem(
+        makeRace({ raceId: '<script>alert(1)</script>' }),
+      );
       expect(html).not.toContain('<script>');
       expect(html).toContain('&lt;script&gt;');
     });
@@ -150,7 +152,11 @@ describe('Recent Races UI', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
       const items = dropdown.querySelectorAll('.recent-race-item');
-      const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      });
       items[0].dispatchEvent(event);
 
       expect(onSelect).toHaveBeenCalledWith(races[0]);
@@ -160,7 +166,11 @@ describe('Recent Races UI', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
       const items = dropdown.querySelectorAll('.recent-race-item');
-      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      });
       items[0].dispatchEvent(event);
 
       expect(onSelect).toHaveBeenCalledWith(races[0]);
@@ -169,10 +179,16 @@ describe('Recent Races UI', () => {
     it('should focus next item on ArrowDown', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
-      const items = dropdown.querySelectorAll('.recent-race-item') as NodeListOf<HTMLElement>;
+      const items = dropdown.querySelectorAll(
+        '.recent-race-item',
+      ) as NodeListOf<HTMLElement>;
       const focusSpy = vi.spyOn(items[1], 'focus');
 
-      const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        cancelable: true,
+      });
       items[0].dispatchEvent(event);
 
       expect(focusSpy).toHaveBeenCalled();
@@ -181,9 +197,15 @@ describe('Recent Races UI', () => {
     it('should not focus past last item on ArrowDown', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
-      const items = dropdown.querySelectorAll('.recent-race-item') as NodeListOf<HTMLElement>;
+      const items = dropdown.querySelectorAll(
+        '.recent-race-item',
+      ) as NodeListOf<HTMLElement>;
       // Last item
-      const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        cancelable: true,
+      });
       items[2].dispatchEvent(event);
 
       // Should not crash or move focus out of bounds
@@ -193,10 +215,16 @@ describe('Recent Races UI', () => {
     it('should focus previous item on ArrowUp', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
-      const items = dropdown.querySelectorAll('.recent-race-item') as NodeListOf<HTMLElement>;
+      const items = dropdown.querySelectorAll(
+        '.recent-race-item',
+      ) as NodeListOf<HTMLElement>;
       const focusSpy = vi.spyOn(items[0], 'focus');
 
-      const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'ArrowUp',
+        bubbles: true,
+        cancelable: true,
+      });
       items[1].dispatchEvent(event);
 
       expect(focusSpy).toHaveBeenCalled();
@@ -205,9 +233,15 @@ describe('Recent Races UI', () => {
     it('should not focus before first item on ArrowUp', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
-      const items = dropdown.querySelectorAll('.recent-race-item') as NodeListOf<HTMLElement>;
+      const items = dropdown.querySelectorAll(
+        '.recent-race-item',
+      ) as NodeListOf<HTMLElement>;
       // First item
-      const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'ArrowUp',
+        bubbles: true,
+        cancelable: true,
+      });
       items[0].dispatchEvent(event);
 
       expect(onSelect).not.toHaveBeenCalled();
@@ -217,7 +251,11 @@ describe('Recent Races UI', () => {
       attachRecentRaceItemHandlers(dropdown, races, onSelect);
 
       const items = dropdown.querySelectorAll('.recent-race-item');
-      const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      });
       items[0].dispatchEvent(event);
 
       expect(dropdown.style.display).toBe('none');
@@ -230,7 +268,11 @@ describe('Recent Races UI', () => {
       const keysToTest = ['Enter', ' ', 'ArrowDown', 'ArrowUp', 'Escape'];
 
       for (const key of keysToTest) {
-        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        const event = new KeyboardEvent('keydown', {
+          key,
+          bubbles: true,
+          cancelable: true,
+        });
         const preventSpy = vi.spyOn(event, 'preventDefault');
         items[1].dispatchEvent(event);
         expect(preventSpy).toHaveBeenCalled();

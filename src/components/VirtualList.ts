@@ -1,8 +1,16 @@
 import { t } from '../i18n/translations';
+import { batteryService } from '../services/battery';
+import type { BatteryLevel } from '../services/battery';
 import { store } from '../store';
 import type { Entry, FaultEntry, Run } from '../types';
 import {
+  // Template helpers
+  deleteButton,
+  deletionPendingBadge,
+  duplicateBadge,
+  editButton,
   escapeHtml,
+  faultBadge,
   formatBib,
   formatTime,
   getFaultTypeLabel,
@@ -10,12 +18,6 @@ import {
   getPointLabel,
   getRunColor,
   getRunLabel,
-  // Template helpers
-  deleteButton,
-  deletionPendingBadge,
-  duplicateBadge,
-  editButton,
-  faultBadge,
   iconChevron,
   photoButton,
   pointBadge,
@@ -41,8 +43,22 @@ const ITEM_HEIGHT = 72; // Height of each result item in pixels
 const SUB_ITEM_HEIGHT = 56; // Height of sub-items when expanded
 const GROUP_HEADER_HEIGHT = 72; // Height of group header
 const BUFFER_SIZE = 5; // Number of items to render above/below viewport
-const SCROLL_DEBOUNCE = 16; // ~60fps
+const SCROLL_DEBOUNCE_NORMAL = 16; // ~60fps
+const SCROLL_DEBOUNCE_LOW = 33; // ~30fps
+const SCROLL_DEBOUNCE_CRITICAL = 50; // ~20fps
 const RESIZE_DEBOUNCE = 100; // Debounce resize events for battery efficiency
+
+/** Get scroll debounce delay based on battery level */
+function getScrollDebounce(batteryLevel: BatteryLevel): number {
+  switch (batteryLevel) {
+    case 'critical':
+      return SCROLL_DEBOUNCE_CRITICAL;
+    case 'low':
+      return SCROLL_DEBOUNCE_LOW;
+    default:
+      return SCROLL_DEBOUNCE_NORMAL;
+  }
+}
 
 interface VirtualListOptions {
   container: HTMLElement;
@@ -56,8 +72,6 @@ interface VirtualListOptions {
 interface ItemListeners {
   click?: EventListener;
   keydown?: EventListener;
-  touchstart?: EventListener;
-  touchend?: EventListener;
   // Child button listeners
   editClick?: EventListener;
   deleteClick?: EventListener;
@@ -89,6 +103,8 @@ export class VirtualList {
   private needsRefreshOnResume = false;
   private isDestroyed = false;
   private domRemovalObserver: MutationObserver | null = null;
+  private scrollDebounceDelay: number = SCROLL_DEBOUNCE_NORMAL;
+  private unsubscribeBattery: (() => void) | null = null;
 
   constructor(options: VirtualListOptions) {
     this.options = options;
@@ -112,7 +128,7 @@ export class VirtualList {
     this.scrollContainer.appendChild(this.contentContainer);
     this.container.appendChild(this.scrollContainer);
 
-    // Set up scroll listener with cancellable debounce
+    // Set up scroll listener with cancellable debounce (battery-aware)
     this.scrollHandler = () => {
       if (this.scrollDebounceTimeout !== null) {
         clearTimeout(this.scrollDebounceTimeout);
@@ -124,10 +140,15 @@ export class VirtualList {
         } catch (error) {
           logger.error('VirtualList scroll error:', error);
         }
-      }, SCROLL_DEBOUNCE);
+      }, this.scrollDebounceDelay);
     };
     this.scrollContainer.addEventListener('scroll', this.scrollHandler, {
       passive: true,
+    });
+
+    // Subscribe to battery status for adaptive scroll debounce
+    this.unsubscribeBattery = batteryService.subscribe((status) => {
+      this.scrollDebounceDelay = getScrollDebounce(status.batteryLevel);
     });
 
     // Set up resize observer with debounce for battery efficiency
@@ -457,7 +478,7 @@ export class VirtualList {
     let currentY = 0;
 
     for (let i = 0; i < this.groups.length; i++) {
-      const group = this.groups[i];
+      const group = this.groups[i]!;
       const groupHeight = this.getGroupHeight(group);
       const groupBottom = currentY + groupHeight;
 
@@ -507,7 +528,12 @@ export class VirtualList {
 
     if (!item) {
       if (group.entries.length > 0) {
-        item = this.createEntryItem(group.entries[0], group.faults, itemId, group.crossDeviceDuplicateCount);
+        item = this.createEntryItem(
+          group.entries[0]!,
+          group.faults,
+          itemId,
+          group.crossDeviceDuplicateCount,
+        );
       } else if (group.faults.length > 0) {
         item = this.createFaultOnlyItem(group, itemId);
       } else {
@@ -569,7 +595,7 @@ export class VirtualList {
 
     // Render timing entries
     for (let i = 0; i < group.entries.length; i++) {
-      const entry = group.entries[i];
+      const entry = group.entries[i]!;
       const subId = `sub-entry-${entry.id}`;
       visibleIds.add(subId);
 
@@ -587,7 +613,7 @@ export class VirtualList {
 
     // Render faults
     for (let i = 0; i < group.faults.length; i++) {
-      const fault = group.faults[i];
+      const fault = group.faults[i]!;
       const subId = `sub-fault-${fault.id}`;
       visibleIds.add(subId);
 
@@ -709,18 +735,7 @@ export class VirtualList {
     }) as EventListener;
     header.addEventListener('keydown', listeners.keydown);
 
-    // Touch feedback
-    listeners.touchstart = () => {
-      header.style.background = 'var(--surface-elevated)';
-    };
-    header.addEventListener('touchstart', listeners.touchstart, {
-      passive: true,
-    });
-
-    listeners.touchend = () => {
-      header.style.background = 'var(--surface)';
-    };
-    header.addEventListener('touchend', listeners.touchend, { passive: true });
+    // Touch feedback is handled by CSS :active pseudo-class
 
     // Store listeners for cleanup
     this.itemListeners.set(headerId, listeners);
@@ -768,13 +783,11 @@ export class VirtualList {
     const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
 
-    const faultBadgeHtml = faults.length > 0
-      ? faultBadge({ faults, lang })
-      : '';
+    const faultBadgeHtml =
+      faults.length > 0 ? faultBadge({ faults, lang }) : '';
 
-    const duplicateBadgeHtml = crossDeviceDuplicateCount > 0
-      ? duplicateBadge(lang)
-      : '';
+    const duplicateBadgeHtml =
+      crossDeviceDuplicateCount > 0 ? duplicateBadge(lang) : '';
 
     item.innerHTML = `
       <div style="width: 16px; flex-shrink: 0;"></div>
@@ -845,18 +858,7 @@ export class VirtualList {
     }) as EventListener;
     item.addEventListener('click', listeners.click);
 
-    // Touch feedback
-    listeners.touchstart = (() => {
-      item.style.background = 'var(--surface-elevated)';
-    }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, {
-      passive: true,
-    });
-
-    listeners.touchend = (() => {
-      item.style.background = 'var(--surface)';
-    }) as EventListener;
-    item.addEventListener('touchend', listeners.touchend, { passive: true });
+    // Touch feedback is handled by CSS :active pseudo-class
 
     // Keyboard support: Enter/Space to open, E to edit, Delete to delete
     listeners.keydown = ((e: Event) => {
@@ -1035,18 +1037,7 @@ export class VirtualList {
     }) as EventListener;
     item.addEventListener('click', listeners.click);
 
-    // Touch feedback
-    listeners.touchstart = (() => {
-      item.style.background = 'var(--surface-elevated)';
-    }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, {
-      passive: true,
-    });
-
-    listeners.touchend = (() => {
-      item.style.background = 'var(--surface)';
-    }) as EventListener;
-    item.addEventListener('touchend', listeners.touchend, { passive: true });
+    // Touch feedback is handled by CSS :active pseudo-class
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
     listeners.keydown = ((e: Event) => {
@@ -1177,18 +1168,7 @@ export class VirtualList {
     }) as EventListener;
     item.addEventListener('click', listeners.click);
 
-    // Touch feedback
-    listeners.touchstart = (() => {
-      item.style.background = 'var(--surface)';
-    }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, {
-      passive: true,
-    });
-
-    listeners.touchend = (() => {
-      item.style.background = 'var(--surface-elevated)';
-    }) as EventListener;
-    item.addEventListener('touchend', listeners.touchend, { passive: true });
+    // Touch feedback is handled by CSS :active pseudo-class
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
     listeners.keydown = ((e: Event) => {
@@ -1325,18 +1305,7 @@ export class VirtualList {
     }) as EventListener;
     item.addEventListener('click', listeners.click);
 
-    // Touch feedback
-    listeners.touchstart = (() => {
-      item.style.background = 'var(--surface)';
-    }) as EventListener;
-    item.addEventListener('touchstart', listeners.touchstart, {
-      passive: true,
-    });
-
-    listeners.touchend = (() => {
-      item.style.background = 'var(--surface-elevated)';
-    }) as EventListener;
-    item.addEventListener('touchend', listeners.touchend, { passive: true });
+    // Touch feedback is handled by CSS :active pseudo-class
 
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
     listeners.keydown = ((e: Event) => {
@@ -1496,7 +1465,7 @@ export class VirtualList {
     const focusableItems = this.getSortedFocusableItems();
     const currentIndex = focusableItems.indexOf(currentItem);
     if (currentIndex >= 0 && currentIndex < focusableItems.length - 1) {
-      focusableItems[currentIndex + 1].focus();
+      focusableItems[currentIndex + 1]!.focus();
     }
   }
 
@@ -1507,7 +1476,7 @@ export class VirtualList {
     const focusableItems = this.getSortedFocusableItems();
     const currentIndex = focusableItems.indexOf(currentItem);
     if (currentIndex > 0) {
-      focusableItems[currentIndex - 1].focus();
+      focusableItems[currentIndex - 1]!.focus();
     }
   }
 
@@ -1517,7 +1486,7 @@ export class VirtualList {
   private getItemYPosition(item: HTMLElement): number {
     const transform = item.style.transform;
     const match = transform.match(/translateY\((\d+)px\)/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match ? parseInt(match[1]!, 10) : 0;
   }
 
   /**
@@ -1530,10 +1499,6 @@ export class VirtualList {
       if (listeners.click) item.removeEventListener('click', listeners.click);
       if (listeners.keydown)
         item.removeEventListener('keydown', listeners.keydown);
-      if (listeners.touchstart)
-        item.removeEventListener('touchstart', listeners.touchstart);
-      if (listeners.touchend)
-        item.removeEventListener('touchend', listeners.touchend);
       // Child button listeners
       if (listeners.editBtn && listeners.editClick) {
         listeners.editBtn.removeEventListener('click', listeners.editClick);
@@ -1590,6 +1555,12 @@ export class VirtualList {
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
+    }
+
+    // Clean up battery subscription
+    if (this.unsubscribeBattery) {
+      this.unsubscribeBattery();
+      this.unsubscribeBattery = null;
     }
 
     // Clean up all item listeners before removing DOM

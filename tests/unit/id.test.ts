@@ -4,15 +4,15 @@
  *        migrateId, generateRaceId
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  generateEntryId,
   generateDeviceId,
   generateDeviceName,
-  parseEntryId,
+  generateEntryId,
+  generateRaceId,
   isNewIdFormat,
   migrateId,
-  generateRaceId
+  parseEntryId,
 } from '../../src/utils/id';
 
 describe('ID Utilities', () => {

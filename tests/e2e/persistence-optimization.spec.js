@@ -8,12 +8,22 @@
  * - All data persists correctly across reload despite optimization
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, navigateTo, clickToggle, isToggleOn, enterBib, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  enterBib,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 test.describe('Dirty-Slice Persistence', () => {
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.setTimeout(30000);
 
@@ -21,7 +31,9 @@ test.describe('Dirty-Slice Persistence', () => {
     await setupPage(page);
   });
 
-  test('should persist entries after recording timestamps', async ({ page }) => {
+  test('should persist entries after recording timestamps', async ({
+    page,
+  }) => {
     // Record entries
     await enterBib(page, 1);
     await page.click('#radial-time-btn');
@@ -44,7 +56,9 @@ test.describe('Dirty-Slice Persistence', () => {
     expect(entries[1].bib).toBe('002');
   });
 
-  test('should persist settings changes independently from entries', async ({ page }) => {
+  test('should persist settings changes independently from entries', async ({
+    page,
+  }) => {
     // Record an entry first
     await enterBib(page, 5);
     await page.click('#radial-time-btn');
@@ -55,7 +69,7 @@ test.describe('Dirty-Slice Persistence', () => {
 
     // Record the entries state
     const entriesBefore = await page.evaluate(() =>
-      localStorage.getItem('skiTimerEntries')
+      localStorage.getItem('skiTimerEntries'),
     );
 
     // Now change a setting
@@ -74,12 +88,14 @@ test.describe('Dirty-Slice Persistence', () => {
 
     // Entries should still be intact (not cleared or corrupted by settings save)
     const entriesAfter = await page.evaluate(() =>
-      localStorage.getItem('skiTimerEntries')
+      localStorage.getItem('skiTimerEntries'),
     );
     expect(entriesAfter).toBe(entriesBefore);
   });
 
-  test('should persist both entries and settings across reload', async ({ page }) => {
+  test('should persist both entries and settings across reload', async ({
+    page,
+  }) => {
     // Record an entry
     await enterBib(page, 42);
     await page.click('#radial-time-btn');
@@ -121,7 +137,9 @@ test.describe('Dirty-Slice Persistence', () => {
     await page.waitForTimeout(300);
 
     // Verify language was saved
-    const lang = await page.evaluate(() => localStorage.getItem('skiTimerLang'));
+    const lang = await page.evaluate(() =>
+      localStorage.getItem('skiTimerLang'),
+    );
     expect(lang).toBe('en');
 
     // Verify entry still exists in storage
@@ -133,7 +151,9 @@ test.describe('Dirty-Slice Persistence', () => {
     expect(entries[0].bib).toBe('010');
   });
 
-  test('should handle rapid settings changes without data loss', async ({ page }) => {
+  test('should handle rapid settings changes without data loss', async ({
+    page,
+  }) => {
     // Record entries
     await enterBib(page, 1);
     await page.click('#radial-time-btn');
@@ -164,7 +184,10 @@ test.describe('Dirty-Slice Persistence', () => {
 
 test.describe('Persistence - Run Selection', () => {
   // Skip on WebKit
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.setTimeout(30000);
 
@@ -172,7 +195,9 @@ test.describe('Persistence - Run Selection', () => {
     await setupPage(page);
   });
 
-  test('should persist selected run across settings changes', async ({ page }) => {
+  test('should persist selected run across settings changes', async ({
+    page,
+  }) => {
     // Select Run 2
     await page.click('#radial-run-selector [data-run="2"]');
 

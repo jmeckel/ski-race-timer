@@ -4,7 +4,7 @@
  * sayNotUnderstood, cancel, language handling, error handling
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -129,11 +129,13 @@ function createMockSpeechSynthesis() {
       if (voicesReadyImmediately) return mockVoices;
       return [];
     }),
-    addEventListener: vi.fn((event: string, callback: () => void, options?: any) => {
-      if (event === 'voiceschanged') {
-        voicesChangedCallback = callback;
-      }
-    }),
+    addEventListener: vi.fn(
+      (event: string, callback: () => void, options?: any) => {
+        if (event === 'voiceschanged') {
+          voicesChangedCallback = callback;
+        }
+      },
+    ),
     removeEventListener: vi.fn(),
     onvoiceschanged: null as (() => void) | null,
     dispatchEvent: vi.fn(() => true),
@@ -220,7 +222,9 @@ describe('Speech Synthesis Service', () => {
       }
 
       // After voiceschanged, getVoices should be called at least once more
-      expect(mockSynth.getVoices.mock.calls.length).toBeGreaterThan(callsBefore);
+      expect(mockSynth.getVoices.mock.calls.length).toBeGreaterThan(
+        callsBefore,
+      );
     });
   });
 
@@ -282,7 +286,10 @@ describe('Speech Synthesis Service', () => {
     });
 
     it('should apply custom rate and pitch options', async () => {
-      const promise = speechSynthesisService.speak('Hello', { rate: 1.5, pitch: 0.8 });
+      const promise = speechSynthesisService.speak('Hello', {
+        rate: 1.5,
+        pitch: 0.8,
+      });
       vi.advanceTimersByTime(10);
       await promise;
 
@@ -295,7 +302,9 @@ describe('Speech Synthesis Service', () => {
       vi.advanceTimersByTime(10);
       await promise;
 
-      expect(mockSynth.speak).toHaveBeenCalledWith(expect.any(MockSpeechSynthesisUtterance));
+      expect(mockSynth.speak).toHaveBeenCalledWith(
+        expect.any(MockSpeechSynthesisUtterance),
+      );
     });
 
     it('should reject if speech synthesis is not supported', async () => {
@@ -305,7 +314,9 @@ describe('Speech Synthesis Service', () => {
       vi.resetModules();
       const module = await import('../../../src/services/speechSynthesis');
 
-      await expect(module.speechSynthesis.speak('Hello')).rejects.toThrow('Speech synthesis not supported');
+      await expect(module.speechSynthesis.speak('Hello')).rejects.toThrow(
+        'Speech synthesis not supported',
+      );
 
       Object.defineProperty(window, 'speechSynthesis', {
         value: original,

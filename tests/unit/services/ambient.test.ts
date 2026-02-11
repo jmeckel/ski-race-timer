@@ -4,7 +4,7 @@
  * subscribe/unsubscribe, enter/exit ambient mode, cleanup
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -22,18 +22,22 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 // Track batteryService.subscribe callbacks so we can trigger them
-let batterySubscribeCallback: ((status: { batteryLevel: string; charging: boolean }) => void) | null = null;
+let batterySubscribeCallback:
+  | ((status: { batteryLevel: string; charging: boolean }) => void)
+  | null = null;
 let batteryIsCritical = false;
 
 // Mock the battery service module
 vi.mock('../../../src/services/battery', () => ({
   batteryService: {
-    subscribe: vi.fn((cb: (status: { batteryLevel: string; charging: boolean }) => void) => {
-      batterySubscribeCallback = cb;
-      return () => {
-        batterySubscribeCallback = null;
-      };
-    }),
+    subscribe: vi.fn(
+      (cb: (status: { batteryLevel: string; charging: boolean }) => void) => {
+        batterySubscribeCallback = cb;
+        return () => {
+          batterySubscribeCallback = null;
+        };
+      },
+    ),
     isCriticalBattery: vi.fn(() => batteryIsCritical),
   },
 }));
@@ -78,12 +82,24 @@ describe('Ambient Mode Service', () => {
 
       // Should subscribe to battery
       const batteryModule = await import('../../../src/services/battery');
-      expect(batteryModule.batteryService.subscribe).toHaveBeenCalledWith(expect.any(Function));
+      expect(batteryModule.batteryService.subscribe).toHaveBeenCalledWith(
+        expect.any(Function),
+      );
 
       // Should add activity event listeners (touchstart, click, keydown)
-      expect(addEventSpy).toHaveBeenCalledWith('touchstart', expect.any(Function), { passive: true });
-      expect(addEventSpy).toHaveBeenCalledWith('click', expect.any(Function), { passive: true });
-      expect(addEventSpy).toHaveBeenCalledWith('keydown', expect.any(Function), { passive: true });
+      expect(addEventSpy).toHaveBeenCalledWith(
+        'touchstart',
+        expect.any(Function),
+        { passive: true },
+      );
+      expect(addEventSpy).toHaveBeenCalledWith('click', expect.any(Function), {
+        passive: true,
+      });
+      expect(addEventSpy).toHaveBeenCalledWith(
+        'keydown',
+        expect.any(Function),
+        { passive: true },
+      );
 
       addEventSpy.mockRestore();
     });
@@ -92,12 +108,17 @@ describe('Ambient Mode Service', () => {
       ambientModeService.initialize();
 
       const batteryModule = await import('../../../src/services/battery');
-      const callCount = (batteryModule.batteryService.subscribe as ReturnType<typeof vi.fn>).mock.calls.length;
+      const callCount = (
+        batteryModule.batteryService.subscribe as ReturnType<typeof vi.fn>
+      ).mock.calls.length;
 
       ambientModeService.initialize();
 
       // Should not call subscribe again
-      expect((batteryModule.batteryService.subscribe as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callCount);
+      expect(
+        (batteryModule.batteryService.subscribe as ReturnType<typeof vi.fn>)
+          .mock.calls.length,
+      ).toBe(callCount);
     });
   });
 
@@ -506,9 +527,18 @@ describe('Ambient Mode Service', () => {
       ambientModeService.cleanup();
 
       // Should remove activity listeners
-      expect(removeEventSpy).toHaveBeenCalledWith('touchstart', expect.any(Function));
-      expect(removeEventSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(removeEventSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'touchstart',
+        expect.any(Function),
+      );
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'click',
+        expect.any(Function),
+      );
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'keydown',
+        expect.any(Function),
+      );
 
       removeEventSpy.mockRestore();
     });

@@ -24,16 +24,19 @@ export async function setupPage(page) {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
     // Set default settings for consistent test state
     // Keys must match the store's DEFAULT_SETTINGS: auto, haptic, sound, sync, gps, simple, photoCapture, syncPhotos
-    localStorage.setItem('skiTimerSettings', JSON.stringify({
-      auto: true,
-      haptic: true,
-      sound: false,
-      sync: false,
-      syncPhotos: false,
-      gps: false,
-      simple: false,  // Normal mode is default
-      photoCapture: false
-    }));
+    localStorage.setItem(
+      'skiTimerSettings',
+      JSON.stringify({
+        auto: true,
+        haptic: true,
+        sound: false,
+        sync: false,
+        syncPhotos: false,
+        gps: false,
+        simple: false, // Normal mode is default
+        photoCapture: false,
+      }),
+    );
     localStorage.setItem('skiTimerLang', 'de');
   });
 
@@ -56,16 +59,19 @@ export async function setupPageEnglish(page) {
   await page.addInitScript(() => {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
     // Keys must match the store's DEFAULT_SETTINGS
-    localStorage.setItem('skiTimerSettings', JSON.stringify({
-      auto: true,
-      haptic: true,
-      sound: false,
-      sync: false,
-      syncPhotos: false,
-      gps: false,
-      simple: false,  // Normal mode is default
-      photoCapture: false
-    }));
+    localStorage.setItem(
+      'skiTimerSettings',
+      JSON.stringify({
+        auto: true,
+        haptic: true,
+        sound: false,
+        sync: false,
+        syncPhotos: false,
+        gps: false,
+        simple: false, // Normal mode is default
+        photoCapture: false,
+      }),
+    );
     localStorage.setItem('skiTimerLang', 'en');
   });
 
@@ -80,16 +86,19 @@ export async function setupPageWithSync(page, raceId = 'TEST-RACE') {
   await page.addInitScript((raceId) => {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
     // Keys must match the store's DEFAULT_SETTINGS
-    localStorage.setItem('skiTimerSettings', JSON.stringify({
-      auto: true,
-      haptic: true,
-      sound: false,
-      sync: true,  // Sync enabled
-      syncPhotos: false,
-      gps: false,
-      simple: false,  // Full mode for sync testing
-      photoCapture: false
-    }));
+    localStorage.setItem(
+      'skiTimerSettings',
+      JSON.stringify({
+        auto: true,
+        haptic: true,
+        sound: false,
+        sync: true, // Sync enabled
+        syncPhotos: false,
+        gps: false,
+        simple: false, // Full mode for sync testing
+        photoCapture: false,
+      }),
+    );
     localStorage.setItem('skiTimerLang', 'de');
     localStorage.setItem('skiTimerRaceId', raceId);
   }, raceId);
@@ -151,7 +160,9 @@ export async function recordTimestamp(page, bib = null) {
   }
   await page.click('#radial-time-btn');
   // Wait for confirmation overlay
-  await page.waitForSelector('#radial-confirmation-overlay.show', { timeout: 2000 });
+  await page.waitForSelector('#radial-confirmation-overlay.show', {
+    timeout: 2000,
+  });
 }
 
 /**
@@ -159,12 +170,17 @@ export async function recordTimestamp(page, bib = null) {
  * Useful when toast intercepts pointer events on underlying buttons
  */
 export async function waitForToastToHide(page) {
-  await page.waitForFunction(() => {
-    const toast = document.querySelector('.toast');
-    return !toast || !toast.closest('#toast-container');
-  }, { timeout: 5000 }).catch(() => {
-    // Toast might not exist - continue
-  });
+  await page
+    .waitForFunction(
+      () => {
+        const toast = document.querySelector('.toast');
+        return !toast || !toast.closest('#toast-container');
+      },
+      { timeout: 5000 },
+    )
+    .catch(() => {
+      // Toast might not exist - continue
+    });
   // Small buffer for animation
   await page.waitForTimeout(100);
 }
@@ -177,12 +193,17 @@ export async function waitForToastToHide(page) {
 export async function waitForConfirmationToHide(page) {
   // First wait for it to appear (if not already visible)
   try {
-    await page.waitForSelector('#radial-confirmation-overlay.show', { timeout: 2000 });
+    await page.waitForSelector('#radial-confirmation-overlay.show', {
+      timeout: 2000,
+    });
   } catch {
     // Overlay might have already hidden or never appeared - continue
   }
   // Then wait for it to hide
-  await page.waitForSelector('#radial-confirmation-overlay.show', { state: 'hidden', timeout: 5000 });
+  await page.waitForSelector('#radial-confirmation-overlay.show', {
+    state: 'hidden',
+    timeout: 5000,
+  });
 }
 
 /**
@@ -191,7 +212,10 @@ export async function waitForConfirmationToHide(page) {
  */
 export async function enterBib(page, bib) {
   // Wait for dial numbers to be rendered (Safari needs extra time in landscape)
-  await page.waitForSelector('.dial-number[data-num="0"]', { state: 'visible', timeout: 5000 });
+  await page.waitForSelector('.dial-number[data-num="0"]', {
+    state: 'visible',
+    timeout: 5000,
+  });
   // Wait for clear button to be ready (not covered by overlay)
   await page.waitForSelector('#radial-clear-btn', { state: 'visible' });
   await page.click('#radial-clear-btn');

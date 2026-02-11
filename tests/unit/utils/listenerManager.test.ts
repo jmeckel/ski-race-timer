@@ -3,7 +3,7 @@
  * Tests: add(), removeAll(), count tracking, actual addEventListener/removeEventListener behavior
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListenerManager } from '../../../src/utils/listenerManager';
 
 describe('ListenerManager', () => {

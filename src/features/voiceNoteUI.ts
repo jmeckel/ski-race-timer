@@ -350,8 +350,8 @@ export function initFaultConfirmationOverlay(): void {
 
       // Get the fault ID from the overlay (WeakMap context or data attribute fallback)
       const faultId = overlay
-        ? (getModalContext<{ faultId: string }>(overlay)?.faultId ||
-            overlay.getAttribute('data-fault-id'))
+        ? getModalContext<{ faultId: string }>(overlay)?.faultId ||
+          overlay.getAttribute('data-fault-id')
         : undefined;
 
       // Hide the confirmation overlay

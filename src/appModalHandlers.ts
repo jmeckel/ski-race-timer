@@ -1,4 +1,5 @@
 import { clearToasts, showToast, type ToastAction } from './components';
+import { deleteEntriesWithCleanup } from './features/entryDeletion';
 import { initFaultEditModal, updateInlineFaultsList } from './features/faults';
 import {
   closeAllModalsAnimated,
@@ -20,12 +21,17 @@ import {
 import { deleteFaultFromCloud, syncEntry } from './services/sync';
 import { store } from './store';
 import type { Entry } from './types';
+import { ListenerManager } from './utils/listenerManager';
 import {
   clearModalContext,
   getModalContext,
   setModalContext,
 } from './utils/modalContext';
+import { openModalWithContext } from './utils/modalHelpers';
+import { updateButtonGroupState } from './utils/uiHelpers';
 import { makeNumericInput } from './utils/validation';
+
+const listeners = new ListenerManager();
 
 /**
  * Initialize modals
@@ -33,7 +39,7 @@ import { makeNumericInput } from './utils/validation';
 export function initModals(): void {
   // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach((overlay) => {
-    overlay.addEventListener('click', (e) => {
+    listeners.add(overlay, 'click', (e) => {
       if (e.target === overlay) {
         closeAllModals();
       }
@@ -42,13 +48,13 @@ export function initModals(): void {
 
   // Cancel buttons
   document.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
-    btn.addEventListener('click', closeAllModals);
+    listeners.add(btn, 'click', closeAllModals);
   });
 
   // Confirm delete button
   const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
   if (confirmDeleteBtn) {
-    confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+    listeners.add(confirmDeleteBtn, 'click', handleConfirmDelete);
   }
 
   // Confirm fault delete button (for inline fault list)
@@ -56,7 +62,7 @@ export function initModals(): void {
     'confirm-fault-delete-btn',
   );
   if (confirmFaultDeleteBtn) {
-    confirmFaultDeleteBtn.addEventListener('click', () => {
+    listeners.add(confirmFaultDeleteBtn, 'click', () => {
       const modal = document.getElementById('fault-delete-modal');
       const faultId = modal
         ? getModalContext<{ faultId: string }>(modal)?.faultId
@@ -79,7 +85,7 @@ export function initModals(): void {
   // Save edit button
   const saveEditBtn = document.getElementById('save-edit-btn');
   if (saveEditBtn) {
-    saveEditBtn.addEventListener('click', handleSaveEdit);
+    listeners.add(saveEditBtn, 'click', handleSaveEdit);
   }
 
   // Edit bib input - numeric only validation
@@ -93,7 +99,7 @@ export function initModals(): void {
   // Edit run selector
   const editRunSelector = document.getElementById('edit-run-selector');
   if (editRunSelector) {
-    editRunSelector.addEventListener('click', (e) => {
+    listeners.add(editRunSelector, 'click', (e) => {
       const target = e.target as HTMLElement;
       const btn = target.closest('.edit-run-btn');
       if (!btn) return;
@@ -116,14 +122,14 @@ export function initModals(): void {
   // Photo viewer close buttons (X and footer Close)
   const photoViewerCloseBtn = document.getElementById('photo-viewer-close-btn');
   if (photoViewerCloseBtn) {
-    photoViewerCloseBtn.addEventListener('click', closePhotoViewer);
+    listeners.add(photoViewerCloseBtn, 'click', closePhotoViewer);
   }
 
   const photoViewerCloseFooterBtn = document.getElementById(
     'photo-viewer-close-footer-btn',
   );
   if (photoViewerCloseFooterBtn) {
-    photoViewerCloseFooterBtn.addEventListener('click', closePhotoViewer);
+    listeners.add(photoViewerCloseFooterBtn, 'click', closePhotoViewer);
   }
 
   // Photo viewer delete button
@@ -131,13 +137,13 @@ export function initModals(): void {
     'photo-viewer-delete-btn',
   );
   if (photoViewerDeleteBtn) {
-    photoViewerDeleteBtn.addEventListener('click', deletePhoto);
+    listeners.add(photoViewerDeleteBtn, 'click', deletePhoto);
   }
 
   // Photo viewer modal overlay click to close
   const photoViewerModal = document.getElementById('photo-viewer-modal');
   if (photoViewerModal) {
-    photoViewerModal.addEventListener('click', (e) => {
+    listeners.add(photoViewerModal, 'click', (e) => {
       if (e.target === photoViewerModal) {
         closePhotoViewer();
       }
@@ -149,15 +155,20 @@ export function initModals(): void {
 }
 
 /**
+ * Cleanup modal event listeners
+ */
+export function destroyModals(): void {
+  listeners.removeAll();
+}
+
+/**
  * Open edit modal
  */
 export function openEditModal(entry: Entry): void {
   const modal = document.getElementById('edit-modal');
   if (!modal) return;
 
-  // Store entry context for saving
   const entryRun = entry.run ?? 1;
-  setModalContext(modal, { entryId: entry.id, entryRun });
 
   // Populate fields
   const bibInput = document.getElementById(
@@ -171,12 +182,14 @@ export function openEditModal(entry: Entry): void {
   if (statusSelect) statusSelect.value = entry.status;
 
   // Update run selector buttons
-  document.querySelectorAll('.edit-run-btn').forEach((btn) => {
-    const isActive = btn.getAttribute('data-run') === String(entryRun);
-    btn.classList.toggle('active', isActive);
-  });
+  updateButtonGroupState(
+    document.body,
+    '.edit-run-btn',
+    'data-run',
+    String(entryRun),
+  );
 
-  openModal(modal);
+  openModalWithContext(modal, { entryId: entry.id, entryRun });
 }
 
 /**
@@ -240,11 +253,8 @@ async function handleConfirmDelete(): Promise<void> {
   const state = store.getState();
 
   if (action === 'clearAll') {
-    // Get all entries before clearing to sync deletions
     const entriesToDelete = [...state.entries];
     store.clearAll();
-
-    // Clear all photos from IndexedDB
     await photoStorage.clearAll();
 
     // Sync deletions to cloud
@@ -257,20 +267,8 @@ async function handleConfirmDelete(): Promise<void> {
     showToast(t('cleared', state.currentLang), 'success');
   } else if (action === 'deleteSelected') {
     const ids = Array.from(state.selectedEntries);
-
-    // Get entries before deleting to sync deletions
     const entriesToDelete = state.entries.filter((e) => ids.includes(e.id));
-    store.deleteMultiple(ids);
-
-    // Delete photos from IndexedDB for selected entries
-    await photoStorage.deletePhotos(ids);
-
-    // Sync deletions to cloud
-    if (state.settings.sync && state.raceId) {
-      for (const entry of entriesToDelete) {
-        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
-      }
-    }
+    await deleteEntriesWithCleanup(entriesToDelete);
 
     showToast(t('deleted', state.currentLang), 'success');
   } else if (action === 'undoAdd') {
@@ -292,19 +290,9 @@ async function handleConfirmDelete(): Promise<void> {
     closeAllModals();
     return; // Early return - don't call feedbackDelete
   } else if (entryId) {
-    // Get entry before deleting to sync deletion
     const entryToDelete = state.entries.find((e) => e.id === entryId);
-    store.deleteEntry(entryId);
-
-    // Delete photo from IndexedDB
-    await photoStorage.deletePhoto(entryId);
-
-    // Sync deletion to cloud
-    if (state.settings.sync && state.raceId && entryToDelete) {
-      syncService.deleteEntryFromCloud(
-        entryToDelete.id,
-        entryToDelete.deviceId,
-      );
+    if (entryToDelete) {
+      await deleteEntriesWithCleanup([entryToDelete]);
     }
 
     const lang = state.currentLang;

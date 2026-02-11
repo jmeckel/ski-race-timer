@@ -7,8 +7,10 @@
 import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { ListenerManager } from '../utils/listenerManager';
 
 let dismissed = false;
+const listeners = new ListenerManager();
 
 function showBanner(): void {
   if (dismissed) return;
@@ -48,18 +50,25 @@ export function initOfflineBanner(): void {
   // Dismiss button
   const dismissBtn = document.getElementById('offline-banner-dismiss');
   if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
+    listeners.add(dismissBtn, 'click', () => {
       dismissed = true;
       hideBanner();
     });
   }
 
   // Listen for online/offline events
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
+  listeners.add(window, 'online', handleOnline);
+  listeners.add(window, 'offline', handleOffline);
 
   // Check initial state
   if (!navigator.onLine) {
     showBanner();
   }
+}
+
+/**
+ * Cleanup offline banner listeners
+ */
+export function destroyOfflineBanner(): void {
+  listeners.removeAll();
 }

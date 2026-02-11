@@ -156,11 +156,7 @@ export function initFaultEditModal(): void {
     'confirm-mark-deletion-btn',
   );
   if (confirmMarkDeletionBtn) {
-    listeners.add(
-      confirmMarkDeletionBtn,
-      'click',
-      handleConfirmMarkDeletion,
-    );
+    listeners.add(confirmMarkDeletionBtn, 'click', handleConfirmMarkDeletion);
   }
 }
 

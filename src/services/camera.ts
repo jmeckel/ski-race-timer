@@ -20,6 +20,9 @@ const PHOTO_MAX_SIZE_KB = 200; // Max base64 size in KB (actual image ~150KB)
 // Camera state machine to handle visibility changes correctly
 type CameraState = 'stopped' | 'initializing' | 'ready' | 'paused' | 'resuming';
 
+// Maximum time camera can stay in 'resuming' state before allowing retry (ms)
+const RESUMING_TIMEOUT = 5000;
+
 class CameraService {
   private stream: MediaStream | null = null;
   private videoElement: HTMLVideoElement | null = null;
@@ -29,6 +32,7 @@ class CameraService {
   private pendingVisibilityChange: 'hidden' | 'visible' | null = null;
   private previewElement: HTMLVideoElement | null = null;
   private ownsVideoElement = false;
+  private resumingStartedAt: number | null = null;
 
   /**
    * Initialize the camera service
@@ -160,11 +164,22 @@ class CameraService {
    * Uses state machine to handle rapid visibility changes correctly
    */
   private async reinitializeCamera(): Promise<void> {
-    // Prevent concurrent reinitialize calls
+    // Prevent concurrent reinitialize calls, but allow retry if stuck for too long
     if (this.cameraState === 'resuming') {
-      return;
+      if (
+        this.resumingStartedAt &&
+        Date.now() - this.resumingStartedAt > RESUMING_TIMEOUT
+      ) {
+        // Stuck in resuming state for too long - reset to allow retry
+        logger.warn('Camera stuck in resuming state, resetting for retry');
+        this.cameraState = 'paused';
+        this.resumingStartedAt = null;
+      } else {
+        return;
+      }
     }
     this.cameraState = 'resuming';
+    this.resumingStartedAt = Date.now();
 
     try {
       if (!this.videoElement) {
@@ -204,15 +219,18 @@ class CameraService {
       // Check if visibility changed during reinitialization
       if (this.pendingVisibilityChange === 'hidden') {
         this.pendingVisibilityChange = null;
+        this.resumingStartedAt = null;
         this.pauseCamera();
         return;
       }
 
       this.cameraState = 'ready';
+      this.resumingStartedAt = null;
       store.setCameraReady(true);
     } catch (error) {
       logger.error('Failed to reinitialize camera:', error);
       this.cameraState = 'stopped';
+      this.resumingStartedAt = null;
     }
   }
 
@@ -273,7 +291,8 @@ class CameraService {
 
       // Convert to base64
       const dataUrl = this.canvasElement.toDataURL('image/jpeg', PHOTO_QUALITY);
-      const base64 = dataUrl.split(',')[1];
+      const base64 = dataUrl.split(',')[1] ?? null;
+      if (!base64) return null;
       const sizeKB = Math.round(base64.length / 1024);
 
       // Check size limit
@@ -320,6 +339,7 @@ class CameraService {
       this.visibilityHandler = null;
     }
     this.pendingVisibilityChange = null;
+    this.resumingStartedAt = null;
     this.cameraState = 'stopped';
     store.setCameraReady(false);
   }

@@ -6,7 +6,7 @@
  *        canEnableSync, getCurrentSettings
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock translations
 vi.mock('../../../src/i18n/translations', () => ({
@@ -14,18 +14,18 @@ vi.mock('../../../src/i18n/translations', () => ({
 }));
 
 import {
-  initSettings,
-  getToggleElement,
-  updateSettingsInputs,
-  updateLangToggle,
-  applyVisualSettings,
   applyGlassEffectSettings,
-  getSettingsSummary,
-  isValidDeviceName,
-  sanitizeDeviceName,
+  applyVisualSettings,
   canEnableSync,
   getCurrentSettings,
+  getSettingsSummary,
+  getToggleElement,
+  initSettings,
+  isValidDeviceName,
   type SettingsDependencies,
+  sanitizeDeviceName,
+  updateLangToggle,
+  updateSettingsInputs,
 } from '../../../src/features/settings';
 import type { AppState, Settings } from '../../../src/types';
 

@@ -4,8 +4,15 @@
  * Tests for GPS synchronization, accuracy display, and timestamp integration
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide, enterBib } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  clickToggle,
+  enterBib,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 // Helper to enable GPS (assumes page is on settings view)
 async function enableGPS(page) {
@@ -15,7 +22,12 @@ async function enableGPS(page) {
 }
 
 // Helper to mock geolocation
-async function mockGeolocation(context, latitude = 47.0707, longitude = 15.4395, accuracy = 10) {
+async function mockGeolocation(
+  context,
+  latitude = 47.0707,
+  longitude = 15.4395,
+  accuracy = 10,
+) {
   await context.setGeolocation({ latitude, longitude, accuracy });
   await context.grantPermissions(['geolocation']);
 }
@@ -36,7 +48,7 @@ test.describe('GPS Settings', () => {
     // Create context with geolocation permission
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
     const page = await context.newPage();
     await setupPage(page);
@@ -45,14 +57,14 @@ test.describe('GPS Settings', () => {
     const gpsToggle = page.locator('#gps-toggle');
 
     // Ensure it starts off
-    const isOn = await isToggleOn(page, "#gps-toggle");
+    const isOn = await isToggleOn(page, '#gps-toggle');
     if (isOn) {
-      await clickToggle(page, "#gps-toggle");
+      await clickToggle(page, '#gps-toggle');
       await page.waitForTimeout(100);
     }
 
     // Toggle on
-    await clickToggle(page, "#gps-toggle");
+    await clickToggle(page, '#gps-toggle');
     await page.waitForTimeout(500); // Wait for GPS to initialize
 
     await expect(gpsToggle).toBeChecked();
@@ -63,13 +75,13 @@ test.describe('GPS Settings', () => {
     const gpsToggle = page.locator('#gps-toggle');
 
     // Ensure it's on first
-    const isOn = await isToggleOn(page, "#gps-toggle");
+    const isOn = await isToggleOn(page, '#gps-toggle');
     if (!isOn) {
-      await clickToggle(page, "#gps-toggle");
+      await clickToggle(page, '#gps-toggle');
     }
 
     // Toggle off
-    await clickToggle(page, "#gps-toggle");
+    await clickToggle(page, '#gps-toggle');
 
     await expect(gpsToggle).not.toBeChecked();
   });
@@ -78,17 +90,26 @@ test.describe('GPS Settings', () => {
     // Create context with geolocation permission
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
     const page = await context.newPage();
 
     // Set up with GPS enabled from the start (bypass onboarding, full mode, GPS on)
     await page.addInitScript(() => {
       localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-      localStorage.setItem('skiTimerSettings', JSON.stringify({
-        auto: true, haptic: true, sound: false, sync: false,
-        syncPhotos: false, gps: true, simple: false, photoCapture: false
-      }));
+      localStorage.setItem(
+        'skiTimerSettings',
+        JSON.stringify({
+          auto: true,
+          haptic: true,
+          sound: false,
+          sync: false,
+          syncPhotos: false,
+          gps: true,
+          simple: false,
+          photoCapture: false,
+        }),
+      );
       localStorage.setItem('skiTimerLang', 'de');
     });
 
@@ -121,7 +142,7 @@ test.describe('GPS Status Display', () => {
     // Need geolocation context for GPS to work
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
     const page = await context.newPage();
     await setupPage(page);
@@ -139,7 +160,7 @@ test.describe('GPS Status Display', () => {
   test('should hide GPS indicator when disabled', async ({ browser }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
     const page = await context.newPage();
     await setupPage(page);
@@ -148,7 +169,7 @@ test.describe('GPS Status Display', () => {
     await page.waitForTimeout(500);
 
     // Disable GPS
-    await clickToggle(page, "#gps-toggle");
+    await clickToggle(page, '#gps-toggle');
 
     // Go to timer to check the GPS indicator
     await navigateTo(page, 'timer');
@@ -168,10 +189,12 @@ test.describe('GPS Status Display', () => {
 });
 
 test.describe('GPS with Geolocation Permission', () => {
-  test('should work when geolocation permission granted', async ({ browser }) => {
+  test('should work when geolocation permission granted', async ({
+    browser,
+  }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
 
     const page = await context.newPage();
@@ -189,7 +212,7 @@ test.describe('GPS with Geolocation Permission', () => {
   test('should show GPS indicator when active', async ({ browser }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
 
     const page = await context.newPage();
@@ -225,10 +248,14 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     // Remove any GPS warning toasts that overlay the dial and record button
-    await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+    await page.evaluate(() =>
+      document.querySelectorAll('.toast').forEach((t) => t.remove()),
+    );
     await enterBib(page, 1);
     // Remove toasts again in case new ones appeared during bib entry
-    await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+    await page.evaluate(() =>
+      document.querySelectorAll('.toast').forEach((t) => t.remove()),
+    );
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -245,9 +272,9 @@ test.describe('GPS Timestamp Recording', () => {
     await navigateTo(page, 'settings');
 
     const gpsToggle = page.locator('#gps-toggle');
-    const isOn = await isToggleOn(page, "#gps-toggle");
+    const isOn = await isToggleOn(page, '#gps-toggle');
     if (!isOn) {
-      await clickToggle(page, "#gps-toggle");
+      await clickToggle(page, '#gps-toggle');
     }
 
     // Record entry anyway
@@ -267,7 +294,7 @@ test.describe('GPS Accuracy Levels', () => {
   test('should handle high accuracy GPS', async ({ browser }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395, accuracy: 1 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
 
     const page = await context.newPage();
@@ -292,7 +319,7 @@ test.describe('GPS Accuracy Levels', () => {
   test('should handle low accuracy GPS', async ({ browser }) => {
     const context = await browser.newContext({
       geolocation: { latitude: 47.0707, longitude: 15.4395, accuracy: 100 },
-      permissions: ['geolocation']
+      permissions: ['geolocation'],
     });
 
     const page = await context.newPage();
@@ -323,26 +350,26 @@ test.describe('GPS Independence from Other Settings', () => {
 
   test('should toggle GPS without affecting sync', async ({ page }) => {
     // Get initial sync state
-    const syncInitial = await isToggleOn(page, "#sync-toggle");
+    const syncInitial = await isToggleOn(page, '#sync-toggle');
 
     // Toggle GPS
-    await clickToggle(page, "#gps-toggle");
+    await clickToggle(page, '#gps-toggle');
 
     // Sync should be unchanged
-    const syncAfter = await isToggleOn(page, "#sync-toggle");
+    const syncAfter = await isToggleOn(page, '#sync-toggle');
     expect(syncAfter).toBe(syncInitial);
   });
 
   test('should toggle GPS without affecting haptic', async ({ page }) => {
     // Get initial haptic state
     const hapticToggle = page.locator('#haptic-toggle');
-    const hapticInitial = await hapticToggle.evaluate(el => el.checked);
+    const hapticInitial = await hapticToggle.evaluate((el) => el.checked);
 
     // Toggle GPS
-    await clickToggle(page, "#gps-toggle");
+    await clickToggle(page, '#gps-toggle');
 
     // Haptic should be unchanged
-    const hapticAfter = await hapticToggle.evaluate(el => el.checked);
+    const hapticAfter = await hapticToggle.evaluate((el) => el.checked);
     expect(hapticAfter).toBe(hapticInitial);
   });
 });

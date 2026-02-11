@@ -3,7 +3,7 @@
  * Tests: initOfflineBanner, show/hide banner, dismiss, online/offline events
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing the module
 vi.mock('../../../src/components', () => ({
@@ -22,8 +22,8 @@ vi.mock('../../../src/store', () => ({
   },
 }));
 
-import { initOfflineBanner } from '../../../src/features/offlineBanner';
 import { showToast } from '../../../src/components';
+import { initOfflineBanner } from '../../../src/features/offlineBanner';
 import { t } from '../../../src/i18n/translations';
 import { store } from '../../../src/store';
 

@@ -8,58 +8,63 @@
  * - Graceful degradation when Battery API unavailable
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, navigateTo } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import { navigateTo, setupPage } from './helpers.js';
 
 /**
  * Mock the Battery Status API before page load.
  * Returns a mock battery object that can be externally controlled.
  */
 function mockBatteryAPI(page, { level = 1.0, charging = true } = {}) {
-  return page.addInitScript(({ level, charging }) => {
-    // Create a mock battery manager with event dispatch support
-    const listeners = {};
-    const mockBattery = {
-      level,
-      charging,
-      chargingTime: charging ? 0 : Infinity,
-      dischargingTime: charging ? Infinity : 3600,
-      addEventListener(type, fn) {
-        if (!listeners[type]) listeners[type] = [];
-        listeners[type].push(fn);
-      },
-      removeEventListener(type, fn) {
-        if (listeners[type]) {
-          listeners[type] = listeners[type].filter(l => l !== fn);
-        }
-      },
-      // Expose method to simulate battery changes
-      _setLevel(newLevel) {
-        this.level = newLevel;
-        (listeners['levelchange'] || []).forEach(fn => fn());
-      },
-      _setCharging(newCharging) {
-        this.charging = newCharging;
-        (listeners['chargingchange'] || []).forEach(fn => fn());
-      }
-    };
+  return page.addInitScript(
+    ({ level, charging }) => {
+      // Create a mock battery manager with event dispatch support
+      const listeners = {};
+      const mockBattery = {
+        level,
+        charging,
+        chargingTime: charging ? 0 : Infinity,
+        dischargingTime: charging ? Infinity : 3600,
+        addEventListener(type, fn) {
+          if (!listeners[type]) listeners[type] = [];
+          listeners[type].push(fn);
+        },
+        removeEventListener(type, fn) {
+          if (listeners[type]) {
+            listeners[type] = listeners[type].filter((l) => l !== fn);
+          }
+        },
+        // Expose method to simulate battery changes
+        _setLevel(newLevel) {
+          this.level = newLevel;
+          (listeners['levelchange'] || []).forEach((fn) => fn());
+        },
+        _setCharging(newCharging) {
+          this.charging = newCharging;
+          (listeners['chargingchange'] || []).forEach((fn) => fn());
+        },
+      };
 
-    // Expose mock battery globally for test manipulation
-    window.__mockBattery = mockBattery;
+      // Expose mock battery globally for test manipulation
+      window.__mockBattery = mockBattery;
 
-    // Override navigator.getBattery
-    navigator.getBattery = () => Promise.resolve(mockBattery);
-  }, { level, charging });
+      // Override navigator.getBattery
+      navigator.getBattery = () => Promise.resolve(mockBattery);
+    },
+    { level, charging },
+  );
 }
 
 test.describe('Power Saver - Battery API Integration', () => {
-  test('should NOT have power-saver class when battery is normal', async ({ page }) => {
-    await mockBatteryAPI(page, { level: 0.80, charging: false });
+  test('should NOT have power-saver class when battery is normal', async ({
+    page,
+  }) => {
+    await mockBatteryAPI(page, { level: 0.8, charging: false });
     await setupPage(page);
 
     // Battery is at 80% (normal) - no power saver
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(false);
   });
@@ -73,44 +78,50 @@ test.describe('Power Saver - Battery API Integration', () => {
     await page.waitForTimeout(500);
 
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(true);
   });
 
-  test('should add power-saver class when battery is critical', async ({ page }) => {
+  test('should add power-saver class when battery is critical', async ({
+    page,
+  }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
 
     await page.waitForTimeout(500);
 
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(true);
   });
 
-  test('should NOT add power-saver when low battery but charging', async ({ page }) => {
+  test('should NOT add power-saver when low battery but charging', async ({
+    page,
+  }) => {
     // Low level but charging = normal (battery recovering)
-    await mockBatteryAPI(page, { level: 0.10, charging: true });
+    await mockBatteryAPI(page, { level: 0.1, charging: true });
     await setupPage(page);
 
     await page.waitForTimeout(500);
 
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(false);
   });
 
-  test('should toggle power-saver when battery level changes dynamically', async ({ page }) => {
-    await mockBatteryAPI(page, { level: 0.80, charging: false });
+  test('should toggle power-saver when battery level changes dynamically', async ({
+    page,
+  }) => {
+    await mockBatteryAPI(page, { level: 0.8, charging: false });
     await setupPage(page);
 
     // Initially normal - no power saver
     await page.waitForTimeout(300);
     let hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(false);
 
@@ -121,7 +132,7 @@ test.describe('Power Saver - Battery API Integration', () => {
     await page.waitForTimeout(300);
 
     hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(true);
 
@@ -132,21 +143,23 @@ test.describe('Power Saver - Battery API Integration', () => {
     await page.waitForTimeout(300);
 
     hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(false);
   });
 });
 
 test.describe('Power Saver - CSS Animation Disabling', () => {
-  test('power-saver class should disable breathe animations', async ({ page }) => {
+  test('power-saver class should disable breathe animations', async ({
+    page,
+  }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
     await page.waitForTimeout(500);
 
     // Verify power-saver is active
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(true);
 
@@ -166,7 +179,9 @@ test.describe('Power Saver - CSS Animation Disabling', () => {
     expect(animationRule).toContain('none');
   });
 
-  test('power-saver class should disable snowflake spinner', async ({ page }) => {
+  test('power-saver class should disable snowflake spinner', async ({
+    page,
+  }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
     await page.waitForTimeout(500);
@@ -204,7 +219,9 @@ test.describe('Power Saver - Clock Still Works', () => {
     expect(newSec).not.toBe(initialSec);
   });
 
-  test('clock should still update when battery is critical', async ({ page }) => {
+  test('clock should still update when battery is critical', async ({
+    page,
+  }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
 
@@ -218,13 +235,17 @@ test.describe('Power Saver - Clock Still Works', () => {
     expect(newSec).not.toBe(initialSec);
   });
 
-  test('recording timestamps should work in power-saver mode', async ({ page }) => {
+  test('recording timestamps should work in power-saver mode', async ({
+    page,
+  }) => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
 
     // Record a timestamp
     await page.click('#radial-time-btn');
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
   });
 });
 
@@ -238,7 +259,7 @@ test.describe('Power Saver - Battery API Unavailable', () => {
 
     // No power-saver class should be present
     const hasPowerSaver = await page.evaluate(() =>
-      document.body.classList.contains('power-saver')
+      document.body.classList.contains('power-saver'),
     );
     expect(hasPowerSaver).toBe(false);
 
@@ -250,7 +271,9 @@ test.describe('Power Saver - Battery API Unavailable', () => {
     expect(newSec).not.toBe(initialSec);
   });
 
-  test('all views should be accessible without Battery API', async ({ page }) => {
+  test('all views should be accessible without Battery API', async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       delete navigator.getBattery;
     });

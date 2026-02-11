@@ -5,6 +5,31 @@
  * The API remains identical to the original for backwards compatibility.
  */
 
+/**
+ * ## Signals Migration Plan
+ *
+ * This store uses a dual reactivity pattern: callback-based `subscribe()` and
+ * Preact Signals (`$state`, computed selectors, `effect()`). Both exist because
+ * the codebase is being incrementally migrated from callbacks to signals.
+ *
+ * **For new code, prefer signals:**
+ * - Read state via computed selectors (`$entries`, `$currentView`, etc.)
+ * - React to changes via `effect()` from `@preact/signals-core`
+ * - Use `store.getState()` only for one-shot reads (event handlers, init)
+ *
+ * **`subscribe()` is deprecated** and will be removed once all consumers are
+ * migrated to signal-based effects. Existing subscribers should be converted
+ * when their host module is next modified.
+ *
+ * **Available computed selectors:**
+ * Field extractors: `$entries`, `$settings`, `$syncStatus`, `$currentLang`,
+ *   `$gpsStatus`, `$deviceRole`, `$faultEntries`, `$entryCount`, `$cloudDeviceCount`,
+ *   `$currentView`, `$isSyncing`
+ * Derived state: `$hasUnsyncedChanges`, `$entriesByRun`
+ */
+
+import { computed, effect, type Signal, signal } from '@preact/signals-core';
+import { storage } from '../services/storage';
 import type {
   Action,
   AppState,
@@ -23,8 +48,8 @@ import type {
 import { SCHEMA_VERSION } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { logger } from '../utils/logger';
-import { isValidEntry, migrateSchema } from '../utils/validation';
 import { checkLocalStorageQuota } from '../utils/storageQuota';
+import { isValidEntry, migrateSchema } from '../utils/validation';
 
 // Import slices
 import * as entriesSlice from './slices/entriesSlice';
@@ -86,6 +111,8 @@ type ListenerErrorCallback = (error: unknown, listener: StateListener) => void;
 
 class Store {
   private state: AppState;
+  /** Reactive signal wrapping the entire app state. Future subscribers can use this directly. */
+  readonly $state: Signal<Readonly<AppState>>;
   private listeners: Set<StateListener> = new Set();
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private dirtySlices: Set<string> = new Set(); // Track which slices need saving
@@ -99,20 +126,22 @@ class Store {
 
   constructor() {
     this.state = this.loadInitialState();
+    this.$state = signal(this.state);
   }
 
   private loadInitialState(): AppState {
     // Load device ID first (or generate new one)
-    let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+    let deviceId = storage.getRaw(STORAGE_KEYS.DEVICE_ID);
     if (!deviceId) {
       deviceId = generateDeviceId();
-      localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+      storage.setRaw(STORAGE_KEYS.DEVICE_ID, deviceId);
+      storage.flush();
     }
 
     // Load and migrate data
-    const entriesJson = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-    const settingsJson = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    const syncQueueJson = localStorage.getItem(STORAGE_KEYS.SYNC_QUEUE);
+    const entriesJson = storage.getRaw(STORAGE_KEYS.ENTRIES);
+    const settingsJson = storage.getRaw(STORAGE_KEYS.SETTINGS);
+    const syncQueueJson = storage.getRaw(STORAGE_KEYS.SYNC_QUEUE);
 
     let entries: Entry[] = [];
     let settings = DEFAULT_SETTINGS;
@@ -152,34 +181,33 @@ class Store {
     }
 
     // Load other values
-    const lang = (localStorage.getItem(STORAGE_KEYS.LANG) || 'de') as Language;
-    let deviceName = localStorage.getItem(STORAGE_KEYS.DEVICE_NAME);
+    const lang = (storage.getRaw(STORAGE_KEYS.LANG) || 'de') as Language;
+    let deviceName = storage.getRaw(STORAGE_KEYS.DEVICE_NAME);
     if (!deviceName) {
       deviceName = generateDeviceName();
-      localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, deviceName);
+      storage.setRaw(STORAGE_KEYS.DEVICE_NAME, deviceName);
+      storage.flush();
     }
-    const raceId = localStorage.getItem(STORAGE_KEYS.RACE_ID) || '';
+    const raceId = storage.getRaw(STORAGE_KEYS.RACE_ID) || '';
     const lastSyncedRaceId =
-      localStorage.getItem(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
+      storage.getRaw(STORAGE_KEYS.LAST_SYNCED_RACE_ID) || '';
 
     // Load Gate Judge state
-    const deviceRole = (localStorage.getItem(STORAGE_KEYS.DEVICE_ROLE) ||
+    const deviceRole = (storage.getRaw(STORAGE_KEYS.DEVICE_ROLE) ||
       'timer') as DeviceRole;
     let gateAssignment: [number, number] | null = null;
     let firstGateColor: GateColor = 'red';
     let faultEntries: FaultEntry[] = [];
 
     try {
-      const gateAssignmentJson = localStorage.getItem(
-        STORAGE_KEYS.GATE_ASSIGNMENT,
-      );
+      const gateAssignmentJson = storage.getRaw(STORAGE_KEYS.GATE_ASSIGNMENT);
       if (gateAssignmentJson) {
         const parsed = JSON.parse(gateAssignmentJson);
         if (Array.isArray(parsed) && parsed.length === 2) {
           gateAssignment = parsed as [number, number];
         }
       }
-      const storedColor = localStorage.getItem(STORAGE_KEYS.FIRST_GATE_COLOR);
+      const storedColor = storage.getRaw(STORAGE_KEYS.FIRST_GATE_COLOR);
       if (storedColor === 'red' || storedColor === 'blue') {
         firstGateColor = storedColor;
       }
@@ -188,7 +216,7 @@ class Store {
     }
 
     try {
-      const faultEntriesJson = localStorage.getItem(STORAGE_KEYS.FAULT_ENTRIES);
+      const faultEntriesJson = storage.getRaw(STORAGE_KEYS.FAULT_ENTRIES);
       if (faultEntriesJson) {
         const parsed = JSON.parse(faultEntriesJson);
         if (Array.isArray(parsed)) {
@@ -241,12 +269,17 @@ class Store {
     };
   }
 
-  // Get current state (readonly)
+  // Get current state (readonly) - reads from signal for consistency
   getState(): Readonly<AppState> {
-    return this.state;
+    return this.$state.value;
   }
 
-  // Subscribe to state changes
+  /**
+   * Subscribe to state changes via callback.
+   * @deprecated Prefer signal-based reactivity: use computed selectors
+   * (`$entries`, `$currentView`, etc.) with `effect()` from `@preact/signals-core`.
+   * This method will be removed once all consumers are migrated.
+   */
   subscribe(listener: StateListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -311,6 +344,8 @@ class Store {
   private setState(updates: Partial<AppState>, persist: boolean = true) {
     const changedKeys = Object.keys(updates) as (keyof AppState)[];
     this.state = { ...this.state, ...updates };
+    // Update reactive signal so signal-based subscribers are notified
+    (this.$state as Signal<Readonly<AppState>>).value = this.state;
     this.notify(changedKeys);
 
     if (persist) {
@@ -362,69 +397,66 @@ class Store {
           }
           return entry;
         });
-        localStorage.setItem(
-          STORAGE_KEYS.ENTRIES,
-          JSON.stringify(entriesToSave),
-        );
+        storage.setRaw(STORAGE_KEYS.ENTRIES, JSON.stringify(entriesToSave));
       }
 
       if (dirty.has('settings')) {
-        localStorage.setItem(
+        storage.setRaw(
           STORAGE_KEYS.SETTINGS,
           JSON.stringify(this.state.settings),
         );
       }
 
       if (dirty.has('currentLang')) {
-        localStorage.setItem(STORAGE_KEYS.LANG, this.state.currentLang);
+        storage.setRaw(STORAGE_KEYS.LANG, this.state.currentLang);
       }
 
       if (dirty.has('deviceName')) {
-        localStorage.setItem(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
+        storage.setRaw(STORAGE_KEYS.DEVICE_NAME, this.state.deviceName);
       }
 
       if (dirty.has('raceId')) {
-        localStorage.setItem(STORAGE_KEYS.RACE_ID, this.state.raceId);
+        storage.setRaw(STORAGE_KEYS.RACE_ID, this.state.raceId);
       }
 
       if (dirty.has('lastSyncedRaceId')) {
-        localStorage.setItem(
+        storage.setRaw(
           STORAGE_KEYS.LAST_SYNCED_RACE_ID,
           this.state.lastSyncedRaceId,
         );
       }
 
       if (dirty.has('syncQueue')) {
-        localStorage.setItem(
+        storage.setRaw(
           STORAGE_KEYS.SYNC_QUEUE,
           JSON.stringify(this.state.syncQueue),
         );
       }
 
       if (dirty.has('deviceRole')) {
-        localStorage.setItem(STORAGE_KEYS.DEVICE_ROLE, this.state.deviceRole);
+        storage.setRaw(STORAGE_KEYS.DEVICE_ROLE, this.state.deviceRole);
       }
 
       if (dirty.has('gateAssignment')) {
         if (this.state.gateAssignment) {
-          localStorage.setItem(
+          storage.setRaw(
             STORAGE_KEYS.GATE_ASSIGNMENT,
             JSON.stringify(this.state.gateAssignment),
           );
         } else {
-          localStorage.removeItem(STORAGE_KEYS.GATE_ASSIGNMENT);
+          storage.remove(STORAGE_KEYS.GATE_ASSIGNMENT);
         }
       }
 
       if (dirty.has('firstGateColor')) {
-        localStorage.setItem(
+        storage.setRaw(
           STORAGE_KEYS.FIRST_GATE_COLOR,
           this.state.firstGateColor,
         );
       }
 
       if (dirty.has('faultEntries')) {
-        localStorage.setItem(
+        storage.setRaw(
           STORAGE_KEYS.FAULT_ENTRIES,
           JSON.stringify(this.state.faultEntries),
         );
@@ -432,11 +464,10 @@ class Store {
 
       // Schema version only needs writing when entries or settings change
       if (dirty.has('entries') || dirty.has('settings')) {
-        localStorage.setItem(
-          STORAGE_KEYS.SCHEMA_VERSION,
-          String(SCHEMA_VERSION),
-        );
+        storage.setRaw(STORAGE_KEYS.SCHEMA_VERSION, String(SCHEMA_VERSION));
       }
+      // Flush all pending writes to localStorage synchronously
+      storage.flush();
       // Check localStorage quota after save
       const quotaCheck = checkLocalStorageQuota();
       if (quotaCheck.warning) {
@@ -601,7 +632,7 @@ class Store {
 
   peekUndo(): Action | null {
     if (!this.canUndo()) return null;
-    return this.state.undoStack[this.state.undoStack.length - 1];
+    return this.state.undoStack[this.state.undoStack.length - 1] ?? null;
   }
 
   undo(): { type: Action['type']; data: Entry | Entry[] } | null {
@@ -1132,15 +1163,50 @@ class Store {
 // Singleton store instance
 export const store = new Store();
 
-// Helper hooks for common state access
+// Computed signals for commonly-accessed derived state.
+// These re-compute automatically when the underlying $state signal changes.
+export const $entries = computed(() => store.$state.value.entries);
+export const $settings = computed(() => store.$state.value.settings);
+export const $syncStatus = computed(() => store.$state.value.syncStatus);
+export const $currentLang = computed(() => store.$state.value.currentLang);
+export const $gpsStatus = computed(() => store.$state.value.gpsStatus);
+export const $deviceRole = computed(() => store.$state.value.deviceRole);
+export const $faultEntries = computed(() => store.$state.value.faultEntries);
+export const $entryCount = computed(() => store.$state.value.entries.length);
+export const $cloudDeviceCount = computed(
+  () => store.$state.value.cloudDeviceCount,
+);
+export const $currentView = computed(() => store.$state.value.currentView);
+export const $isSyncing = computed(
+  () => store.$state.value.syncStatus === 'syncing',
+);
+
+// Derived computed selectors — memoized aggregate state
+export const $hasUnsyncedChanges = computed(() => {
+  const state = store.$state.value;
+  return state.entries.some((e) => !e.syncedAt) || state.syncQueue.length > 0;
+});
+
+export const $entriesByRun = computed(() => {
+  const entries = store.$state.value.entries;
+  return {
+    run1: entries.filter((e) => e.run === 1),
+    run2: entries.filter((e) => e.run === 2),
+  };
+});
+
+// Re-export effect for consumers that want signal-based subscriptions
+export { effect };
+
+// Backward-compatible helper functions (delegate to computed signals)
 export function getEntries(): Entry[] {
-  return store.getState().entries;
+  return $entries.value;
 }
 
 export function getSettings(): Settings {
-  return store.getState().settings;
+  return $settings.value;
 }
 
 export function getSyncStatus(): SyncStatus {
-  return store.getState().syncStatus;
+  return $syncStatus.value;
 }

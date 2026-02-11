@@ -17,7 +17,7 @@
  * Run with: npm run test:e2e:prod
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const PROD_URL = 'https://ski-race-timer.vercel.app';
 
@@ -40,8 +40,12 @@ async function ensureOnboardingDismissed(page) {
   const isVisible = await onboardingModal.isVisible().catch(() => false);
   if (isVisible) {
     // Try to complete onboarding by clicking through
-    await page.click('#onboarding-modal .btn-secondary', { timeout: 2000 }).catch(() => {});
-    await page.waitForSelector('#onboarding-modal', { state: 'hidden', timeout: 5000 }).catch(() => {});
+    await page
+      .click('#onboarding-modal .btn-secondary', { timeout: 2000 })
+      .catch(() => {});
+    await page
+      .waitForSelector('#onboarding-modal', { state: 'hidden', timeout: 5000 })
+      .catch(() => {});
   }
 }
 
@@ -49,10 +53,13 @@ async function ensureOnboardingDismissed(page) {
  * Wait for confirmation overlay to hide
  */
 async function waitForConfirmationToHide(page) {
-  await page.waitForFunction(() => {
-    const overlay = document.querySelector('#radial-confirmation-overlay');
-    return !overlay || !overlay.classList.contains('show');
-  }, { timeout: 3000 });
+  await page.waitForFunction(
+    () => {
+      const overlay = document.querySelector('#radial-confirmation-overlay');
+      return !overlay || !overlay.classList.contains('show');
+    },
+    { timeout: 3000 },
+  );
 }
 
 test.describe('Production PWA - Core Functionality', () => {
@@ -107,13 +114,19 @@ test.describe('Production PWA - Core Functionality', () => {
     test('should display radial dial number buttons', async ({ page }) => {
       // Check some dial number buttons exist
       for (let i = 0; i <= 9; i++) {
-        await expect(page.locator(`.dial-number[data-num="${i}"]`)).toBeVisible();
+        await expect(
+          page.locator(`.dial-number[data-num="${i}"]`),
+        ).toBeVisible();
       }
     });
 
     test('should display timing point buttons', async ({ page }) => {
-      await expect(page.locator('.radial-point-btn[data-point="S"]')).toBeVisible();
-      await expect(page.locator('.radial-point-btn[data-point="F"]')).toBeVisible();
+      await expect(
+        page.locator('.radial-point-btn[data-point="S"]'),
+      ).toBeVisible();
+      await expect(
+        page.locator('.radial-point-btn[data-point="F"]'),
+      ).toBeVisible();
     });
 
     test('should display timestamp button', async ({ page }) => {
@@ -122,7 +135,9 @@ test.describe('Production PWA - Core Functionality', () => {
   });
 
   test.describe('Clock Display', () => {
-    test('should show valid time format and update in real-time', async ({ page }) => {
+    test('should show valid time format and update in real-time', async ({
+      page,
+    }) => {
       const clockHm = page.locator('#radial-time-hm');
       const clockSec = page.locator('#radial-time-seconds');
       const hm = await clockHm.textContent();
@@ -154,7 +169,11 @@ test.describe('Production PWA - Core Functionality', () => {
             updateCount++;
           });
 
-          observer.observe(clock, { childList: true, characterData: true, subtree: true });
+          observer.observe(clock, {
+            childList: true,
+            characterData: true,
+            subtree: true,
+          });
 
           // Wait 1 second and count updates
           setTimeout(() => {
@@ -190,7 +209,9 @@ test.describe('Production PWA - Core Functionality', () => {
       await expect(page.locator('[data-view="results"]')).toHaveClass(/active/);
 
       await page.click('[data-view="settings"]');
-      await expect(page.locator('[data-view="settings"]')).toHaveClass(/active/);
+      await expect(page.locator('[data-view="settings"]')).toHaveClass(
+        /active/,
+      );
     });
   });
 
@@ -226,24 +247,36 @@ test.describe('Production PWA - Core Functionality', () => {
   test.describe('Timing Point Selection', () => {
     test('should select Start point', async ({ page }) => {
       await page.click('.radial-point-btn[data-point="S"]');
-      await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="S"]'),
+      ).toHaveClass(/active/);
     });
 
     test('should select Finish point', async ({ page }) => {
       await page.click('.radial-point-btn[data-point="F"]');
-      await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="F"]'),
+      ).toHaveClass(/active/);
     });
 
     test('should only show one timing point as active', async ({ page }) => {
       // Select Start
       await page.click('.radial-point-btn[data-point="S"]');
-      await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
-      await expect(page.locator('.radial-point-btn[data-point="F"]')).not.toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="S"]'),
+      ).toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="F"]'),
+      ).not.toHaveClass(/active/);
 
       // Select Finish - Start should no longer be active
       await page.click('.radial-point-btn[data-point="F"]');
-      await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
-      await expect(page.locator('.radial-point-btn[data-point="S"]')).not.toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="F"]'),
+      ).toHaveClass(/active/);
+      await expect(
+        page.locator('.radial-point-btn[data-point="S"]'),
+      ).not.toHaveClass(/active/);
     });
   });
 
@@ -254,16 +287,22 @@ test.describe('Production PWA - Core Functionality', () => {
       await page.click('#radial-time-btn');
 
       // Should show confirmation overlay
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
     });
 
     test('should hide confirmation after timeout', async ({ page }) => {
       await page.click('#radial-time-btn');
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+        /show/,
+      );
 
       // Wait for auto-hide
       await waitForConfirmationToHide(page);
-      await expect(page.locator('#radial-confirmation-overlay')).not.toHaveClass(/show/);
+      await expect(
+        page.locator('#radial-confirmation-overlay'),
+      ).not.toHaveClass(/show/);
     });
 
     test('should show entry in results after recording', async ({ page }) => {
@@ -367,11 +406,11 @@ test.describe('Production PWA - Settings View', () => {
 
   test('should toggle auto-increment', async ({ page }) => {
     const toggle = page.locator('#auto-toggle');
-    const before = await toggle.evaluate(el => el.checked);
+    const before = await toggle.evaluate((el) => el.checked);
 
     await page.locator('label:has(#auto-toggle)').click();
 
-    const after = await toggle.evaluate(el => el.checked);
+    const after = await toggle.evaluate((el) => el.checked);
     expect(after).not.toBe(before);
   });
 
@@ -384,7 +423,9 @@ test.describe('Production PWA - Settings View', () => {
     await expect(page.locator('#race-id-input-row-container')).toBeVisible();
   });
 
-  test('should have language toggle that responds to clicks', async ({ page }) => {
+  test('should have language toggle that responds to clicks', async ({
+    page,
+  }) => {
     const langToggle = page.locator('#lang-toggle');
 
     // Language toggle should be clickable and have an active option
@@ -433,7 +474,9 @@ test.describe('Production PWA - PWA Features', () => {
   test('should have correct viewport meta tag', async ({ page }) => {
     await page.goto(PROD_URL);
 
-    const viewport = await page.locator('meta[name="viewport"]').getAttribute('content');
+    const viewport = await page
+      .locator('meta[name="viewport"]')
+      .getAttribute('content');
     expect(viewport).toContain('width=device-width');
     expect(viewport).toContain('initial-scale=1');
   });
@@ -509,7 +552,9 @@ test.describe('Production PWA - Accessibility', () => {
     await ensureOnboardingDismissed(page);
   });
 
-  test('should have no major accessibility issues in timer view', async ({ page }) => {
+  test('should have no major accessibility issues in timer view', async ({
+    page,
+  }) => {
     // Check for basic accessibility attributes
     const timestampBtn = page.locator('#radial-time-btn');
     await expect(timestampBtn).toBeVisible();
@@ -533,7 +578,7 @@ test.describe('Production PWA - Accessibility', () => {
   test('should have accessible color contrast', async ({ page }) => {
     // Clock text should be visible
     const clock = page.locator('#radial-time-hm');
-    const color = await clock.evaluate(el => getComputedStyle(el).color);
+    const color = await clock.evaluate((el) => getComputedStyle(el).color);
     expect(color).toBeDefined();
     expect(color).not.toBe('transparent');
   });

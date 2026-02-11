@@ -231,7 +231,8 @@ export const translations = {
     storageError: 'Failed to save data - check storage',
     storageQuotaError: 'Storage full! Export data immediately',
     storageWarning: 'Storage almost full',
-    storageNearlyFull: 'Storage nearly full. Export data and clear old entries.',
+    storageNearlyFull:
+      'Storage nearly full. Export data and clear old entries.',
 
     // Network errors
     networkError: 'Network error - check connection',
@@ -769,7 +770,8 @@ export const translations = {
     storageError: 'Speichern fehlgeschlagen - Speicher prüfen',
     storageQuotaError: 'Speicher voll! Daten sofort exportieren',
     storageWarning: 'Speicher fast voll',
-    storageNearlyFull: 'Speicher fast voll. Daten exportieren und alte Einträge löschen.',
+    storageNearlyFull:
+      'Speicher fast voll. Daten exportieren und alte Einträge löschen.',
 
     // Network errors
     networkError: 'Netzwerkfehler - Verbindung prüfen',
@@ -793,7 +795,8 @@ export const translations = {
 
     // Wake Lock errors
     wakeLockFailed: 'Bildschirm kann während Zeitmessung abdunkeln',
-    wakeLockIdleTimeout: 'Bildschirm wird gedimmt um Akku zu sparen. Tippen zum Wachhalten.',
+    wakeLockIdleTimeout:
+      'Bildschirm wird gedimmt um Akku zu sparen. Tippen zum Wachhalten.',
 
     // Generic errors
     unknownError: 'Unbekannter Fehler',

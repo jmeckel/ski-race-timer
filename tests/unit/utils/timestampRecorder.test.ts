@@ -3,14 +3,14 @@
  * Tests: createTimestampEntry(), isDuplicateEntry()
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Entry } from '../../../src/types';
 import {
+  type CreateTimestampEntryParams,
   createTimestampEntry,
   isDuplicateEntry,
   type TimestampGpsService,
-  type CreateTimestampEntryParams,
 } from '../../../src/utils/timestampRecorder';
-import type { Entry } from '../../../src/types';
 
 describe('Timestamp Recorder', () => {
   let mockGpsService: TimestampGpsService;
@@ -58,10 +58,16 @@ describe('Timestamp Recorder', () => {
     });
 
     it('should set correct timing point', () => {
-      const { entry: startEntry } = createTimestampEntry({ ...baseParams, point: 'S' });
+      const { entry: startEntry } = createTimestampEntry({
+        ...baseParams,
+        point: 'S',
+      });
       expect(startEntry.point).toBe('S');
 
-      const { entry: finishEntry } = createTimestampEntry({ ...baseParams, point: 'F' });
+      const { entry: finishEntry } = createTimestampEntry({
+        ...baseParams,
+        point: 'F',
+      });
       expect(finishEntry.point).toBe('F');
     });
 

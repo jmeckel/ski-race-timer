@@ -1,11 +1,11 @@
-import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
-    }
+      '@': resolve(__dirname, 'src'),
+    },
   },
   test: {
     // Use jsdom for DOM simulation
@@ -18,7 +18,7 @@ export default defineConfig({
     include: [
       'tests/unit/**/*.test.{js,ts}',
       'tests/api/**/*.test.{js,ts}',
-      'tests/integration/**/*.test.{js,ts}'
+      'tests/integration/**/*.test.{js,ts}',
     ],
 
     // Exclude E2E tests (handled by Playwright)
@@ -32,11 +32,11 @@ export default defineConfig({
       include: ['api/**/*.{js,ts}', 'public/**/*.js', 'src/**/*.ts'],
       exclude: ['tests/**/*', 'node_modules/**/*', 'src/**/*.d.ts'],
       thresholds: {
-        statements: 50,
-        branches: 50,
-        functions: 50,
-        lines: 50,
-      }
+        statements: 53,
+        branches: 52,
+        functions: 53,
+        lines: 53,
+      },
     },
 
     // Global test timeout
@@ -49,6 +49,6 @@ export default defineConfig({
     watch: false,
 
     // Globals for describe, it, expect etc
-    globals: true
-  }
+    globals: true,
+  },
 });

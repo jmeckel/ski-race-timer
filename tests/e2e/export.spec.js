@@ -4,9 +4,23 @@
  * Tests for CSV export and Race Horology format
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import * as fs from 'fs';
-import { setupPage, setupPageFullMode, clickToggle, isToggleOn, navigateTo, waitForConfirmationToHide } from './helpers.js';
+import {
+  clickToggle,
+  isToggleOn,
+  navigateTo,
+  setupPage,
+  setupPageFullMode,
+  waitForConfirmationToHide,
+} from './helpers.js';
+
+// Helper to dismiss toast overlays that can intercept pointer events on buttons
+async function dismissToasts(page) {
+  await page.evaluate(() =>
+    document.querySelectorAll('.toast').forEach((t) => t.remove()),
+  );
+}
 
 // Helper to add test entries via radial dial
 async function addTestEntries(page, count = 3) {
@@ -31,7 +45,10 @@ test.describe('Export - Race Horology CSV', () => {
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
   // Real Safari works fine (verified manually)
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -46,6 +63,7 @@ test.describe('Export - Race Horology CSV', () => {
   test('should export Race Horology CSV file', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -56,6 +74,7 @@ test.describe('Export - Race Horology CSV', () => {
   test('should include correct filename with date', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -68,6 +87,7 @@ test.describe('Export - Race Horology CSV', () => {
   test('should export CSV with correct content', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download');
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -87,6 +107,7 @@ test.describe('Export - Race Horology CSV', () => {
   test('should export entries with bib numbers', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download');
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -104,6 +125,7 @@ test.describe('Export - Race Horology CSV', () => {
   test('should export timestamps in correct format', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download');
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -117,9 +139,12 @@ test.describe('Export - Race Horology CSV', () => {
     }
   });
 
-  test('should export timestamps in Race Horology format (HH:MM:SS,ss)', async ({ page }) => {
+  test('should export timestamps in Race Horology format (HH:MM:SS,ss)', async ({
+    page,
+  }) => {
     const downloadPromise = page.waitForEvent('download');
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -133,9 +158,12 @@ test.describe('Export - Race Horology CSV', () => {
     }
   });
 
-  test('should export timing point as FT for Finish entries', async ({ page }) => {
+  test('should export timing point as FT for Finish entries', async ({
+    page,
+  }) => {
     const downloadPromise = page.waitForEvent('download');
 
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -152,7 +180,10 @@ test.describe('Export - Race Horology CSV', () => {
 
 test.describe('Export - Edge Cases', () => {
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test('should export empty results gracefully', async ({ page }) => {
     await setupPage(page);
@@ -165,17 +196,24 @@ test.describe('Export - Edge Cases', () => {
     await navigateTo(page, 'results');
 
     // Wait for any toast notifications to disappear
-    await page.waitForFunction(() => {
-      const toast = document.querySelector('.toast');
-      return !toast || !toast.classList.contains('show');
-    }, { timeout: 5000 }).catch(() => {});
+    await page
+      .waitForFunction(
+        () => {
+          const toast = document.querySelector('.toast');
+          return !toast || !toast.classList.contains('show');
+        },
+        { timeout: 5000 },
+      )
+      .catch(() => {});
 
     // Export button should still work or be disabled
     const exportBtn = page.locator('#export-btn');
     const isVisible = await exportBtn.isVisible();
 
     if (isVisible) {
-      const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+      const downloadPromise = page
+        .waitForEvent('download', { timeout: 5000 })
+        .catch(() => null);
       await exportBtn.click({ force: true });
       const download = await downloadPromise;
 
@@ -208,6 +246,7 @@ test.describe('Export - Edge Cases', () => {
 
     // Export
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -226,7 +265,10 @@ test.describe('Export - Multiple Runs', () => {
   test.setTimeout(30000);
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPageFullMode(page);
@@ -241,6 +283,7 @@ test.describe('Export - Multiple Runs', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -266,6 +309,7 @@ test.describe('Export - Multiple Runs', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -296,6 +340,7 @@ test.describe('Export - Multiple Runs', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -316,13 +361,18 @@ test.describe('Export - Multiple Timing Points', () => {
   test.setTimeout(30000);
 
   // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(({ browserName }) => browserName === 'webkit', 'WebKit test driver issue with radial dial in landscape');
+  test.skip(
+    ({ browserName }) => browserName === 'webkit',
+    'WebKit test driver issue with radial dial in landscape',
+  );
 
   test.beforeEach(async ({ page }) => {
     await setupPageFullMode(page);
   });
 
-  test('should export entries with different timing points', async ({ page }) => {
+  test('should export entries with different timing points', async ({
+    page,
+  }) => {
     // Add Start entry
     await page.click('.radial-point-btn[data-point="S"]');
     await page.click('.dial-number[data-num="1"]');
@@ -339,6 +389,7 @@ test.describe('Export - Multiple Timing Points', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -353,7 +404,9 @@ test.describe('Export - Multiple Timing Points', () => {
     }
   });
 
-  test('should export Start timing point as ST (Race Horology format)', async ({ page }) => {
+  test('should export Start timing point as ST (Race Horology format)', async ({
+    page,
+  }) => {
     // Add Start entry
     await page.click('.radial-point-btn[data-point="S"]');
     await page.click('.dial-number[data-num="5"]');
@@ -363,6 +416,7 @@ test.describe('Export - Multiple Timing Points', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -376,7 +430,9 @@ test.describe('Export - Multiple Timing Points', () => {
     }
   });
 
-  test('should export Finish timing point as FT (Race Horology format)', async ({ page }) => {
+  test('should export Finish timing point as FT (Race Horology format)', async ({
+    page,
+  }) => {
     // Add Finish entry
     await page.click('.radial-point-btn[data-point="F"]');
     await page.click('.dial-number[data-num="7"]');
@@ -386,6 +442,7 @@ test.describe('Export - Multiple Timing Points', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;
@@ -416,6 +473,7 @@ test.describe('Export - Multiple Timing Points', () => {
     // Export
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
+    await dismissToasts(page);
     await page.click('#export-btn');
 
     const download = await downloadPromise;

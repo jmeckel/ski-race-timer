@@ -3,7 +3,7 @@
  * Tests: openPhotoViewer, closePhotoViewer, deletePhoto, getCurrentPhotoEntryId
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing the module
 vi.mock('../../../src/components', () => ({
@@ -33,8 +33,12 @@ vi.mock('../../../src/store', () => ({
 
 vi.mock('../../../src/utils/format', () => ({
   formatTime: vi.fn((date: Date) => '12:00:00.000'),
-  getPointColor: vi.fn((point: string) => (point === 'S' ? '#f97316' : '#10b981')),
-  getPointLabel: vi.fn((point: string, lang: string) => (point === 'S' ? 'Start' : 'Finish')),
+  getPointColor: vi.fn((point: string) =>
+    point === 'S' ? '#f97316' : '#10b981',
+  ),
+  getPointLabel: vi.fn((point: string, lang: string) =>
+    point === 'S' ? 'Start' : 'Finish',
+  ),
 }));
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -50,18 +54,18 @@ vi.mock('../../../src/features/modals', () => ({
   closeModal: vi.fn(),
 }));
 
+import { showToast } from '../../../src/components';
+import { closeModal, openModal } from '../../../src/features/modals';
 import {
-  openPhotoViewer,
   closePhotoViewer,
   deletePhoto,
   getCurrentPhotoEntryId,
+  openPhotoViewer,
 } from '../../../src/features/photoViewer';
-import { showToast } from '../../../src/components';
 import { feedbackDelete, photoStorage } from '../../../src/services';
 import { store } from '../../../src/store';
-import { openModal, closeModal } from '../../../src/features/modals';
-import { logger } from '../../../src/utils/logger';
 import type { Entry } from '../../../src/types';
+import { logger } from '../../../src/utils/logger';
 
 describe('Photo Viewer Feature Module', () => {
   let modal: HTMLDivElement;

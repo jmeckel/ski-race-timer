@@ -67,7 +67,7 @@ class VoiceModeService {
   // Configuration
   private readonly CONFIRMATION_TIMEOUT_MS = 10000; // 10s to confirm
   private readonly LLM_TIMEOUT_MS = 5000; // 5s for LLM response
-  private readonly RESTART_DELAY_MS = 100; // Small delay before restarting recognition
+  private readonly RESTART_DELAY_MS = 500; // Brief rest for mic between recognition sessions to reduce power draw
 
   /**
    * Check if voice mode is supported in this browser
@@ -135,9 +135,9 @@ class VoiceModeService {
     };
 
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const result = event.results[event.resultIndex];
+      const result = event.results[event.resultIndex]!;
       if (result.isFinal) {
-        const transcript = result[0].transcript.trim();
+        const transcript = result[0]!.transcript.trim();
         logger.debug('[Voice] Transcript:', transcript);
         this.processTranscript(transcript);
       }

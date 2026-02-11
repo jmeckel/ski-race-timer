@@ -4,19 +4,19 @@
  *        getPointColor, getPointLabel, debounce, throttle
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  formatTime,
+  debounce,
+  escapeHtml,
+  formatBib,
   formatDate,
   formatDuration,
-  formatBib,
-  escapeHtml,
+  formatFileSize,
+  formatTime,
   getPointColor,
   getPointLabel,
-  debounce,
   throttle,
   truncate,
-  formatFileSize
 } from '../../src/utils/format';
 
 describe('Format Utilities', () => {
@@ -161,7 +161,6 @@ describe('Format Utilities', () => {
     it('should return secondary color for Finish', () => {
       expect(getPointColor('F')).toBe('var(--secondary)');
     });
-
   });
 
   describe('getPointLabel', () => {

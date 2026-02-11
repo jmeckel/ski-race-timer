@@ -5,22 +5,22 @@
  *        migrateSchema, calculateChecksum, verifyChecksum
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { Entry, Settings, SyncQueueItem } from '../../src/types';
+import { SCHEMA_VERSION } from '../../src/types';
 import {
+  calculateChecksum,
+  isValidDataSchema,
+  isValidDeviceId,
   isValidEntry,
+  isValidRaceId,
   isValidSettings,
   isValidSyncQueueItem,
-  isValidRaceId,
-  isValidDeviceId,
-  isValidDataSchema,
-  sanitizeString,
-  sanitizeEntry,
   migrateSchema,
-  calculateChecksum,
-  verifyChecksum
+  sanitizeEntry,
+  sanitizeString,
+  verifyChecksum,
 } from '../../src/utils/validation';
-import { SCHEMA_VERSION } from '../../src/types';
-import type { Entry, Settings, SyncQueueItem } from '../../src/types';
 
 describe('Validation Utilities', () => {
   describe('isValidEntry', () => {
@@ -32,7 +32,7 @@ describe('Validation Utilities', () => {
       timestamp: '2024-01-01T12:00:00.000Z',
       status: 'ok',
       deviceId: 'dev_test',
-      deviceName: 'Timer 1'
+      deviceName: 'Timer 1',
     };
 
     it('should validate a complete entry', () => {
@@ -78,8 +78,12 @@ describe('Validation Utilities', () => {
     });
 
     it('should reject invalid point', () => {
-      expect(isValidEntry({ ...validEntry, point: 'X' as Entry['point'] })).toBe(false);
-      expect(isValidEntry({ ...validEntry, point: 'I4' as Entry['point'] })).toBe(false);
+      expect(
+        isValidEntry({ ...validEntry, point: 'X' as Entry['point'] }),
+      ).toBe(false);
+      expect(
+        isValidEntry({ ...validEntry, point: 'I4' as Entry['point'] }),
+      ).toBe(false);
     });
 
     it('should reject invalid timestamp', () => {
@@ -88,7 +92,9 @@ describe('Validation Utilities', () => {
     });
 
     it('should reject invalid status', () => {
-      expect(isValidEntry({ ...validEntry, status: 'invalid' as Entry['status'] })).toBe(false);
+      expect(
+        isValidEntry({ ...validEntry, status: 'invalid' as Entry['status'] }),
+      ).toBe(false);
     });
 
     it('should reject bib longer than 10 chars', () => {
@@ -110,8 +116,8 @@ describe('Validation Utilities', () => {
           gpsCoords: {
             latitude: 48.1234,
             longitude: 11.5678,
-            accuracy: 5.0
-          }
+            accuracy: 5.0,
+          },
         };
         expect(isValidEntry(fullEntry)).toBe(true);
       });
@@ -127,7 +133,10 @@ describe('Validation Utilities', () => {
       });
 
       it('should reject non-number syncedAt', () => {
-        const entry = { ...validEntry, syncedAt: '1704067200000' as unknown as number };
+        const entry = {
+          ...validEntry,
+          syncedAt: '1704067200000' as unknown as number,
+        };
         expect(isValidEntry(entry)).toBe(false);
       });
 
@@ -152,19 +161,28 @@ describe('Validation Utilities', () => {
       });
 
       it('should reject non-object gpsCoords', () => {
-        const entry = { ...validEntry, gpsCoords: 'invalid' as unknown as Entry['gpsCoords'] };
+        const entry = {
+          ...validEntry,
+          gpsCoords: 'invalid' as unknown as Entry['gpsCoords'],
+        };
         expect(isValidEntry(entry)).toBe(false);
       });
 
       it('should reject null gpsCoords', () => {
-        const entry = { ...validEntry, gpsCoords: null as unknown as Entry['gpsCoords'] };
+        const entry = {
+          ...validEntry,
+          gpsCoords: null as unknown as Entry['gpsCoords'],
+        };
         expect(isValidEntry(entry)).toBe(false);
       });
 
       it('should reject gpsCoords with missing latitude', () => {
         const entry = {
           ...validEntry,
-          gpsCoords: { longitude: 11.5678, accuracy: 5.0 } as unknown as Entry['gpsCoords']
+          gpsCoords: {
+            longitude: 11.5678,
+            accuracy: 5.0,
+          } as unknown as Entry['gpsCoords'],
         };
         expect(isValidEntry(entry)).toBe(false);
       });
@@ -172,7 +190,11 @@ describe('Validation Utilities', () => {
       it('should reject gpsCoords with non-number latitude', () => {
         const entry = {
           ...validEntry,
-          gpsCoords: { latitude: '48.1234', longitude: 11.5678, accuracy: 5.0 } as unknown as Entry['gpsCoords']
+          gpsCoords: {
+            latitude: '48.1234',
+            longitude: 11.5678,
+            accuracy: 5.0,
+          } as unknown as Entry['gpsCoords'],
         };
         expect(isValidEntry(entry)).toBe(false);
       });
@@ -180,7 +202,7 @@ describe('Validation Utilities', () => {
       it('should reject gpsCoords with NaN latitude', () => {
         const entry = {
           ...validEntry,
-          gpsCoords: { latitude: NaN, longitude: 11.5678, accuracy: 5.0 }
+          gpsCoords: { latitude: NaN, longitude: 11.5678, accuracy: 5.0 },
         };
         expect(isValidEntry(entry)).toBe(false);
       });
@@ -188,7 +210,7 @@ describe('Validation Utilities', () => {
       it('should reject gpsCoords with negative accuracy', () => {
         const entry = {
           ...validEntry,
-          gpsCoords: { latitude: 48.1234, longitude: 11.5678, accuracy: -1 }
+          gpsCoords: { latitude: 48.1234, longitude: 11.5678, accuracy: -1 },
         };
         expect(isValidEntry(entry)).toBe(false);
       });
@@ -201,7 +223,7 @@ describe('Validation Utilities', () => {
           timestamp: '2024-01-01T12:00:00.000Z',
           status: 'ok' as const,
           deviceId: 'dev_test',
-          deviceName: 'Timer 1'
+          deviceName: 'Timer 1',
         };
         expect(isValidEntry(minimalEntry)).toBe(true);
       });
@@ -216,7 +238,7 @@ describe('Validation Utilities', () => {
       sync: false,
       gps: false,
       simple: true,
-      photoCapture: false
+      photoCapture: false,
     };
 
     it('should validate complete settings', () => {
@@ -249,10 +271,10 @@ describe('Validation Utilities', () => {
         timestamp: '2024-01-01T12:00:00.000Z',
         status: 'ok',
         deviceId: 'dev_test',
-        deviceName: 'Timer 1'
+        deviceName: 'Timer 1',
       },
       retryCount: 0,
-      lastAttempt: 0
+      lastAttempt: 0,
     };
 
     it('should validate complete sync queue item', () => {
@@ -355,7 +377,7 @@ describe('Validation Utilities', () => {
       deviceId: 'dev_test',
       deviceName: 'Timer 1',
       raceId: 'RACE001',
-      syncQueue: []
+      syncQueue: [],
     };
 
     it('should validate complete schema', () => {
@@ -380,7 +402,9 @@ describe('Validation Utilities', () => {
 
   describe('sanitizeString', () => {
     it('should remove angle brackets', () => {
-      expect(sanitizeString('<script>alert(1)</script>')).toBe('scriptalert(1)/script');
+      expect(sanitizeString('<script>alert(1)</script>')).toBe(
+        'scriptalert(1)/script',
+      );
     });
 
     it('should truncate to max length', () => {
@@ -411,7 +435,7 @@ describe('Validation Utilities', () => {
       timestamp: '2024-01-01T12:00:00.000Z',
       status: 'ok',
       deviceId: 'dev_test',
-      deviceName: 'Timer 1'
+      deviceName: 'Timer 1',
     };
 
     it('should sanitize a valid entry', () => {
@@ -463,13 +487,15 @@ describe('Validation Utilities', () => {
 
     it('should preserve valid entries', () => {
       const data = {
-        entries: [{
-          id: 'test-id',
-          bib: '042',
-          point: 'F',
-          timestamp: '2024-01-01T12:00:00.000Z',
-          status: 'ok'
-        }]
+        entries: [
+          {
+            id: 'test-id',
+            bib: '042',
+            point: 'F',
+            timestamp: '2024-01-01T12:00:00.000Z',
+            status: 'ok',
+          },
+        ],
       };
       const result = migrateSchema(data, deviceId);
       expect(result.entries).toHaveLength(1);
@@ -478,10 +504,15 @@ describe('Validation Utilities', () => {
     it('should filter invalid entries', () => {
       const data = {
         entries: [
-          { id: 'valid', bib: '042', point: 'F', timestamp: '2024-01-01T12:00:00.000Z' },
+          {
+            id: 'valid',
+            bib: '042',
+            point: 'F',
+            timestamp: '2024-01-01T12:00:00.000Z',
+          },
           { invalid: true },
-          null
-        ]
+          null,
+        ],
       };
       const result = migrateSchema(data, deviceId);
       expect(result.entries).toHaveLength(1);
@@ -489,7 +520,7 @@ describe('Validation Utilities', () => {
 
     it('should merge settings with defaults', () => {
       const data = {
-        settings: { auto: false }
+        settings: { auto: false },
       };
       const result = migrateSchema(data, deviceId);
       expect(result.settings.auto).toBe(false);
@@ -498,16 +529,18 @@ describe('Validation Utilities', () => {
 
     it('should preserve sync queue', () => {
       const data = {
-        syncQueue: [{
-          entry: {
-            id: 'test',
-            bib: '001',
-            point: 'F',
-            timestamp: '2024-01-01T12:00:00.000Z'
+        syncQueue: [
+          {
+            entry: {
+              id: 'test',
+              bib: '001',
+              point: 'F',
+              timestamp: '2024-01-01T12:00:00.000Z',
+            },
+            retryCount: 1,
+            lastAttempt: Date.now(),
           },
-          retryCount: 1,
-          lastAttempt: Date.now()
-        }]
+        ],
       };
       const result = migrateSchema(data, deviceId);
       expect(result.syncQueue).toHaveLength(1);

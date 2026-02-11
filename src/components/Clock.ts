@@ -5,16 +5,20 @@ import { formatDate, formatTime } from '../utils';
 import { logger } from '../utils/logger';
 
 // Frame throttling for battery optimization
-// Normal: 60fps, Low battery: 30fps, Critical: 15fps
+// Normal: 60fps, Medium: 30fps, Low: 15fps, Critical: 7.5fps
 const FRAME_SKIP_NORMAL = 0;
-const FRAME_SKIP_LOW = 1; // Skip every other frame (30fps)
-const FRAME_SKIP_CRITICAL = 3; // Skip 3 of 4 frames (15fps)
+const FRAME_SKIP_MEDIUM = 1; // Skip every other frame (30fps)
+const FRAME_SKIP_LOW = 3; // Skip 3 of 4 frames (15fps)
+const FRAME_SKIP_CRITICAL = 7; // Skip 7 of 8 frames (~7.5fps)
 
 /**
  * High-performance clock component using requestAnimationFrame
  * Only updates changed digits to minimize DOM manipulation
  * Battery-aware: reduces frame rate when battery is low
  */
+/** Callback signature for time tick subscribers */
+export type ClockTickCallback = (hours: string, minutes: string, seconds: string, milliseconds: string) => void;
+
 export class Clock {
   private container: HTMLElement;
   private timeElement: HTMLElement;
@@ -31,6 +35,9 @@ export class Clock {
   private batteryUnsubscribe: (() => void) | null = null;
   private isDestroyed = false;
   private cachedDigits: HTMLSpanElement[] = [];
+
+  // External tick subscribers (e.g., radial timer view)
+  private tickCallbacks: Set<ClockTickCallback> = new Set();
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -179,6 +186,9 @@ export class Clock {
       case 'low':
         this.frameSkipCount = FRAME_SKIP_LOW;
         break;
+      case 'medium':
+        this.frameSkipCount = FRAME_SKIP_MEDIUM;
+        break;
       default:
         this.frameSkipCount = FRAME_SKIP_NORMAL;
     }
@@ -232,6 +242,21 @@ export class Clock {
         if (timeStr !== this.lastTimeStr) {
           this.updateDigits(timeStr);
           this.lastTimeStr = timeStr;
+
+          // Notify tick subscribers with time components
+          if (this.tickCallbacks.size > 0) {
+            const h = timeStr.substring(0, 2);
+            const m = timeStr.substring(3, 5);
+            const s = timeStr.substring(6, 8);
+            const ms = timeStr.substring(9, 12);
+            for (const cb of this.tickCallbacks) {
+              try {
+                cb(h, m, s, ms);
+              } catch (e) {
+                logger.error('Clock tick callback error:', e);
+              }
+            }
+          }
         }
 
         // Update date once per second (when seconds change)
@@ -269,8 +294,8 @@ export class Clock {
    */
   private updateDigits(timeStr: string): void {
     for (let i = 0; i < timeStr.length && i < this.cachedDigits.length; i++) {
-      const digit = this.cachedDigits[i];
-      const newChar = timeStr[i];
+      const digit = this.cachedDigits[i]!;
+      const newChar = timeStr[i]!;
 
       if (digit.textContent !== newChar) {
         digit.textContent = newChar;
@@ -300,6 +325,19 @@ export class Clock {
   }
 
   /**
+   * Subscribe to clock tick updates.
+   * Callback receives (hours, minutes, seconds, milliseconds) strings,
+   * called at the same battery-aware frame rate as the main clock.
+   * Returns an unsubscribe function.
+   */
+  onTick(callback: ClockTickCallback): () => void {
+    this.tickCallbacks.add(callback);
+    return () => {
+      this.tickCallbacks.delete(callback);
+    };
+  }
+
+  /**
    * Cleanup
    */
   destroy(): void {
@@ -313,6 +351,9 @@ export class Clock {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
+
+    // Clear all tick subscribers
+    this.tickCallbacks.clear();
 
     this.container.innerHTML = '';
   }

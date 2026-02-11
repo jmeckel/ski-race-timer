@@ -4,10 +4,10 @@
  *        semicolon delimiter, status codes
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  formatTimeForRaceHorology,
   escapeCSVField,
+  formatTimeForRaceHorology,
   getExportFilename,
 } from '../../../src/features/export';
 
@@ -135,7 +135,7 @@ describe('CSV Export Format - Race Horology', () => {
       const result = escapeCSVField('|data');
       // Pipe gets both formula-prefix (') AND quote-wrapping (") because | triggers wrapping
       // Result: "'|data" (wrapped in quotes, with single-quote prefix inside)
-      expect(result).toBe("\"'|data\"");
+      expect(result).toBe('"\'|data"');
     });
 
     it('should prefix tab character with single quote', () => {
@@ -254,12 +254,12 @@ describe('CSV Export Format - Race Horology', () => {
       expect(fields).toHaveLength(6);
 
       // Fields match expected positions
-      expect(fields[0]).toBe('042');       // Startnummer (bib)
-      expect(fields[1]).toBe('1');         // Lauf (run)
-      expect(fields[2]).toBe('FT');        // Messpunkt (timing point)
+      expect(fields[0]).toBe('042'); // Startnummer (bib)
+      expect(fields[1]).toBe('1'); // Lauf (run)
+      expect(fields[2]).toBe('FT'); // Messpunkt (timing point)
       expect(fields[3]).toBe('14:30:45,12'); // Zeit (time HH:MM:SS,ss)
-      expect(fields[4]).toBe('OK');        // Status
-      expect(fields[5]).toBe('Timer 1');   // Gerät (device)
+      expect(fields[4]).toBe('OK'); // Status
+      expect(fields[5]).toBe('Timer 1'); // Gerät (device)
     });
 
     it('should produce extended rows with 8 fields when faults exist', () => {
@@ -267,8 +267,8 @@ describe('CSV Export Format - Race Horology', () => {
       const fields = mockRowWithFaults.split(';');
       expect(fields).toHaveLength(8);
 
-      expect(fields[6]).toBe('5');         // Torstrafzeit (penalty seconds)
-      expect(fields[7]).toBe('T4(MG)');    // Torfehler (fault details)
+      expect(fields[6]).toBe('5'); // Torstrafzeit (penalty seconds)
+      expect(fields[7]).toBe('T4(MG)'); // Torfehler (fault details)
     });
 
     it('time field should match HH:MM:SS,ss pattern', () => {

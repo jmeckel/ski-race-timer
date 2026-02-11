@@ -4,6 +4,7 @@
 
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
 
 const PULL_THRESHOLD = 80; // Pixels to pull before triggering refresh
@@ -25,6 +26,7 @@ export class PullToRefresh {
   private isPulling = false;
   private isRefreshing = false;
   private scrollableParent: HTMLElement | null = null;
+  private listeners = new ListenerManager();
 
   constructor(options: PullToRefreshOptions) {
     this.container = options.container;
@@ -126,15 +128,30 @@ export class PullToRefresh {
    * Bind touch events
    */
   private bindEvents(): void {
-    this.container.addEventListener('touchstart', this.onTouchStart, {
-      passive: true,
-    });
-    this.container.addEventListener('touchmove', this.onTouchMove, {
-      passive: false,
-    });
-    this.container.addEventListener('touchend', this.onTouchEnd, {
-      passive: true,
-    });
+    this.listeners.add(
+      this.container,
+      'touchstart',
+      this.onTouchStart as EventListener,
+      {
+        passive: true,
+      },
+    );
+    this.listeners.add(
+      this.container,
+      'touchmove',
+      this.onTouchMove as EventListener,
+      {
+        passive: false,
+      },
+    );
+    this.listeners.add(
+      this.container,
+      'touchend',
+      this.onTouchEnd as EventListener,
+      {
+        passive: true,
+      },
+    );
   }
 
   /**
@@ -147,7 +164,7 @@ export class PullToRefresh {
     const scrollTop = this.scrollableParent?.scrollTop ?? 0;
     if (scrollTop > 0) return;
 
-    this.startY = e.touches[0].clientY;
+    this.startY = e.touches[0]!.clientY;
     this.isPulling = true;
   };
 
@@ -164,7 +181,7 @@ export class PullToRefresh {
         return;
       }
 
-      this.currentY = e.touches[0].clientY;
+      this.currentY = e.touches[0]!.clientY;
       const pullDistance = (this.currentY - this.startY) / RESISTANCE;
 
       if (pullDistance > 0) {
@@ -262,13 +279,11 @@ export class PullToRefresh {
 
   /**
    * Cleanup
-   * Note: Only the 'capture' option affects removeEventListener matching.
-   * Since we use default (capture: false), no options are needed for removal.
    */
   destroy(): void {
-    this.container.removeEventListener('touchstart', this.onTouchStart);
-    this.container.removeEventListener('touchmove', this.onTouchMove);
-    this.container.removeEventListener('touchend', this.onTouchEnd);
+    this.isRefreshing = false;
+    this.isPulling = false;
+    this.listeners.removeAll();
     this.indicator.remove();
 
     // Remove style element from document head

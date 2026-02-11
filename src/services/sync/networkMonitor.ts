@@ -137,9 +137,7 @@ class NetworkMonitor {
   /**
    * Subscribe to connection quality changes
    */
-  onQualityChange(
-    callback: (quality: ConnectionQuality) => void,
-  ): () => void {
+  onQualityChange(callback: (quality: ConnectionQuality) => void): () => void {
     this.qualityListeners.add(callback);
     return () => {
       this.qualityListeners.delete(callback);

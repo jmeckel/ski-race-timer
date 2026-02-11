@@ -2,9 +2,9 @@
  * Voice Mode Service Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { voiceModeService } from '../../../src/services/voice';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { speechSynthesis } from '../../../src/services/speechSynthesis';
+import { voiceModeService } from '../../../src/services/voice';
 
 describe('Voice Mode Service', () => {
   describe('isSupported', () => {

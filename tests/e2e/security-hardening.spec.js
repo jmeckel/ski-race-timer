@@ -8,15 +8,22 @@
  * - PBKDF2 PIN format in localStorage
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, navigateTo, enterBib, waitForConfirmationToHide } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  enterBib,
+  navigateTo,
+  setupPage,
+  waitForConfirmationToHide,
+} from './helpers.js';
 
 test.describe('CSP - No Inline Scripts', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
 
-  test('app should load successfully without unsafe-inline', async ({ page }) => {
+  test('app should load successfully without unsafe-inline', async ({
+    page,
+  }) => {
     // If CSP blocked inline scripts, the app wouldn't render at all
     // Verify core elements are present and functional
     await expect(page.locator('#radial-time-hm')).toBeVisible();
@@ -27,7 +34,7 @@ test.describe('CSP - No Inline Scripts', () => {
 
   test('no JavaScript errors on initial load', async ({ page }) => {
     const errors = [];
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
       errors.push(error.message);
     });
 
@@ -35,10 +42,11 @@ test.describe('CSP - No Inline Scripts', () => {
     await page.waitForTimeout(1000);
 
     // Filter out known non-critical errors (e.g., service worker in dev mode)
-    const criticalErrors = errors.filter(e =>
-      !e.includes('service-worker') &&
-      !e.includes('SW') &&
-      !e.includes('workbox')
+    const criticalErrors = errors.filter(
+      (e) =>
+        !e.includes('service-worker') &&
+        !e.includes('SW') &&
+        !e.includes('workbox'),
     );
 
     expect(criticalErrors).toHaveLength(0);
@@ -46,10 +54,12 @@ test.describe('CSP - No Inline Scripts', () => {
 
   test('all views render without CSP violations', async ({ page }) => {
     const cspViolations = [];
-    page.on('console', msg => {
-      if (msg.text().includes('Content Security Policy') ||
-          msg.text().includes('CSP') ||
-          msg.text().includes('Refused to execute inline script')) {
+    page.on('console', (msg) => {
+      if (
+        msg.text().includes('Content Security Policy') ||
+        msg.text().includes('CSP') ||
+        msg.text().includes('Refused to execute inline script')
+      ) {
         cspViolations.push(msg.text());
       }
     });
@@ -67,11 +77,15 @@ test.describe('CSP - No Inline Scripts', () => {
     expect(cspViolations).toHaveLength(0);
   });
 
-  test('dynamic content rendering works without inline scripts', async ({ page }) => {
+  test('dynamic content rendering works without inline scripts', async ({
+    page,
+  }) => {
     // Record a timestamp - this exercises innerHTML with escaped content
     await enterBib(page, 42);
     await page.click('#radial-time-btn');
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
     await waitForConfirmationToHide(page);
 
     // Navigate to results - exercises dynamic list rendering
@@ -85,11 +99,19 @@ test.describe('Default PIN Removal', () => {
     // Fresh state - no token, no PIN
     await page.addInitScript(() => {
       localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-      localStorage.setItem('skiTimerSettings', JSON.stringify({
-        auto: true, haptic: true, sound: false,
-        sync: false, syncPhotos: false, gps: false,
-        simple: false, photoCapture: false
-      }));
+      localStorage.setItem(
+        'skiTimerSettings',
+        JSON.stringify({
+          auto: true,
+          haptic: true,
+          sound: false,
+          sync: false,
+          syncPhotos: false,
+          gps: false,
+          simple: false,
+          photoCapture: false,
+        }),
+      );
       localStorage.setItem('skiTimerLang', 'de');
       // Explicitly clear any auth token and PIN
       localStorage.removeItem('skiTimerAuthToken');
@@ -104,7 +126,7 @@ test.describe('Default PIN Removal', () => {
 
     // No auth token should have been created automatically
     const authToken = await page.evaluate(() =>
-      localStorage.getItem('skiTimerAuthToken')
+      localStorage.getItem('skiTimerAuthToken'),
     );
     expect(authToken).toBeNull();
   });
@@ -112,11 +134,19 @@ test.describe('Default PIN Removal', () => {
   test('should NOT store a default PIN automatically', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-      localStorage.setItem('skiTimerSettings', JSON.stringify({
-        auto: true, haptic: true, sound: false,
-        sync: false, syncPhotos: false, gps: false,
-        simple: false, photoCapture: false
-      }));
+      localStorage.setItem(
+        'skiTimerSettings',
+        JSON.stringify({
+          auto: true,
+          haptic: true,
+          sound: false,
+          sync: false,
+          syncPhotos: false,
+          gps: false,
+          simple: false,
+          photoCapture: false,
+        }),
+      );
       localStorage.setItem('skiTimerLang', 'de');
       localStorage.removeItem('skiTimerAuthToken');
       localStorage.removeItem('skiTimerAdminPin');
@@ -128,19 +158,29 @@ test.describe('Default PIN Removal', () => {
 
     // No PIN should be auto-set
     const adminPin = await page.evaluate(() =>
-      localStorage.getItem('skiTimerAdminPin')
+      localStorage.getItem('skiTimerAdminPin'),
     );
     expect(adminPin).toBeNull();
   });
 
-  test('PIN status should show "not set" without pre-existing PIN', async ({ page }) => {
+  test('PIN status should show "not set" without pre-existing PIN', async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-      localStorage.setItem('skiTimerSettings', JSON.stringify({
-        auto: true, haptic: true, sound: false,
-        sync: false, syncPhotos: false, gps: false,
-        simple: false, photoCapture: false
-      }));
+      localStorage.setItem(
+        'skiTimerSettings',
+        JSON.stringify({
+          auto: true,
+          haptic: true,
+          sound: false,
+          sync: false,
+          syncPhotos: false,
+          gps: false,
+          simple: false,
+          photoCapture: false,
+        }),
+      );
       localStorage.setItem('skiTimerLang', 'de');
       localStorage.removeItem('skiTimerAuthToken');
       localStorage.removeItem('skiTimerAdminPin');
@@ -154,8 +194,9 @@ test.describe('Default PIN Removal', () => {
     // PIN status should indicate not set
     const statusText = await page.locator('#admin-pin-status').textContent();
     // Should say "Nicht gesetzt" (DE) or "Not set" (EN) - check for "nicht" or "not"
-    const isNotSet = statusText?.toLowerCase().includes('nicht') ||
-                     statusText?.toLowerCase().includes('not set');
+    const isNotSet =
+      statusText?.toLowerCase().includes('nicht') ||
+      statusText?.toLowerCase().includes('not set');
     expect(isNotSet).toBeTruthy();
   });
 });
@@ -165,7 +206,9 @@ test.describe('Auth Token Security', () => {
     await setupPage(page);
   });
 
-  test('should not expose PIN hashes in localStorage entries', async ({ page }) => {
+  test('should not expose PIN hashes in localStorage entries', async ({
+    page,
+  }) => {
     // Record some entries
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
@@ -190,7 +233,9 @@ test.describe('Auth Token Security', () => {
 
     // App should still function for local timing
     await page.click('#radial-time-btn');
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
     await waitForConfirmationToHide(page);
 
     // Results should show the entry
@@ -210,8 +255,12 @@ test.describe('PIN Modal Security', () => {
 
     // PIN inputs use type="tel" for numeric keypad on mobile
     // (password type would show alphabetic keyboard)
-    const newPinType = await page.locator('#new-pin-input').getAttribute('type');
-    const confirmPinType = await page.locator('#confirm-pin-input').getAttribute('type');
+    const newPinType = await page
+      .locator('#new-pin-input')
+      .getAttribute('type');
+    const confirmPinType = await page
+      .locator('#confirm-pin-input')
+      .getAttribute('type');
 
     expect(newPinType).toBe('tel');
     expect(confirmPinType).toBe('tel');

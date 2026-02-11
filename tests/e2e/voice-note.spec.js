@@ -6,8 +6,8 @@
  * so we test the UI flow and graceful degradation (unsupported state).
  */
 
-import { test, expect } from '@playwright/test';
-import { setupPage, navigateTo } from './helpers.js';
+import { expect, test } from '@playwright/test';
+import { navigateTo, setupPage } from './helpers.js';
 
 /**
  * Set up page with gate judge role for fault entry access
@@ -15,16 +15,19 @@ import { setupPage, navigateTo } from './helpers.js';
 async function setupGateJudgePage(page) {
   await page.addInitScript(() => {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-    localStorage.setItem('skiTimerSettings', JSON.stringify({
-      auto: true,
-      haptic: true,
-      sound: false,
-      sync: false,
-      syncPhotos: false,
-      gps: false,
-      simple: false,
-      photoCapture: false
-    }));
+    localStorage.setItem(
+      'skiTimerSettings',
+      JSON.stringify({
+        auto: true,
+        haptic: true,
+        sound: false,
+        sync: false,
+        syncPhotos: false,
+        gps: false,
+        simple: false,
+        photoCapture: false,
+      }),
+    );
     localStorage.setItem('skiTimerLang', 'en');
     localStorage.setItem('skiTimerDeviceRole', 'gateJudge');
   });
@@ -51,7 +54,9 @@ test.describe('Voice Note Modal', () => {
     await expect(micBtn).toBeAttached();
   });
 
-  test('voice note modal should have save and cancel buttons', async ({ page }) => {
+  test('voice note modal should have save and cancel buttons', async ({
+    page,
+  }) => {
     const saveBtn = page.locator('#voice-note-save-btn');
     const cancelBtn = page.locator('#voice-note-cancel-btn');
     await expect(saveBtn).toBeAttached();
@@ -74,7 +79,9 @@ test.describe('Voice Note - Graceful Degradation', () => {
     await setupGateJudgePage(page);
   });
 
-  test('mic button should show unsupported state when SpeechRecognition is unavailable', async ({ page }) => {
+  test('mic button should show unsupported state when SpeechRecognition is unavailable', async ({
+    page,
+  }) => {
     // In Playwright browsers, SpeechRecognition is typically not available
     // The mic button should have the 'unsupported' class after modal opens
     const hasSpeechRecognition = await page.evaluate(() => {

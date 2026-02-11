@@ -44,7 +44,11 @@ export {
 } from '../auth';
 
 // Re-export types
-export type { BroadcastMessage, ConnectionQuality, PollingConfig } from './types';
+export type {
+  BroadcastMessage,
+  ConnectionQuality,
+  PollingConfig,
+} from './types';
 
 /**
  * SyncService facade - coordinates all sync modules
@@ -322,7 +326,7 @@ class SyncService {
     try {
       const response = await fetchWithTimeout(
         `${API_BASE}?raceId=${encodeURIComponent(raceId)}&checkOnly=true`,
-        { headers: getAuthHeaders() },
+        { headers: { 'Accept-Encoding': 'gzip, deflate', ...getAuthHeaders() } },
         5000,
       );
 
@@ -379,7 +383,10 @@ class SyncService {
         const response = await fetchWithTimeout(
           `${API_BASE}?${params}`,
           {
-            headers: getAuthHeaders(),
+            headers: {
+              'Accept-Encoding': 'gzip, deflate',
+              ...getAuthHeaders(),
+            },
           },
           FETCH_TIMEOUT,
         );

@@ -1,21 +1,37 @@
 import type {
   DataSchema,
   Entry,
-  EntryStatus,
   FaultEntry,
   FaultType,
   FaultVersion,
   Run,
   Settings,
   SyncQueueItem,
-  TimingPoint,
 } from '../types';
 import { SCHEMA_VERSION } from '../types';
 import { generateDeviceName } from './id';
 
-const VALID_POINTS: TimingPoint[] = ['S', 'F'];
-const VALID_STATUSES: EntryStatus[] = ['ok', 'dns', 'dnf', 'dsq', 'flt'];
-const VALID_FAULT_TYPES: FaultType[] = ['MG', 'STR', 'BR'];
+// Re-export shared validation functions and constants
+export {
+  isValidDeviceId,
+  isValidEntry,
+  isValidRaceId,
+  MAX_BIB_LENGTH,
+  MAX_DEVICE_NAME_LENGTH,
+  MAX_RACE_ID_LENGTH,
+  VALID_FAULT_TYPES,
+  VALID_POINTS,
+  VALID_STATUSES,
+} from '../../shared/validation';
+
+// Import for local use within this file (re-export above handles external consumers)
+import {
+  isValidDeviceId,
+  isValidEntry,
+  isValidRaceId,
+  VALID_FAULT_TYPES,
+} from '../../shared/validation';
+
 /**
  * Validate that a run number is a positive integer
  */
@@ -23,98 +39,6 @@ function isValidRun(run: unknown): run is Run {
   return typeof run === 'number' && Number.isInteger(run) && run >= 1;
 }
 const VALID_CHANGE_TYPES = ['create', 'edit', 'restore'] as const;
-
-/**
- * Validate a single entry
- *
- * Validates structure and types for all Entry fields:
- * - Required: id, point, timestamp
- * - Optional in legacy data: bib, status, deviceId, deviceName
- * - Optional: syncedAt, photo, gpsCoords
- *
- * @returns true if entry has valid structure (may still need sanitization)
- */
-export function isValidEntry(entry: unknown): entry is Entry {
-  if (!entry || typeof entry !== 'object') return false;
-
-  const e = entry as Record<string, unknown>;
-
-  // ID can be string (new format) or number (legacy)
-  if (typeof e.id !== 'string' && typeof e.id !== 'number') return false;
-  if (typeof e.id === 'string' && e.id.length === 0) return false;
-  if (typeof e.id === 'number' && e.id <= 0) return false;
-
-  // Bib is optional but must be string if present
-  if (e.bib !== undefined && typeof e.bib !== 'string') return false;
-  if (typeof e.bib === 'string' && e.bib.length > 10) return false;
-
-  // Point is required and must be valid
-  if (!VALID_POINTS.includes(e.point as TimingPoint)) return false;
-
-  // Timestamp is required and must be valid ISO date
-  if (!e.timestamp || typeof e.timestamp !== 'string') return false;
-  if (Number.isNaN(Date.parse(e.timestamp))) return false;
-
-  // Status is optional but must be valid if present
-  if (
-    e.status !== undefined &&
-    !VALID_STATUSES.includes(e.status as EntryStatus)
-  )
-    return false;
-
-  // DeviceId is optional but must be string if present
-  if (e.deviceId !== undefined && typeof e.deviceId !== 'string') return false;
-
-  // DeviceName is optional but must be string if present
-  if (e.deviceName !== undefined && typeof e.deviceName !== 'string')
-    return false;
-
-  // SyncedAt is optional but must be non-negative number if present
-  if (e.syncedAt !== undefined) {
-    if (
-      typeof e.syncedAt !== 'number' ||
-      e.syncedAt < 0 ||
-      !Number.isFinite(e.syncedAt)
-    ) {
-      return false;
-    }
-  }
-
-  // Photo is optional but must be string if present
-  if (e.photo !== undefined && typeof e.photo !== 'string') return false;
-
-  // TimeSource is optional but must be valid if present
-  if (e.timeSource !== undefined && e.timeSource !== 'gps' && e.timeSource !== 'system') return false;
-
-  // GpsTimestamp is optional but must be a finite number if present
-  if (e.gpsTimestamp !== undefined) {
-    if (typeof e.gpsTimestamp !== 'number' || !Number.isFinite(e.gpsTimestamp)) return false;
-  }
-
-  // GpsCoords is optional but must have valid structure if present
-  if (e.gpsCoords !== undefined) {
-    if (typeof e.gpsCoords !== 'object' || e.gpsCoords === null) return false;
-    const coords = e.gpsCoords as Record<string, unknown>;
-    if (
-      typeof coords.latitude !== 'number' ||
-      !Number.isFinite(coords.latitude)
-    )
-      return false;
-    if (
-      typeof coords.longitude !== 'number' ||
-      !Number.isFinite(coords.longitude)
-    )
-      return false;
-    if (
-      typeof coords.accuracy !== 'number' ||
-      !Number.isFinite(coords.accuracy) ||
-      coords.accuracy < 0
-    )
-      return false;
-  }
-
-  return true;
-}
 
 /**
  * Validate a FaultVersion object (used in version history)
@@ -383,23 +307,6 @@ export function isValidSyncQueueItem(item: unknown): item is SyncQueueItem {
   if (typeof i.lastAttempt !== 'number' || i.lastAttempt < 0) return false;
 
   return true;
-}
-
-/**
- * Validate race ID format
- */
-export function isValidRaceId(raceId: unknown): raceId is string {
-  if (!raceId || typeof raceId !== 'string') return false;
-  if (raceId.length > 50) return false;
-  return /^[a-zA-Z0-9_-]+$/.test(raceId);
-}
-
-/**
- * Validate device ID format
- */
-export function isValidDeviceId(deviceId: unknown): deviceId is string {
-  if (!deviceId || typeof deviceId !== 'string') return false;
-  return deviceId.startsWith('dev_') && deviceId.length > 4;
 }
 
 /**

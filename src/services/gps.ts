@@ -15,7 +15,14 @@ const GPS_OPTIONS_NORMAL: PositionOptions = {
 const GPS_OPTIONS_LOW_BATTERY: PositionOptions = {
   enableHighAccuracy: false,
   timeout: 15000,
-  maximumAge: 15000,
+  maximumAge: 30000,
+};
+
+// Critical battery: duty-cycled GPS with maximum caching
+const GPS_OPTIONS_CRITICAL: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 30000,
+  maximumAge: 120000,
 };
 
 // Accuracy thresholds (in meters)
@@ -29,6 +36,9 @@ class GpsService {
   private wasActiveBeforeHidden = false;
   private batteryUnsubscribe: (() => void) | null = null;
   private usingLowPowerMode = false;
+  private dutyCycleIntervalId: ReturnType<typeof setInterval> | null = null;
+  private isDutyCycling = false;
+  private pausedByView = false; // true when paused because user left timer tab
   private timeOffset: number | null = null; // GPS time - system time (ms)
 
   /**
@@ -41,10 +51,53 @@ class GpsService {
   }
 
   /**
+   * Start duty cycling: periodic GPS fixes instead of continuous watching
+   */
+  private startDutyCycling(): void {
+    if (this.isDutyCycling) return;
+    this.isDutyCycling = true;
+
+    // Stop continuous watch
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+
+    logger.debug('[GPS] Starting duty cycling (60s interval)');
+
+    // Periodic getCurrentPosition every 60s
+    this.dutyCycleIntervalId = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => this.handlePosition(position),
+        (error) => this.handleError(error),
+        GPS_OPTIONS_CRITICAL,
+      );
+    }, 60000);
+
+    // Get one position immediately
+    navigator.geolocation.getCurrentPosition(
+      (position) => this.handlePosition(position),
+      (error) => this.handleError(error),
+      GPS_OPTIONS_CRITICAL,
+    );
+  }
+
+  /**
+   * Stop duty cycling
+   */
+  private stopDutyCycling(): void {
+    if (this.dutyCycleIntervalId !== null) {
+      clearInterval(this.dutyCycleIntervalId);
+      this.dutyCycleIntervalId = null;
+    }
+    this.isDutyCycling = false;
+  }
+
+  /**
    * Start watching GPS position
    */
   start(): boolean {
-    if (this.watchId !== null) {
+    if (this.watchId !== null || this.isDutyCycling) {
       return true; // Already watching
     }
 
@@ -54,6 +107,7 @@ class GpsService {
       return false;
     }
 
+    this.pausedByView = false;
     store.setGpsStatus('searching');
 
     try {
@@ -70,23 +124,33 @@ class GpsService {
         this.visibilityHandler = () => {
           if (document.hidden) {
             // Page is hidden - stop GPS watch to save battery
-            this.wasActiveBeforeHidden = this.watchId !== null;
+            this.wasActiveBeforeHidden =
+              this.watchId !== null || this.isDutyCycling;
             if (this.watchId !== null) {
               navigator.geolocation.clearWatch(this.watchId);
               this.watchId = null;
+            }
+            this.stopDutyCycling();
+            if (this.wasActiveBeforeHidden) {
               // Keep lastPosition so we can still use it for entries
               store.setGpsStatus('inactive');
             }
           } else {
             // Page is visible again - resume GPS if it was active before
-            if (this.wasActiveBeforeHidden) {
+            // but NOT if it was paused because user left the timer tab
+            if (this.wasActiveBeforeHidden && !this.pausedByView) {
               store.setGpsStatus('searching');
-              const opts = this.getGpsOptions();
-              this.watchId = navigator.geolocation.watchPosition(
-                (position) => this.handlePosition(position),
-                (error) => this.handleError(error),
-                opts,
-              );
+              // Check battery level to decide between duty cycling vs continuous
+              if (batteryService.isCriticalBattery()) {
+                this.startDutyCycling();
+              } else {
+                const opts = this.getGpsOptions();
+                this.watchId = navigator.geolocation.watchPosition(
+                  (position) => this.handlePosition(position),
+                  (error) => this.handleError(error),
+                  opts,
+                );
+              }
             }
           }
         };
@@ -96,22 +160,48 @@ class GpsService {
       // Subscribe to battery changes to switch GPS accuracy mode
       if (!this.batteryUnsubscribe) {
         this.batteryUnsubscribe = batteryService.subscribe(() => {
-          // Only react if actively watching
-          if (this.watchId === null) return;
+          // Only react if actively watching or duty cycling
+          if (this.watchId === null && !this.isDutyCycling) return;
 
-          const shouldUseLowPower = batteryService.isLowBattery();
-          if (shouldUseLowPower !== this.usingLowPowerMode) {
+          const isCritical = batteryService.isCriticalBattery();
+
+          if (isCritical && !this.isDutyCycling) {
+            // Switch to duty cycling for critical battery
             logger.debug(
-              `[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`,
+              '[GPS] Switching to duty-cycle mode (critical battery)',
             );
-            // Restart watch with new options
-            navigator.geolocation.clearWatch(this.watchId);
+            this.startDutyCycling();
+            return;
+          }
+
+          if (!isCritical && this.isDutyCycling) {
+            // Resume continuous watching from duty cycling
+            logger.debug('[GPS] Resuming continuous GPS from duty-cycle mode');
+            this.stopDutyCycling();
             const opts = this.getGpsOptions();
             this.watchId = navigator.geolocation.watchPosition(
               (position) => this.handlePosition(position),
               (error) => this.handleError(error),
               opts,
             );
+            return;
+          }
+
+          // Normal low-power vs high-accuracy switching (non-critical)
+          if (this.watchId !== null) {
+            const shouldUseLowPower = batteryService.isLowBattery();
+            if (shouldUseLowPower !== this.usingLowPowerMode) {
+              logger.debug(
+                `[GPS] Switching to ${shouldUseLowPower ? 'low-power' : 'high-accuracy'} mode`,
+              );
+              navigator.geolocation.clearWatch(this.watchId);
+              const opts = this.getGpsOptions();
+              this.watchId = navigator.geolocation.watchPosition(
+                (position) => this.handlePosition(position),
+                (error) => this.handleError(error),
+                opts,
+              );
+            }
           }
         });
       }
@@ -133,18 +223,49 @@ class GpsService {
   }
 
   /**
-   * Pause watching GPS position without clearing last known location
+   * Pause watching GPS position without clearing last known location.
+   * Used when user navigates away from the timer tab.
    */
   pause(): void {
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
+    this.stopDutyCycling();
 
+    this.pausedByView = true;
     this.wasActiveBeforeHidden = false;
     // Only show 'paused' (green static) if GPS was actually working (had a fix)
     // Otherwise show 'inactive' (red) to indicate GPS never worked
     store.setGpsStatus(this.lastPosition ? 'paused' : 'inactive');
+  }
+
+  /**
+   * Resume GPS watching after a view-based pause.
+   * No-op if the page is currently hidden (visibility handler will
+   * resume GPS when the page becomes visible again).
+   */
+  resume(): void {
+    if (!this.pausedByView) return; // Not paused by view, nothing to do
+    this.pausedByView = false;
+
+    // Don't resume hardware if page is hidden — the visibility handler
+    // will take care of it when the page becomes visible.
+    if (document.hidden) {
+      // Mark so the visibility handler knows to restart
+      this.wasActiveBeforeHidden = true;
+      return;
+    }
+
+    // Actually restart GPS
+    this.start();
+  }
+
+  /**
+   * Check if GPS is paused (e.g. because user is on a non-timer tab)
+   */
+  isPaused(): boolean {
+    return this.pausedByView;
   }
 
   /**
@@ -155,6 +276,7 @@ class GpsService {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
+    this.stopDutyCycling();
 
     // Remove visibility change handler
     if (this.visibilityHandler) {
@@ -162,6 +284,7 @@ class GpsService {
       this.visibilityHandler = null;
     }
     this.wasActiveBeforeHidden = false;
+    this.pausedByView = false;
 
     // Remove battery subscription
     if (this.batteryUnsubscribe) {
@@ -271,7 +394,10 @@ class GpsService {
    * Check if GPS is active
    */
   isActive(): boolean {
-    return this.watchId !== null && this.lastPosition !== null;
+    return (
+      (this.watchId !== null || this.isDutyCycling) &&
+      this.lastPosition !== null
+    );
   }
 
   /**

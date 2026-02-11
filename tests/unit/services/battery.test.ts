@@ -4,7 +4,7 @@
  * subscribe/unsubscribe, cleanup, power state queries
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -126,8 +126,14 @@ describe('Battery Service', () => {
     it('should register event listeners on battery', async () => {
       await batteryService.initialize();
 
-      expect(mockBattery.addEventListener).toHaveBeenCalledWith('levelchange', expect.any(Function));
-      expect(mockBattery.addEventListener).toHaveBeenCalledWith('chargingchange', expect.any(Function));
+      expect(mockBattery.addEventListener).toHaveBeenCalledWith(
+        'levelchange',
+        expect.any(Function),
+      );
+      expect(mockBattery.addEventListener).toHaveBeenCalledWith(
+        'chargingchange',
+        expect.any(Function),
+      );
     });
 
     it('should return true if already initialized', async () => {
@@ -157,7 +163,9 @@ describe('Battery Service', () => {
     });
 
     it('should return false and log warning if getBattery throws', async () => {
-      (navigator as any).getBattery = vi.fn(() => Promise.reject(new Error('Not allowed')));
+      (navigator as any).getBattery = vi.fn(() =>
+        Promise.reject(new Error('Not allowed')),
+      );
 
       vi.resetModules();
       const module = await import('../../../src/services/battery');
@@ -205,7 +213,7 @@ describe('Battery Service', () => {
 
   describe('battery level classification', () => {
     it('should classify as normal when charging', async () => {
-      mockBattery._setLevel(0.05); // 5%, but charging
+      mockBattery._setLevel(0.03); // 3%, but charging
       mockBattery._setCharging(true);
 
       await batteryService.initialize();
@@ -213,7 +221,7 @@ describe('Battery Service', () => {
       expect(batteryService.getStatus().batteryLevel).toBe('normal');
     });
 
-    it('should classify as normal when above 20%', async () => {
+    it('should classify as normal when above 30%', async () => {
       mockBattery._setLevel(0.5);
       mockBattery._setCharging(false);
 
@@ -222,7 +230,34 @@ describe('Battery Service', () => {
       expect(batteryService.getStatus().batteryLevel).toBe('normal');
     });
 
-    it('should classify as low when between 10-20% and not charging', async () => {
+    it('should classify as medium when between 15-30% and not charging', async () => {
+      mockBattery._setLevel(0.25);
+      mockBattery._setCharging(false);
+
+      await batteryService.initialize();
+
+      expect(batteryService.getStatus().batteryLevel).toBe('medium');
+    });
+
+    it('should classify as medium at exactly 30%', async () => {
+      mockBattery._setLevel(0.3);
+      mockBattery._setCharging(false);
+
+      await batteryService.initialize();
+
+      expect(batteryService.getStatus().batteryLevel).toBe('medium');
+    });
+
+    it('should classify as low when between 5-15% and not charging', async () => {
+      mockBattery._setLevel(0.1);
+      mockBattery._setCharging(false);
+
+      await batteryService.initialize();
+
+      expect(batteryService.getStatus().batteryLevel).toBe('low');
+    });
+
+    it('should classify as low at exactly 15%', async () => {
       mockBattery._setLevel(0.15);
       mockBattery._setCharging(false);
 
@@ -231,17 +266,8 @@ describe('Battery Service', () => {
       expect(batteryService.getStatus().batteryLevel).toBe('low');
     });
 
-    it('should classify as low at exactly 20%', async () => {
-      mockBattery._setLevel(0.2);
-      mockBattery._setCharging(false);
-
-      await batteryService.initialize();
-
-      expect(batteryService.getStatus().batteryLevel).toBe('low');
-    });
-
-    it('should classify as critical when at or below 10% and not charging', async () => {
-      mockBattery._setLevel(0.1);
+    it('should classify as critical when at or below 5% and not charging', async () => {
+      mockBattery._setLevel(0.05);
       mockBattery._setCharging(false);
 
       await batteryService.initialize();
@@ -249,8 +275,8 @@ describe('Battery Service', () => {
       expect(batteryService.getStatus().batteryLevel).toBe('critical');
     });
 
-    it('should classify as critical when below 10% and not charging', async () => {
-      mockBattery._setLevel(0.05);
+    it('should classify as critical when below 5% and not charging', async () => {
+      mockBattery._setLevel(0.03);
       mockBattery._setCharging(false);
 
       await batteryService.initialize();
@@ -267,11 +293,13 @@ describe('Battery Service', () => {
       batteryService.subscribe(callback);
 
       expect(callback).toHaveBeenCalledTimes(1);
-      expect(callback).toHaveBeenCalledWith(expect.objectContaining({
-        level: 1.0,
-        charging: true,
-        batteryLevel: 'normal',
-      }));
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 1.0,
+          charging: true,
+          batteryLevel: 'normal',
+        }),
+      );
     });
 
     it('should return an unsubscribe function', async () => {
@@ -303,9 +331,11 @@ describe('Battery Service', () => {
       mockBattery._setLevel(0.5);
       mockBattery._triggerEvent('levelchange');
 
-      expect(callback).toHaveBeenCalledWith(expect.objectContaining({
-        level: 0.5,
-      }));
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 0.5,
+        }),
+      );
     });
 
     it('should notify subscriber on charging change', async () => {
@@ -319,9 +349,11 @@ describe('Battery Service', () => {
       mockBattery._setCharging(false);
       mockBattery._triggerEvent('chargingchange');
 
-      expect(callback).toHaveBeenCalledWith(expect.objectContaining({
-        charging: false,
-      }));
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          charging: false,
+        }),
+      );
     });
 
     it('should not notify if status has not changed', async () => {
@@ -375,8 +407,16 @@ describe('Battery Service', () => {
       expect(batteryService.isLowBattery()).toBe(false);
     });
 
+    it('should return false for medium battery', async () => {
+      mockBattery._setLevel(0.25);
+      mockBattery._setCharging(false);
+      await batteryService.initialize();
+
+      expect(batteryService.isLowBattery()).toBe(false);
+    });
+
     it('should return true for low battery', async () => {
-      mockBattery._setLevel(0.15);
+      mockBattery._setLevel(0.1);
       mockBattery._setCharging(false);
       await batteryService.initialize();
 
@@ -384,7 +424,7 @@ describe('Battery Service', () => {
     });
 
     it('should return true for critical battery', async () => {
-      mockBattery._setLevel(0.05);
+      mockBattery._setLevel(0.03);
       mockBattery._setCharging(false);
       await batteryService.initialize();
 
@@ -398,7 +438,7 @@ describe('Battery Service', () => {
     });
 
     it('should return false for low battery', async () => {
-      mockBattery._setLevel(0.15);
+      mockBattery._setLevel(0.1);
       mockBattery._setCharging(false);
       await batteryService.initialize();
 
@@ -406,7 +446,7 @@ describe('Battery Service', () => {
     });
 
     it('should return true for critical battery', async () => {
-      mockBattery._setLevel(0.05);
+      mockBattery._setLevel(0.03);
       mockBattery._setCharging(false);
       await batteryService.initialize();
 
@@ -453,8 +493,14 @@ describe('Battery Service', () => {
 
       batteryService.cleanup();
 
-      expect(mockBattery.removeEventListener).toHaveBeenCalledWith('levelchange', expect.any(Function));
-      expect(mockBattery.removeEventListener).toHaveBeenCalledWith('chargingchange', expect.any(Function));
+      expect(mockBattery.removeEventListener).toHaveBeenCalledWith(
+        'levelchange',
+        expect.any(Function),
+      );
+      expect(mockBattery.removeEventListener).toHaveBeenCalledWith(
+        'chargingchange',
+        expect.any(Function),
+      );
     });
 
     it('should clear callbacks', async () => {
@@ -499,21 +545,27 @@ describe('Battery Service', () => {
 
       expect(batteryService.getStatus().batteryLevel).toBe('normal');
 
+      // Drop to medium
+      mockBattery._setLevel(0.25);
+      mockBattery._triggerEvent('levelchange');
+
+      expect(batteryService.getStatus().batteryLevel).toBe('medium');
+
       // Drop to low
-      mockBattery._setLevel(0.15);
+      mockBattery._setLevel(0.1);
       mockBattery._triggerEvent('levelchange');
 
       expect(batteryService.getStatus().batteryLevel).toBe('low');
 
       // Drop to critical
-      mockBattery._setLevel(0.05);
+      mockBattery._setLevel(0.03);
       mockBattery._triggerEvent('levelchange');
 
       expect(batteryService.getStatus().batteryLevel).toBe('critical');
     });
 
     it('should reclassify as normal when charging starts', async () => {
-      mockBattery._setLevel(0.05);
+      mockBattery._setLevel(0.03);
       mockBattery._setCharging(false);
       await batteryService.initialize();
 

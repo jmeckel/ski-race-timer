@@ -5,7 +5,7 @@
  *        openMarkDeletionModal, handleConfirmMarkDeletion, initFaultEditModal
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing the module
 vi.mock('../../../src/components', () => ({
@@ -66,17 +66,18 @@ vi.mock('../../../src/features/modals', () => ({
   closeModal: vi.fn(),
 }));
 
+import { showToast } from '../../../src/components';
 import {
   createAndSyncFault,
-  showFaultConfirmation,
-  openFaultEditModal,
-  handleSaveFaultEdit,
-  handleRestoreFaultVersion,
-  openMarkDeletionModal,
   handleConfirmMarkDeletion,
+  handleRestoreFaultVersion,
+  handleSaveFaultEdit,
   initFaultEditModal,
+  openFaultEditModal,
+  openMarkDeletionModal,
+  showFaultConfirmation,
 } from '../../../src/features/faults/faultOperations';
-import { showToast } from '../../../src/components';
+import { closeModal, openModal } from '../../../src/features/modals';
 import {
   feedbackSuccess,
   feedbackTap,
@@ -84,14 +85,15 @@ import {
 } from '../../../src/services';
 import { syncFault } from '../../../src/services/sync';
 import { store } from '../../../src/store';
-import { openModal, closeModal } from '../../../src/features/modals';
-import { setModalContext } from '../../../src/utils/modalContext';
 import type { FaultEntry, FaultVersion } from '../../../src/types';
+import { setModalContext } from '../../../src/utils/modalContext';
 
 describe('Fault Operations Feature Module', () => {
   let container: HTMLDivElement;
 
-  const createMockFault = (overrides: Partial<FaultEntry> = {}): FaultEntry => ({
+  const createMockFault = (
+    overrides: Partial<FaultEntry> = {},
+  ): FaultEntry => ({
     id: 'fault-1',
     bib: '042',
     run: 1,
@@ -245,7 +247,11 @@ describe('Fault Operations Feature Module', () => {
       typeEl.classList.add('fault-confirmation-type');
       overlay.appendChild(typeEl);
 
-      const fault = createMockFault({ bib: '007', gateNumber: 3, faultType: 'STR' });
+      const fault = createMockFault({
+        bib: '007',
+        gateNumber: 3,
+        faultType: 'STR',
+      });
       showFaultConfirmation(fault);
 
       expect(bibEl.textContent).toBe('007');
@@ -260,7 +266,9 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ id: 'fault-xyz' });
       showFaultConfirmation(fault);
 
-      expect(setModalContext).toHaveBeenCalledWith(overlay, { faultId: 'fault-xyz' });
+      expect(setModalContext).toHaveBeenCalledWith(overlay, {
+        faultId: 'fault-xyz',
+      });
     });
 
     it('should handle missing overlay gracefully', () => {
@@ -338,7 +346,9 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ bib: '042' });
       openFaultEditModal(fault);
 
-      const bibInput = document.getElementById('fault-edit-bib-input') as HTMLInputElement;
+      const bibInput = document.getElementById(
+        'fault-edit-bib-input',
+      ) as HTMLInputElement;
       expect(bibInput.value).toBe('042');
     });
 
@@ -347,7 +357,9 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ gateNumber: 7 });
       openFaultEditModal(fault);
 
-      const gateInput = document.getElementById('fault-edit-gate-input') as HTMLInputElement;
+      const gateInput = document.getElementById(
+        'fault-edit-gate-input',
+      ) as HTMLInputElement;
       expect(gateInput.value).toBe('7');
     });
 
@@ -356,7 +368,9 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ faultType: 'STR' });
       openFaultEditModal(fault);
 
-      const typeSelect = document.getElementById('fault-edit-type-select') as HTMLSelectElement;
+      const typeSelect = document.getElementById(
+        'fault-edit-type-select',
+      ) as HTMLSelectElement;
       expect(typeSelect.value).toBe('STR');
     });
 
@@ -365,7 +379,9 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ notes: 'Some notes' });
       openFaultEditModal(fault);
 
-      const notesTextarea = document.getElementById('fault-edit-notes') as HTMLTextAreaElement;
+      const notesTextarea = document.getElementById(
+        'fault-edit-notes',
+      ) as HTMLTextAreaElement;
       expect(notesTextarea.value).toBe('Some notes');
     });
 
@@ -408,7 +424,9 @@ describe('Fault Operations Feature Module', () => {
       });
       openFaultEditModal(fault);
 
-      const versionSelect = document.getElementById('fault-version-select') as HTMLSelectElement;
+      const versionSelect = document.getElementById(
+        'fault-version-select',
+      ) as HTMLSelectElement;
       // Should have current version + history version
       expect(versionSelect.options.length).toBe(2);
     });
@@ -418,7 +436,10 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault({ markedForDeletion: true });
       openFaultEditModal(fault);
 
-      expect(showToast).toHaveBeenCalledWith('cannotEditPendingDeletion', 'warning');
+      expect(showToast).toHaveBeenCalledWith(
+        'cannotEditPendingDeletion',
+        'warning',
+      );
       expect(openModal).not.toHaveBeenCalled();
     });
 
@@ -707,7 +728,11 @@ describe('Fault Operations Feature Module', () => {
       detailsEl.id = 'mark-deletion-details';
       container.appendChild(detailsEl);
 
-      const fault = createMockFault({ bib: '007', gateNumber: 3, faultType: 'STR' });
+      const fault = createMockFault({
+        bib: '007',
+        gateNumber: 3,
+        faultType: 'STR',
+      });
       openMarkDeletionModal(fault);
 
       expect(detailsEl.innerHTML).toContain('007');

@@ -4,7 +4,7 @@
  * getPinStatus, changePin, exchangeToken, fetchTodaysRaces, clearAuthToken
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the auth service before importing the module under test
 vi.mock('../../../src/services/auth', () => ({
@@ -28,21 +28,26 @@ vi.mock('../../../src/utils/recentRaces', () => ({
 }));
 
 import {
-  fetchRaces,
-  deleteRace,
-  checkRaceExists,
-  getPinStatus,
+  hasAuthToken as authHasAuthToken,
+  setAuthToken,
+} from '../../../src/services/auth';
+import {
   changePin,
-  exchangeToken,
-  fetchTodaysRaces,
+  checkRaceExists,
   clearAuthToken,
-  hasAuthToken,
+  deleteRace,
+  exchangeToken,
+  fetchRaces,
+  fetchTodaysRaces,
   getAuthToken,
+  getPinStatus,
+  hasAuthToken,
 } from '../../../src/utils/api';
-
 import { fetchWithTimeout, logError } from '../../../src/utils/errors';
-import { setAuthToken, hasAuthToken as authHasAuthToken } from '../../../src/services/auth';
-import { addRecentRace, getTodaysRecentRaces } from '../../../src/utils/recentRaces';
+import {
+  addRecentRace,
+  getTodaysRecentRaces,
+} from '../../../src/utils/recentRaces';
 
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
@@ -119,7 +124,9 @@ describe('API Client', () => {
 
     it('should return error on 401 response', async () => {
       const errorData = { error: 'Token expired', expired: true };
-      mockFetchWithTimeout.mockResolvedValue(mockResponse(errorData, 401, false));
+      mockFetchWithTimeout.mockResolvedValue(
+        mockResponse(errorData, 401, false),
+      );
 
       const result = await fetchRaces();
 
@@ -140,7 +147,9 @@ describe('API Client', () => {
     });
 
     it('should return error on generic server error', async () => {
-      mockFetchWithTimeout.mockResolvedValue(mockResponse({ error: 'Server error' }, 500, false));
+      mockFetchWithTimeout.mockResolvedValue(
+        mockResponse({ error: 'Server error' }, 500, false),
+      );
 
       const result = await fetchRaces();
 
@@ -239,7 +248,9 @@ describe('API Client', () => {
     });
 
     it('should return error on failure', async () => {
-      mockFetchWithTimeout.mockResolvedValue(mockResponse({ error: 'Not found' }, 404, false));
+      mockFetchWithTimeout.mockResolvedValue(
+        mockResponse({ error: 'Not found' }, 404, false),
+      );
 
       const result = await deleteRace('RACE-XXX');
 
@@ -312,7 +323,10 @@ describe('API Client', () => {
       await getPinStatus();
 
       const callArgs = mockFetchWithTimeout.mock.calls[0];
-      const headers = (callArgs[1] as RequestInit).headers as Record<string, string>;
+      const headers = (callArgs[1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
       // requiresAuth is false, so no Authorization header should be added by apiRequest
       expect(headers.Authorization).toBeUndefined();
     });
@@ -450,7 +464,11 @@ describe('API Client', () => {
       const racesData = {
         races: [
           { raceId: 'TODAY-RACE', entryCount: 5, lastUpdated: now },
-          { raceId: 'OLD-RACE', entryCount: 10, lastUpdated: now - 2 * 24 * 60 * 60 * 1000 },
+          {
+            raceId: 'OLD-RACE',
+            entryCount: 10,
+            lastUpdated: now - 2 * 24 * 60 * 60 * 1000,
+          },
         ],
       };
       mockFetchWithTimeout.mockResolvedValue(mockResponse(racesData));
@@ -464,9 +482,7 @@ describe('API Client', () => {
     it('should update localStorage cache with API results', async () => {
       const now = Date.now();
       const racesData = {
-        races: [
-          { raceId: 'RACE-A', entryCount: 3, lastUpdated: now },
-        ],
+        races: [{ raceId: 'RACE-A', entryCount: 3, lastUpdated: now }],
       };
       mockFetchWithTimeout.mockResolvedValue(mockResponse(racesData));
 
@@ -493,7 +509,13 @@ describe('API Client', () => {
       const mockHasAuth = vi.mocked(authHasAuthToken);
       mockHasAuth.mockReturnValue(false);
 
-      const localRaces = [{ raceId: 'LOCAL-RACE', createdAt: Date.now(), lastUpdated: Date.now() }];
+      const localRaces = [
+        {
+          raceId: 'LOCAL-RACE',
+          createdAt: Date.now(),
+          lastUpdated: Date.now(),
+        },
+      ];
       vi.mocked(getTodaysRecentRaces).mockReturnValue(localRaces);
 
       const result = await fetchTodaysRaces();
@@ -503,9 +525,17 @@ describe('API Client', () => {
     });
 
     it('should fallback to localStorage when API fails', async () => {
-      mockFetchWithTimeout.mockResolvedValue(mockResponse({ error: 'Server down' }, 500, false));
+      mockFetchWithTimeout.mockResolvedValue(
+        mockResponse({ error: 'Server down' }, 500, false),
+      );
 
-      const localRaces = [{ raceId: 'CACHED-RACE', createdAt: Date.now(), lastUpdated: Date.now() }];
+      const localRaces = [
+        {
+          raceId: 'CACHED-RACE',
+          createdAt: Date.now(),
+          lastUpdated: Date.now(),
+        },
+      ];
       vi.mocked(getTodaysRecentRaces).mockReturnValue(localRaces);
 
       const result = await fetchTodaysRaces();
@@ -516,7 +546,13 @@ describe('API Client', () => {
     it('should fallback to localStorage when API returns no races', async () => {
       mockFetchWithTimeout.mockResolvedValue(mockResponse({ races: null }));
 
-      const localRaces = [{ raceId: 'CACHED-RACE', createdAt: Date.now(), lastUpdated: Date.now() }];
+      const localRaces = [
+        {
+          raceId: 'CACHED-RACE',
+          createdAt: Date.now(),
+          lastUpdated: Date.now(),
+        },
+      ];
       vi.mocked(getTodaysRecentRaces).mockReturnValue(localRaces);
 
       const result = await fetchTodaysRaces();
@@ -528,9 +564,7 @@ describe('API Client', () => {
       const now = Date.now();
       const yesterday = now - 2 * 24 * 60 * 60 * 1000; // 2 days ago to be safe
       const racesData = {
-        races: [
-          { raceId: 'OLD-RACE', entryCount: 10, lastUpdated: yesterday },
-        ],
+        races: [{ raceId: 'OLD-RACE', entryCount: 10, lastUpdated: yesterday }],
       };
       mockFetchWithTimeout.mockResolvedValue(mockResponse(racesData));
 
@@ -546,9 +580,7 @@ describe('API Client', () => {
 
     it('should handle races without lastUpdated', async () => {
       const racesData = {
-        races: [
-          { raceId: 'NO-UPDATE', entryCount: 5, lastUpdated: undefined },
-        ],
+        races: [{ raceId: 'NO-UPDATE', entryCount: 5, lastUpdated: undefined }],
       };
       mockFetchWithTimeout.mockResolvedValue(mockResponse(racesData));
 

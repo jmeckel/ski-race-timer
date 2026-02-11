@@ -5,25 +5,29 @@
  *        isTimeoutError, FetchTimeoutError, fetchWithTimeout, mapSeverityToToastType
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+  ErrorContext,
+} from '../../../src/utils/errors';
 import {
-  ErrorCode,
-  ErrorSeverity,
-  TOAST_DURATION,
-  handleError,
-  logError,
-  logWarning,
-  logCritical,
-  isApiError,
   createApiError,
   createApiSuccess,
-  isNetworkError,
-  isTimeoutError,
+  DEFAULT_FETCH_TIMEOUT,
+  ErrorCode,
+  ErrorSeverity,
   FetchTimeoutError,
   fetchWithTimeout,
-  DEFAULT_FETCH_TIMEOUT,
+  handleError,
+  isApiError,
+  isNetworkError,
+  isTimeoutError,
+  logCritical,
+  logError,
+  logWarning,
+  TOAST_DURATION,
 } from '../../../src/utils/errors';
-import type { ApiErrorResponse, ApiSuccessResponse, ErrorContext } from '../../../src/utils/errors';
 
 // Mock dependencies
 const mockShowToast = vi.fn();
@@ -521,7 +525,13 @@ describe('Error Handling Utilities', () => {
     });
 
     it('should include retryAfter when provided', () => {
-      const result = createApiError('RATE_LIMIT', 'Too many requests', 429, undefined, 60);
+      const result = createApiError(
+        'RATE_LIMIT',
+        'Too many requests',
+        429,
+        undefined,
+        60,
+      );
 
       expect(result.body.error.retryAfter).toBe(60);
     });
@@ -618,7 +628,9 @@ describe('Error Handling Utilities', () => {
     it('should create error with correct message', () => {
       const error = new FetchTimeoutError('https://api.example.com', 5000);
 
-      expect(error.message).toBe('Request to https://api.example.com timed out after 5000ms');
+      expect(error.message).toBe(
+        'Request to https://api.example.com timed out after 5000ms',
+      );
       expect(error.name).toBe('FetchTimeoutError');
     });
 
@@ -656,7 +668,9 @@ describe('Error Handling Utilities', () => {
     });
 
     it('should pass options to fetch', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response('ok'));
 
       await fetchWithTimeout('https://api.example.com', {
         method: 'POST',
@@ -686,7 +700,11 @@ describe('Error Handling Utilities', () => {
           }),
       );
 
-      const promise = fetchWithTimeout('https://api.example.com/slow', {}, 1000);
+      const promise = fetchWithTimeout(
+        'https://api.example.com/slow',
+        {},
+        1000,
+      );
       vi.advanceTimersByTime(1001);
 
       await expect(promise).rejects.toThrow(FetchTimeoutError);
@@ -699,15 +717,17 @@ describe('Error Handling Utilities', () => {
       const networkError = new TypeError('Failed to fetch');
       vi.spyOn(globalThis, 'fetch').mockRejectedValue(networkError);
 
-      await expect(
-        fetchWithTimeout('https://api.example.com'),
-      ).rejects.toThrow('Failed to fetch');
+      await expect(fetchWithTimeout('https://api.example.com')).rejects.toThrow(
+        'Failed to fetch',
+      );
 
       vi.mocked(globalThis.fetch).mockRestore();
     });
 
     it('should use default timeout when not specified', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response('ok'));
 
       await fetchWithTimeout('https://api.example.com');
 
@@ -729,7 +749,9 @@ describe('Error Handling Utilities', () => {
 
     it('should clear timeout after fetch error', async () => {
       const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
-      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'));
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+        new Error('Network error'),
+      );
 
       try {
         await fetchWithTimeout('https://api.example.com');

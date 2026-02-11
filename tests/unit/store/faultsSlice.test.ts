@@ -4,26 +4,26 @@
  *        cloud sync/merge, filtering, sorting
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { FaultEntry, FaultVersion } from '../../../src/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  extractFaultVersionData,
-  createFaultVersion,
-  appendToVersionHistory,
   addFaultEntry,
-  deleteFaultEntry,
-  updateFaultEntry,
-  updateFaultEntryWithHistory,
-  restoreFaultVersion,
-  markFaultForDeletion,
+  appendToVersionHistory,
   approveFaultDeletion,
-  rejectFaultDeletion,
-  getPendingDeletions,
+  createFaultVersion,
+  deleteFaultEntry,
+  extractFaultVersionData,
   getFaultsForBib,
+  getPendingDeletions,
+  markFaultForDeletion,
   markFaultSynced,
   mergeFaultsFromCloud,
+  rejectFaultDeletion,
   removeDeletedCloudFaults,
+  restoreFaultVersion,
+  updateFaultEntry,
+  updateFaultEntryWithHistory,
 } from '../../../src/store/slices/faultsSlice';
+import type { FaultEntry, FaultVersion } from '../../../src/types';
 
 // Helper to create a valid fault entry for testing
 function createTestFault(overrides: Partial<FaultEntry> = {}): FaultEntry {
@@ -49,10 +49,7 @@ function createTestFaultInput(
   overrides: Partial<
     Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'>
   > = {},
-): Omit<
-  FaultEntry,
-  'currentVersion' | 'versionHistory' | 'markedForDeletion'
-> {
+): Omit<FaultEntry, 'currentVersion' | 'versionHistory' | 'markedForDeletion'> {
   return {
     id: `fault-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     bib: '042',
@@ -760,9 +757,9 @@ describe('Faults Slice', () => {
       expect(result![0].markedForDeletionByDeviceId).toBe('dev_judge1');
       expect(result![0].markedForDeletionAt).toBeDefined();
       // Verify it is a valid ISO date
-      expect(
-        Number.isNaN(Date.parse(result![0].markedForDeletionAt!)),
-      ).toBe(false);
+      expect(Number.isNaN(Date.parse(result![0].markedForDeletionAt!))).toBe(
+        false,
+      );
     });
 
     it('should return null if fault not found', () => {
@@ -1035,12 +1032,7 @@ describe('Faults Slice', () => {
     });
 
     it('should skip invalid cloud faults', () => {
-      const invalidFaults = [
-        { invalid: true },
-        null,
-        42,
-        'not a fault',
-      ];
+      const invalidFaults = [{ invalid: true }, null, 42, 'not a fault'];
 
       const result = mergeFaultsFromCloud(
         [],
@@ -1201,9 +1193,7 @@ describe('Faults Slice', () => {
         createTestFault({ id: 'fault-2', deviceId: 'dev_remote' }),
       ];
 
-      const result = removeDeletedCloudFaults(faults, [
-        'fault-1:dev_remote',
-      ]);
+      const result = removeDeletedCloudFaults(faults, ['fault-1:dev_remote']);
 
       expect(result.removedCount).toBe(1);
       expect(result.faultEntries).toHaveLength(1);

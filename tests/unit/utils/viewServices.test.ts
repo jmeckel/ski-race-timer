@@ -2,23 +2,23 @@
  * Unit Tests for view-specific services behavior
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppState } from '../../../src/types';
 
 vi.mock('../../../src/services', () => ({
   gpsService: {
     start: vi.fn(),
     stop: vi.fn(),
-    pause: vi.fn()
+    pause: vi.fn(),
   },
   cameraService: {
     initialize: vi.fn(),
-    stop: vi.fn()
-  }
+    stop: vi.fn(),
+  },
 }));
 
+import { cameraService, gpsService } from '../../../src/services';
 import { applyViewServices } from '../../../src/utils/viewServices';
-import { gpsService, cameraService } from '../../../src/services';
 
 const baseSettings = {
   auto: true,
@@ -31,7 +31,7 @@ const baseSettings = {
   photoCapture: false,
   motionEffects: true,
   glassEffects: true,
-  outdoorMode: false
+  outdoorMode: false,
 };
 
 function createState(overrides: Partial<AppState>): AppState {
@@ -64,7 +64,7 @@ function createState(overrides: Partial<AppState>): AppState {
     gpsStatus: 'inactive',
     cameraReady: false,
     cameraError: null,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -79,8 +79,8 @@ describe('applyViewServices', () => {
       settings: {
         ...baseSettings,
         gps: true,
-        photoCapture: true
-      }
+        photoCapture: true,
+      },
     });
 
     applyViewServices(state);
@@ -97,8 +97,8 @@ describe('applyViewServices', () => {
       settings: {
         ...baseSettings,
         gps: true,
-        photoCapture: true
-      }
+        photoCapture: true,
+      },
     });
 
     applyViewServices(state);
@@ -116,8 +116,8 @@ describe('applyViewServices', () => {
       settings: {
         ...baseSettings,
         gps: false,
-        photoCapture: false
-      }
+        photoCapture: false,
+      },
     });
 
     applyViewServices(state);

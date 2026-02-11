@@ -3,11 +3,11 @@
  * Tests: formatTimeForRaceHorology, escapeCSVField, getExportFilename
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  formatTimeForRaceHorology,
   escapeCSVField,
-  getExportFilename
+  formatTimeForRaceHorology,
+  getExportFilename,
 } from '../../../src/features/export';
 
 describe('Export Feature Module', () => {
@@ -79,7 +79,7 @@ describe('Export Feature Module', () => {
       expect(escapeCSVField('\tdata')).toBe("'\tdata");
       expect(escapeCSVField('\rdata')).toBe("'\rdata");
       // Newline triggers both prefix AND quote wrapping
-      expect(escapeCSVField('\ndata')).toBe("\"'\ndata\"");
+      expect(escapeCSVField('\ndata')).toBe('"\'\ndata"');
     });
 
     it('should escape double quotes by doubling them', () => {

@@ -3,6 +3,7 @@
  * Centralizes CORS headers, security headers, and response formatting
  */
 
+import { createHash } from 'crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 /** Standard HTTP methods used in API endpoints */
@@ -186,4 +187,30 @@ export function sanitizeString(str: unknown, maxLength: number): string {
     .replace(/[<>"'&]/g, '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x1f\x7f]/g, '');
+}
+
+/**
+ * Generate an ETag from response data
+ * @param data - Data to hash
+ * @returns ETag string (quoted MD5 hash)
+ */
+export function generateETag(data: unknown): string {
+  const hash = createHash('md5')
+    .update(JSON.stringify(data))
+    .digest('hex');
+  return `"${hash}"`;
+}
+
+/**
+ * Check If-None-Match header against ETag
+ * Returns true if the client's cached version matches (304 should be returned)
+ * @param req - Vercel request object
+ * @param etag - Generated ETag to compare against
+ * @returns True if client cache is still valid
+ */
+export function checkIfNoneMatch(req: VercelRequest, etag: string): boolean {
+  const ifNoneMatch = req.headers['if-none-match'];
+  if (!ifNoneMatch) return false;
+  const clientEtag = Array.isArray(ifNoneMatch) ? ifNoneMatch[0] : ifNoneMatch;
+  return clientEtag === etag;
 }

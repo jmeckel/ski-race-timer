@@ -4,14 +4,14 @@
  *        preCacheElements(), getCacheStats()
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  clearElementCache,
+  getCacheStats,
   getElement,
   getElementOrThrow,
   invalidateElement,
-  clearElementCache,
   preCacheElements,
-  getCacheStats,
 } from '../../../src/utils/domCache';
 
 describe('DOM Cache Utility', () => {
@@ -75,7 +75,7 @@ describe('DOM Cache Utility', () => {
 
     it('should throw when element does not exist', () => {
       expect(() => getElementOrThrow('missing')).toThrow(
-        'Element with id "missing" not found'
+        'Element with id "missing" not found',
       );
     });
 

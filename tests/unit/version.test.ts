@@ -3,7 +3,7 @@
  * Tests: getVersionInfo() with valid/invalid versions and language fallback
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the store module before importing version
 vi.mock('../../src/store', () => ({
@@ -12,12 +12,14 @@ vi.mock('../../src/store', () => ({
   },
 }));
 
-import { getVersionInfo } from '../../src/version';
 import { store } from '../../src/store';
+import { getVersionInfo } from '../../src/version';
 
 describe('getVersionInfo', () => {
   beforeEach(() => {
-    vi.mocked(store.getState).mockReturnValue({ currentLang: 'en' } as ReturnType<typeof store.getState>);
+    vi.mocked(store.getState).mockReturnValue({
+      currentLang: 'en',
+    } as ReturnType<typeof store.getState>);
   });
 
   describe('valid versions', () => {
@@ -79,19 +81,25 @@ describe('getVersionInfo', () => {
 
   describe('language support', () => {
     it('should return English description when lang is en', () => {
-      vi.mocked(store.getState).mockReturnValue({ currentLang: 'en' } as ReturnType<typeof store.getState>);
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+      } as ReturnType<typeof store.getState>);
       const info = getVersionInfo('5.20.0');
       expect(info!.description).toContain('Offline banner');
     });
 
     it('should return German description when lang is de', () => {
-      vi.mocked(store.getState).mockReturnValue({ currentLang: 'de' } as ReturnType<typeof store.getState>);
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'de',
+      } as ReturnType<typeof store.getState>);
       const info = getVersionInfo('5.20.0');
       expect(info!.description).toContain('Offline-Banner');
     });
 
     it('should fall back to English for unknown language', () => {
-      vi.mocked(store.getState).mockReturnValue({ currentLang: 'fr' as 'en' } as ReturnType<typeof store.getState>);
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'fr' as 'en',
+      } as ReturnType<typeof store.getState>);
       const info = getVersionInfo('5.20.0');
       // Falls back to English
       expect(info!.description).toContain('Offline banner');

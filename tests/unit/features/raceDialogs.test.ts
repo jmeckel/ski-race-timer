@@ -4,7 +4,7 @@
  *        showPhotoSyncWarningModal, initRaceDialogs
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing the module
 vi.mock('../../../src/components', () => ({
@@ -44,7 +44,9 @@ vi.mock('../../../src/store', () => ({
 }));
 
 vi.mock('../../../src/utils/format', () => ({
-  formatFileSize: vi.fn((bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`),
+  formatFileSize: vi.fn(
+    (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`,
+  ),
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
@@ -74,18 +76,22 @@ vi.mock('../../../src/features/race/pinManagement', () => ({
   verifyPinForRaceJoin: vi.fn(() => Promise.resolve(true)),
 }));
 
-import {
-  showRaceChangeDialog,
-  handleRaceDeleted,
-  handleAuthExpired,
-  showPhotoSyncWarningModal,
-  initRaceDialogs,
-} from '../../../src/features/race/raceDialogs';
 import { showToast } from '../../../src/components';
-import { feedbackWarning, feedbackSuccess, syncService } from '../../../src/services';
-import { store } from '../../../src/store';
-import { openModal, closeModal } from '../../../src/features/modals';
+import { closeModal, openModal } from '../../../src/features/modals';
 import { verifyPinForRaceJoin } from '../../../src/features/race/pinManagement';
+import {
+  handleAuthExpired,
+  handleRaceDeleted,
+  initRaceDialogs,
+  showPhotoSyncWarningModal,
+  showRaceChangeDialog,
+} from '../../../src/features/race/raceDialogs';
+import {
+  feedbackSuccess,
+  feedbackWarning,
+  syncService,
+} from '../../../src/services';
+import { store } from '../../../src/store';
 
 describe('Race Dialogs Feature Module', () => {
   let container: HTMLDivElement;
@@ -247,7 +253,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(textEl.textContent).toContain('RACE-001');
       expect(textEl.textContent).toContain('Race was deleted');
@@ -266,7 +278,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(openModal).toHaveBeenCalledWith(modal);
     });
@@ -284,7 +302,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(store.updateSettings).toHaveBeenCalledWith({ sync: false });
       expect(store.setRaceId).toHaveBeenCalledWith('');
@@ -309,7 +333,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(syncToggle.checked).toBe(false);
     });
@@ -332,7 +362,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(raceIdInput.value).toBe('');
     });
@@ -346,7 +382,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       expect(feedbackWarning).toHaveBeenCalled();
     });
@@ -368,7 +410,13 @@ describe('Race Dialogs Feature Module', () => {
         },
       });
 
-      handleRaceDeleted(event as CustomEvent<{ raceId: string; deletedAt: number; message: string }>);
+      handleRaceDeleted(
+        event as CustomEvent<{
+          raceId: string;
+          deletedAt: number;
+          message: string;
+        }>,
+      );
 
       // When message is empty, the fallback t('raceDeletedText') should be used
       expect(textEl.textContent).toContain('raceDeletedText');
@@ -383,7 +431,11 @@ describe('Race Dialogs Feature Module', () => {
 
       handleAuthExpired(event as CustomEvent<{ message: string }>);
 
-      expect(showToast).toHaveBeenCalledWith('Session expired', 'warning', 5000);
+      expect(showToast).toHaveBeenCalledWith(
+        'Session expired',
+        'warning',
+        5000,
+      );
     });
 
     it('should use fallback message when none provided', () => {

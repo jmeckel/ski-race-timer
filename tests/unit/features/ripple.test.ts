@@ -3,11 +3,11 @@
  * Tests: createRipple, initRippleEffects, cleanupRippleEffects
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  cleanupRippleEffects,
   createRipple,
   initRippleEffects,
-  cleanupRippleEffects,
 } from '../../../src/features/ripple';
 
 describe('Ripple Feature Module', () => {

@@ -6,6 +6,7 @@
 import { t } from '../i18n/translations';
 import type { AppState, FaultEntry, FaultType } from '../types';
 import { escapeHtml, getFaultTypeLabel } from '../utils/format';
+import { ListenerManager } from '../utils/listenerManager';
 
 // Module state
 let inlineSelectedBib = '';
@@ -43,6 +44,7 @@ export interface GateJudgeDependencies {
 }
 
 let deps: GateJudgeDependencies | null = null;
+const listeners = new ListenerManager();
 
 /**
  * Initialize the Gate Judge module with dependencies
@@ -150,7 +152,7 @@ export function updateInlineBibSelector(): void {
 
   // Auto-fill with most recent active bib if no bib selected yet
   if (!inlineSelectedBib && activeBibs.length > 0) {
-    inlineSelectedBib = activeBibs[0];
+    inlineSelectedBib = activeBibs[0]!;
   }
 
   const bibInput = document.getElementById(
@@ -261,7 +263,7 @@ export function initInlineFaultEntry(): void {
 
   // Fault type buttons
   document.querySelectorAll('.inline-fault-type-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    listeners.add(btn, 'click', () => {
       const faultType = btn.getAttribute('data-fault-type') as FaultType;
       deps!.feedbackTap();
       selectInlineFaultType(faultType);
@@ -271,7 +273,7 @@ export function initInlineFaultEntry(): void {
   // Save button
   const saveBtn = document.getElementById('inline-save-fault-btn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    listeners.add(saveBtn, 'click', () => {
       deps!.feedbackTap();
       saveInlineFault();
     });
@@ -356,6 +358,13 @@ export function resetInlineFaultEntry(): void {
   inlineSelectedBib = '';
   inlineSelectedGate = 0;
   inlineSelectedFaultType = null;
+}
+
+/**
+ * Cleanup gate judge event listeners
+ */
+export function destroyGateJudge(): void {
+  listeners.removeAll();
 }
 
 /**

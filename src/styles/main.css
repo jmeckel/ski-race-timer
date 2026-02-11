@@ -122,623 +122,651 @@
 
 /* ===== Component Styles ===== */
 @layer components {
+  /* ===== Ripple Effect ===== */
+  /* Material Design-style ripple synced with haptic feedback */
+  .ripple-container {
+    position: relative;
+    overflow: hidden;
+  }
 
-/* ===== Ripple Effect ===== */
-/* Material Design-style ripple synced with haptic feedback */
-.ripple-container {
-  position: relative;
-  overflow: hidden;
-}
-
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(0);
-  animation: rippleEffect 0.5s ease-out forwards;
-  pointer-events: none;
-}
-
-.ripple-primary {
-  background: rgba(59, 130, 246, 0.4);
-}
-
-.ripple-success {
-  background: rgba(74, 222, 128, 0.4);
-}
-
-.ripple-secondary {
-  background: rgba(227, 24, 55, 0.4);
-}
-
-@keyframes rippleEffect {
-  0% {
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
     transform: scale(0);
-    opacity: 1;
+    animation: rippleEffect 0.5s ease-out forwards;
+    pointer-events: none;
   }
-  100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
 
-/* ===== App Container ===== */
-/*
+  .ripple-primary {
+    background: rgba(59, 130, 246, 0.4);
+  }
+
+  .ripple-success {
+    background: rgba(74, 222, 128, 0.4);
+  }
+
+  .ripple-secondary {
+    background: rgba(227, 24, 55, 0.4);
+  }
+
+  @keyframes rippleEffect {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  /* ===== App Container ===== */
+  /*
  * Do NOT use position: fixed - it breaks iOS PWA viewport sizing.
  * Instead, use height: 100% to inherit from body which has proper viewport units.
  * Note: bottom safe area is on tab-bar so its background fills the safe area.
  */
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-  padding-top: env(safe-area-inset-top, 0px);
-  background: var(--background);
-}
-
-/* ===== Main Content ===== */
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
-/* ===== Header ===== */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-xs) var(--space-lg);
-  background: var(--surface);
-  border-bottom: 1px solid var(--surface-elevated);
-}
-
-.header-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.header-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  max-width: 50%;
-}
-
-.sync-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.sync-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.sync-dot.connected {
-  background: var(--success);
-  box-shadow:
-    0 0 8px var(--success),
-    0 0 16px rgba(74, 222, 128, 0.4);
-}
-
-.sync-dot.error {
-  background: var(--error);
-}
-
-.sync-dot.offline {
-  background: var(--warning);
-}
-
-.sync-dot.syncing {
-  background: var(--primary);
-  animation: syncPulse 1s ease-in-out infinite;
-}
-
-@keyframes syncPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: var(--background);
   }
-  50% {
-    transform: scale(1.3);
-    opacity: 0.7;
+
+  /* ===== Main Content ===== */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
   }
-}
 
-.sync-device-count {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-left: 2px;
-}
-
-/* Judges Ready Indicator */
-.judges-ready-indicator {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-left: 6px;
-  padding: 2px 6px;
-  background: rgba(34, 197, 94, 0.15);
-  border-radius: var(--radius);
-  color: var(--success);
-}
-
-.judges-ready-indicator svg {
-  flex-shrink: 0;
-}
-
-.judges-ready-count {
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: "JetBrains Mono", monospace;
-}
-
-.judges-ready-indicator.all-ready {
-  background: var(--success);
-  color: white;
-  animation: pulse-ready 1s ease-in-out;
-}
-
-@keyframes pulse-ready {
-  0%,
-  100% {
-    transform: scale(1);
+  /* ===== Header ===== */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-lg);
+    background: var(--surface);
+    border-bottom: 1px solid var(--surface-elevated);
   }
-  50% {
-    transform: scale(1.05);
+
+  .header-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-}
 
-/* Individual Judge Ready Indicator (shown in gate judge mode instead of GPS) */
-.judge-ready-indicator {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 3px var(--space-sm);
-  border-radius: var(--radius);
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.3);
-  white-space: nowrap;
-}
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    max-width: 65%;
+  }
 
-.judge-ready-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--error);
-  animation: pulse 2s infinite;
-  flex-shrink: 0;
-}
+  .sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
 
-.judge-ready-text {
-  font-weight: 600;
-  color: var(--text-secondary);
-}
+  .sync-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
 
-/* None ready - red */
-.judge-ready-indicator.none-ready .judge-ready-dot {
-  background: var(--error);
-  box-shadow: 0 0 8px var(--error);
-}
+    &.connected {
+      background: var(--success);
+      box-shadow:
+        0 0 8px var(--success),
+        0 0 16px rgba(74, 222, 128, 0.4);
+    }
 
-/* Some ready - yellow */
-.judge-ready-indicator.some-ready .judge-ready-dot {
-  background: var(--warning);
-  box-shadow: 0 0 8px var(--warning);
-}
+    &.error {
+      background: var(--error);
+    }
 
-/* All ready - green */
-.judge-ready-indicator.all-ready .judge-ready-dot {
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-}
+    &.offline {
+      background: var(--warning);
+    }
 
-.judge-ready-indicator.all-ready .judge-ready-text {
-  color: var(--success);
-}
+    &.syncing {
+      background: var(--primary);
+      animation: syncPulse 1s ease-in-out infinite;
+    }
+  }
 
-.entry-count-badge {
-  padding: var(--space-xs) 10px;
-  background: linear-gradient(
-    135deg,
-    rgba(249, 115, 22, 0.85) 0%,
-    rgba(234, 88, 12, 0.75) 100%
-  );
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: white;
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 0 12px rgba(249, 115, 22, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2);
-}
+  @keyframes syncPulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 0.7;
+    }
+  }
 
-/* ===== Views ===== */
-.view {
-  display: none !important;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
+  .sync-device-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--text-secondary);
+    margin-left: 2px;
+    min-width: 32px;
+    text-align: right;
+  }
 
-.view.active {
-  display: flex !important;
-}
+  /* Judges Ready Indicator */
+  .judges-ready-indicator {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: rgba(34, 197, 94, 0.15);
+    border-radius: var(--radius);
+    color: var(--success);
+    flex-shrink: 0;
 
-/* ===== View Overrides ===== */
-/* Radial timer grid (portrait) and display:contents (landscape) need
+    & svg {
+      flex-shrink: 0;
+    }
+
+    &.all-ready {
+      background: var(--success);
+      color: white;
+      animation: pulse-ready 1s ease-in-out;
+    }
+  }
+
+  .judges-ready-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: "JetBrains Mono", monospace;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  @keyframes pulse-ready {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  /* Individual Judge Ready Indicator (shown in gate judge mode instead of GPS) */
+  .judge-ready-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 3px var(--space-sm);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+
+    /* None ready - red */
+    &.none-ready .judge-ready-dot {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    /* Some ready - yellow */
+    &.some-ready .judge-ready-dot {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+    }
+
+    /* All ready - green */
+    &.all-ready .judge-ready-dot {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    &.all-ready .judge-ready-text {
+      color: var(--success);
+    }
+  }
+
+  .judge-ready-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--error);
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+
+  .judge-ready-text {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .entry-count-badge {
+    padding: var(--space-xs) 10px;
+    min-width: 28px;
+    background: linear-gradient(
+      135deg,
+      rgba(249, 115, 22, 0.85) 0%,
+      rgba(234, 88, 12, 0.75) 100%
+    );
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: "JetBrains Mono", monospace;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+      0 0 12px rgba(249, 115, 22, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* ===== Views ===== */
+  .view {
+    display: none !important;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+
+    &.active {
+      display: flex !important;
+    }
+  }
+
+  /* ===== View Overrides ===== */
+  /* Radial timer grid (portrait) and display:contents (landscape) need
    to beat .view.active's !important. Placing them inside the same
    @layer ensures correct cascade order for !important declarations. */
-.timer-view.radial-mode.active {
-  display: grid !important;
-}
-
-@media (orientation: landscape) {
   .timer-view.radial-mode.active {
-    display: contents !important;
+    display: grid !important;
   }
-}
 
-/* ===== Tab Bar ===== */
-.tab-bar {
-  display: flex;
-  background: var(--surface);
-  border-top: 1px solid var(--surface-elevated);
-  flex-shrink: 0;
-  /* Safe area padding so tab bar background fills the bottom safe area */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.tab-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 8px 4px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition:
-    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.15s ease;
-  position: relative;
-}
-
-.tab-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.tab-btn::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 40px;
-  height: 3px;
-  background: var(--primary);
-  border-radius: 0 0 2px 2px;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tab-btn:active {
-  transform: scale(0.95);
-}
-
-.tab-btn.active {
-  color: var(--primary);
-}
-
-.tab-btn.active::after {
-  transform: translateX(-50%) scaleX(1);
-}
-
-.tab-btn svg {
-  width: 24px;
-  height: 24px;
-  transition: transform 0.2s ease;
-}
-
-.tab-btn.active svg {
-  transform: scale(1.05);
-}
-
-/* Gate Judge mode tab reordering - Gate tab first, then Results, then Settings */
-.tab-bar.gate-judge-mode #gate-judge-tab {
-  order: 1;
-}
-
-.tab-bar.gate-judge-mode [data-view="results"] {
-  order: 2;
-}
-
-.tab-bar.gate-judge-mode [data-view="settings"] {
-  order: 3;
-}
-
-.tab-bar.gate-judge-mode #timer-tab {
-  order: 4;
-}
-
-/* ===== GPS Indicator ===== */
-.gps-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.gps-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--gps-inactive);
-  flex-shrink: 0;
-}
-
-.gps-dot.active {
-  background: var(--gps-active);
-  animation: gpsPulse 2s ease-in-out infinite;
-  box-shadow:
-    0 0 8px var(--gps-active),
-    0 0 16px rgba(74, 222, 128, 0.4);
-}
-
-.gps-dot.searching {
-  background: var(--gps-searching);
-  animation: gpsPulse 1s ease-in-out infinite;
-}
-
-.gps-dot.paused {
-  background: var(--gps-active);
-  /* No animation - indicates GPS is enabled but paused (not on timer view) */
-}
-
-@keyframes gpsPulse {
-  0%,
-  100% {
-    opacity: 1;
+  @media (orientation: landscape) {
+    .timer-view.radial-mode.active {
+      display: contents !important;
+    }
   }
-  50% {
-    opacity: 0.5;
+
+  /* ===== Tab Bar ===== */
+  .tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--surface-elevated);
+    flex-shrink: 0;
+    /* Safe area padding so tab bar background fills the bottom safe area */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-}
 
-/* ===== Status Text Labels (WCAG 1.4.1 - not color alone) ===== */
-.gps-status-text,
-.sync-status-text,
-.sync-device-count {
-  font-size: 0.7rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition:
+      color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.15s ease;
+    position: relative;
 
-.gps-status-text.status-active {
-  color: var(--gps-active);
-}
+    & svg {
+      width: 24px;
+      height: 24px;
+      transition: transform 0.2s ease;
+    }
 
-.gps-status-text.status-searching {
-  color: var(--gps-searching);
-}
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 40px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 0 0 2px 2px;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-.gps-status-text.status-inactive {
-  color: var(--text-tertiary);
-}
+    &:active {
+      transform: scale(0.95);
+    }
 
-.sync-device-count.status-active {
-  color: var(--success);
-}
+    &.active {
+      color: var(--primary);
 
-/* ===== Camera Indicator ===== */
-.camera-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-xs);
-  color: var(--primary);
-  opacity: 0.9;
-}
+      &::after {
+        transform: translateX(-50%) scaleX(1);
+      }
 
-.camera-indicator svg {
-  display: block;
-}
-
-/* ===== Voice Mode Indicator ===== */
-.voice-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius);
-  font-size: 0.7rem;
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.3);
-  white-space: nowrap;
-}
-
-.voice-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.voice-status-text {
-  color: var(--text-secondary);
-}
-
-/* Listening - green pulsing */
-.voice-indicator.listening .voice-dot {
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-  animation: voicePulse 1.5s ease-in-out infinite;
-}
-
-.voice-indicator.listening .voice-status-text {
-  color: var(--success);
-}
-
-/* Processing - yellow */
-.voice-indicator.processing .voice-dot {
-  background: var(--warning);
-  box-shadow: 0 0 8px var(--warning);
-  animation: voicePulse 0.5s ease-in-out infinite;
-}
-
-.voice-indicator.processing .voice-status-text {
-  color: var(--warning);
-}
-
-/* Confirming - blue */
-.voice-indicator.confirming .voice-dot {
-  background: var(--primary);
-  box-shadow: 0 0 8px var(--primary);
-  animation: voicePulse 1s ease-in-out infinite;
-}
-
-.voice-indicator.confirming .voice-status-text {
-  color: var(--primary);
-}
-
-/* Offline - red */
-.voice-indicator.offline .voice-dot {
-  background: var(--error);
-  box-shadow: 0 0 8px var(--error);
-}
-
-.voice-indicator.offline .voice-status-text {
-  color: var(--error);
-}
-
-/* Error - red */
-.voice-indicator.error .voice-dot {
-  background: var(--error);
-  box-shadow: 0 0 8px var(--error);
-}
-
-.voice-indicator.error .voice-status-text {
-  color: var(--error);
-}
-
-@keyframes voicePulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
+      & svg {
+        transform: scale(1.05);
+      }
+    }
   }
-  50% {
-    transform: scale(1.3);
-    opacity: 0.7;
+
+  /* Gate Judge mode tab reordering - Gate tab first, then Results, then Settings */
+  .tab-bar.gate-judge-mode #gate-judge-tab {
+    order: 1;
   }
-}
 
-/* ===== Empty State ===== */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px var(--space-xl);
-  color: var(--text-secondary);
-  text-align: center;
-}
+  .tab-bar.gate-judge-mode [data-view="results"] {
+    order: 2;
+  }
 
-.empty-state svg {
-  opacity: 0.5;
-  margin-bottom: var(--space-lg);
-}
+  .tab-bar.gate-judge-mode [data-view="settings"] {
+    order: 3;
+  }
 
-.empty-state .empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: var(--space-md);
-  opacity: 0.4;
-  filter: grayscale(0.3);
-}
+  .tab-bar.gate-judge-mode #timer-tab {
+    order: 4;
+  }
 
-.empty-state .empty-subtitle {
-  font-size: 0.8rem;
-  color: var(--text-tertiary);
-  margin-top: 4px;
-}
+  /* ===== GPS Indicator ===== */
+  .gps-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
 
-/* Snowflake loading indicator */
-.snowflake-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  padding: var(--space-2xl) var(--space-xl);
-  color: var(--text-secondary);
-}
+  .gps-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gps-inactive);
+    flex-shrink: 0;
 
-.snowflake-loading .loading-text {
-  font-size: 0.875rem;
-  color: var(--text-tertiary);
-}
+    &.active {
+      background: var(--gps-active);
+      animation: gpsPulse 2s ease-in-out infinite;
+      box-shadow:
+        0 0 8px var(--gps-active),
+        0 0 16px rgba(74, 222, 128, 0.4);
+    }
 
-/* ===== Accessibility ===== */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
+    &.searching {
+      background: var(--gps-searching);
+      animation: gpsPulse 1s ease-in-out infinite;
+    }
 
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: 0;
-  padding: var(--space-md) var(--space-lg);
-  background: var(--primary);
-  color: white;
-  z-index: 10000;
-  transition: top 0.2s;
-}
+    &.paused {
+      background: var(--gps-active);
+      /* No animation - indicates GPS is enabled but paused (not on timer view) */
+    }
+  }
 
-.skip-link:focus {
-  top: 0;
-}
+  @keyframes gpsPulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 
+  /* ===== Status Text Labels (WCAG 1.4.1 - not color alone) ===== */
+  .gps-status-text,
+  .sync-status-text,
+  .sync-device-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gps-status-text {
+    &.status-active {
+      color: var(--gps-active);
+    }
+
+    &.status-searching {
+      color: var(--gps-searching);
+    }
+
+    &.status-inactive {
+      color: var(--text-tertiary);
+    }
+  }
+
+  .sync-device-count.status-active {
+    color: var(--success);
+  }
+
+  /* ===== Camera Indicator ===== */
+  .camera-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xs);
+    color: var(--primary);
+    opacity: 0.9;
+
+    & svg {
+      display: block;
+    }
+  }
+
+  /* ===== Voice Mode Indicator ===== */
+  .voice-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius);
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+
+    /* Listening - green pulsing */
+    &.listening .voice-dot {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: voicePulse 1.5s ease-in-out infinite;
+    }
+
+    &.listening .voice-status-text {
+      color: var(--success);
+    }
+
+    /* Processing - yellow */
+    &.processing .voice-dot {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+      animation: voicePulse 0.5s ease-in-out infinite;
+    }
+
+    &.processing .voice-status-text {
+      color: var(--warning);
+    }
+
+    /* Confirming - blue */
+    &.confirming .voice-dot {
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      animation: voicePulse 1s ease-in-out infinite;
+    }
+
+    &.confirming .voice-status-text {
+      color: var(--primary);
+    }
+
+    /* Offline - red */
+    &.offline .voice-dot {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    &.offline .voice-status-text {
+      color: var(--error);
+    }
+
+    /* Error - red */
+    &.error .voice-dot {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    &.error .voice-status-text {
+      color: var(--error);
+    }
+  }
+
+  .voice-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .voice-status-text {
+    color: var(--text-secondary);
+  }
+
+  @keyframes voicePulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 0.7;
+    }
+  }
+
+  /* ===== Empty State ===== */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px var(--space-xl);
+    color: var(--text-secondary);
+    text-align: center;
+
+    & svg {
+      opacity: 0.5;
+      margin-bottom: var(--space-lg);
+    }
+
+    & .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: var(--space-md);
+      opacity: 0.4;
+      filter: grayscale(0.3);
+    }
+
+    & .empty-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+  }
+
+  /* Snowflake loading indicator */
+  .snowflake-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-2xl) var(--space-xl);
+    color: var(--text-secondary);
+  }
+
+  .snowflake-loading .loading-text {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+  }
+
+  /* ===== Accessibility ===== */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--primary);
+    color: white;
+    z-index: 10000;
+    transition: top 0.2s;
+
+    &:focus {
+      top: 0;
+    }
+  }
+  /* ===== Virtual List Touch Feedback ===== */
+  /* Replaces inline JS touchstart/touchend handlers with CSS :active */
+  .result-item:active,
+  .result-group-header:active {
+    background: var(--surface-elevated);
+  }
+
+  .result-sub-item:active {
+    background: var(--surface);
+  }
 } /* end @layer components */
 
 /* ===== Responsive ===== */
@@ -1130,28 +1158,28 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   position: relative;
   overflow: hidden;
-}
 
-.timestamp-btn.glass-surface-1::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(
-    ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%)
-      calc(30% + var(--motion-tilt-y, 0) * 20%),
-    rgba(255, 255, 255, 0.3) 0%,
-    transparent 50%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%)
+        calc(30% + var(--motion-tilt-y, 0) * 20%),
+      rgba(255, 255, 255, 0.3) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
 
-.timestamp-btn.glass-surface-1 span {
-  position: relative;
-  z-index: 2;
+  & span {
+    position: relative;
+    z-index: 2;
+  }
 }
 
 /* Header Glass Enhancement - matches bib display style */
@@ -1192,11 +1220,11 @@
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
 
-.num-btn.glass-surface-3:active {
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  &:active {
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* Modal Glass Enhancement */
@@ -1236,10 +1264,10 @@
   transition:
     background 0.3s ease,
     box-shadow 0.3s ease;
-}
 
-.setting-row.glass-surface-3:hover {
-  background: rgba(255, 255, 255, 0.03);
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
 }
 
 /* Timing Point Buttons Glass Enhancement */
@@ -1301,18 +1329,18 @@
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text-primary);
-}
 
-/* Run buttons - Alpine blue glow */
-.run-btn.glass-surface-3.active {
-  background: linear-gradient(
-    135deg,
-    rgba(37, 99, 235, 0.85) 0%,
-    rgba(14, 165, 233, 0.6) 100%
-  );
-  border-color: rgba(147, 197, 253, 0.9);
-  color: #fff;
-  box-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
+  /* Run buttons - Alpine blue glow */
+  &.active {
+    background: linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.85) 0%,
+      rgba(14, 165, 233, 0.6) 100%
+    );
+    border-color: rgba(147, 197, 253, 0.9);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.55);
+  }
 }
 
 /* Clock Container Subtle Enhancement */
@@ -1447,7 +1475,10 @@ body.ambient-mode #main {
   font-weight: 500;
   max-height: 40px;
   opacity: 1;
-  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    padding 0.3s ease;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1455,12 +1486,12 @@ body.ambient-mode #main {
   gap: var(--space-sm);
   position: relative;
   z-index: 25;
-}
 
-.offline-banner.hidden {
-  max-height: 0;
-  opacity: 0;
-  padding: 0 var(--space-md);
+  &.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 var(--space-md);
+  }
 }
 
 .offline-banner-dismiss {
@@ -1473,11 +1504,11 @@ body.ambient-mode #main {
   padding: 0 4px;
   line-height: 1;
   opacity: 0.6;
-}
 
-.offline-banner-dismiss:hover,
-.offline-banner-dismiss:focus-visible {
-  opacity: 1;
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
 }
 
 /* ===== Power Saver: Stop infinite animations to save GPU ===== */
@@ -1489,6 +1520,105 @@ body.ambient-mode #main {
 .power-saver .voice-indicator.confirming .voice-dot,
 .power-saver .ambient-touch-indicator {
   animation: none;
+}
+
+/* ===== Narrow Portrait Breakpoints ===== */
+
+/* Standard narrow (380-399px): abbreviate text, hide camera */
+@media (orientation: portrait) and (max-width: 399px) {
+  .header-status {
+    gap: 4px;
+  }
+
+  .header-title {
+    font-size: 1rem;
+  }
+
+  .sync-status-text,
+  .gps-status-text {
+    max-width: 50px;
+  }
+
+  .camera-indicator {
+    display: none !important;
+  }
+}
+
+/* Narrow (360-379px): dot-only mode, hide text */
+@media (orientation: portrait) and (max-width: 379px) {
+  .header-status {
+    gap: 3px;
+  }
+
+  .header-title {
+    font-size: 0.95rem;
+  }
+
+  .sync-status-text,
+  .gps-status-text,
+  .judge-ready-text {
+    display: none;
+  }
+
+  .sync-device-count {
+    display: none !important;
+  }
+
+  .sync-indicator,
+  .gps-indicator,
+  .judge-ready-indicator {
+    padding: 4px 6px;
+  }
+
+  .camera-indicator,
+  .voice-indicator {
+    display: none !important;
+  }
+}
+
+/* Very narrow (320-359px): ultra-compact */
+@media (orientation: portrait) and (max-width: 359px) {
+  .header-status {
+    gap: 2px;
+    max-width: 70%;
+  }
+
+  .header-title {
+    font-size: 0.85rem;
+    max-width: 30%;
+  }
+
+  .sync-indicator,
+  .gps-indicator,
+  .judge-ready-indicator {
+    padding: 3px 4px;
+  }
+
+  .sync-dot,
+  .gps-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .entry-count-badge {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    min-width: 24px;
+  }
+
+  .judges-ready-indicator {
+    padding: 3px 4px;
+  }
+
+  .judges-ready-indicator svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .judges-ready-count {
+    font-size: 0.7rem;
+    min-width: 20px;
+  }
 }
 
 /* ===== High Contrast Mode ===== */
