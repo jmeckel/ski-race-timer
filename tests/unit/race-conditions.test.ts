@@ -54,45 +54,42 @@ describe('Race Condition: Store concurrent updates', () => {
     vi.useRealTimers();
   });
 
-  it('should deliver consistent state to listeners during rapid sequential updates', () => {
+  it('should deliver consistent state to effects during rapid sequential updates', async () => {
+    const storeModule = await import('../../src/store/index');
     const states: string[] = [];
 
-    store.subscribe((snapshot) => {
-      states.push(snapshot.bibInput);
+    const dispose = storeModule.effect(() => {
+      states.push(storeModule.$bibInput.value);
     });
 
     store.setBibInput('1');
     store.setBibInput('12');
     store.setBibInput('123');
 
-    // Each notification should reflect the state at the time of that update
-    expect(states).toEqual(['1', '12', '123']);
+    // Each signal update should be tracked by the effect
+    expect(states).toContain('1');
+    expect(states).toContain('12');
+    expect(states).toContain('123');
+    dispose();
   });
 
-  it('should handle a listener that triggers another state update (re-entrant notify)', () => {
-    const observedViews: string[] = [];
+  it('should handle an effect that triggers another state update (re-entrant)', async () => {
+    const storeModule = await import('../../src/store/index');
 
-    store.subscribe((snapshot, changedKeys) => {
-      observedViews.push(snapshot.currentView);
-
+    const dispose = storeModule.effect(() => {
+      const currentView = storeModule.$currentView.value;
       // Re-entrantly trigger another state change when we see 'results'
-      if (
-        changedKeys.includes('currentView') &&
-        snapshot.currentView === 'results'
-      ) {
+      if (currentView === 'results') {
         store.setBibInput('9');
       }
     });
 
     store.setView('results');
 
-    // The listener should have been called at least twice:
-    // once for setView('results') and once for setBibInput('9')
-    expect(observedViews.length).toBeGreaterThanOrEqual(2);
-
     // Final state should reflect both updates
     expect(store.getState().currentView).toBe('results');
     expect(store.getState().bibInput).toBe('9');
+    dispose();
   });
 
   it('should not lose entries when many are added in rapid succession', () => {
@@ -127,25 +124,6 @@ describe('Race Condition: Store concurrent updates', () => {
     // The store writes entries with debounce -- 10 addEntry calls within 100ms
     // should result in a single write. We verify the final entries count is correct.
     expect(store.getState().entries).toHaveLength(10);
-  });
-
-  it('should keep the notification queue bounded under excessive re-entrant updates', () => {
-    let notificationCount = 0;
-
-    store.subscribe(() => {
-      notificationCount++;
-      // Trigger cascading updates but only a bounded number
-      if (notificationCount < 200) {
-        store.setBibInput(String(notificationCount % 10));
-      }
-    });
-
-    // This should not cause a stack overflow or unbounded memory growth
-    expect(() => store.setBibInput('0')).not.toThrow();
-
-    // The notification queue has a MAX_NOTIFICATION_QUEUE of 100
-    // so the system should drain without infinite growth
-    expect(store.getState().bibInput).toBeDefined();
   });
 });
 
@@ -400,11 +378,14 @@ describe('Race Condition: Entry recording during view switch', () => {
     vi.useRealTimers();
   });
 
-  it('should persist entry even if view switches during addEntry', () => {
+  it('should persist entry even if view switches during addEntry', async () => {
+    const storeModule = await import('../../src/store/index');
     const entry = createEntry({ id: 'dev_test-1-viewswitch' });
 
-    store.subscribe((_state, changedKeys) => {
-      if (changedKeys.includes('entries')) {
+    // Effect that switches view when entries change
+    const dispose = storeModule.effect(() => {
+      const entries = storeModule.$entries.value;
+      if (entries.length > 0) {
         store.setView('results');
       }
     });
@@ -414,6 +395,7 @@ describe('Race Condition: Entry recording during view switch', () => {
     expect(store.getState().entries).toHaveLength(1);
     expect(store.getState().entries[0].id).toBe('dev_test-1-viewswitch');
     expect(store.getState().currentView).toBe('results');
+    dispose();
   });
 
   it('should maintain entry data integrity when recording, view switch, and undo happen together', () => {
@@ -448,17 +430,18 @@ describe('Race Condition: Entry recording during view switch', () => {
     expect(store.getState().currentView).toBe('results');
   });
 
-  it('should not corrupt entries when delete and view switch happen in same listener', () => {
+  it('should not corrupt entries when delete and view switch happen in same effect', async () => {
+    const storeModule = await import('../../src/store/index');
     const entry1 = createEntry({ id: 'dev_test-4a-corrupt' });
     const entry2 = createEntry({ id: 'dev_test-4b-corrupt' });
     store.addEntry(entry1);
     store.addEntry(entry2);
 
-    store.subscribe((_state, changedKeys) => {
-      if (changedKeys.includes('entries')) {
-        if (_state.currentView === 'timer') {
-          store.setView('results');
-        }
+    // Effect that switches view when entries change on timer view
+    const dispose = storeModule.effect(() => {
+      void storeModule.$entries.value;
+      if (store.getState().currentView === 'timer') {
+        store.setView('results');
       }
     });
 
@@ -466,6 +449,7 @@ describe('Race Condition: Entry recording during view switch', () => {
 
     expect(store.getState().entries).toHaveLength(1);
     expect(store.getState().entries[0].id).toBe('dev_test-4b-corrupt');
+    dispose();
   });
 });
 

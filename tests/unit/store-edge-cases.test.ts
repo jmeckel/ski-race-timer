@@ -129,67 +129,33 @@ describe('Store Edge Cases', () => {
     });
   });
 
-  describe('Notification queue overflow behavior', () => {
+  describe('Rapid state changes stability', () => {
     it('should handle many rapid state changes without crashing', () => {
-      // Subscribe a listener to track notifications
-      const listener = vi.fn();
-      store.subscribe(listener);
-
-      // Fire 200 rapid state changes (exceeds MAX_NOTIFICATION_QUEUE of 100)
       expect(() => {
         for (let i = 0; i < 200; i++) {
           store.setBibInput(String(i % 10));
         }
       }).not.toThrow();
 
-      // Listener should have been called (exact count depends on queue draining)
-      expect(listener).toHaveBeenCalled();
+      // Final state should reflect last update
+      expect(store.getState().bibInput).toBeDefined();
     });
 
-    it('should drain oldest notifications when queue overflows during re-entrant changes', () => {
-      let reentrantCount = 0;
-      const maxReentrant = 150; // more than MAX_NOTIFICATION_QUEUE (100)
-
-      const reentrantListener = vi.fn(
-        (
-          _state: unknown,
-          keys: (keyof import('../../src/types').AppState)[],
-        ) => {
-          if (keys.includes('bibInput') && reentrantCount < maxReentrant) {
-            reentrantCount++;
-            // Re-entrant state change during notification
-            store.setBibInput(String(reentrantCount % 10));
-          }
-        },
-      );
-
-      store.subscribe(reentrantListener);
-
-      // This should trigger the re-entrant listener cascade
-      expect(() => {
-        store.setBibInput('0');
-      }).not.toThrow();
-
-      // Should have processed some notifications (may not be all due to draining)
-      expect(reentrantListener).toHaveBeenCalled();
-    });
-
-    it('should preserve listener error isolation when queue is stressed', () => {
-      const errorListener = vi.fn(() => {
-        throw new Error('Listener crash');
+    it('should reflect correct final state after rapid signal-driven updates', async () => {
+      const { effect, $bibInput } = await import('../../src/store/index');
+      const values: string[] = [];
+      const dispose = effect(() => {
+        values.push($bibInput.value);
       });
-      const goodListener = vi.fn();
 
-      store.subscribe(errorListener);
-      store.subscribe(goodListener);
-
-      // Rapid changes that stress the notification queue
       for (let i = 0; i < 50; i++) {
         store.setBibInput(String(i % 10));
       }
 
-      // Good listener should still receive notifications despite error listener
-      expect(goodListener).toHaveBeenCalled();
+      // Effect should have tracked all changes
+      expect(values.length).toBeGreaterThan(1);
+      expect(values[values.length - 1]).toBe('9'); // 49 % 10 = 9
+      dispose();
     });
   });
 

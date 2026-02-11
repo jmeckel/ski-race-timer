@@ -16,11 +16,7 @@ import {
   isRadialModeActive,
   updateRadialBib,
 } from './features/radialTimerView';
-import {
-  getVirtualList,
-  updateEntryCountBadge,
-  updateStats,
-} from './features/resultsView';
+import { getVirtualList, updateEntryCountBadge, updateStats } from './features/resultsView';
 import {
   applyGlassEffectSettings,
   updateRoleToggle,
@@ -31,173 +27,199 @@ import {
   updateTimingPointSelection,
 } from './features/timerView';
 import { ambientModeService, wakeLockService } from './services';
-import { store } from './store';
+import {
+  $bibInput,
+  $cloudDeviceCount,
+  $currentView,
+  $deviceRole,
+  $entries,
+  $faultEntries,
+  $gateAssignment,
+  $gpsStatus,
+  $isJudgeReady,
+  $selectedPoint,
+  $selectedRun,
+  $settings,
+  $syncStatus,
+  $undoStack,
+  effect,
+  store,
+} from './store';
 import { applyViewServices } from './utils/viewServices';
 
 /**
- * State change handler map: groups related updates together
- * Each handler receives the current state and returns void
+ * Initialize signal-based state effects.
+ * Each effect reacts to specific computed signals and triggers the appropriate UI updates.
+ * Returns a disposer function that cleans up all effects.
  */
-type StateHandler = (state: ReturnType<typeof store.getState>) => void;
+export function initStateEffects(): () => void {
+  const disposers: (() => void)[] = [];
 
-const STATE_HANDLERS: Record<string, StateHandler[]> = {
-  // Timer view updates (handles both classic and radial modes)
-  bibInput: [
-    () => {
+  // --- Timer view updates ---
+
+  disposers.push(
+    effect(() => {
+      void $bibInput.value;
       if (isRadialModeActive()) {
         updateRadialBib();
       } else {
         updateBibDisplay();
       }
-    },
-  ],
-  selectedPoint: [
-    () => {
+    }),
+  );
+
+  disposers.push(
+    effect(() => {
+      void $selectedPoint.value;
       if (!isRadialModeActive()) {
         updateTimingPointSelection();
       }
-      // Radial mode handles this via its own store subscription
-    },
-  ],
+    }),
+  );
 
-  // Run selection updates both timer and gate judge views
-  selectedRun: [
-    (state) => {
+  disposers.push(
+    effect(() => {
+      void $selectedRun.value;
       updateRunSelection();
       updateGateJudgeRunSelection();
-      if (state.currentView === 'gateJudge') updateActiveBibsList();
-    },
-  ],
+      if ($currentView.value === 'gateJudge') updateActiveBibsList();
+    }),
+  );
 
-  // Entry updates affect results list and gate judge view
-  entries: [
-    (state) => {
-      const vList = getVirtualList();
-      if (vList) vList.setEntries(state.entries);
+  // --- Entry updates (stats & badge; VirtualList handles its own entries internally) ---
+
+  disposers.push(
+    effect(() => {
+      void $entries.value;
       updateStats();
       updateEntryCountBadge();
-      if (state.currentView === 'gateJudge') updateActiveBibsList();
-    },
-  ],
+      if ($currentView.value === 'gateJudge') updateActiveBibsList();
+    }),
+  );
 
-  // Gate Judge role/state updates
-  deviceRole: [
-    () => {
+  // --- Gate Judge role/state updates ---
+
+  disposers.push(
+    effect(() => {
+      void $deviceRole.value;
       updateRoleToggle();
       updateGateJudgeTabVisibility();
       updateJudgeReadyStatus();
-    },
-  ],
-  isJudgeReady: [() => updateJudgeReadyStatus()],
-  gateAssignment: [() => updateGateRangeDisplay()],
-  faultEntries: [
-    (state) => {
-      if (state.currentView === 'gateJudge') updateActiveBibsList();
-    },
-  ],
+    }),
+  );
 
-  // Status indicators
-  syncStatus: [() => updateSyncStatusIndicator()],
-  cloudDeviceCount: [() => updateSyncStatusIndicator()],
-  gpsStatus: [
-    () => {
+  disposers.push(
+    effect(() => {
+      void $isJudgeReady.value;
+      updateJudgeReadyStatus();
+    }),
+  );
+
+  disposers.push(
+    effect(() => {
+      void $gateAssignment.value;
+      updateGateRangeDisplay();
+    }),
+  );
+
+  disposers.push(
+    effect(() => {
+      void $faultEntries.value;
+      if ($currentView.value === 'gateJudge') updateActiveBibsList();
+    }),
+  );
+
+  // --- Status indicators ---
+
+  disposers.push(
+    effect(() => {
+      void $syncStatus.value;
+      void $cloudDeviceCount.value;
+      updateSyncStatusIndicator();
+    }),
+  );
+
+  disposers.push(
+    effect(() => {
+      void $gpsStatus.value;
       updateGpsIndicator();
       updateJudgeReadyStatus();
-    },
-  ],
-  undoStack: [() => updateUndoButton()],
-};
+    }),
+  );
 
-/**
- * Handle view changes (wake lock, virtual list pause/resume, ambient mode)
- */
-function handleViewChange(state: ReturnType<typeof store.getState>): void {
-  updateViewVisibility();
+  disposers.push(
+    effect(() => {
+      void $undoStack.value;
+      updateUndoButton();
+    }),
+  );
 
-  // Refresh status indicators (ensure they reflect current state on all views)
-  updateGpsIndicator();
-  updateSyncStatusIndicator();
+  // --- View changes (wake lock, virtual list pause/resume, ambient mode) ---
 
-  // Wake Lock: keep screen on during active timing
-  if (state.currentView === 'timer') {
-    wakeLockService.enable();
-  } else {
-    wakeLockService.disable();
-  }
+  disposers.push(
+    effect(() => {
+      const currentView = $currentView.value;
+      updateViewVisibility();
 
-  // Ambient Mode: enable only on timer view when setting is enabled
-  if (state.currentView === 'timer' && state.settings.ambientMode) {
-    ambientModeService.enable();
-  } else {
-    ambientModeService.disable();
-  }
+      // Refresh status indicators on all views
+      updateGpsIndicator();
+      updateSyncStatusIndicator();
 
-  // VirtualList: pause when not on results view to save resources
-  const virtualList = getVirtualList();
-  if (virtualList) {
-    if (state.currentView === 'results') {
-      virtualList.resume();
-    } else {
-      virtualList.pause();
-    }
-  }
-}
-
-/**
- * Handle settings changes
- */
-function handleSettingsChange(): void {
-  updateSyncStatusIndicator();
-  updateGpsIndicator();
-  updateJudgeReadyStatus();
-  updatePhotoCaptureIndicator();
-  applyGlassEffectSettings();
-
-  // Handle ambient mode setting changes
-  const state = store.getState();
-  if (state.settings.ambientMode) {
-    ambientModeService.initialize();
-    if (state.currentView === 'timer') {
-      ambientModeService.enable();
-    }
-  } else {
-    ambientModeService.disable();
-  }
-}
-
-/**
- * Handle state changes - dispatches to appropriate handlers
- */
-export function handleStateChange(
-  state: ReturnType<typeof store.getState>,
-  changedKeys: (keyof typeof state)[],
-): void {
-  // Handle view changes (complex logic extracted to separate function)
-  if (changedKeys.includes('currentView')) {
-    handleViewChange(state);
-  }
-
-  // Handle settings changes (affects multiple indicators)
-  if (changedKeys.includes('settings')) {
-    handleSettingsChange();
-    applyViewServices(state);
-  }
-
-  // Handle currentView + settings combo for services
-  if (
-    changedKeys.includes('currentView') &&
-    !changedKeys.includes('settings')
-  ) {
-    applyViewServices(state);
-  }
-
-  // Dispatch to mapped handlers
-  for (const key of changedKeys) {
-    const handlers = STATE_HANDLERS[key];
-    if (handlers) {
-      for (const handler of handlers) {
-        handler(state);
+      // Wake Lock: keep screen on during active timing
+      if (currentView === 'timer') {
+        wakeLockService.enable();
+      } else {
+        wakeLockService.disable();
       }
+
+      // Ambient Mode: enable only on timer view when setting is enabled
+      if (currentView === 'timer' && $settings.value.ambientMode) {
+        ambientModeService.enable();
+      } else {
+        ambientModeService.disable();
+      }
+
+      // VirtualList: pause when not on results view to save resources
+      const virtualList = getVirtualList();
+      if (virtualList) {
+        if (currentView === 'results') {
+          virtualList.resume();
+        } else {
+          virtualList.pause();
+        }
+      }
+    }),
+  );
+
+  // --- Settings changes ---
+
+  disposers.push(
+    effect(() => {
+      const settings = $settings.value;
+      updateSyncStatusIndicator();
+      updateGpsIndicator();
+      updateJudgeReadyStatus();
+      updatePhotoCaptureIndicator();
+      applyGlassEffectSettings();
+
+      // Handle ambient mode setting changes
+      if (settings.ambientMode) {
+        ambientModeService.initialize();
+        if ($currentView.value === 'timer') {
+          ambientModeService.enable();
+        }
+      } else {
+        ambientModeService.disable();
+      }
+
+      // Apply view-specific services
+      applyViewServices(store.getState());
+    }),
+  );
+
+  return () => {
+    for (const dispose of disposers) {
+      dispose();
     }
-  }
+  };
 }

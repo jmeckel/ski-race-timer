@@ -5,7 +5,7 @@ import {
 import { initServices } from './appInitServices';
 import { initModals } from './appModalHandlers';
 // Extracted app modules
-import { handleStateChange } from './appStateHandlers';
+import { initStateEffects } from './appStateHandlers';
 import { updateUI } from './appUiUpdates';
 import { showToast } from './components';
 import { closeModal, isAnyModalOpen, openModal } from './features/modals';
@@ -147,8 +147,8 @@ export function initApp(): void {
   initRippleEffects();
   initOfflineBanner();
 
-  // Subscribe to state changes
-  store.subscribe(handleStateChange);
+  // Initialize signal-based state effects (replaces callback-based subscribe)
+  initStateEffects();
 
   // Initialize services (sync, GPS, wake lock, ambient mode, voice)
   initServices();

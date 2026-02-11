@@ -30,15 +30,28 @@ vi.mock('../../../src/services/sync', () => ({
   },
 }));
 
+import { computed, effect, signal } from '@preact/signals-core';
+
 const mockGetState = vi.fn();
 const mockGetPendingDeletions = vi.fn(() => []);
+
+const mockChiefState = signal({
+  settings: { sync: false },
+  faultEntries: [] as unknown[],
+  entries: [] as unknown[],
+  penaltySeconds: 5,
+  usePenaltyMode: true,
+  isChiefJudgeView: false,
+  isJudgeReady: false,
+  deviceRole: 'timer' as string,
+  gateAssignment: null as [number, number] | null,
+});
 
 vi.mock('../../../src/store', () => ({
   store: {
     getState: () => mockGetState(),
     getPendingDeletions: (...args: unknown[]) =>
       mockGetPendingDeletions(...args),
-    subscribe: vi.fn(() => vi.fn()),
     toggleChiefJudgeView: vi.fn(),
     setUsePenaltyMode: vi.fn(),
     setPenaltySeconds: vi.fn(),
@@ -49,6 +62,16 @@ vi.mock('../../../src/store', () => ({
     isRacerFinalized: vi.fn(() => false),
     finalizeRacer: vi.fn(),
   },
+  $settings: computed(() => mockChiefState.value.settings),
+  $faultEntries: computed(() => mockChiefState.value.faultEntries),
+  $entries: computed(() => mockChiefState.value.entries),
+  $penaltySeconds: computed(() => mockChiefState.value.penaltySeconds),
+  $usePenaltyMode: computed(() => mockChiefState.value.usePenaltyMode),
+  $isChiefJudgeView: computed(() => mockChiefState.value.isChiefJudgeView),
+  $isJudgeReady: computed(() => mockChiefState.value.isJudgeReady),
+  $deviceRole: computed(() => mockChiefState.value.deviceRole),
+  $gateAssignment: computed(() => mockChiefState.value.gateAssignment),
+  effect,
 }));
 
 vi.mock('../../../src/utils', () => ({

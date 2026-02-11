@@ -21,7 +21,7 @@ vi.mock('../../src/appModalHandlers', () => ({
 }));
 
 vi.mock('../../src/appStateHandlers', () => ({
-  handleStateChange: vi.fn(),
+  initStateEffects: vi.fn(() => vi.fn()),
 }));
 
 vi.mock('../../src/appUiUpdates', () => ({
@@ -98,7 +98,6 @@ vi.mock('../../src/store', () => ({
   effect: vi.fn(() => vi.fn()),
   store: {
     getState: () => mockGetState(),
-    subscribe: vi.fn(() => vi.fn()),
   },
 }));
 

@@ -16,7 +16,7 @@ import {
 } from './services';
 import { cameraService } from './services/camera';
 import { hasAuthToken } from './services/sync';
-import { store } from './store';
+import { $settings, effect, store } from './store';
 import { ListenerManager } from './utils/listenerManager';
 import { applyViewServices } from './utils/viewServices';
 
@@ -102,18 +102,16 @@ export function initServices(): void {
   });
 
   // Stop camera immediately when photo capture setting is disabled
-  // App-lifetime subscription — cleanup not needed (lives until page unload)
+  // App-lifetime effect — cleanup on page unload
   let prevPhotoCapture = initialState.settings.photoCapture;
-  const unsubPhotoCapture = store.subscribe((state, changedKeys) => {
-    if (changedKeys.includes('settings')) {
-      const currentPhotoCapture = state.settings.photoCapture;
-      if (prevPhotoCapture && !currentPhotoCapture) {
-        cameraService.stop();
-      }
-      prevPhotoCapture = currentPhotoCapture;
+  const disposePhotoEffect = effect(() => {
+    const currentPhotoCapture = $settings.value.photoCapture;
+    if (prevPhotoCapture && !currentPhotoCapture) {
+      cameraService.stop();
     }
+    prevPhotoCapture = currentPhotoCapture;
   });
-  window.addEventListener('beforeunload', () => unsubPhotoCapture(), {
+  window.addEventListener('beforeunload', () => disposePhotoEffect(), {
     once: true,
   });
 

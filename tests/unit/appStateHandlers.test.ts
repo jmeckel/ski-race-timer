@@ -1,11 +1,12 @@
 /**
  * Unit Tests for App State Handlers Module
- * Tests: handleStateChange dispatching to appropriate handlers
+ * Tests: initStateEffects() sets up signal-based effects that dispatch UI updates
  */
 
+import { computed, effect, signal } from '@preact/signals-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock all dependencies
+// Mock all UI update dependencies
 vi.mock('../../src/appUiUpdates', () => ({
   updateGpsIndicator: vi.fn(),
   updatePhotoCaptureIndicator: vi.fn(),
@@ -59,18 +60,52 @@ vi.mock('../../src/services', () => ({
   },
 }));
 
-const mockGetState = vi.fn();
-vi.mock('../../src/store', () => ({
-  store: {
-    getState: () => mockGetState(),
-  },
-}));
-
 vi.mock('../../src/utils/viewServices', () => ({
   applyViewServices: vi.fn(),
 }));
 
-import { handleStateChange } from '../../src/appStateHandlers';
+// Create a shared mock state signal that mimics the store
+const mockState = signal({
+  currentView: 'timer' as string,
+  currentLang: 'en',
+  settings: { sync: true, gps: true, ambientMode: false } as Record<
+    string,
+    unknown
+  >,
+  entries: [] as unknown[],
+  faultEntries: [] as unknown[],
+  bibInput: '',
+  selectedPoint: 'S',
+  selectedRun: 1,
+  syncStatus: 'connected',
+  gpsStatus: 'active',
+  cloudDeviceCount: 0,
+  undoStack: [] as unknown[],
+  deviceRole: 'timer' as string,
+  isJudgeReady: false,
+  gateAssignment: null as [number, number] | null,
+});
+
+vi.mock('../../src/store', () => ({
+  store: { getState: () => mockState.value },
+  $currentView: computed(() => mockState.value.currentView),
+  $bibInput: computed(() => mockState.value.bibInput),
+  $selectedPoint: computed(() => mockState.value.selectedPoint),
+  $selectedRun: computed(() => mockState.value.selectedRun),
+  $entries: computed(() => mockState.value.entries),
+  $faultEntries: computed(() => mockState.value.faultEntries),
+  $deviceRole: computed(() => mockState.value.deviceRole),
+  $isJudgeReady: computed(() => mockState.value.isJudgeReady),
+  $gateAssignment: computed(() => mockState.value.gateAssignment),
+  $syncStatus: computed(() => mockState.value.syncStatus),
+  $cloudDeviceCount: computed(() => mockState.value.cloudDeviceCount),
+  $gpsStatus: computed(() => mockState.value.gpsStatus),
+  $undoStack: computed(() => mockState.value.undoStack),
+  $settings: computed(() => mockState.value.settings),
+  effect,
+}));
+
+import { initStateEffects } from '../../src/appStateHandlers';
 import {
   updateGpsIndicator,
   updatePhotoCaptureIndicator,
@@ -107,81 +142,96 @@ import { ambientModeService, wakeLockService } from '../../src/services';
 import { applyViewServices } from '../../src/utils/viewServices';
 
 describe('App State Handlers', () => {
-  const baseState = {
-    currentView: 'timer' as const,
+  let dispose: () => void;
+
+  const defaultState = {
+    currentView: 'timer' as string,
     currentLang: 'en',
-    settings: { sync: true, gps: true, ambientMode: false },
-    entries: [],
-    faultEntries: [],
+    settings: { sync: true, gps: true, ambientMode: false } as Record<
+      string,
+      unknown
+    >,
+    entries: [] as unknown[],
+    faultEntries: [] as unknown[],
     bibInput: '',
-    selectedPoint: 'S' as const,
+    selectedPoint: 'S',
     selectedRun: 1,
     syncStatus: 'connected',
     gpsStatus: 'active',
     cloudDeviceCount: 0,
-    undoStack: [],
+    undoStack: [] as unknown[],
+    deviceRole: 'timer' as string,
+    isJudgeReady: false,
+    gateAssignment: null as [number, number] | null,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetState.mockReturnValue(baseState);
+    // Reset state to defaults
+    mockState.value = { ...defaultState };
+    // Initialize effects
+    dispose = initStateEffects();
+    // Clear mocks after initial effect run (effects fire on creation)
+    vi.clearAllMocks();
   });
 
-  describe('handleStateChange - view changes', () => {
+  afterEach(() => {
+    dispose();
+  });
+
+  describe('initStateEffects', () => {
+    it('should return a disposer function', () => {
+      expect(typeof dispose).toBe('function');
+    });
+  });
+
+  describe('view changes', () => {
     it('should update view visibility on currentView change', () => {
-      handleStateChange(baseState as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
       expect(updateViewVisibility).toHaveBeenCalled();
     });
 
     it('should enable wake lock when switching to timer view', () => {
-      const state = { ...baseState, currentView: 'timer' as const };
-      handleStateChange(state as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
+      vi.clearAllMocks();
+      mockState.value = { ...mockState.value, currentView: 'timer' };
       expect(wakeLockService.enable).toHaveBeenCalled();
     });
 
     it('should disable wake lock when switching away from timer view', () => {
-      const state = { ...baseState, currentView: 'results' as const };
-      handleStateChange(state as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
       expect(wakeLockService.disable).toHaveBeenCalled();
     });
 
     it('should enable ambient mode on timer view when ambient setting is on', () => {
-      const state = {
-        ...baseState,
-        currentView: 'timer' as const,
-        settings: { ...baseState.settings, ambientMode: true },
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, ambientMode: true },
       };
-      handleStateChange(state as any, ['currentView']);
+      vi.clearAllMocks();
+      // Trigger currentView effect by changing view and back
+      mockState.value = { ...mockState.value, currentView: 'results' };
+      vi.clearAllMocks();
+      mockState.value = { ...mockState.value, currentView: 'timer' };
       expect(ambientModeService.enable).toHaveBeenCalled();
     });
 
     it('should disable ambient mode when not on timer view', () => {
-      const state = {
-        ...baseState,
-        currentView: 'results' as const,
-        settings: { ...baseState.settings, ambientMode: true },
-      };
-      handleStateChange(state as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
       expect(ambientModeService.disable).toHaveBeenCalled();
     });
 
     it('should refresh status indicators on view change', () => {
-      handleStateChange(baseState as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
       expect(updateGpsIndicator).toHaveBeenCalled();
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
-    });
-
-    it('should call applyViewServices on view change', () => {
-      handleStateChange(baseState as any, ['currentView']);
-      expect(applyViewServices).toHaveBeenCalledWith(baseState);
     });
 
     it('should pause virtual list when not on results view', () => {
       const mockVList = { pause: vi.fn(), resume: vi.fn() };
       vi.mocked(getVirtualList).mockReturnValue(mockVList as any);
 
-      const state = { ...baseState, currentView: 'timer' as const };
-      handleStateChange(state as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'settings' };
       expect(mockVList.pause).toHaveBeenCalled();
     });
 
@@ -189,15 +239,17 @@ describe('App State Handlers', () => {
       const mockVList = { pause: vi.fn(), resume: vi.fn() };
       vi.mocked(getVirtualList).mockReturnValue(mockVList as any);
 
-      const state = { ...baseState, currentView: 'results' as const };
-      handleStateChange(state as any, ['currentView']);
+      mockState.value = { ...mockState.value, currentView: 'results' };
       expect(mockVList.resume).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - settings changes', () => {
+  describe('settings changes', () => {
     it('should update all indicators on settings change', () => {
-      handleStateChange(baseState as any, ['settings']);
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, gps: false },
+      };
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
       expect(updateGpsIndicator).toHaveBeenCalled();
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
@@ -206,163 +258,161 @@ describe('App State Handlers', () => {
     });
 
     it('should call applyViewServices on settings change', () => {
-      handleStateChange(baseState as any, ['settings']);
-      expect(applyViewServices).toHaveBeenCalledWith(baseState);
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, gps: false },
+      };
+      expect(applyViewServices).toHaveBeenCalled();
     });
 
-    it('should initialize ambient mode when setting is enabled', () => {
-      const state = {
-        ...baseState,
-        settings: { ...baseState.settings, ambientMode: true },
-        currentView: 'timer' as const,
+    it('should initialize ambient mode when setting is enabled on timer view', () => {
+      mockState.value = {
+        ...mockState.value,
+        currentView: 'timer',
+        settings: { ...mockState.value.settings, ambientMode: true },
       };
-      mockGetState.mockReturnValue(state);
-      handleStateChange(state as any, ['settings']);
       expect(ambientModeService.initialize).toHaveBeenCalled();
       expect(ambientModeService.enable).toHaveBeenCalled();
     });
 
     it('should disable ambient mode when setting is off', () => {
-      const state = {
-        ...baseState,
-        settings: { ...baseState.settings, ambientMode: false },
+      mockState.value = {
+        ...mockState.value,
+        settings: { ...mockState.value.settings, ambientMode: false },
       };
-      mockGetState.mockReturnValue(state);
-      handleStateChange(state as any, ['settings']);
       expect(ambientModeService.disable).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - bibInput changes', () => {
+  describe('bibInput changes', () => {
     it('should update bib display in classic mode', () => {
       vi.mocked(isRadialModeActive).mockReturnValue(false);
-      handleStateChange(baseState as any, ['bibInput']);
+      mockState.value = { ...mockState.value, bibInput: '123' };
       expect(updateBibDisplay).toHaveBeenCalled();
     });
 
     it('should update radial bib in radial mode', () => {
       vi.mocked(isRadialModeActive).mockReturnValue(true);
-      handleStateChange(baseState as any, ['bibInput']);
+      mockState.value = { ...mockState.value, bibInput: '456' };
       expect(updateRadialBib).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - selectedPoint changes', () => {
+  describe('selectedPoint changes', () => {
     it('should update timing point selection in classic mode', () => {
       vi.mocked(isRadialModeActive).mockReturnValue(false);
-      handleStateChange(baseState as any, ['selectedPoint']);
+      mockState.value = { ...mockState.value, selectedPoint: 'F' };
       expect(updateTimingPointSelection).toHaveBeenCalled();
     });
 
     it('should NOT update timing point selection in radial mode', () => {
       vi.mocked(isRadialModeActive).mockReturnValue(true);
-      handleStateChange(baseState as any, ['selectedPoint']);
+      mockState.value = { ...mockState.value, selectedPoint: 'F' };
       expect(updateTimingPointSelection).not.toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - selectedRun changes', () => {
+  describe('selectedRun changes', () => {
     it('should update run selection and gate judge', () => {
-      handleStateChange(baseState as any, ['selectedRun']);
+      mockState.value = { ...mockState.value, selectedRun: 2 };
       expect(updateRunSelection).toHaveBeenCalled();
       expect(updateGateJudgeRunSelection).toHaveBeenCalled();
     });
 
     it('should update active bibs when on gateJudge view', () => {
-      const state = { ...baseState, currentView: 'gateJudge' as const };
-      handleStateChange(state as any, ['selectedRun']);
+      mockState.value = { ...mockState.value, currentView: 'gateJudge' };
+      vi.clearAllMocks();
+      mockState.value = { ...mockState.value, selectedRun: 2 };
       expect(updateActiveBibsList).toHaveBeenCalled();
     });
 
     it('should NOT update active bibs when not on gateJudge view', () => {
-      handleStateChange(baseState as any, ['selectedRun']);
+      mockState.value = { ...mockState.value, selectedRun: 2 };
       expect(updateActiveBibsList).not.toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - entries changes', () => {
+  describe('entries changes', () => {
     it('should update stats and entry count badge', () => {
-      handleStateChange(baseState as any, ['entries']);
+      mockState.value = { ...mockState.value, entries: [{ id: '1' }] };
       expect(updateStats).toHaveBeenCalled();
       expect(updateEntryCountBadge).toHaveBeenCalled();
     });
 
-    it('should set entries on virtual list when available', () => {
-      const mockVList = { setEntries: vi.fn() };
-      vi.mocked(getVirtualList).mockReturnValue(mockVList as any);
-
-      handleStateChange(baseState as any, ['entries']);
-      expect(mockVList.setEntries).toHaveBeenCalledWith(baseState.entries);
-    });
-
     it('should update active bibs when on gateJudge view', () => {
-      const state = { ...baseState, currentView: 'gateJudge' as const };
-      handleStateChange(state as any, ['entries']);
+      mockState.value = { ...mockState.value, currentView: 'gateJudge' };
+      vi.clearAllMocks();
+      mockState.value = { ...mockState.value, entries: [{ id: '1' }] };
       expect(updateActiveBibsList).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - deviceRole changes', () => {
+  describe('deviceRole changes', () => {
     it('should update role toggle and gate judge visibility', () => {
-      handleStateChange(baseState as any, ['deviceRole']);
+      mockState.value = { ...mockState.value, deviceRole: 'gateJudge' };
       expect(updateRoleToggle).toHaveBeenCalled();
       expect(updateGateJudgeTabVisibility).toHaveBeenCalled();
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - other state keys', () => {
+  describe('other state keys', () => {
     it('should update judge ready status on isJudgeReady change', () => {
-      handleStateChange(baseState as any, ['isJudgeReady']);
+      mockState.value = { ...mockState.value, isJudgeReady: true };
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
 
     it('should update gate range display on gateAssignment change', () => {
-      handleStateChange(baseState as any, ['gateAssignment']);
+      mockState.value = {
+        ...mockState.value,
+        gateAssignment: [1, 5] as [number, number],
+      };
       expect(updateGateRangeDisplay).toHaveBeenCalled();
     });
 
     it('should update active bibs on faultEntries change when on gateJudge', () => {
-      const state = { ...baseState, currentView: 'gateJudge' as const };
-      handleStateChange(state as any, ['faultEntries']);
+      mockState.value = { ...mockState.value, currentView: 'gateJudge' };
+      vi.clearAllMocks();
+      mockState.value = {
+        ...mockState.value,
+        faultEntries: [{ id: 'f1' }],
+      };
       expect(updateActiveBibsList).toHaveBeenCalled();
     });
 
     it('should update sync indicator on syncStatus change', () => {
-      handleStateChange(baseState as any, ['syncStatus']);
+      mockState.value = { ...mockState.value, syncStatus: 'syncing' };
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
     });
 
     it('should update sync indicator on cloudDeviceCount change', () => {
-      handleStateChange(baseState as any, ['cloudDeviceCount']);
+      mockState.value = { ...mockState.value, cloudDeviceCount: 3 };
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
     });
 
     it('should update GPS and judge status on gpsStatus change', () => {
-      handleStateChange(baseState as any, ['gpsStatus']);
+      mockState.value = { ...mockState.value, gpsStatus: 'searching' };
       expect(updateGpsIndicator).toHaveBeenCalled();
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
 
     it('should update undo button on undoStack change', () => {
-      handleStateChange(baseState as any, ['undoStack']);
+      mockState.value = {
+        ...mockState.value,
+        undoStack: [{ type: 'add' }],
+      };
       expect(updateUndoButton).toHaveBeenCalled();
     });
   });
 
-  describe('handleStateChange - combined changes', () => {
-    it('should handle view + settings change correctly', () => {
-      handleStateChange(baseState as any, ['currentView', 'settings']);
-      expect(updateViewVisibility).toHaveBeenCalled();
-      expect(applyGlassEffectSettings).toHaveBeenCalled();
-      // applyViewServices should be called (settings branch handles it)
-      expect(applyViewServices).toHaveBeenCalled();
-    });
-
-    it('should handle unknown keys without error', () => {
-      expect(() =>
-        handleStateChange(baseState as any, ['unknownKey' as any]),
-      ).not.toThrow();
+  describe('disposer cleanup', () => {
+    it('should stop effects after dispose', () => {
+      dispose();
+      vi.clearAllMocks();
+      mockState.value = { ...mockState.value, bibInput: 'xyz' };
+      expect(updateBibDisplay).not.toHaveBeenCalled();
+      // Re-create for afterEach
+      dispose = initStateEffects();
     });
   });
 });

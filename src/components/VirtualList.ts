@@ -1,7 +1,13 @@
 import { t } from '../i18n/translations';
 import type { BatteryLevel } from '../services/battery';
 import { batteryService } from '../services/battery';
-import { store } from '../store';
+import {
+  $entries,
+  $faultEntries,
+  $selectedEntries,
+  effect,
+  store,
+} from '../store';
 import type { Entry, FaultEntry, Run } from '../types';
 import {
   // Template helpers
@@ -173,15 +179,12 @@ export class VirtualList {
     });
     this.resizeObserver.observe(this.scrollContainer);
 
-    // Subscribe to store updates
-    this.unsubscribe = store.subscribe((stateSnapshot, changedKeys) => {
-      if (
-        changedKeys.includes('entries') ||
-        changedKeys.includes('selectedEntries') ||
-        changedKeys.includes('faultEntries')
-      ) {
-        this.setEntries(stateSnapshot.entries);
-      }
+    // React to store updates via signals
+    this.unsubscribe = effect(() => {
+      const entries = $entries.value;
+      void $selectedEntries.value;
+      void $faultEntries.value;
+      this.setEntries(entries);
     });
 
     // Watch for container removal from DOM to auto-cleanup (prevents memory leak)

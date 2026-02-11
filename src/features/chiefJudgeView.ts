@@ -7,7 +7,19 @@ import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { feedbackDelete, feedbackSuccess, feedbackTap } from '../services';
 import { deleteFaultFromCloud, syncFault, syncService } from '../services/sync';
-import { store } from '../store';
+import {
+  $deviceRole,
+  $entries,
+  $faultEntries,
+  $gateAssignment,
+  $isChiefJudgeView,
+  $isJudgeReady,
+  $penaltySeconds,
+  $settings,
+  $usePenaltyMode,
+  effect,
+  store,
+} from '../store';
 import type { FaultEntry, Language, Run } from '../types';
 import {
   escapeAttr,
@@ -31,8 +43,8 @@ import {
 // Module-level listener manager for lifecycle cleanup
 const listeners = new ListenerManager();
 
-// Module-level store subscription cleanup
-let unsubscribeChiefJudge: (() => void) | null = null;
+// Module-level effect disposers for cleanup
+const effectDisposers: (() => void)[] = [];
 
 // Promise resolver for PIN verification (async event pattern)
 type PinVerifyResolve = (verified: boolean) => void;
@@ -140,55 +152,68 @@ export function initChiefJudgeToggle(): void {
   // Update visibility based on sync and faults
   updateChiefJudgeToggleVisibility();
 
-  // Subscribe to state changes to update visibility and refresh panel
-  // Note: stateSnapshot is captured when notification was queued - use store.getState() if you need latest
-  unsubscribeChiefJudge = store.subscribe((stateSnapshot, keys) => {
-    if (keys.includes('settings') || keys.includes('faultEntries')) {
+  // Signal-based effects for reactive state updates
+  effectDisposers.push(
+    // Toggle visibility when settings or faults change
+    effect(() => {
+      void $settings.value;
+      void $faultEntries.value;
       updateChiefJudgeToggleVisibility();
-    }
-    // Refresh fault summary panel when faults or penalty config change and panel is visible
-    if (
-      (keys.includes('faultEntries') ||
-        keys.includes('penaltySeconds') ||
-        keys.includes('usePenaltyMode')) &&
-      stateSnapshot.isChiefJudgeView
-    ) {
-      updateFaultSummaryPanel();
-      updatePendingDeletionsPanel();
-    }
+    }),
+
+    // Refresh fault summary panel when faults or penalty config change (only if visible)
+    effect(() => {
+      void $faultEntries.value;
+      void $penaltySeconds.value;
+      void $usePenaltyMode.value;
+      if ($isChiefJudgeView.value) {
+        updateFaultSummaryPanel();
+        updatePendingDeletionsPanel();
+      }
+    }),
+
     // Update penalty UI when config changes
-    if (keys.includes('penaltySeconds') || keys.includes('usePenaltyMode')) {
+    effect(() => {
+      void $penaltySeconds.value;
+      void $usePenaltyMode.value;
       updatePenaltyConfigUI();
-    }
-    // Update judges overview when entries change (sync polling) and panel is visible
-    if (
-      (keys.includes('entries') ||
-        keys.includes('faultEntries') ||
-        keys.includes('isJudgeReady')) &&
-      stateSnapshot.isChiefJudgeView
-    ) {
-      updateJudgesOverview();
-    }
-    // Update inline fault list when faults change and device is a gate judge
-    if (
-      keys.includes('faultEntries') &&
-      stateSnapshot.deviceRole === 'gateJudge'
-    ) {
-      dispatchUpdateInlineFaultsList();
-      dispatchUpdateInlineBibSelector();
-    }
-    // Update inline bib selector when entries change (new starts/finishes) and device is a gate judge
-    if (keys.includes('entries') && stateSnapshot.deviceRole === 'gateJudge') {
-      dispatchUpdateInlineBibSelector();
-    }
-    // Update inline gate selector when gate assignment changes
-    if (
-      keys.includes('gateAssignment') &&
-      stateSnapshot.deviceRole === 'gateJudge'
-    ) {
-      dispatchUpdateInlineGateSelector();
-    }
-  });
+    }),
+
+    // Update judges overview when entries/faults/readiness change (only if visible)
+    effect(() => {
+      void $entries.value;
+      void $faultEntries.value;
+      void $isJudgeReady.value;
+      if ($isChiefJudgeView.value) {
+        updateJudgesOverview();
+      }
+    }),
+
+    // Update inline fault list when faults change (gate judge only)
+    effect(() => {
+      void $faultEntries.value;
+      if ($deviceRole.value === 'gateJudge') {
+        dispatchUpdateInlineFaultsList();
+        dispatchUpdateInlineBibSelector();
+      }
+    }),
+
+    // Update inline bib selector when entries change (gate judge only)
+    effect(() => {
+      void $entries.value;
+      if ($deviceRole.value === 'gateJudge') {
+        dispatchUpdateInlineBibSelector();
+      }
+    }),
+
+    // Update inline gate selector when gate assignment changes (gate judge only)
+    effect(() => {
+      void $gateAssignment.value;
+      if ($deviceRole.value === 'gateJudge') {
+        dispatchUpdateInlineGateSelector();
+      }
+    }),
+  );
 
   // Initialize penalty configuration handlers
   initPenaltyConfig();
@@ -712,9 +737,9 @@ function handleFinalizeClick(event: Event): void {
  * Clean up Chief Judge view store subscription
  */
 export function cleanupChiefJudgeView(): void {
-  if (unsubscribeChiefJudge) {
-    unsubscribeChiefJudge();
-    unsubscribeChiefJudge = null;
+  for (const dispose of effectDisposers) {
+    dispose();
   }
+  effectDisposers.length = 0;
   listeners.removeAll();
 }

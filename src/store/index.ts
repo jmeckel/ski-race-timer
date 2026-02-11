@@ -6,25 +6,26 @@
  */
 
 /**
- * ## Signals Migration Plan
+ * ## State Management with Preact Signals
  *
- * This store uses a dual reactivity pattern: callback-based `subscribe()` and
- * Preact Signals (`$state`, computed selectors, `effect()`). Both exist because
- * the codebase is being incrementally migrated from callbacks to signals.
+ * This store uses Preact Signals for reactive state management.
+ * The `$state` signal wraps the entire app state, and computed selectors
+ * provide fine-grained reactivity for individual state fields.
  *
- * **For new code, prefer signals:**
- * - Read state via computed selectors (`$entries`, `$currentView`, etc.)
- * - React to changes via `effect()` from `@preact/signals-core`
- * - Use `store.getState()` only for one-shot reads (event handlers, init)
+ * **Reading state:**
+ * - Use computed selectors (`$entries`, `$currentView`, etc.) in effects
+ * - Use `store.getState()` for one-shot reads (event handlers, init)
  *
- * **`subscribe()` is deprecated** and will be removed once all consumers are
- * migrated to signal-based effects. Existing subscribers should be converted
- * when their host module is next modified.
+ * **Reacting to changes:**
+ * - Use `effect()` from `@preact/signals-core` for side effects
+ * - Effects auto-track signal dependencies and re-run when they change
  *
  * **Available computed selectors:**
  * Field extractors: `$entries`, `$settings`, `$syncStatus`, `$currentLang`,
  *   `$gpsStatus`, `$deviceRole`, `$faultEntries`, `$entryCount`, `$cloudDeviceCount`,
- *   `$currentView`, `$isSyncing`
+ *   `$currentView`, `$bibInput`, `$selectedPoint`, `$selectedRun`, `$undoStack`,
+ *   `$isJudgeReady`, `$gateAssignment`, `$isChiefJudgeView`, `$penaltySeconds`,
+ *   `$usePenaltyMode`, `$selectedEntries`, `$isSyncing`
  * Derived state: `$hasUnsyncedChanges`, `$entriesByRun`
  */
 
@@ -81,9 +82,6 @@ const STORAGE_KEYS = {
   FAULT_ENTRIES: 'skiTimerFaultEntries',
 } as const;
 
-// Maximum pending notification queue size
-const MAX_NOTIFICATION_QUEUE = 100;
-
 // All state keys that get persisted to localStorage
 const PERSISTENT_KEYS = [
   'entries',
@@ -98,14 +96,6 @@ const PERSISTENT_KEYS = [
   'firstGateColor',
   'faultEntries',
 ] as const;
-
-/**
- * State change listener type
- */
-type StateListener = (
-  stateSnapshot: Readonly<AppState>,
-  changedKeys: (keyof AppState)[],
-) => void;
 
 /**
  * Parse JSON from a storage key, returning `fallback` on missing/invalid data.
@@ -131,14 +121,8 @@ class Store {
   private state: AppState;
   /** Reactive signal wrapping the entire app state. Future subscribers can use this directly. */
   readonly $state: Signal<Readonly<AppState>>;
-  private listeners: Set<StateListener> = new Set();
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private dirtySlices: Set<string> = new Set(); // Track which slices need saving
-  private isNotifying = false;
-  private pendingNotifications: {
-    keys: (keyof AppState)[];
-    stateSnapshot: AppState;
-  }[] = [];
 
   constructor() {
     this.state = this.loadInitialState();
@@ -253,67 +237,14 @@ class Store {
     return this.$state.value;
   }
 
-  /**
-   * Subscribe to state changes via callback.
-   * @deprecated Prefer signal-based reactivity: use computed selectors
-   * (`$entries`, `$currentView`, etc.) with `effect()` from `@preact/signals-core`.
-   * This method will be removed once all consumers are migrated.
-   */
-  subscribe(listener: StateListener): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-
-  // Notify all listeners of state changes
-  private notify(changedKeys: (keyof AppState)[]) {
-    const stateSnapshot = this.state;
-
-    // Check queue bounds before adding
-    if (this.pendingNotifications.length >= MAX_NOTIFICATION_QUEUE) {
-      logger.warn(
-        `Notification queue exceeded ${MAX_NOTIFICATION_QUEUE} - draining oldest`,
-      );
-      this.pendingNotifications.splice(
-        0,
-        Math.floor(MAX_NOTIFICATION_QUEUE / 2),
-      );
-    }
-
-    this.pendingNotifications.push({ keys: changedKeys, stateSnapshot });
-
-    // If already processing notifications, the while loop will pick up the new entry
-    if (this.isNotifying) {
-      return;
-    }
-
-    this.isNotifying = true;
-    try {
-      while (this.pendingNotifications.length > 0) {
-        const { keys, stateSnapshot } = this.pendingNotifications.shift()!;
-        const listenersCopy = Array.from(this.listeners);
-        for (const listener of listenersCopy) {
-          try {
-            listener(stateSnapshot, keys);
-          } catch (e) {
-            logger.error('State listener error:', e);
-          }
-        }
-      }
-    } finally {
-      this.isNotifying = false;
-    }
-  }
-
   private setState(updates: Partial<AppState>, persist: boolean = true) {
-    const changedKeys = Object.keys(updates) as (keyof AppState)[];
     this.state = { ...this.state, ...updates };
-    // Update reactive signal so signal-based subscribers are notified
+    // Update reactive signal — all computed selectors and effects react automatically
     (this.$state as Signal<Readonly<AppState>>).value = this.state;
-    this.notify(changedKeys);
 
     if (persist) {
       // Track which slices are dirty to avoid serializing unchanged data
-      for (const key of changedKeys) {
+      for (const key of Object.keys(updates)) {
         this.dirtySlices.add(key);
       }
       this.scheduleSave();
@@ -1136,6 +1067,26 @@ export const $cloudDeviceCount = computed(
   () => store.$state.value.cloudDeviceCount,
 );
 export const $currentView = computed(() => store.$state.value.currentView);
+export const $bibInput = computed(() => store.$state.value.bibInput);
+export const $selectedPoint = computed(() => store.$state.value.selectedPoint);
+export const $selectedRun = computed(() => store.$state.value.selectedRun);
+export const $undoStack = computed(() => store.$state.value.undoStack);
+export const $isJudgeReady = computed(() => store.$state.value.isJudgeReady);
+export const $gateAssignment = computed(
+  () => store.$state.value.gateAssignment,
+);
+export const $isChiefJudgeView = computed(
+  () => store.$state.value.isChiefJudgeView,
+);
+export const $penaltySeconds = computed(
+  () => store.$state.value.penaltySeconds,
+);
+export const $usePenaltyMode = computed(
+  () => store.$state.value.usePenaltyMode,
+);
+export const $selectedEntries = computed(
+  () => store.$state.value.selectedEntries,
+);
 export const $isSyncing = computed(
   () => store.$state.value.syncStatus === 'syncing',
 );

@@ -55,15 +55,23 @@ vi.mock('../../src/services/sync', () => ({
   hasAuthToken: vi.fn(() => true),
 }));
 
+import { computed, effect, signal } from '@preact/signals-core';
+
 const mockGetState = vi.fn();
 const mockUpdateSettings = vi.fn();
+
+const mockSettingsSignal = signal({ photoCapture: false } as Record<
+  string,
+  unknown
+>);
 
 vi.mock('../../src/store', () => ({
   store: {
     getState: () => mockGetState(),
     updateSettings: (...args: unknown[]) => mockUpdateSettings(...args),
-    subscribe: vi.fn(),
   },
+  $settings: computed(() => mockSettingsSignal.value),
+  effect,
 }));
 
 vi.mock('../../src/utils/listenerManager', () => ({

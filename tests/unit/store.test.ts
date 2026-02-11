@@ -160,51 +160,51 @@ describe('Store', () => {
     });
   });
 
-  describe('Subscription', () => {
-    it('should allow subscribing to state changes', () => {
-      const listener = vi.fn();
-      const unsubscribe = store.subscribe(listener);
-
-      store.setBibInput('123');
-
-      expect(listener).toHaveBeenCalledWith(expect.any(Object), ['bibInput']);
-      unsubscribe();
-    });
-
-    it('should allow unsubscribing', () => {
-      const listener = vi.fn();
-      const unsubscribe = store.subscribe(listener);
-
-      unsubscribe();
-      store.setBibInput('123');
-
-      expect(listener).not.toHaveBeenCalled();
-    });
-
-    it('should notify multiple listeners', () => {
-      const listener1 = vi.fn();
-      const listener2 = vi.fn();
-      store.subscribe(listener1);
-      store.subscribe(listener2);
-
-      store.setBibInput('123');
-
-      expect(listener1).toHaveBeenCalled();
-      expect(listener2).toHaveBeenCalled();
-    });
-
-    it('should handle listener errors gracefully', () => {
-      const errorListener = vi.fn(() => {
-        throw new Error('Listener error');
+  describe('Signal Reactivity', () => {
+    it('should notify effects when state changes via computed signals', async () => {
+      const { effect, $bibInput } = await import('../../src/store/index');
+      const values: string[] = [];
+      const dispose = effect(() => {
+        values.push($bibInput.value);
       });
-      const goodListener = vi.fn();
 
-      store.subscribe(errorListener);
-      store.subscribe(goodListener);
+      store.setBibInput('123');
 
-      // Should not throw
-      expect(() => store.setBibInput('123')).not.toThrow();
-      expect(goodListener).toHaveBeenCalled();
+      expect(values).toContain('123');
+      dispose();
+    });
+
+    it('should stop notifying after effect disposal', async () => {
+      const { effect, $bibInput } = await import('../../src/store/index');
+      const values: string[] = [];
+      const dispose = effect(() => {
+        values.push($bibInput.value);
+      });
+
+      dispose();
+      const countBefore = values.length;
+      store.setBibInput('456');
+
+      expect(values.length).toBe(countBefore);
+    });
+
+    it('should notify multiple independent effects', async () => {
+      const { effect, $bibInput } = await import('../../src/store/index');
+      const values1: string[] = [];
+      const values2: string[] = [];
+      const dispose1 = effect(() => {
+        values1.push($bibInput.value);
+      });
+      const dispose2 = effect(() => {
+        values2.push($bibInput.value);
+      });
+
+      store.setBibInput('789');
+
+      expect(values1).toContain('789');
+      expect(values2).toContain('789');
+      dispose1();
+      dispose2();
     });
   });
 

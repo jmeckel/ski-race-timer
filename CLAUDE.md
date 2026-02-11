@@ -81,7 +81,7 @@ Located in `src/features/faults/faultInlineEntry.ts`, `src/features/gateJudgeVie
 
 ### Multi-Device Sync
 
-Redis (ioredis) with polling (5s normal, 30s on error). BroadcastChannel for same-browser tab sync.
+Redis (ioredis) with polling (5s normal, 30s on error). BroadcastChannel for same-browser tab sync. Batch POST support: `entries[]` array (up to 10) with per-entry atomic processing and `BatchEntryResult[]` response.
 
 ### Authentication & RBAC
 
@@ -115,6 +115,42 @@ All use `/api/v1/` prefix. Legacy `/api/*` paths rewritten for backwards compati
 | `REDIS_URL` | Yes | Redis connection URL |
 | `JWT_SECRET` | Production | JWT signing secret |
 | `CORS_ORIGIN` | No | Allowed CORS origin |
+
+## State Management (Signals)
+
+### Dual Reactivity Architecture
+
+The store (`src/store/index.ts`) uses Preact Signals (`@preact/signals-core`) alongside a legacy callback-based `subscribe()`. Both are updated simultaneously in `setState()`.
+
+**For new code, prefer signals:**
+```typescript
+import { $entries, $settings, effect, store } from '../store';
+
+// React to changes
+const dispose = effect(() => {
+  void $entries.value;
+  updateDisplay();
+});
+
+// One-shot reads (event handlers, init)
+const state = store.getState();
+
+// Cleanup
+dispose();
+```
+
+**Available computed selectors:** `$entries`, `$settings`, `$syncStatus`, `$currentLang`, `$gpsStatus`, `$deviceRole`, `$faultEntries`, `$entryCount`, `$cloudDeviceCount`, `$currentView`, `$bibInput`, `$selectedPoint`, `$selectedRun`, `$undoStack`, `$isJudgeReady`, `$gateAssignment`, `$isChiefJudgeView`, `$penaltySeconds`, `$usePenaltyMode`, `$selectedEntries`, `$isSyncing`, `$hasUnsyncedChanges`, `$entriesByRun`
+
+All state reactivity uses signals — there is no callback-based `subscribe()`. Effect setup is centralized in `appStateHandlers.ts:initStateEffects()` for global UI updates, plus local effects in `VirtualList`, `chiefJudgeView`, and `appInitServices`.
+
+### Race Condition Guards
+
+Key concurrency patterns verified by tests:
+- **Queue double-processing**: `isProcessingQueue` flag with `try/finally` in `QueueProcessor.processQueue()`
+- **Store signal reactivity**: Preact Signals handles batching and dependency tracking; re-entrant `setState` calls within effects are safely handled
+- **Cloud merge dedup**: `existingIds` Set in `mergeCloudEntries` prevents duplicates from BroadcastChannel + cloud poll
+- **Camera state machine**: `cameraState` property guards concurrent `initialize()` calls
+- **GPS idempotent start**: `if (this.watchId !== null)` guard prevents duplicate watchers
 
 ## Key Patterns
 
@@ -177,6 +213,25 @@ All tokens defined in `:root` in `src/styles/main.css`:
 ```
 
 CSS variables live OUTSIDE layers (in `:root`). Base styles and component styles in their respective layers.
+
+### CSS Logical Properties
+
+All CSS files use logical properties for RTL-readiness:
+- `margin-inline-start/end` instead of `margin-left/right`
+- `margin-block-start/end` instead of `margin-top/bottom`
+- `inset-inline-start/end` instead of `left/right` positioning
+- `text-align: start/end` instead of `left/right`
+- `padding-inline-start/end`, `padding-block-start/end`
+
+**Keep physical** for: safe-area insets, `left: 50%` centering, circular dial geometry, toggle switch knobs, decorative chevron borders.
+
+### Reduced Motion
+
+Comprehensive `prefers-reduced-motion` support in `src/styles/animations.css`:
+- Blanket rule shortens all animation/transition durations
+- Explicit `animation: none !important` for infinite/decorative animations
+- `transform: none !important` on all `:active` button press effects
+- JS detection in `RadialDialAnimation.ts` with instant digit processing fallback
 
 ### Touch Targets
 
@@ -264,6 +319,8 @@ Components must clean up in `destroy()`:
 - Dirty-slice persistence: only serialize changed state slices to localStorage
 - Suspend idle AudioContext after 30s; resume before playing
 - CSS `.power-saver` class disables infinite animations on low battery
+- View-based code splitting via `rollupOptions.output.manualChunks` in `vite.config.ts` (7 chunks: vendor-signals, timer, results, settings, gate-judge, chief-judge, main)
+- Battery-aware frame skipping: normal (every frame), low (every 2nd), critical (every 4th)
 
 ## Version Management
 
