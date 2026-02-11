@@ -305,10 +305,10 @@ Safety guards:
 - **MINOR**: New features, enhancements (add new codename in `src/version.ts`)
 - **MAJOR**: Breaking changes
 
-Each minor release gets a `"Dessert Animal"` codename in `src/version.ts`:
+Each minor release gets a `"Snow Type + Famous Ski Run"` codename in `src/version.ts`:
 ```typescript
-'5.20': {
-  name: 'Baklava Falcon',
+'5.22': {
+  name: 'Crust Stelvio',
   description: {
     en: '1-2 sentences, end-user wording.',
     de: 'German translation.'

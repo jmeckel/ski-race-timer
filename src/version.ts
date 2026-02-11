@@ -10,35 +10,35 @@ interface VersionInfo {
 
 const VERSION_NAMES: Record<string, VersionInfo> = {
   '5.18': {
-    name: 'Tiramisu Fox',
+    name: 'Powder Streif',
     description: {
       en: 'Battery power saver for longer outdoor timing. Improved PIN security and faster voice notes.',
       de: 'Batterieschoner für längere Zeitmessung im Freien. Verbesserte PIN-Sicherheit und schnellere Sprachnotizen.',
     },
   },
   '5.19': {
-    name: 'Marzipan Lynx',
+    name: 'Firn Lauberhorn',
     description: {
       en: 'Under-the-hood reliability upgrade. Stronger server-side input validation and improved code quality.',
       de: 'Verbesserungen unter der Haube. Stärkere serverseitige Eingabevalidierung und verbesserte Codequalität.',
     },
   },
   '5.20': {
-    name: 'Baklava Falcon',
+    name: 'Corn Saslong',
     description: {
       en: 'Offline banner, undo for deletions, reorganized settings, and standardized event cleanup across the app.',
       de: 'Offline-Banner, Rückgängig-Funktion für Löschungen, neu organisierte Einstellungen und standardisierte Ereignisbereinigung.',
     },
   },
   '5.21': {
-    name: 'Churros Otter',
+    name: 'Sleet Kandahar',
     description: {
       en: 'Responsive layout fixes for all screen sizes. Dial and numbers scale smoothly from iPhone SE to iPad landscape.',
       de: 'Responsive Layout-Korrekturen für alle Bildschirmgrößen. Zifferblatt und Zahlen skalieren fließend vom iPhone SE bis iPad Querformat.',
     },
   },
   '5.22': {
-    name: 'Pavlova Owl',
+    name: 'Crust Stelvio',
     description: {
       en: 'Signals-based reactivity, view code splitting, reduced-motion support, and 3,700+ new tests for rock-solid reliability.',
       de: 'Signalbasierte Reaktivität, View-Code-Splitting, Reduced-Motion-Unterstützung und 3.700+ neue Tests für maximale Zuverlässigkeit.',

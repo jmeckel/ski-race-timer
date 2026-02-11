@@ -119,7 +119,7 @@ vi.mock('../../src/utils/logger', () => ({
 
 vi.mock('../../src/version', () => ({
   getVersionInfo: vi.fn(() => ({
-    name: 'Baklava Falcon',
+    name: 'Corn Saslong',
     description: 'Test description',
   })),
 }));
@@ -215,7 +215,7 @@ describe('App Module', () => {
       initApp();
 
       expect(versionEl.textContent).toBe('5.21.0');
-      expect(versionNameEl.textContent).toContain('Baklava Falcon');
+      expect(versionNameEl.textContent).toContain('Corn Saslong');
     });
 
     it('should use radial timer when radial mode is active', async () => {

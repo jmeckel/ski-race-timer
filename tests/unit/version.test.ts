@@ -26,38 +26,38 @@ describe('getVersionInfo', () => {
     it('should return info for a known minor version (5.18)', () => {
       const info = getVersionInfo('5.18.0');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Tiramisu Fox');
+      expect(info!.name).toBe('Powder Streif');
       expect(typeof info!.description).toBe('string');
     });
 
     it('should return info for 5.19', () => {
       const info = getVersionInfo('5.19.0');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Marzipan Lynx');
+      expect(info!.name).toBe('Firn Lauberhorn');
     });
 
     it('should return info for 5.20', () => {
       const info = getVersionInfo('5.20.0');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Baklava Falcon');
+      expect(info!.name).toBe('Corn Saslong');
     });
 
     it('should return info for 5.21', () => {
       const info = getVersionInfo('5.21.0');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Churros Otter');
+      expect(info!.name).toBe('Sleet Kandahar');
     });
 
     it('should match patch versions to their minor (5.20.3)', () => {
       const info = getVersionInfo('5.20.3');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Baklava Falcon');
+      expect(info!.name).toBe('Corn Saslong');
     });
 
     it('should work with two-part version strings', () => {
       const info = getVersionInfo('5.20');
       expect(info).not.toBeNull();
-      expect(info!.name).toBe('Baklava Falcon');
+      expect(info!.name).toBe('Corn Saslong');
     });
   });
 
