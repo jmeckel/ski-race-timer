@@ -80,6 +80,34 @@ export function iconWarningCircle(size = 12): string {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>`;
 }
 
+/**
+ * Timer / stopwatch icon (used for timer role cards)
+ */
+export function iconTimer(size = 18): string {
+  return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 5V3"/><path d="M10 3h4"/></svg>`;
+}
+
+/**
+ * Flag icon (used for gate judge role cards)
+ */
+export function iconFlag(size = 18): string {
+  return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`;
+}
+
+/**
+ * Note / document icon (used for fault notes)
+ */
+export function iconNote(size = 14): string {
+  return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+}
+
+/**
+ * Hourglass icon (used for loading states)
+ */
+export function iconHourglass(size = 16): string {
+  return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v6l4 4-4 4v6h12v-6l-4-4 4-4V2H6z"/></svg>`;
+}
+
 // ---------------------------------------------------------------------------
 // Composite UI Patterns
 // ---------------------------------------------------------------------------
@@ -169,10 +197,7 @@ export function deletionPendingBadge(fontSize = '0.7rem'): string {
 /**
  * Run label badge (L1/L2 or R1/R2)
  */
-export function runBadge(
-  runLabel: string,
-  runColor: string,
-): string {
+export function runBadge(runLabel: string, runColor: string): string {
   return `<span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>`;
 }
 

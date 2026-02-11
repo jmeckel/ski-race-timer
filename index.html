@@ -45,13 +45,13 @@
           <span class="sync-dot" aria-label="Sync status"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
           <span class="sync-device-count" id="sync-device-count" style="display: none;" aria-live="polite"></span>
-          <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-            <span class="judges-ready-count" id="judges-ready-count">0/0</span>
-          </span>
         </div>
+        <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          <span class="judges-ready-count" id="judges-ready-count">0/0</span>
+        </span>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
           <span class="gps-dot" aria-label="GPS status"></span>
           <span class="gps-status-text" data-i18n="gpsInactive">GPS Inactive</span>
@@ -470,14 +470,14 @@
             <div class="settings-section-title" data-i18n="deviceRole">Device Role</div>
             <div class="role-cards-settings" id="role-toggle" role="radiogroup" aria-label="Device role">
               <button class="role-card-setting active" data-role="timer" role="radio" aria-checked="true">
-                <div class="role-card-icon" aria-hidden="true">⏱️</div>
+                <div class="role-card-icon" aria-hidden="true"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 5V3"/><path d="M10 3h4"/></svg></div>
                 <div class="role-card-content">
                   <span class="role-card-title" data-i18n="roleTimer">Timer</span>
                   <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
                 </div>
               </button>
               <button class="role-card-setting" data-role="gateJudge" role="radio" aria-checked="false">
-                <div class="role-card-icon" aria-hidden="true">🚩</div>
+                <div class="role-card-icon" aria-hidden="true"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
                 <div class="role-card-content">
                   <span class="role-card-title" data-i18n="roleGateJudge">Gate Judge</span>
                   <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
@@ -1382,7 +1382,7 @@
       <div class="onboarding-cards">
         <!-- Card 1: Welcome + Language -->
         <div class="onboarding-card" data-step="1">
-          <div class="onboarding-icon">⏱️</div>
+          <div class="onboarding-icon"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 5V3"/><path d="M10 3h4"/></svg></div>
           <h2 data-i18n="onboardingWelcome">Welcome to Ski Race Timer</h2>
           <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
           <div class="onboarding-lang-select">
@@ -1398,20 +1398,20 @@
           <p data-i18n="onboardingRoleDesc">Choose how you'll be helping at the race</p>
           <div class="onboarding-role-select" role="radiogroup" aria-label="Role selection">
             <button class="role-card selected" data-role="timer" id="onboarding-role-timer" role="radio" aria-checked="true">
-              <div class="role-card-icon" aria-hidden="true">⏱️</div>
+              <div class="role-card-icon" aria-hidden="true"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 5V3"/><path d="M10 3h4"/></svg></div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleTimerTitle">Timer</span>
                 <span class="role-card-desc" data-i18n="roleTimerDesc">Record start and finish times</span>
               </div>
-              <div class="role-card-check" aria-hidden="true">✓</div>
+              <div class="role-card-check" aria-hidden="true"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
             </button>
             <button class="role-card" data-role="gateJudge" id="onboarding-role-judge" role="radio" aria-checked="false">
-              <div class="role-card-icon" aria-hidden="true">🚩</div>
+              <div class="role-card-icon" aria-hidden="true"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
               <div class="role-card-content">
                 <span class="role-card-title" data-i18n="roleJudgeTitle">Gate Judge</span>
                 <span class="role-card-desc" data-i18n="roleJudgeDesc">Record gate faults (Torrichter)</span>
               </div>
-              <div class="role-card-check" aria-hidden="true">✓</div>
+              <div class="role-card-check" aria-hidden="true"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
             </button>
           </div>
           <div class="onboarding-btn-row">
@@ -1441,7 +1441,7 @@
 
         <!-- Card 4a: Photo Capture (Timer path only) -->
         <div class="onboarding-card" data-step="4" data-path="timer" style="display:none">
-          <div class="onboarding-icon">📷</div>
+          <div class="onboarding-icon"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></div>
           <h2 data-i18n="onboardingPhoto">Photo Documentation</h2>
           <p data-i18n="onboardingPhotoDesc">Automatically capture a photo when recording each timestamp. Useful for verifying bib numbers and resolving disputes.</p>
           <label class="onboarding-toggle-row">
@@ -1459,7 +1459,7 @@
 
         <!-- Card 4b: Gate Assignment (Gate Judge path only) -->
         <div class="onboarding-card" data-step="4" data-path="gateJudge" style="display:none">
-          <div class="onboarding-icon">🚩</div>
+          <div class="onboarding-icon"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
           <h2 data-i18n="onboardingGates">Your Gate Assignment</h2>
           <p data-i18n="onboardingGatesDesc">Enter the gate numbers you'll be watching. You can change this later.</p>
           <div class="onboarding-gate-inputs">
@@ -1511,7 +1511,7 @@
 
         <!-- Card 6: Ready -->
         <div class="onboarding-card" data-step="6" style="display:none">
-          <div class="onboarding-icon success">✓</div>
+          <div class="onboarding-icon success"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
           <h2 data-i18n="onboardingReady" id="onboarding-ready-title">Ready to Time!</h2>
           <div class="onboarding-summary" id="onboarding-summary"></div>
           <p class="onboarding-tip" data-i18n="onboardingTip" id="onboarding-ready-tip">Tap the big red button to record timestamps</p>

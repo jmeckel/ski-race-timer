@@ -6,7 +6,9 @@ import { exchangePinForToken, hasAuthToken } from './services/sync';
 import { store } from './store';
 import type { DeviceRole, Language, RaceInfo } from './types';
 import { fetchWithTimeout } from './utils/errors';
+import { escapeHtml } from './utils/format';
 import { generateDeviceName } from './utils/id';
+import { ListenerManager } from './utils/listenerManager';
 import { logger } from './utils/logger';
 import {
   addRecentRace,
@@ -17,6 +19,7 @@ import {
   attachRecentRaceItemHandlers,
   renderRecentRaceItems,
 } from './utils/recentRacesUi';
+import { iconCheck, iconHourglass } from './utils/templates';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
 
@@ -45,6 +48,7 @@ export class OnboardingController {
   private updateTranslationsCallback: (() => void) | null = null;
   private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
     null;
+  private listeners = new ListenerManager();
 
   constructor() {
     this.modal = document.getElementById('onboarding-modal');
@@ -161,15 +165,15 @@ export class OnboardingController {
     if (!this.modal) return;
 
     // Escape key dismisses the modal
-    document.addEventListener('keydown', (e) => {
+    this.listeners.add(document, 'keydown', ((e: KeyboardEvent) => {
       if (e.key === 'Escape' && this.modal?.classList.contains('active')) {
         this.dismiss();
       }
-    });
+    }) as EventListener);
 
     // Language selection
     this.modal.querySelectorAll('.lang-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      this.listeners.add(btn, 'click', (e) => {
         const target = e.currentTarget as HTMLElement;
         const lang = target.dataset.lang as Language;
         if (lang) {
@@ -192,7 +196,7 @@ export class OnboardingController {
 
     // Action buttons (next, skip, finish)
     this.modal.querySelectorAll('[data-action]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
+      this.listeners.add(btn, 'click', async (e) => {
         const target = e.currentTarget as HTMLElement;
         const action = target.dataset.action;
         if (action) {
@@ -205,7 +209,7 @@ export class OnboardingController {
     // Regenerate device name button
     const regenerateBtn = document.getElementById('onboarding-regenerate-name');
     if (regenerateBtn) {
-      regenerateBtn.addEventListener('click', () => {
+      this.listeners.add(regenerateBtn, 'click', () => {
         const deviceNameInput = document.getElementById(
           'onboarding-device-name',
         ) as HTMLInputElement;
@@ -218,7 +222,7 @@ export class OnboardingController {
 
     // Role selection
     this.modal.querySelectorAll('.role-card').forEach((card) => {
-      card.addEventListener('click', () => {
+      this.listeners.add(card, 'click', () => {
         const role = card.getAttribute('data-role') as DeviceRole;
         if (role) {
           this.selectedRole = role;
@@ -239,7 +243,7 @@ export class OnboardingController {
     if (raceIdInput) {
       const debouncedCheck = debounce(() => this.checkRaceExists(), 500);
 
-      raceIdInput.addEventListener('input', () => {
+      this.listeners.add(raceIdInput, 'input', () => {
         debouncedCheck();
         // Show/hide PIN field based on race ID input
         const pinInput = document.getElementById(
@@ -259,7 +263,7 @@ export class OnboardingController {
       'onboarding-recent-races-dropdown',
     );
     if (recentRacesBtn && recentRacesDropdown) {
-      recentRacesBtn.addEventListener('click', () => {
+      this.listeners.add(recentRacesBtn, 'click', () => {
         feedbackTap();
         if (recentRacesDropdown.style.display === 'none') {
           this.showRecentRacesDropdown(
@@ -285,7 +289,11 @@ export class OnboardingController {
             recentRacesBtn.setAttribute('aria-expanded', 'false');
           }
         };
-        document.addEventListener('click', this.recentRacesDocumentHandler);
+        this.listeners.add(
+          document,
+          'click',
+          this.recentRacesDocumentHandler as EventListener,
+        );
       }
     }
   }
@@ -463,11 +471,9 @@ export class OnboardingController {
       store.setView('timer');
     }
 
-    // Clean up document listener
-    if (this.recentRacesDocumentHandler) {
-      document.removeEventListener('click', this.recentRacesDocumentHandler);
-      this.recentRacesDocumentHandler = null;
-    }
+    // Clean up all event listeners
+    this.listeners.removeAll();
+    this.recentRacesDocumentHandler = null;
   }
 
   /**
@@ -838,7 +844,7 @@ export class OnboardingController {
     }
 
     // Show loading state
-    statusEl.textContent = `⏳ ${t('loading', lang)}`;
+    statusEl.innerHTML = `${iconHourglass(14)} ${escapeHtml(t('loading', lang))}`;
     statusEl.className = 'race-status loading';
 
     const result = await syncService.checkRaceExists(raceId);
@@ -846,7 +852,7 @@ export class OnboardingController {
     if (result.exists) {
       const entryWord =
         result.entryCount === 1 ? t('entry', lang) : t('entries', lang);
-      statusEl.textContent = `✓ ${t('raceFound', lang)} (${result.entryCount} ${entryWord})`;
+      statusEl.innerHTML = `${iconCheck(14)} ${escapeHtml(t('raceFound', lang))} (${escapeHtml(String(result.entryCount))} ${escapeHtml(entryWord)})`;
       statusEl.className = 'race-status found';
     } else {
       statusEl.textContent = `+ ${t('raceNew', lang)}`;

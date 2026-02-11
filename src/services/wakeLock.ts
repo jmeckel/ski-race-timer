@@ -100,14 +100,19 @@ class WakeLockService {
     // Register global interaction listener
     if (!this.interactionHandler) {
       this.interactionHandler = () => this.resetIdleTimer();
-      document.addEventListener('touchstart', this.interactionHandler, { passive: true });
+      document.addEventListener('touchstart', this.interactionHandler, {
+        passive: true,
+      });
       document.addEventListener('mousedown', this.interactionHandler);
       document.addEventListener('keydown', this.interactionHandler);
     }
 
     // Start periodic idle check
     if (this.idleCheckInterval === null) {
-      this.idleCheckInterval = setInterval(() => this.checkIdle(), IDLE_CHECK_INTERVAL_MS);
+      this.idleCheckInterval = setInterval(
+        () => this.checkIdle(),
+        IDLE_CHECK_INTERVAL_MS,
+      );
     }
   }
 
@@ -172,7 +177,7 @@ class WakeLockService {
 
       // Notify user that screen may dim during timing
       const lang = store.getState().currentLang;
-      showToast(t('wakeLockFailed', lang), 'warning', 5000);
+      showToast(t('wakeLockFailed', lang), 'warning', 2000);
 
       return false;
     }

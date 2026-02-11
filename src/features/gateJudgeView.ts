@@ -8,7 +8,7 @@ import { t } from '../i18n/translations';
 import { feedbackSuccess, feedbackTap, syncService } from '../services';
 import { store } from '../store';
 import type { GateAssignment, GateColor, VoiceIntent } from '../types';
-import { escapeAttr, escapeHtml, getElement } from '../utils';
+import { escapeAttr, escapeHtml, getElement, iconCheck } from '../utils';
 import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
 import {
@@ -272,7 +272,7 @@ export function updateOtherJudgesCoverage(): void {
     .map(
       (a) => `
     <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? t('readySuffix', lang) : ''}">
-      ${a.isReady ? '<span class="ready-check" aria-hidden="true">✓</span>' : ''}
+      ${a.isReady ? `<span class="ready-check" aria-hidden="true">${iconCheck(14)}</span>` : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
       <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
     </div>

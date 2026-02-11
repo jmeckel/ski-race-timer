@@ -15,8 +15,10 @@ import {
   getFaultTypeLabel,
   iconCheck,
   iconEdit,
+  iconNote,
   iconTrash,
   iconTrashDetailed,
+  iconWarningCircle,
   iconX,
 } from '../utils';
 import { ListenerManager } from '../utils/listenerManager';
@@ -456,8 +458,8 @@ export function updateFaultSummaryPanel(): void {
           <div class="fault-gate-info">
             <span class="fault-gate-num${isMarkedForDeletion ? ' strikethrough' : ''}">${t('gate', lang)} ${escapeHtml(String(fault.gateNumber))}</span>
             <span class="fault-type-badge${isMarkedForDeletion ? ' marked' : ''}">${getFaultTypeLabel(fault.faultType, lang)}</span>
-            ${hasNotes ? `<span class="fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
-            ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${escapeAttr(deletionInfo)}">⚠</span>` : ''}
+            ${hasNotes ? `<span class="fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">${iconNote(14)}</span>` : ''}
+            ${isMarkedForDeletion ? `<span class="deletion-pending-badge" title="${escapeAttr(deletionInfo)}">${iconWarningCircle(14)}</span>` : ''}
           </div>
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">

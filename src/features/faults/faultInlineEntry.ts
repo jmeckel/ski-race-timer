@@ -13,6 +13,7 @@ import {
   escapeAttr,
   escapeHtml,
   getFaultTypeLabel,
+  iconNote,
   iconTrash,
   makeNumericInput,
 } from '../../utils';
@@ -167,7 +168,7 @@ export function updateInlineFaultsList(): void {
         <div class="gate-judge-fault-details">
           <span class="gate-judge-fault-gate ${escapeHtml(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
           <span class="gate-judge-fault-type">${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}</span>
-          ${hasNotes ? `<span class="gate-judge-fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">📝</span>` : ''}
+          ${hasNotes ? `<span class="gate-judge-fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">${iconNote(14)}</span>` : ''}
         </div>
       </div>
       <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">

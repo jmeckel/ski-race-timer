@@ -4,7 +4,7 @@
  * idle timeout, error handling, cleanup
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {
@@ -174,7 +174,10 @@ describe('Wake Lock Service', () => {
 
       await wakeLockService.enable();
 
-      expect(addEventSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+      expect(addEventSpy).toHaveBeenCalledWith(
+        'visibilitychange',
+        expect.any(Function),
+      );
 
       addEventSpy.mockRestore();
     });
@@ -184,8 +187,15 @@ describe('Wake Lock Service', () => {
 
       await wakeLockService.enable();
 
-      expect(addEventSpy).toHaveBeenCalledWith('touchstart', expect.any(Function), { passive: true });
-      expect(addEventSpy).toHaveBeenCalledWith('mousedown', expect.any(Function));
+      expect(addEventSpy).toHaveBeenCalledWith(
+        'touchstart',
+        expect.any(Function),
+        { passive: true },
+      );
+      expect(addEventSpy).toHaveBeenCalledWith(
+        'mousedown',
+        expect.any(Function),
+      );
       expect(addEventSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
 
       addEventSpy.mockRestore();
@@ -194,7 +204,10 @@ describe('Wake Lock Service', () => {
     it('should register release listener on the sentinel', async () => {
       await wakeLockService.enable();
 
-      expect(mockSentinel.addEventListener).toHaveBeenCalledWith('release', expect.any(Function));
+      expect(mockSentinel.addEventListener).toHaveBeenCalledWith(
+        'release',
+        expect.any(Function),
+      );
     });
   });
 
@@ -212,7 +225,10 @@ describe('Wake Lock Service', () => {
       await wakeLockService.enable();
       await wakeLockService.disable();
 
-      expect(removeEventSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'visibilitychange',
+        expect.any(Function),
+      );
 
       removeEventSpy.mockRestore();
     });
@@ -223,9 +239,18 @@ describe('Wake Lock Service', () => {
       await wakeLockService.enable();
       await wakeLockService.disable();
 
-      expect(removeEventSpy).toHaveBeenCalledWith('touchstart', expect.any(Function));
-      expect(removeEventSpy).toHaveBeenCalledWith('mousedown', expect.any(Function));
-      expect(removeEventSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'touchstart',
+        expect.any(Function),
+      );
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'mousedown',
+        expect.any(Function),
+      );
+      expect(removeEventSpy).toHaveBeenCalledWith(
+        'keydown',
+        expect.any(Function),
+      );
 
       removeEventSpy.mockRestore();
     });
@@ -292,10 +317,16 @@ describe('Wake Lock Service', () => {
 
       // Create a new sentinel for the re-acquisition
       const newSentinel = createMockWakeLockSentinel();
-      (navigator.wakeLock.request as ReturnType<typeof vi.fn>).mockResolvedValueOnce(newSentinel);
+      (
+        navigator.wakeLock.request as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(newSentinel);
 
       // Simulate page becoming visible
-      Object.defineProperty(document, 'hidden', { value: false, writable: true, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: false,
+        writable: true,
+        configurable: true,
+      });
       document.dispatchEvent(new Event('visibilitychange'));
 
       // Need to flush microtasks for the async requestWakeLock
@@ -310,7 +341,11 @@ describe('Wake Lock Service', () => {
       mockSentinel._simulateRelease();
 
       // Simulate page is hidden
-      Object.defineProperty(document, 'hidden', { value: true, writable: true, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: true,
+        writable: true,
+        configurable: true,
+      });
       document.dispatchEvent(new Event('visibilitychange'));
 
       await vi.advanceTimersByTimeAsync(0);
@@ -319,7 +354,11 @@ describe('Wake Lock Service', () => {
       expect(navigator.wakeLock.request).toHaveBeenCalledTimes(1);
 
       // Restore
-      Object.defineProperty(document, 'hidden', { value: false, writable: true, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: false,
+        writable: true,
+        configurable: true,
+      });
     });
   });
 
@@ -388,7 +427,9 @@ describe('Wake Lock Service', () => {
 
       // Create a new sentinel for re-acquisition
       const newSentinel = createMockWakeLockSentinel();
-      (navigator.wakeLock.request as ReturnType<typeof vi.fn>).mockResolvedValueOnce(newSentinel);
+      (
+        navigator.wakeLock.request as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce(newSentinel);
 
       // Reset idle timer (simulating user interaction)
       wakeLockService.resetIdleTimer();
@@ -413,9 +454,9 @@ describe('Wake Lock Service', () => {
 
   describe('error handling', () => {
     it('should handle wake lock request failure gracefully', async () => {
-      (navigator.wakeLock.request as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Permission denied'),
-      );
+      (
+        navigator.wakeLock.request as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error('Permission denied'));
       const { showToast } = await import('../../../src/components');
       const { logger } = await import('../../../src/utils/logger');
 
@@ -426,20 +467,23 @@ describe('Wake Lock Service', () => {
       expect(showToast).toHaveBeenCalledWith(
         expect.any(String),
         'warning',
-        5000,
+        2000,
       );
     });
 
     it('should handle non-Error rejection', async () => {
-      (navigator.wakeLock.request as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        'some string error',
-      );
+      (
+        navigator.wakeLock.request as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce('some string error');
       const { logger } = await import('../../../src/utils/logger');
 
       const result = await wakeLockService.enable();
 
       expect(result).toBe(false);
-      expect(logger.warn).toHaveBeenCalledWith('Wake Lock request failed:', 'Unknown error');
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Wake Lock request failed:',
+        'Unknown error',
+      );
     });
 
     it('should handle release error gracefully', async () => {
@@ -449,7 +493,10 @@ describe('Wake Lock Service', () => {
       await wakeLockService.enable();
       await wakeLockService.disable();
 
-      expect(logger.warn).toHaveBeenCalledWith('Wake Lock release error:', expect.any(Error));
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Wake Lock release error:',
+        expect.any(Error),
+      );
     });
   });
 
