@@ -256,7 +256,8 @@ test.describe('GPS Timestamp Recording', () => {
     await page.evaluate(() =>
       document.querySelectorAll('.toast').forEach((t) => t.remove()),
     );
-    await page.click('#radial-time-btn');
+    // Use force click — GPS warning toasts can reappear and intercept pointer events
+    await page.click('#radial-time-btn', { force: true });
     await waitForConfirmationToHide(page);
 
     // Verify entry recorded
