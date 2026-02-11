@@ -107,7 +107,8 @@ export function initServices(): void {
   const disposePhotoEffect = effect(() => {
     const currentPhotoCapture = $settings.value.photoCapture;
     if (prevPhotoCapture && !currentPhotoCapture) {
-      cameraService.stop();
+      // Defer: cameraService.stop() writes to store synchronously
+      queueMicrotask(() => cameraService.stop());
     }
     prevPhotoCapture = currentPhotoCapture;
   });

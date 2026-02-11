@@ -54,6 +54,7 @@ import {
   $undoStack,
   effect,
   store,
+  untracked,
 } from './store';
 import { applyViewServices } from './utils/viewServices';
 
@@ -210,8 +211,9 @@ export function initStateEffects(): () => void {
     effect(() => {
       void $settingsGps.value;
       void $currentView.value;
-      updateGpsIndicator();
-      applyViewServices(store.getState());
+      untracked(() => updateGpsIndicator());
+      // Defer service calls: gpsService.start/stop/pause write to store synchronously
+      queueMicrotask(() => applyViewServices(store.getState()));
     }),
   );
 
@@ -220,8 +222,9 @@ export function initStateEffects(): () => void {
     effect(() => {
       void $settingsPhotoCapture.value;
       void $currentView.value;
-      updatePhotoCaptureIndicator();
-      applyViewServices(store.getState());
+      untracked(() => updatePhotoCaptureIndicator());
+      // Defer service calls: cameraService.stop writes to store synchronously
+      queueMicrotask(() => applyViewServices(store.getState()));
     }),
   );
 

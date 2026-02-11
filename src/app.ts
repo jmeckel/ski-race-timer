@@ -148,19 +148,10 @@ export function initApp(): void {
   initOfflineBanner();
 
   // Initialize signal-based state effects (replaces callback-based subscribe)
-  // Wrapped in try-catch so a signal cycle doesn't prevent onboarding/services
-  try {
-    initStateEffects();
-  } catch (err) {
-    logger.error('Failed to initialize state effects:', err);
-  }
+  initStateEffects();
 
   // Initialize services (sync, GPS, wake lock, ambient mode, voice)
-  try {
-    initServices();
-  } catch (err) {
-    logger.error('Failed to initialize services:', err);
-  }
+  initServices();
 
   // Cleanup on page unload to prevent memory leaks
   listeners.add(window, 'beforeunload', handleBeforeUnload);

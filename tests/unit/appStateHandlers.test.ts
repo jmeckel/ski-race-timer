@@ -3,7 +3,7 @@
  * Tests: initStateEffects() sets up signal-based effects that dispatch UI updates
  */
 
-import { computed, effect, signal } from '@preact/signals-core';
+import { computed, effect, signal, untracked } from '@preact/signals-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all UI update dependencies
@@ -114,6 +114,7 @@ vi.mock('../../src/store', () => ({
   $settingsOutdoorMode: computed(() => mockState.value.settings.outdoorMode),
   $settingsAmbientMode: computed(() => mockState.value.settings.ambientMode),
   effect,
+  untracked,
 }));
 
 import { initStateEffects } from '../../src/appStateHandlers';

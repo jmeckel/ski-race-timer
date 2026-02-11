@@ -29,7 +29,13 @@
  * Derived state: `$hasUnsyncedChanges`, `$entriesByRun`
  */
 
-import { computed, effect, type Signal, signal } from '@preact/signals-core';
+import {
+  computed,
+  effect,
+  type Signal,
+  signal,
+  untracked,
+} from '@preact/signals-core';
 import { storage } from '../services/storage';
 import type {
   Action,
@@ -1124,8 +1130,8 @@ export const $entriesByRun = computed(() => {
   };
 });
 
-// Re-export effect for consumers that want signal-based subscriptions
-export { effect };
+// Re-export effect and untracked for consumers that want signal-based subscriptions
+export { effect, untracked };
 
 // Backward-compatible helper functions (delegate to computed signals)
 export function getEntries(): Entry[] {
