@@ -88,7 +88,7 @@ describe('GPS Service', () => {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 10000,
+          maximumAge: 30000,
         },
       );
     });

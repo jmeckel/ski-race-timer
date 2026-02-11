@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.18.0 | Last Updated: February 2026
+Version 5.21.2 | Last Updated: February 2026
 
 ---
 
@@ -400,8 +400,9 @@ Choose your role:
 
 The app automatically detects low battery conditions using the Battery Status API and reduces power consumption:
 
-- **Low battery (below 20%)** - Decorative animations (glow effects, spinners) are paused to save battery
-- **Critical battery (below 10%)** - Additional frame rate reduction for the clock display
+- **Medium battery (below 30%)** - Reduced haptic feedback intensity and slightly increased sync polling intervals
+- **Low battery (below 15%)** - Decorative animations (glow effects, spinners) are paused to save battery
+- **Critical battery (below 5%)** - Additional frame rate reduction for the clock display
 - **Charging** - Power saver deactivates when the device is plugged in, even at low battery
 
 This is fully automatic and requires no configuration. The clock and timing functions continue to work normally in power-saver mode. If your device does not support the Battery API, the app runs with all animations enabled as usual.
@@ -649,7 +650,7 @@ Ski Race Timer supports full keyboard and USB numpad navigation for desktop use 
 
 **Report Issues:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.18.0
+**Version:** 5.21.2
 
 ---
 

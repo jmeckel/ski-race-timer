@@ -1,8 +1,111 @@
-// Re-export all utilities
+// Named re-exports for tree-shaking (avoids `export *` barrel issues)
 
-export * from './domCache';
-export * from './errors';
-export * from './format';
-export * from './id';
-export * from './templates';
-export * from './validation';
+export {
+  clearElementCache,
+  getCacheStats,
+  getElement,
+  getElementOrThrow,
+  invalidateElement,
+  preCacheElements,
+} from './domCache';
+
+export {
+  type ApiErrorResponse,
+  type ApiResponse,
+  type ApiSuccessResponse,
+  createApiError,
+  createApiSuccess,
+  DEFAULT_FETCH_TIMEOUT,
+  ErrorCode,
+  type ErrorCodeType,
+  type ErrorContext,
+  ErrorSeverity,
+  type ErrorSeverityType,
+  FetchTimeoutError,
+  fetchWithTimeout,
+  handleError,
+  isApiError,
+  isNetworkError,
+  isTimeoutError,
+  logCritical,
+  logError,
+  logWarning,
+  TOAST_DURATION,
+} from './errors';
+
+export {
+  debounce,
+  escapeAttr,
+  escapeHtml,
+  formatBib,
+  formatDate,
+  formatDuration,
+  formatFileSize,
+  formatTime,
+  getFaultTypeLabel,
+  getPointColor,
+  getPointLabel,
+  getRunColor,
+  getRunLabel,
+  throttle,
+  truncate,
+} from './format';
+
+export {
+  generateDeviceId,
+  generateDeviceName,
+  generateEntryId,
+  generateRaceId,
+  isNewIdFormat,
+  migrateId,
+  parseEntryId,
+} from './id';
+
+export {
+  deleteButton,
+  deletionPendingBadge,
+  duplicateBadge,
+  editButton,
+  faultBadge,
+  iconCamera,
+  iconCheck,
+  iconChevron,
+  iconDuplicate,
+  iconEdit,
+  iconFlag,
+  iconHourglass,
+  iconNote,
+  iconTimer,
+  iconTrash,
+  iconTrashDetailed,
+  iconWarningCircle,
+  iconX,
+  photoButton,
+  pointBadge,
+  runBadge,
+  statusBadge,
+} from './templates';
+
+export {
+  calculateChecksum,
+  isValidDataSchema,
+  isValidDeviceId,
+  isValidEntry,
+  isValidFaultEntry,
+  isValidFaultVersion,
+  isValidRaceId,
+  isValidSettings,
+  isValidSyncQueueItem,
+  MAX_BIB_LENGTH,
+  MAX_DEVICE_NAME_LENGTH,
+  MAX_RACE_ID_LENGTH,
+  makeNumericInput,
+  migrateSchema,
+  sanitizeEntry,
+  sanitizeFaultEntry,
+  sanitizeString,
+  VALID_FAULT_TYPES,
+  VALID_POINTS,
+  VALID_STATUSES,
+  verifyChecksum,
+} from './validation';

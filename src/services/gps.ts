@@ -3,12 +3,12 @@ import { logger } from '../utils/logger';
 import { batteryService } from './battery';
 
 // GPS configuration
-// maximumAge: 10s allows reuse of cached position, reducing GPS chip wake-ups
-// while still providing fresh-enough timestamps for race timing
+// maximumAge: 30s allows reuse of cached position, reducing GPS chip wake-ups
+// while still providing fresh-enough coordinates for race timing location tracking
 const GPS_OPTIONS_NORMAL: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 10000,
-  maximumAge: 10000,
+  maximumAge: 30000,
 };
 
 // Low battery: disable high accuracy to save significant power

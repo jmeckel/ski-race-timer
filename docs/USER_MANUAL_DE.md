@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.18.0 | Stand: Februar 2026
+Version 5.21.2 | Stand: Februar 2026
 
 ---
 
@@ -419,8 +419,9 @@ Wählen Sie Ihre Rolle:
 
 Die App erkennt automatisch niedrige Akkustände über die Battery Status API und reduziert den Stromverbrauch:
 
-- **Niedriger Akku (unter 20%)** - Dekorative Animationen (Leuchteffekte, Spinner) werden pausiert
-- **Kritischer Akku (unter 10%)** - Zusätzliche Reduzierung der Bildwiederholrate der Uhranzeige
+- **Mittlerer Akku (unter 30%)** - Reduzierte Vibrationsintensität und leicht verlängerte Sync-Intervalle
+- **Niedriger Akku (unter 15%)** - Dekorative Animationen (Leuchteffekte, Spinner) werden pausiert
+- **Kritischer Akku (unter 5%)** - Zusätzliche Reduzierung der Bildwiederholrate der Uhranzeige
 - **Beim Laden** - Der Batterieschoner deaktiviert sich, wenn das Gerät angeschlossen ist, auch bei niedrigem Akku
 
 Dies geschieht vollautomatisch und erfordert keine Konfiguration. Uhr und Zeiterfassung funktionieren im Energiesparmodus normal weiter. Falls Ihr Gerät die Battery API nicht unterstützt, läuft die App mit allen Animationen wie gewohnt.
@@ -673,7 +674,7 @@ Druckbarer Text im Format einer offiziellen Torrichterkarte:
 
 **Probleme melden:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.18.0
+**Version:** 5.21.2
 
 ---
 

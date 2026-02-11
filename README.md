@@ -230,5 +230,5 @@ This project is private. All rights reserved.
 
 ---
 
-**Version:** 5.18.0
+**Version:** 5.21.2
 **Last Updated:** February 2026

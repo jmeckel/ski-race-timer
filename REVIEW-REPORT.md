@@ -231,12 +231,24 @@ Comprehensive `:focus-visible` styles, proper ARIA attributes in components, `ro
 - T4 (race conditions) deferred because single-threaded JS makes true concurrency impossible; the async coalescing pattern in entrySync is already well-tested
 - 4 of 7 items implemented, 3 deferred with rationale. Coverage focused on highest-value gaps (auth, sync, store slices)
 
-### Phase 5: Polish (2-3 days)
+### Phase 5: Polish ✅ COMPLETED (commit TBD)
 
-30. **A6**: Extract VirtualList template generation from event binding
-31. **A9**: Convert barrel exports to named re-exports
-32. **A10**: Make `parseJson()` require Valibot validation callback
-33. **P5**: Increase GPS `maximumAge` to 30s for normal mode
-34. **U5**: Add PWA manifest `categories` and `shortcuts`
-35. **S2**: Investigate nonce-based CSP for inline styles
-36. **T6**: Triage and resolve skipped tests
+30. **A6**: ~~Extract VirtualList template generation~~ → **Deferred** (template functions already extracted to `src/utils/templates.ts`; remaining DOM creation + event binding in `createEntryItem()` is inherently coupled)
+31. **A9**: ✅ Converted barrel `src/utils/index.ts` from 6 `export *` to explicit named re-exports (~100 symbols) for better tree-shaking
+32. **A10**: ~~Make `parseJson()` require Valibot validation~~ → **Not needed** (all 7 call sites already pass a validate callback; adding Valibot dependency would be over-engineering)
+33. **P5**: ✅ Increased GPS `maximumAge` from 10s to 30s for normal battery mode — reduces GPS chip wake-ups while coordinates remain fresh enough for location tracking (timing uses system clock, not GPS position age)
+34. **U5**: ✅ Added PWA manifest `categories: ['sports', 'utilities']` and `shortcuts` for Timer and Results quick actions
+35. **S2**: ~~Investigate nonce-based CSP for inline styles~~ → **Deferred** (requires server-side nonce generation per request; impractical for Vercel static hosting + PWA with dynamic style injection; `unsafe-inline` for styles-only is acceptable risk)
+36. **T6**: ✅ Triaged all 39 skipped test instances across 9 E2E files:
+    - 32 are WebKit/Safari landscape test driver issues (radial dial click geometry fails in landscape viewport) — legitimate Playwright limitation
+    - 6 require backend server (`SYNC_TESTS=1`, `BACKEND_TESTS` env vars) — integration tests that need infrastructure
+    - 1 is build-only feature (PWA manifest not served in dev mode)
+    - **Conclusion**: All skips are justified and well-documented. No hidden bugs.
+
+**Learnings:**
+- `export *` barrels are a mild tree-shaking concern but not a real problem for Vite/Rollup which handles them well — the bigger benefit of named re-exports is explicitness and preventing accidental re-exports
+- GPS `maximumAge` for position caching is distinct from timing precision — race timestamps come from `Date.now()` / GPS clock offset, not from position freshness
+- A6 was already partially done in Phase 3 (A5/A7 extracted helpers); the remaining `createEntryItem()` code is a DOM factory where template and events are inseparable
+- S2 (nonce CSP) is a non-starter for PWAs that dynamically inject `<style>` elements — would require rewriting all dynamic CSS to use CSS custom properties or class toggling
+- T6 triage confirmed the codebase has 0 unit test skips; all 39 skips are E2E environment limitations. The WebKit landscape issue is a known Playwright limitation with click coordinates on rotated/transformed elements
+- 3 of 7 items implemented, 1 documented (T6 triage), 3 deferred with rationale
