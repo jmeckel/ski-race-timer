@@ -489,6 +489,11 @@ export const translations = {
     // Indicator labels
     syncOnline: 'Sync online',
     syncOffline: 'Offline',
+    syncShortConnected: 'Sync',
+    syncShortSyncing: 'Sync...',
+    syncShortError: 'Error',
+    syncShortOff: 'Off',
+    syncDeviceAbbrev: 'dev',
 
     // Auth
     sessionExpired: 'Session expired. Please re-enter your PIN.',
@@ -906,7 +911,7 @@ export const translations = {
     saveFault: 'Fehler speichern',
     selectFaultType: 'Bitte Fehlerart wählen',
     gateOutOfRange: 'Tor liegt außerhalb des zugewiesenen Bereichs',
-    flt: 'STR',
+    flt: 'SZT',
     statusFlt: 'Strafzeit',
 
     // Chief Judge (Obmann)
@@ -1034,6 +1039,11 @@ export const translations = {
     // Indicator labels
     syncOnline: 'Sync online',
     syncOffline: 'Offline',
+    syncShortConnected: 'Sync',
+    syncShortSyncing: 'Sync...',
+    syncShortError: 'Fehler',
+    syncShortOff: 'Aus',
+    syncDeviceAbbrev: 'G',
 
     // Auth
     sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',

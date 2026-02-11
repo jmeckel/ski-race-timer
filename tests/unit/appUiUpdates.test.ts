@@ -267,7 +267,7 @@ describe('App UI Updates Module', () => {
         currentLang: 'en',
       });
       updateSyncStatusIndicator();
-      expect(deviceCount.textContent).toBe('3 dev');
+      expect(deviceCount.textContent).toBe('3 syncDeviceAbbrev');
       expect(deviceCount.style.display).toBe('inline');
     });
 
@@ -279,7 +279,7 @@ describe('App UI Updates Module', () => {
         currentLang: 'en',
       });
       updateSyncStatusIndicator();
-      expect(deviceCount.textContent).toBe('Off');
+      expect(deviceCount.textContent).toBe('syncShortOff');
     });
 
     it('should hide device count for other statuses', () => {

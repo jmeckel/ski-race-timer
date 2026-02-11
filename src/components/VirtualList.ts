@@ -812,7 +812,7 @@ export class VirtualList {
       </div>
       ${duplicateBadgeHtml}
       ${faultBadgeHtml}
-      ${entry.status !== 'ok' ? statusBadge(entry.status.toUpperCase()) : ''}
+      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang)) : ''}
       ${entry.photo ? photoButton(t('viewPhotoLabel', lang)) : ''}
       ${editButton({ ariaLabel: t('editEntryLabel', lang) })}
       ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang) })}
@@ -1136,7 +1136,7 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${entry.status !== 'ok' ? statusBadge(entry.status.toUpperCase(), 'var(--error)', 'white', '0.65rem') : ''}
+      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang), 'var(--error)', 'white', '0.65rem') : ''}
       ${editButton({ ariaLabel: t('editEntryLabel', lang), size: 16 })}
       ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang), size: 16 })}
     `;

@@ -108,7 +108,7 @@ function getStatusLabel(status: string, lang: Language): string {
     dns: { en: 'DNS', de: 'DNS' },
     dnf: { en: 'DNF', de: 'DNF' },
     dsq: { en: 'DSQ', de: 'DSQ' },
-    flt: { en: 'FLT', de: 'STR' }, // Fault penalty (Strafzeit)
+    flt: { en: 'FLT', de: 'SZT' }, // Fault penalty (Strafzeit)
   };
   return statusMap[status]?.[lang] || status.toUpperCase();
 }

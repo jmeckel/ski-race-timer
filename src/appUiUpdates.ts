@@ -129,15 +129,15 @@ export function updateSyncStatusIndicator(): void {
     dot.setAttribute('aria-label', syncLabel);
   }
 
-  // Use short status text to prevent layout shifts from varying text widths
+  // Use short translated status text to prevent layout shifts from varying text widths
   if (text) {
     const shortStatusText: Record<string, string> = {
-      connected: 'Synced',
-      syncing: 'Sync...',
-      error: 'Error',
-      offline: 'Off',
-      disconnected: 'Off',
-      connecting: 'Sync...',
+      connected: t('syncShortConnected', lang),
+      syncing: t('syncShortSyncing', lang),
+      error: t('syncShortError', lang),
+      offline: t('syncShortOff', lang),
+      disconnected: t('syncShortOff', lang),
+      connecting: t('syncShortSyncing', lang),
     };
     text.textContent =
       shortStatusText[state.syncStatus] || t(state.syncStatus, lang);
@@ -159,11 +159,11 @@ export function updateSyncStatusIndicator(): void {
   // Show device count when connected - use abbreviated format for consistent width
   if (deviceCountEl) {
     if (state.syncStatus === 'connected' && state.cloudDeviceCount > 0) {
-      deviceCountEl.textContent = `${state.cloudDeviceCount} dev`;
+      deviceCountEl.textContent = `${state.cloudDeviceCount} ${t('syncDeviceAbbrev', lang)}`;
       deviceCountEl.style.display = 'inline';
       deviceCountEl.classList.add('status-active');
     } else if (state.syncStatus === 'error' || state.syncStatus === 'offline') {
-      deviceCountEl.textContent = 'Off';
+      deviceCountEl.textContent = t('syncShortOff', lang);
       deviceCountEl.style.display = 'inline';
       deviceCountEl.classList.remove('status-active');
     } else {
