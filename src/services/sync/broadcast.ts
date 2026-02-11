@@ -40,8 +40,10 @@ class BroadcastManager {
           if (type === 'entry' && isValidEntry(data)) {
             store.mergeCloudEntries([data]);
           } else if (type === 'presence') {
-            const deviceInfo = data as DeviceInfo;
-            store.addConnectedDevice(deviceInfo);
+            // Validate presence data before using
+            if (data && typeof data.id === 'string' && typeof data.name === 'string' && typeof data.lastSeen === 'number') {
+              store.addConnectedDevice(data as DeviceInfo);
+            }
           } else if (type === 'fault') {
             const fault = data as FaultEntry;
             if (fault?.id) {

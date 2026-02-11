@@ -1,5 +1,6 @@
 import { store } from '../store';
 import { logger } from '../utils/logger';
+import { batteryService } from './battery';
 
 // Camera configuration
 const CAMERA_CONFIG: MediaStreamConstraints = {
@@ -22,6 +23,8 @@ type CameraState = 'stopped' | 'initializing' | 'ready' | 'paused' | 'resuming';
 
 // Maximum time camera can stay in 'resuming' state before allowing retry (ms)
 const RESUMING_TIMEOUT = 5000;
+// Maximum consecutive reinitialize attempts before giving up
+const MAX_REINIT_RETRIES = 3;
 
 class CameraService {
   private stream: MediaStream | null = null;
@@ -33,6 +36,7 @@ class CameraService {
   private previewElement: HTMLVideoElement | null = null;
   private ownsVideoElement = false;
   private resumingStartedAt: number | null = null;
+  private reinitRetryCount = 0;
 
   /**
    * Create or reuse a video element for camera capture.
@@ -81,11 +85,20 @@ class CameraService {
     if (this.cameraState === 'initializing') return false; // Already initializing
 
     this.cameraState = 'initializing';
+    this.reinitRetryCount = 0; // Reset retry counter on fresh init
 
     try {
       // Check if camera API is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera API not available');
+      }
+
+      // Skip camera on critical battery to save power (stream uses 100-300mW)
+      if (batteryService.isCriticalBattery()) {
+        logger.debug('[Camera] Critical battery, skipping initialization');
+        this.cameraState = 'stopped';
+        store.setCameraReady(false, 'Camera disabled on critical battery');
+        return false;
       }
 
       this.videoElement = this.createVideoElement();
@@ -191,8 +204,19 @@ class CameraService {
         return;
       }
     }
+
+    // Stop retrying after max attempts to avoid infinite loops
+    if (this.reinitRetryCount >= MAX_REINIT_RETRIES) {
+      logger.warn(`Camera reinit failed after ${MAX_REINIT_RETRIES} attempts, giving up`);
+      this.cameraState = 'stopped';
+      this.resumingStartedAt = null;
+      store.setCameraReady(false, 'Camera reinitialization failed');
+      return;
+    }
+
     this.cameraState = 'resuming';
     this.resumingStartedAt = Date.now();
+    this.reinitRetryCount++;
 
     try {
       if (!this.videoElement) {
@@ -215,6 +239,7 @@ class CameraService {
 
       this.cameraState = 'ready';
       this.resumingStartedAt = null;
+      this.reinitRetryCount = 0; // Reset on success
       store.setCameraReady(true);
     } catch (error) {
       logger.error('Failed to reinitialize camera:', error);

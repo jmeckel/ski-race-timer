@@ -418,7 +418,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         notesTimestamp: fault.notesTimestamp || null,
         // Version tracking fields
         currentVersion: fault.currentVersion || 1,
-        versionHistory: Array.isArray(fault.versionHistory) ? fault.versionHistory : [],
+        versionHistory: Array.isArray(fault.versionHistory) ? fault.versionHistory.slice(0, 100) : [],
         // Deletion workflow fields
         markedForDeletion: fault.markedForDeletion === true,
         markedForDeletionAt: fault.markedForDeletionAt || null,

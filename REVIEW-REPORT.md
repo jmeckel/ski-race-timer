@@ -146,18 +146,30 @@ Comprehensive `:focus-visible` styles, proper ARIA attributes in components, `ro
 
 ## Action Plan
 
-### Phase 1: Quick Wins (1-2 days)
+### Phase 1: Quick Wins - COMPLETED
 
-These are low-effort, high-impact fixes:
+**Commit:** c7a2135
 
-1. **X1**: Add `<html lang="de">` and dynamic update on language switch
-2. **U1/U2**: Fix contrast ratios (`--text-tertiary` to `#a0a0a0`, placeholder to `#a8a8a8`)
-3. **U3**: Replace hardcoded button heights with design tokens
-4. **X4/X5**: Add `aria-label` to offline banner dismiss and modal close buttons
-5. **X6**: Add `maxlength` attribute to voice note textarea
-6. **S3**: Sanitize Redis error messages before logging
-7. **I1**: Update `document.documentElement.lang` on language switch
-8. **P1**: Add battery level check in Wake Lock (skip on critical battery)
+**Findings during implementation:**
+- X1, I1 were already implemented (`<html lang="de">` in index.html, `document.documentElement.lang` update in settingsView.ts:131)
+- X4 was already implemented (offline-banner-dismiss has `aria-label="Dismiss"`)
+- X5 was already implemented (modal close buttons have `aria-label="Close"` with `data-i18n-aria-label`)
+- X6 was already implemented (`maxlength="500"` on voice-note-textarea)
+
+**Changes made:**
+1. ~~**X1**: Add `<html lang="de">` and dynamic update on language switch~~ (already existed)
+2. **U1/U2**: Fixed contrast ratios (`--text-tertiary` #909090 -> #a0a0a0, placeholder #909090 -> #a8a8a8)
+3. **U3**: Replaced hardcoded button heights with design tokens in gate-judge.css (56px -> var(--btn-height-lg), 44px -> var(--btn-height-md))
+4. ~~**X4/X5**: Add `aria-label` to offline banner dismiss and modal close buttons~~ (already existed)
+5. ~~**X6**: Add `maxlength` attribute to voice note textarea~~ (already existed)
+6. **S3**: Sanitized Redis error messages - regex strips redis:// URLs before logging
+7. ~~**I1**: Update `document.documentElement.lang` on language switch~~ (already existed)
+8. **P1**: Added battery level check in Wake Lock - skips wake lock request on critical battery (<5%)
+
+**Learnings:**
+- Review agents flagged some items that were already properly implemented. Always verify before changing.
+- Pre-commit hooks auto-formatted and committed alongside lint fixes.
+- 4 of 8 items were already done, showing the codebase has good baseline quality.
 
 ### Phase 2: Architecture Improvements (3-5 days)
 
