@@ -102,8 +102,9 @@ export function initServices(): void {
   });
 
   // Stop camera immediately when photo capture setting is disabled
+  // App-lifetime subscription — cleanup not needed (lives until page unload)
   let prevPhotoCapture = initialState.settings.photoCapture;
-  store.subscribe((state, changedKeys) => {
+  const unsubPhotoCapture = store.subscribe((state, changedKeys) => {
     if (changedKeys.includes('settings')) {
       const currentPhotoCapture = state.settings.photoCapture;
       if (prevPhotoCapture && !currentPhotoCapture) {
@@ -111,6 +112,9 @@ export function initServices(): void {
       }
       prevPhotoCapture = currentPhotoCapture;
     }
+  });
+  window.addEventListener('beforeunload', () => unsubPhotoCapture(), {
+    once: true,
   });
 
   // Initialize voice mode service

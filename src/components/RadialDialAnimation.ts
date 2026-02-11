@@ -4,6 +4,8 @@
  * Extracted from RadialDial.ts for separation of concerns.
  */
 
+import { batteryService } from '../services/battery';
+
 /** Callbacks the animation module triggers on the parent RadialDial */
 export interface RadialDialAnimationCallbacks {
   /** Called each frame during spin/snap-back to apply rotation */
@@ -33,6 +35,7 @@ export class RadialDialAnimation {
   private snapBackAnimationId: number | null = null;
   private snapBackTimeoutId: number | null = null;
   private visualTimeoutIds: Set<number> = new Set();
+  private frameCount = 0;
 
   private isDestroyed = false;
 
@@ -193,6 +196,18 @@ export class RadialDialAnimation {
 
   // --- Private animation methods ---
 
+  /**
+   * Battery-aware frame skipping to reduce CPU usage.
+   * Normal: every frame, Low: every 2nd frame, Critical: every 4th frame.
+   */
+  private shouldSkipFrame(): boolean {
+    this.frameCount++;
+    const level = batteryService.getStatus().batteryLevel;
+    if (level === 'low') return this.frameCount % 2 !== 0;
+    if (level === 'critical') return this.frameCount % 4 !== 0;
+    return false;
+  }
+
   private spinWithMomentum = (): void => {
     if (Math.abs(this.velocity) < 0.2) {
       this.velocity = 0;
@@ -201,16 +216,17 @@ export class RadialDialAnimation {
       return;
     }
 
-    // Apply rotation
+    // Apply physics every frame but skip visual update on low battery
     this.rotation += this.velocity;
     this.accumulatedRotation += this.velocity;
-    this.callbacks.onRotationUpdate(this.rotation);
+    this.velocity *= this.config.friction;
+
+    if (!this.shouldSkipFrame()) {
+      this.callbacks.onRotationUpdate(this.rotation);
+    }
 
     // Check for digit change
     this.checkDigitChange();
-
-    // Apply friction
-    this.velocity *= this.config.friction;
 
     this.spinAnimationId = requestAnimationFrame(this.spinWithMomentum);
   };
@@ -241,7 +257,10 @@ export class RadialDialAnimation {
     }
 
     this.rotation *= 1 - snapSpeed;
-    this.callbacks.onRotationUpdate(this.rotation);
+
+    if (!this.shouldSkipFrame()) {
+      this.callbacks.onRotationUpdate(this.rotation);
+    }
 
     this.snapBackAnimationId = requestAnimationFrame(this.snapBack);
   };

@@ -12,6 +12,16 @@ const CAMERA_CONFIG: MediaStreamConstraints = {
   audio: false,
 };
 
+// Low-battery camera config (reduced resolution to save power)
+const CAMERA_CONFIG_LOW_BATTERY: MediaStreamConstraints = {
+  video: {
+    facingMode: 'environment',
+    width: { ideal: 640 },
+    height: { ideal: 480 },
+  },
+  audio: false,
+};
+
 // Photo quality settings
 const PHOTO_QUALITY = 0.8;
 const PHOTO_MAX_WIDTH = 1280;
@@ -25,6 +35,8 @@ type CameraState = 'stopped' | 'initializing' | 'ready' | 'paused' | 'resuming';
 const RESUMING_TIMEOUT = 5000;
 // Maximum consecutive reinitialize attempts before giving up
 const MAX_REINIT_RETRIES = 3;
+// Idle timeout before stopping stream to save battery (ms)
+const IDLE_TIMEOUT = 120_000; // 2 minutes
 
 class CameraService {
   private stream: MediaStream | null = null;
@@ -37,6 +49,7 @@ class CameraService {
   private ownsVideoElement = false;
   private resumingStartedAt: number | null = null;
   private reinitRetryCount = 0;
+  private idleTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Create or reuse a video element for camera capture.
@@ -108,8 +121,13 @@ class CameraService {
       this.canvasElement.width = PHOTO_MAX_WIDTH;
       this.canvasElement.height = PHOTO_MAX_HEIGHT;
 
+      // Use lower resolution on low battery to save power
+      const config = batteryService.isLowBattery()
+        ? CAMERA_CONFIG_LOW_BATTERY
+        : CAMERA_CONFIG;
+
       // Request camera access
-      this.stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONFIG);
+      this.stream = await navigator.mediaDevices.getUserMedia(config);
       this.videoElement.srcObject = this.stream;
 
       await this.waitForVideoReady();
@@ -123,6 +141,7 @@ class CameraService {
 
       this.cameraState = 'ready';
       store.setCameraReady(true);
+      this.resetIdleTimeout();
 
       // Add visibility change handler to pause/resume camera for battery optimization
       if (!this.visibilityHandler) {
@@ -243,6 +262,7 @@ class CameraService {
       this.resumingStartedAt = null;
       this.reinitRetryCount = 0; // Reset on success
       store.setCameraReady(true);
+      this.resetIdleTimeout();
     } catch (error) {
       logger.error('Failed to reinitialize camera:', error);
       this.cameraState = 'stopped';
@@ -263,6 +283,8 @@ class CameraService {
       logger.warn('Camera not ready for capture');
       return null;
     }
+
+    this.resetIdleTimeout();
 
     try {
       const ctx = this.canvasElement.getContext('2d');
@@ -353,6 +375,7 @@ class CameraService {
     }
     this.pendingVisibilityChange = null;
     this.resumingStartedAt = null;
+    this.clearIdleTimeout();
     this.cameraState = 'stopped';
     store.setCameraReady(false);
   }
@@ -403,6 +426,26 @@ class CameraService {
    */
   getError(): string | null {
     return store.getState().cameraError;
+  }
+
+  /**
+   * Reset the idle timeout - pauses the stream after 2 minutes without capture
+   */
+  private resetIdleTimeout(): void {
+    this.clearIdleTimeout();
+    this.idleTimeoutId = setTimeout(() => {
+      if (this.cameraState === 'ready') {
+        logger.debug('[Camera] Idle timeout, pausing stream to save battery');
+        this.pauseCamera();
+      }
+    }, IDLE_TIMEOUT);
+  }
+
+  private clearIdleTimeout(): void {
+    if (this.idleTimeoutId !== null) {
+      clearTimeout(this.idleTimeoutId);
+      this.idleTimeoutId = null;
+    }
   }
 
   /**
