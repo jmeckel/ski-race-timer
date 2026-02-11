@@ -32,10 +32,10 @@ export default defineConfig({
       include: ['api/**/*.{js,ts}', 'public/**/*.js', 'src/**/*.ts'],
       exclude: ['tests/**/*', 'node_modules/**/*', 'src/**/*.d.ts'],
       thresholds: {
-        statements: 53,
-        branches: 52,
-        functions: 53,
-        lines: 53,
+        statements: 70,
+        branches: 80,
+        functions: 80,
+        lines: 70,
       },
     },
 
