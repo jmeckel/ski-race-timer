@@ -111,6 +111,23 @@ export class SwipeActions {
    * Set up DOM structure
    */
   private setupDOM(): void {
+    // Copy parent's flex layout to wrapper so children render identically.
+    // Read from inline styles since the element may not be in the DOM yet.
+    const es = this.element.style;
+    if (es.display === 'flex' || es.display === 'inline-flex') {
+      this.wrapper.style.display = es.display;
+      if (es.alignItems) this.wrapper.style.alignItems = es.alignItems;
+      if (es.justifyContent)
+        this.wrapper.style.justifyContent = es.justifyContent;
+      if (es.gap) this.wrapper.style.gap = es.gap;
+      this.wrapper.style.width = '100%';
+      // Move padding from parent to wrapper (parent needs clean overflow:hidden)
+      if (es.padding) {
+        this.wrapper.style.padding = es.padding;
+        es.padding = '0';
+      }
+    }
+
     // Move element children into wrapper
     while (this.element.firstChild) {
       this.wrapper.appendChild(this.element.firstChild);
