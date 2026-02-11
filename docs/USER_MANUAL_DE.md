@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.22.0 | Stand: Februar 2026
+Version 5.24.0 | Stand: Februar 2026
 
 ---
 

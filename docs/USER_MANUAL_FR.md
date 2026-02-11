@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **Chronométrage de courses de ski synchronisé par GPS**
 
-Version 5.22.0 | Dernière mise à jour : Février 2026
+Version 5.24.0 | Dernière mise à jour : Février 2026
 
 ---
 

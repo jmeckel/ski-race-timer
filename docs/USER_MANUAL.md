@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.22.0 | Last Updated: February 2026
+Version 5.24.0 | Last Updated: February 2026
 
 ---
 

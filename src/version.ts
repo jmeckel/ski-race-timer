@@ -58,6 +58,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       fr: 'Glisser pour modifier/supprimer dans les résultats, fermeture des modales par clic extérieur, signal flash auto-dossard et effets de paramètres séparés pour de meilleures performances.',
     },
   },
+  '5.24': {
+    name: 'Névé Planai',
+    description: {
+      en: 'Full French language support. Three-language UI (DE/FR/EN), French ski racing terminology, and complete documentation in French.',
+      de: 'Vollständige französische Sprachunterstützung. Dreisprachige Oberfläche (DE/FR/EN), französische Skirennsport-Terminologie und vollständige Dokumentation auf Französisch.',
+      fr: "Support complet de la langue française. Interface trilingue (DE/FR/EN), terminologie du ski de course en français et documentation complète en français.",
+    },
+  },
 };
 
 export function getVersionInfo(
