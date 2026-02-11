@@ -34,10 +34,12 @@ import type {
   PostRequestBody,
   DeleteRequestBody,
   PaginationMeta,
+  BatchEntryResult,
 } from '../lib/syncTypes.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
+const MAX_BATCH_SIZE = 10;
 const DEFAULT_PAGE_LIMIT = 500;
 const MAX_PAGE_LIMIT = 2000;
 
@@ -268,42 +270,17 @@ async function handleGet(
 
 // ─── POST Handler ───
 
-async function handlePost(
-  req: VercelRequest,
-  res: VercelResponse,
+/**
+ * Enrich a raw entry with sanitized fields and optional photo/GPS data
+ */
+async function enrichEntry(
+  entry: RaceEntry,
+  sanitizedDeviceId: string,
+  sanitizedDeviceName: string,
   client: Redis,
   normalizedRaceId: string,
-  redisKey: string,
   log: ReturnType<typeof apiLogger.withRequestId>
-): Promise<void> {
-  // Check for tombstone (race deleted by admin)
-  const tombstoneKey = `race:${normalizedRaceId}:deleted`;
-  const tombstoneData = await client.get(tombstoneKey);
-  if (tombstoneData) {
-    const tombstone = safeJsonParse(tombstoneData, {} as Record<string, unknown>);
-    return sendSuccess(res, {
-      deleted: true,
-      deletedAt: tombstone.deletedAt || Date.now(),
-      message: tombstone.message || 'Race deleted by administrator'
-    });
-  }
-
-  const { entry, deviceId, deviceName } = (req.body || {}) as PostRequestBody;
-
-  // Validate entry
-  if (!entry) {
-    return sendBadRequest(res, 'entry is required');
-  }
-
-  if (!isValidEntry(entry)) {
-    return sendBadRequest(res, 'Invalid entry format');
-  }
-
-  // Sanitize device info
-  const sanitizedDeviceId = sanitizeString(deviceId, 50);
-  const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
-
-  // Build enriched entry with only allowed fields
+): Promise<{ enrichedEntry: RaceEntry; photoSkipped: boolean; photoRateLimited: boolean }> {
   const enrichedEntry: RaceEntry = {
     id: String(entry.id),
     bib: sanitizeString(entry.bib, 10),
@@ -319,9 +296,7 @@ async function handlePost(
   let photoSkipped = false;
   let photoRateLimited = false;
   if (entry.photo && typeof entry.photo === 'string') {
-    // Limit photo size to ~500KB base64 (roughly 375KB image)
     if (entry.photo.length <= 500000) {
-      // Check photo rate limit per device to prevent memory exhaustion
       const photoRateLimit = await checkPhotoRateLimit(client, normalizedRaceId, sanitizedDeviceId);
       if (photoRateLimit.allowed) {
         enrichedEntry.photo = entry.photo;
@@ -356,6 +331,53 @@ async function handlePost(
     };
   }
 
+  return { enrichedEntry, photoSkipped, photoRateLimited };
+}
+
+async function handlePost(
+  req: VercelRequest,
+  res: VercelResponse,
+  client: Redis,
+  normalizedRaceId: string,
+  redisKey: string,
+  log: ReturnType<typeof apiLogger.withRequestId>
+): Promise<void> {
+  // Check for tombstone (race deleted by admin)
+  const tombstoneKey = `race:${normalizedRaceId}:deleted`;
+  const tombstoneData = await client.get(tombstoneKey);
+  if (tombstoneData) {
+    const tombstone = safeJsonParse(tombstoneData, {} as Record<string, unknown>);
+    return sendSuccess(res, {
+      deleted: true,
+      deletedAt: tombstone.deletedAt || Date.now(),
+      message: tombstone.message || 'Race deleted by administrator'
+    });
+  }
+
+  const { entry, entries, deviceId, deviceName } = (req.body || {}) as PostRequestBody;
+
+  // Batch mode: process multiple entries
+  if (entries) {
+    return handlePostBatch(req, res, client, normalizedRaceId, redisKey, log, entries, deviceId, deviceName);
+  }
+
+  // Single entry mode (backward compatible)
+  if (!entry) {
+    return sendBadRequest(res, 'entry is required');
+  }
+
+  if (!isValidEntry(entry)) {
+    return sendBadRequest(res, 'Invalid entry format');
+  }
+
+  // Sanitize device info
+  const sanitizedDeviceId = sanitizeString(deviceId, 50);
+  const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
+
+  const { enrichedEntry, photoSkipped, photoRateLimited } = await enrichEntry(
+    entry, sanitizedDeviceId, sanitizedDeviceName, client, normalizedRaceId, log
+  );
+
   // Atomically add entry using WATCH/MULTI/EXEC to prevent race conditions
   const addResult = await atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId);
 
@@ -387,6 +409,87 @@ async function handlePost(
     crossDeviceDuplicate: addResult.crossDeviceDuplicate,
     // Flag if highest bib update failed (non-critical warning)
     highestBibUpdateFailed: !bibUpdateResult.success
+  });
+}
+
+// ─── POST Batch Handler ───
+
+async function handlePostBatch(
+  _req: VercelRequest,
+  res: VercelResponse,
+  client: Redis,
+  normalizedRaceId: string,
+  redisKey: string,
+  log: ReturnType<typeof apiLogger.withRequestId>,
+  entries: RaceEntry[],
+  deviceId: string | undefined,
+  deviceName: string | undefined
+): Promise<void> {
+  // Validate entries is an array
+  if (!Array.isArray(entries)) {
+    return sendBadRequest(res, 'entries must be an array');
+  }
+
+  // Enforce batch size limit
+  if (entries.length > MAX_BATCH_SIZE) {
+    return sendBadRequest(res, `Batch size exceeds maximum of ${MAX_BATCH_SIZE} entries`);
+  }
+
+  if (entries.length === 0) {
+    return sendBadRequest(res, 'entries array must not be empty');
+  }
+
+  // Sanitize device info
+  const sanitizedDeviceId = sanitizeString(deviceId, 50);
+  const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
+
+  // Process each entry atomically
+  const results: BatchEntryResult[] = [];
+
+  for (const entry of entries) {
+    const entryId = String(entry.id || '');
+
+    if (!isValidEntry(entry)) {
+      results.push({ entryId, success: false, error: 'Invalid entry format' });
+      continue;
+    }
+
+    try {
+      const { enrichedEntry } = await enrichEntry(
+        entry, sanitizedDeviceId, sanitizedDeviceName, client, normalizedRaceId, log
+      );
+
+      const addResult = await atomicAddEntry(client, redisKey, enrichedEntry, sanitizedDeviceId);
+
+      if (!addResult.success) {
+        results.push({ entryId, success: false, error: addResult.error });
+      } else {
+        results.push({ entryId, success: true });
+
+        // Update highest bib (non-critical)
+        await updateHighestBib(client, normalizedRaceId, enrichedEntry.bib).catch(() => {});
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      log.warn('Batch entry processing error', { entryId, error: message });
+      results.push({ entryId, success: false, error: 'Processing error' });
+    }
+  }
+
+  // Update device heartbeat once for the batch
+  await updateDeviceHeartbeat(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName);
+
+  // Get active device count
+  const deviceCount = await getActiveDeviceCount(client, normalizedRaceId);
+
+  // Get highest bib
+  const highestBib = await getHighestBib(client, normalizedRaceId);
+
+  return sendSuccess(res, {
+    success: true,
+    results,
+    deviceCount,
+    highestBib,
   });
 }
 

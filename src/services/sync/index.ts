@@ -18,6 +18,7 @@ import {
   getLastSyncTimestamp,
   initializeEntrySync,
   pushLocalEntries,
+  sendEntriesToCloudBatch,
   sendEntryToCloud,
 } from './entrySync';
 import {
@@ -158,8 +159,9 @@ class SyncService {
       fetchCloudEntries();
     });
 
-    // Initialize queue processor
+    // Initialize queue processor with single and batch callbacks
     queueProcessor.initialize(sendEntryToCloud);
+    queueProcessor.initializeBatch(sendEntriesToCloudBatch);
 
     // Initialize entry sync
     initializeEntrySync({

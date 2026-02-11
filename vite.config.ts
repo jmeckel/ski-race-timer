@@ -20,8 +20,55 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        manualChunks: {
-          'vendor-signals': ['@preact/signals-core'],
+        manualChunks(id) {
+          // Vendor chunks
+          if (id.includes('@preact/signals-core')) {
+            return 'vendor-signals';
+          }
+
+          // Timer view: radial dial components and timer view
+          if (
+            id.includes('src/features/radialTimerView') ||
+            id.includes('src/components/RadialDial.ts') ||
+            id.includes('src/components/RadialDialAnimation') ||
+            id.includes('src/components/RadialDialInteraction')
+          ) {
+            return 'timer';
+          }
+
+          // Results view: results list and virtual list
+          // Note: export.ts is excluded — shared with chief-judge view
+          if (
+            id.includes('src/features/resultsView') ||
+            id.includes('src/components/VirtualList')
+          ) {
+            return 'results';
+          }
+
+          // Settings view: settings orchestrator and sub-modules
+          if (
+            id.includes('src/features/settingsView') ||
+            id.includes('src/features/settings/')
+          ) {
+            return 'settings';
+          }
+
+          // Gate Judge view: gate judge UI, inline fault entry, fault modals
+          if (
+            id.includes('src/features/gateJudgeView') ||
+            id.includes('src/features/gateJudge.ts') ||
+            id.includes('src/features/faults/faultInlineEntry') ||
+            id.includes('src/features/faults/faultModals') ||
+            id.includes('src/features/voiceNoteUI')
+          ) {
+            return 'gate-judge';
+          }
+
+          // Chief Judge view: chief judge panel
+          // Note: faultOperations is excluded — shared with results view via barrel
+          if (id.includes('src/features/chiefJudgeView')) {
+            return 'chief-judge';
+          }
         },
       },
     },

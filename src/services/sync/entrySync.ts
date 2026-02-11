@@ -14,7 +14,7 @@ import { addRecentRace } from '../../utils/recentRaces';
 import { isValidEntry } from '../../utils/validation';
 import { clearAuthToken, dispatchAuthExpired, getAuthHeaders } from '../auth';
 import { photoStorage } from '../photoStorage';
-import { API_BASE, FETCH_TIMEOUT } from './types';
+import { API_BASE, FETCH_TIMEOUT, SYNC_BATCH_SIZE } from './types';
 
 /**
  * Classify a sync error into a SyncStatus for the UI
@@ -426,6 +426,105 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
   } catch (error) {
     logger.error('Cloud sync send error:', error);
     return false;
+  }
+}
+
+/**
+ * Send multiple entries to cloud in a single batch request.
+ * Returns a Map of entryId -> success boolean.
+ */
+export async function sendEntriesToCloudBatch(
+  entries: Entry[],
+): Promise<Map<string, boolean>> {
+  const resultMap = new Map<string, boolean>();
+  const state = store.getState();
+
+  if (!state.settings.sync || !state.raceId || entries.length === 0) {
+    for (const entry of entries) {
+      resultMap.set(entry.id, false);
+    }
+    return resultMap;
+  }
+
+  // Enforce batch size limit
+  const batch = entries.slice(0, SYNC_BATCH_SIZE);
+
+  try {
+    // Prepare entries for sync - load photos from IndexedDB if needed
+    const entriesToSync: Entry[] = [];
+    for (const entry of batch) {
+      let entryToSync = { ...entry };
+      if (state.settings.syncPhotos && isPhotoMarker(entry.photo)) {
+        const photoData = await photoStorage.getPhoto(entry.id);
+        if (photoData) {
+          entryToSync = { ...entry, photo: photoData };
+        } else {
+          entryToSync = { ...entry, photo: undefined };
+        }
+      } else if (entry.photo) {
+        // syncPhotos is disabled - strip photo data from sync
+        entryToSync = { ...entry, photo: undefined };
+      }
+      entriesToSync.push(entryToSync);
+    }
+
+    const response = await fetchWithTimeout(
+      `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          entries: entriesToSync,
+          deviceId: state.deviceId,
+          deviceName: state.deviceName,
+        }),
+      },
+      FETCH_TIMEOUT,
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    // Parse batch response
+    const data = await response.json();
+
+    if (Array.isArray(data.results)) {
+      for (const result of data.results) {
+        resultMap.set(String(result.entryId), result.success === true);
+      }
+    }
+
+    // Remove successfully synced entries from queue
+    for (const entry of batch) {
+      if (resultMap.get(entry.id) === true) {
+        store.removeFromSyncQueue(entry.id);
+      }
+    }
+
+    // Update device count and highest bib from response
+    if (typeof data.deviceCount === 'number') {
+      store.setCloudDeviceCount(data.deviceCount);
+    }
+    if (typeof data.highestBib === 'number') {
+      store.setCloudHighestBib(data.highestBib);
+    }
+
+    // Reset to fast polling when user is actively sending entries
+    callbacks?.onResetFastPolling();
+
+    return resultMap;
+  } catch (error) {
+    logger.error('Cloud sync batch send error:', error);
+    // On network error, mark all entries as failed
+    for (const entry of batch) {
+      resultMap.set(entry.id, false);
+    }
+    return resultMap;
   }
 }
 

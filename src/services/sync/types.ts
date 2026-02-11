@@ -16,6 +16,7 @@ export const MAX_RETRIES = 5;
 export const RETRY_BACKOFF_BASE = 2000; // 2 seconds
 export const QUEUE_PROCESS_INTERVAL = 10000; // 10 seconds
 export const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
+export const SYNC_BATCH_SIZE = 10; // Max entries per batch sync request
 
 // Adaptive polling configuration
 // Gradually increases interval when no changes detected to save battery

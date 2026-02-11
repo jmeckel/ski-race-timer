@@ -74,8 +74,15 @@ export interface HighestBibResult {
 
 export interface PostRequestBody {
   entry?: RaceEntry;
+  entries?: RaceEntry[];
   deviceId?: string;
   deviceName?: string;
+}
+
+export interface BatchEntryResult {
+  entryId: string;
+  success: boolean;
+  error?: string;
 }
 
 export interface DeleteRequestBody {
