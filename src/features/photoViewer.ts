@@ -14,6 +14,7 @@ import {
   getPointLabel,
 } from '../utils/format';
 import { logger } from '../utils/logger';
+import { isPhotoMarker } from '../utils/photoHelpers';
 import { closeModal, openModal } from './modals';
 
 // Module state
@@ -45,7 +46,7 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
     const pointLabel = getPointLabel(entry.point, lang);
     image.alt = `${t('photoForBib', lang)} ${entry.bib || '---'} - ${pointLabel}`;
 
-    if (entry.photo === 'indexeddb') {
+    if (isPhotoMarker(entry.photo)) {
       // Photo stored in IndexedDB - load it
       image.src = ''; // Clear while loading
       const photoData = await photoStorage.getPhoto(entry.id);

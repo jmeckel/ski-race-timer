@@ -16,6 +16,7 @@ interface ToastOptions {
 
 const DEFAULT_DURATION = 3000;
 const COPY_DEBOUNCE_MS = 1000; // Debounce copy notifications
+const MAX_QUEUE_SIZE = 5; // Cap queue to prevent unbounded growth during rapid sync
 
 /**
  * Toast notification component
@@ -70,6 +71,15 @@ export class Toast {
    * Show a toast notification
    */
   show(message: string, options: ToastOptions = {}): void {
+    // Drop oldest non-action toasts when queue is full
+    while (this.queue.length >= MAX_QUEUE_SIZE) {
+      const oldest = this.queue.findIndex((item) => !item.options.action);
+      if (oldest >= 0) {
+        this.queue.splice(oldest, 1);
+      } else {
+        break; // All queued toasts have actions, keep them
+      }
+    }
     this.queue.push({ message, options });
 
     if (!this.isShowing) {

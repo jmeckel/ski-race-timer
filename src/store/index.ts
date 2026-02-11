@@ -48,6 +48,7 @@ import type {
 import { SCHEMA_VERSION } from '../types';
 import { generateDeviceId, generateDeviceName } from '../utils/id';
 import { logger } from '../utils/logger';
+import { hasFullPhotoData } from '../utils/photoHelpers';
 import { checkLocalStorageQuota } from '../utils/storageQuota';
 import { isValidEntry, migrateSchema } from '../utils/validation';
 
@@ -350,11 +351,7 @@ class Store {
       // Only serialize slices that actually changed
       if (dirty.has('entries')) {
         const entriesToSave = this.state.entries.map((entry) => {
-          if (
-            entry.photo &&
-            entry.photo !== 'indexeddb' &&
-            entry.photo.length > 20
-          ) {
+          if (hasFullPhotoData(entry.photo)) {
             return { ...entry, photo: 'indexeddb' };
           }
           return entry;

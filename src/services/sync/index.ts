@@ -6,6 +6,7 @@
 import { store } from '../../store';
 import { fetchWithTimeout } from '../../utils/errors';
 import { logger } from '../../utils/logger';
+import { hasFullPhotoData, isPhotoMarker } from '../../utils/photoHelpers';
 import { getAuthHeaders } from '../auth';
 import { batteryService } from '../battery';
 import { photoStorage } from '../photoStorage';
@@ -365,7 +366,7 @@ class SyncService {
 
     // Count local photos to upload
     for (const entry of state.entries) {
-      if (entry.photo === 'indexeddb' && entry.deviceId === state.deviceId) {
+      if (isPhotoMarker(entry.photo) && entry.deviceId === state.deviceId) {
         const photoData = await photoStorage.getPhoto(entry.id);
         if (photoData) {
           uploadCount++;
@@ -399,9 +400,7 @@ class SyncService {
 
           for (const cloudEntry of cloudEntries) {
             if (
-              cloudEntry.photo &&
-              cloudEntry.photo !== 'indexeddb' &&
-              cloudEntry.photo.length > 20 &&
+              hasFullPhotoData(cloudEntry.photo) &&
               cloudEntry.deviceId !== state.deviceId
             ) {
               const localEntry = state.entries.find(

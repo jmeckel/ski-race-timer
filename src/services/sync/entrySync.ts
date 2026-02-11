@@ -9,11 +9,33 @@ import type { Entry, SyncResponse } from '../../types';
 import { fetchWithTimeout } from '../../utils/errors';
 import { getPointLabel } from '../../utils/format';
 import { logger } from '../../utils/logger';
+import { hasFullPhotoData, isPhotoMarker } from '../../utils/photoHelpers';
 import { addRecentRace } from '../../utils/recentRaces';
 import { isValidEntry } from '../../utils/validation';
 import { clearAuthToken, dispatchAuthExpired, getAuthHeaders } from '../auth';
 import { photoStorage } from '../photoStorage';
 import { API_BASE, FETCH_TIMEOUT } from './types';
+
+/**
+ * Classify a sync error into a SyncStatus for the UI
+ */
+function classifySyncError(error: unknown): 'error' | 'offline' {
+  const message = error instanceof Error ? error.message : '';
+  const name = error instanceof Error ? error.name : '';
+
+  if (
+    name === 'FetchTimeoutError' ||
+    message.includes('timed out') ||
+    message.includes('500') ||
+    message.includes('503')
+  ) {
+    return 'error';
+  }
+  if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+    return 'offline';
+  }
+  return 'error';
+}
 
 /**
  * Callbacks for entry sync operations
@@ -57,7 +79,7 @@ async function processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
   const processedEntries: Entry[] = [];
 
   for (const entry of entries) {
-    if (entry.photo && entry.photo !== 'indexeddb' && entry.photo.length > 20) {
+    if (hasFullPhotoData(entry.photo)) {
       // Entry has full photo data from cloud
       if (state.settings.syncPhotos) {
         // Skip download if photo is already cached in IndexedDB
@@ -263,27 +285,7 @@ async function fetchCloudEntriesImpl(): Promise<void> {
     callbacks?.onPollingAdjust(true, hasChanges);
   } catch (error) {
     logger.error('Cloud sync fetch error:', error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    const errorName = error instanceof Error ? error.name : '';
-
-    if (
-      errorName === 'FetchTimeoutError' ||
-      errorMessage.includes('timed out')
-    ) {
-      store.setSyncStatus('error');
-    } else if (errorMessage.includes('500') || errorMessage.includes('503')) {
-      store.setSyncStatus('error');
-    } else if (
-      errorMessage.includes('Failed to fetch') ||
-      errorMessage.includes('NetworkError')
-    ) {
-      store.setSyncStatus('offline');
-    } else {
-      store.setSyncStatus('error');
-    }
-
+    store.setSyncStatus(classifySyncError(error));
     callbacks?.onPollingAdjust(false);
   }
 }
@@ -338,7 +340,7 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
   try {
     // Prepare entry for sync - load photo from IndexedDB if syncPhotos is enabled
     let entryToSync = { ...entry };
-    if (state.settings.syncPhotos && entry.photo === 'indexeddb') {
+    if (state.settings.syncPhotos && isPhotoMarker(entry.photo)) {
       const photoData = await photoStorage.getPhoto(entry.id);
       if (photoData) {
         entryToSync = { ...entry, photo: photoData };
