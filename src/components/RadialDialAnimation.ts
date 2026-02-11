@@ -39,12 +39,28 @@ export class RadialDialAnimation {
 
   private isDestroyed = false;
 
+  /** Whether the user prefers reduced motion (OS accessibility setting) */
+  private prefersReducedMotion = false;
+  private motionMediaQuery: MediaQueryList | null = null;
+
   constructor(
     callbacks: RadialDialAnimationCallbacks,
     config: RadialDialAnimationConfig,
   ) {
     this.callbacks = callbacks;
     this.config = config;
+
+    // Check and listen for prefers-reduced-motion changes
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      this.motionMediaQuery = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      );
+      this.prefersReducedMotion = this.motionMediaQuery.matches;
+      this.motionMediaQuery.addEventListener(
+        'change',
+        this.onMotionPreferenceChange,
+      );
+    }
   }
 
   // --- Public state accessors ---
@@ -85,11 +101,28 @@ export class RadialDialAnimation {
 
   /** Start momentum spin after drag release. */
   startMomentumSpin(): void {
+    if (this.prefersReducedMotion) {
+      // Skip visual spin animation but process all digit changes
+      // that would have occurred during the momentum phase
+      this.processDigitChangesInstantly();
+      this.velocity = 0;
+      this.rotation = 0;
+      this.callbacks.onRotationUpdate(0);
+      this.callbacks.onAnimationComplete();
+      return;
+    }
     this.spinWithMomentum();
   }
 
   /** Called when drag ends without momentum (schedule snap-back). */
   onDragEndNoMomentum(): void {
+    if (this.prefersReducedMotion) {
+      // Skip snap-back animation, reset instantly
+      this.rotation = 0;
+      this.callbacks.onRotationUpdate(0);
+      this.callbacks.onAnimationComplete();
+      return;
+    }
     this.scheduleSnapBack();
   }
 
@@ -104,10 +137,13 @@ export class RadialDialAnimation {
 
   /**
    * Trigger a flash animation on dial ring and numbers.
+   * Skipped when prefers-reduced-motion is enabled.
    * @param dialRing The dial ring element (or null)
    * @param dialNumbers The dial numbers container (or null)
    */
   flash(dialRing: HTMLElement | null, dialNumbers: HTMLElement | null): void {
+    if (this.prefersReducedMotion) return;
+
     dialRing?.classList.add('flash');
 
     // Flash numbers in sequence
@@ -133,17 +169,21 @@ export class RadialDialAnimation {
 
   /**
    * Flash a single digit element (used during bib adjustment).
+   * Skipped when prefers-reduced-motion is enabled.
    * @param el The element to flash
    */
   flashDigit(el: HTMLElement): void {
+    if (this.prefersReducedMotion) return;
     this.flashClass(el, 'flash', 150);
   }
 
   /**
    * Flash a number element on tap (pressed state).
+   * Skipped when prefers-reduced-motion is enabled.
    * @param el The element to add pressed class to
    */
   flashPressed(el: HTMLElement): void {
+    if (this.prefersReducedMotion) return;
     this.flashClass(el, 'pressed', 150);
   }
 
@@ -160,9 +200,55 @@ export class RadialDialAnimation {
       clearTimeout(timeoutId);
     }
     this.visualTimeoutIds.clear();
+
+    // Remove reduced-motion media query listener
+    this.motionMediaQuery?.removeEventListener(
+      'change',
+      this.onMotionPreferenceChange,
+    );
+    this.motionMediaQuery = null;
   }
 
   // --- Private helpers ---
+
+  /** Handle changes to the prefers-reduced-motion media query */
+  private onMotionPreferenceChange = (e: MediaQueryListEvent): void => {
+    this.prefersReducedMotion = e.matches;
+    // If reduced motion was just enabled mid-animation, cancel visual animations
+    if (this.prefersReducedMotion) {
+      this.cancelAllAnimations();
+      if (this.rotation !== 0) {
+        this.rotation = 0;
+        this.callbacks.onRotationUpdate(0);
+        this.callbacks.onAnimationComplete();
+      }
+    }
+  };
+
+  /**
+   * Process all digit changes that would occur during momentum spin instantly.
+   * Used when prefers-reduced-motion is enabled to skip the visual spin
+   * but still trigger the correct number of digit change callbacks.
+   */
+  private processDigitChangesInstantly(): void {
+    let v = this.velocity;
+    let accumulated = this.accumulatedRotation;
+
+    // Simulate the full momentum decay in one pass
+    while (Math.abs(v) >= 0.2) {
+      accumulated += v;
+      v *= this.config.friction;
+
+      // Check for digit changes
+      while (Math.abs(accumulated) >= this.config.sensitivity) {
+        const direction = accumulated > 0 ? 1 : -1;
+        this.callbacks.onDigitChange(direction);
+        accumulated -= direction * this.config.sensitivity;
+      }
+    }
+
+    this.accumulatedRotation = accumulated;
+  }
 
   /** Cancel all pending RAF animations and snap-back timeout */
   private cancelAllAnimations(): void {

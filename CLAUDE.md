@@ -1,4 +1,4 @@
-# CLAUDE.md
+# [CLAUDE.md](http://CLAUDE.md)
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -45,11 +45,13 @@ Ski Race Timer is a GPS-synchronized race timing Progressive Web App (PWA) for s
 ### Key Components
 
 The app has three tab-based views:
+
 1. **Timer** - Radial dial (iPod-style) for bib input, clock display, timing point (S/Z), run (L1/L2)
 2. **Results** - Virtual-scrolled list with run indicator, CSV export, entry editing/deletion, photo thumbnails
 3. **Settings** - GPS sync, cloud sync, auto-increment, feedback, language (EN/DE), photo, race management
 
 Plus role-specific views:
+
 - **Gate Judge** - Gate-first quick fault entry with 5-column gate grid
 - **Chief Judge** - Fault summaries, deletion approvals
 
@@ -58,6 +60,7 @@ Plus role-specific views:
 Located in `src/components/RadialDial.ts`, `src/features/radialTimerView.ts`, `src/styles/radial-dial.css`.
 
 **Key technical details:**
+
 - Numbers at `radius = containerSize * 0.38`, dial center at 52%
 - Tap detection uses angle-based calculation (not `elementFromPoint`) for reliability after rotation
 - Center exclusion zone (`dist < rect.width * 0.27`) prevents drag when tapping S/Z or L1/L2
@@ -68,7 +71,7 @@ Located in `src/components/RadialDial.ts`, `src/features/radialTimerView.ts`, `s
 
 Located in `src/features/faults/faultInlineEntry.ts`, `src/features/gateJudgeView.ts`.
 
-**Design principle**: Gates are the primary UI element. Flow: tap gate -> select fault type -> bib auto-fills -> save (2-tap minimum). Primary action buttons positioned at bottom for thumb-reachability (gloves, one-handed operation).
+**Design principle**: Gates are the primary UI element. Flow: tap gate -&gt; select fault type -&gt; bib auto-fills -&gt; save (2-tap minimum). Primary action buttons positioned at bottom for thumb-reachability (gloves, one-handed operation).
 
 ### Data Storage
 
@@ -82,34 +85,33 @@ Redis (ioredis) with polling (5s normal, 30s on error). BroadcastChannel for sam
 
 ### Authentication & RBAC
 
-JWT-based: PIN exchange -> token -> `Authorization: Bearer` header. 24h expiry.
+JWT-based: PIN exchange -&gt; token -&gt; `Authorization: Bearer` header. 24h expiry.
 
 | Role | Permissions |
-|------|-------------|
+| --- | --- |
 | `timer` | Read/write entries and faults |
 | `gateJudge` | Read/write entries and faults |
 | `chiefJudge` | All above + delete faults (server-side enforced) |
 
 ### CSV Export (Race Horology Format)
 
-Semicolon delimiter. Columns: Startnummer, Lauf, Messpunkt, Zeit, Status, Gerät, [Torstrafzeit, Torfehler,] Datum.
-ALL fields must be wrapped in `escapeCSVField()` including generated fields like dates.
+Semicolon delimiter. Columns: Startnummer, Lauf, Messpunkt, Zeit, Status, Gerät, \[Torstrafzeit, Torfehler,\] Datum. ALL fields must be wrapped in `escapeCSVField()` including generated fields like dates.
 
 ## API Endpoints
 
 All use `/api/v1/` prefix. Legacy `/api/*` paths rewritten for backwards compatibility.
 
-- **`/api/v1/auth/token`** (POST) - Exchange PIN for JWT with optional role
-- **`/api/v1/sync`** (GET/POST/DELETE) - Cloud sync for race entries
-- **`/api/v1/faults`** (GET/POST/DELETE) - Fault entries (DELETE requires `chiefJudge`)
-- **`/api/v1/admin/races`** (GET/DELETE) - Race management
-- **`/api/v1/admin/pin`** (GET/POST) - PIN hash management
-- **`/api/v1/admin/reset-pin`** (POST) - Server-side PIN reset
+- `/api/v1/auth/token` (POST) - Exchange PIN for JWT with optional role
+- `/api/v1/sync` (GET/POST/DELETE) - Cloud sync for race entries
+- `/api/v1/faults` (GET/POST/DELETE) - Fault entries (DELETE requires `chiefJudge`)
+- `/api/v1/admin/races` (GET/DELETE) - Race management
+- `/api/v1/admin/pin` (GET/POST) - PIN hash management
+- `/api/v1/admin/reset-pin` (POST) - Server-side PIN reset
 
 ## Environment Variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
+| --- | --- | --- |
 | `REDIS_URL` | Yes | Redis connection URL |
 | `JWT_SECRET` | Production | JWT signing secret |
 | `CORS_ORIGIN` | No | Allowed CORS origin |
@@ -136,6 +138,7 @@ Used across 16+ files. For `once` listeners or promise-scoped handlers, raw `add
 ### CustomEvent Communication
 
 Modules communicate via typed CustomEvents (registry in `src/types/events.ts`):
+
 ```typescript
 element.dispatchEvent(new CustomEvent('fault-edit-request', { bubbles: true, detail: { fault } }));
 ```
@@ -147,6 +150,7 @@ Reusable template functions in `src/utils/templates.ts` with built-in XSS escapi
 ### Toast with Undo
 
 When showing undo toasts for destructive actions, call `clearToasts()` first to prevent LIFO stack mismatch when multiple deletions happen quickly:
+
 ```typescript
 clearToasts(); // Dismiss previous undo toast
 showToast(t('entryDeleted', lang), 'success', 5000, { action: undoAction });
@@ -191,12 +195,14 @@ In `src/i18n/translations.ts`. Default language: German.
 ## Security
 
 ### XSS Prevention
+
 - **Always** use `escapeHtml()` for innerHTML content, `escapeAttr()` for HTML attributes
 - Includes ALL dynamic data: bib numbers, device names, gate numbers, race IDs
 - Prefer `textContent` over `innerHTML` when not rendering markup
 - `escapeHtml()` does NOT escape quotes — use `escapeAttr()` for attributes
 
 ### API Security
+
 - Fail closed on errors: deny access when backing services fail
 - Fail closed on missing deps: if Redis unavailable, return 503 (never skip auth)
 - PBKDF2 for PIN hashing (100k+ iterations, random salt), timing-safe comparison
@@ -206,16 +212,20 @@ In `src/i18n/translations.ts`. Default language: German.
 ## Memory Management
 
 ### Event Listeners
+
 Use `ListenerManager` for all listener registration (see Key Patterns above).
 
 ### Component Cleanup
+
 Components must clean up in `destroy()`:
+
 - `listeners.removeAll()` for all event listeners
 - `this.unsubscribe?.()` for store subscriptions
 - `clearTimeout(id)` for all tracked timeouts
 - Remove dynamic `<style>` elements from `document.head`
 
 ### Safety Guards
+
 - **Double-destruction guard**: `if (this.isDestroyed) return;` at start of `destroy()`
 - **MutationObserver**: Watch for DOM removal when components might be removed without `destroy()`
 - **Cleanup on error paths**: If registering listeners before async ops, clean up in catch block
@@ -257,7 +267,7 @@ Components must clean up in `destroy()`:
 
 ## Version Management
 
-**Always bump version in `package.json` after completing features or fixes.**
+**Always bump version in** `package.json` **after completing features or fixes.**
 
 - **PATCH**: Bug fixes, small tweaks
 - **MINOR**: New features, enhancements (add new codename in `src/version.ts`)
@@ -266,6 +276,7 @@ Components must clean up in `destroy()`:
 ### Version Codenames
 
 Each minor release gets a `"Dessert Animal"` codename in `src/version.ts`:
+
 ```typescript
 '5.20': {
   name: 'Baklava Falcon',
@@ -304,6 +315,7 @@ Complete all code changes and reviews BEFORE deployment. Do not interleave.
 ## Code Review
 
 When asked to review, first propose a structured plan:
+
 1. Define scope and criteria
 2. Define out-of-scope
 3. Get user confirmation before starting
@@ -311,13 +323,17 @@ When asked to review, first propose a structured plan:
 ## Keyboard Shortcuts
 
 ### Timer (Radial Dial)
+
 `0-9` bib digit | `S`/`F` timing point | `Alt+1`/`Alt+2` run | `Space`/`Enter` record | `Escape`/`Delete` clear | `Backspace` delete digit
 
 ### Gate Judge
+
 `M`/`G` MG | `T` STR | `B`/`R` BR | `1-9`/`0` gate | Arrows navigate | `Space`/`Enter` confirm
 
 ### Results
+
 `Arrow Up/Down` navigate | `Enter`/`Space`/`E` edit | `Delete`/`D` delete
 
 ### Global
+
 `Tab`/`Shift+Tab` between components | `Escape` close modal | Arrows within component

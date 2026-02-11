@@ -24,11 +24,11 @@
   position: relative;
 }
 
-/* Skip button - always visible at top right */
+/* Skip button - always visible at end side */
 .onboarding-skip-btn {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
-  right: 12px;
+  inset-inline-end: 12px;
   padding: 8px 16px;
   background: transparent;
   border: 1px solid var(--text-tertiary);
@@ -57,7 +57,7 @@
 @media (max-height: 600px) {
   .onboarding-container {
     justify-content: flex-start;
-    padding-top: 16px;
+    padding-block-start: 16px;
   }
 }
 
@@ -65,7 +65,7 @@
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 .onboarding-progress-label {
@@ -109,7 +109,7 @@
 
 .onboarding-icon {
   font-size: 64px;
-  margin-bottom: 16px;
+  margin-block-end: 16px;
   line-height: 1;
 }
 
@@ -120,33 +120,33 @@
 
 .onboarding-card h2 {
   font-size: 1.5rem;
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   color: var(--text-primary);
   font-weight: 700;
 }
 
 .onboarding-card p {
   color: var(--text-secondary);
-  margin-bottom: 24px;
+  margin-block-end: 24px;
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
 .onboarding-card .text-input {
   width: 100%;
-  margin-bottom: 16px;
+  margin-block-end: 16px;
 }
 
 .onboarding-input-row {
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 16px;
+  margin-block-end: 16px;
 }
 
 .onboarding-input-row .text-input {
   flex: 1;
-  margin-bottom: 0;
+  margin-block-end: 0;
 }
 
 .onboarding-regenerate-btn {
@@ -185,7 +185,7 @@
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 #onboarding-modal .lang-btn {
@@ -218,7 +218,7 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
-  margin-top: 8px;
+  margin-block-start: 8px;
   transition: all 0.2s ease;
 }
 
@@ -251,7 +251,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   padding: 8px;
-  margin-top: 4px;
+  margin-block-start: 4px;
 }
 
 .onboarding-btn.text:hover {
@@ -262,12 +262,12 @@
   display: flex;
   gap: 12px;
   width: 100%;
-  margin-top: 8px;
+  margin-block-start: 8px;
 }
 
 .onboarding-btn-row .onboarding-btn {
   flex: 1;
-  margin-top: 0;
+  margin-block-start: 0;
 }
 
 .onboarding-btn-row .onboarding-btn.secondary {
@@ -280,7 +280,7 @@
 
 .onboarding-summary {
   margin: 16px 0;
-  text-align: left;
+  text-align: start;
 }
 
 .onboarding-summary-list {
@@ -320,7 +320,7 @@
 .onboarding-summary-value {
   color: var(--text-primary);
   font-weight: 600;
-  text-align: right;
+  text-align: end;
 }
 
 .onboarding-summary-badge {
@@ -351,14 +351,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 0;
-  margin-bottom: 8px;
+  margin-block-end: 8px;
   color: var(--text-primary);
   font-size: 0.9375rem;
 }
 
 #onboarding-modal .race-status {
   font-size: 0.8125rem;
-  margin-bottom: 12px;
+  margin-block-end: 12px;
   min-height: 20px;
   transition: all 0.2s ease;
 }
@@ -374,8 +374,8 @@
 .onboarding-tip {
   font-size: 0.875rem;
   color: var(--text-tertiary);
-  margin-top: 8px;
-  margin-bottom: 16px;
+  margin-block-start: 8px;
+  margin-block-end: 16px;
 }
 
 /* Role Selection Cards */
@@ -383,7 +383,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 .role-card {
@@ -396,7 +396,7 @@
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 
@@ -459,7 +459,7 @@
   align-items: flex-end;
   gap: 12px;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-block-end: 24px;
 }
 
 .onboarding-gate-inputs .gate-input-group {
@@ -485,5 +485,5 @@
 .onboarding-gate-inputs .gate-range-separator {
   font-size: 1.5rem;
   color: var(--text-tertiary);
-  padding-bottom: 12px;
+  padding-block-end: 12px;
 }

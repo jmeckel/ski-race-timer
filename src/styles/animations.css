@@ -252,6 +252,10 @@
 }
 
 /* ===== Reduced Motion ===== */
+/* Comprehensive prefers-reduced-motion support across all CSS files.
+   The blanket rule shortens all animation/transition durations.
+   Explicit overrides below disable specific infinite/decorative animations
+   while preserving functional state changes (e.g. active states, colors). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -262,6 +266,7 @@
     scroll-behavior: auto !important;
   }
 
+  /* --- animations.css: breathing, entrance, decorative --- */
   .breathe-glow,
   .breathe-glow-success,
   .breathe-glow-danger,
@@ -272,7 +277,7 @@
   .spring-in,
   .fade-in,
   .slide-up {
-    animation: none;
+    animation: none !important;
   }
 
   .press-effect:active {
@@ -284,13 +289,179 @@
   }
 
   .snowflake-spinner .flake {
-    animation: none;
+    animation: none !important;
     opacity: 0.7;
   }
 
   .snowflake-burst .flake {
-    animation: none;
+    animation: none !important;
     display: none;
+  }
+
+  /* --- main.css: status indicator pulses, ripple, ambient --- */
+  .ripple {
+    animation: none !important;
+  }
+
+  .sync-dot.syncing {
+    animation: none !important;
+  }
+
+  .gps-dot.active,
+  .gps-dot.searching {
+    animation: none !important;
+  }
+
+  .judges-ready-indicator.all-ready {
+    animation: none !important;
+  }
+
+  .judge-ready-dot {
+    animation: none !important;
+  }
+
+  .voice-indicator.listening .voice-dot,
+  .voice-indicator.processing .voice-dot,
+  .voice-indicator.confirming .voice-dot {
+    animation: none !important;
+  }
+
+  body.ambient-mode .timer-view::after {
+    animation: none !important;
+  }
+
+  /* Tab bar: disable active transform and indicator slide */
+  .tab-btn:active {
+    transform: none !important;
+  }
+
+  /* --- radial-dial.css: dial flash, blink cursor, button flash, status pulse --- */
+  .dial-ring.flash {
+    animation: none !important;
+  }
+
+  .radial-bib-cursor {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .radial-time-display.flash {
+    animation: none !important;
+  }
+
+  .radial-time-btn.flash {
+    animation: none !important;
+  }
+
+  .radial-status-dot.warning {
+    animation: none !important;
+  }
+
+  .dial-number.flash {
+    animation: none !important;
+  }
+
+  /* Radial confirmation: instant show instead of opacity transition */
+  .radial-confirmation-overlay {
+    transition: none !important;
+  }
+
+  /* --- timer.css: timestamp button flash, last-recorded pulse --- */
+  .timestamp-btn.flash {
+    animation: none !important;
+  }
+
+  .timestamp-btn.breathe-glow {
+    animation: none !important;
+  }
+
+  .last-recorded-inline.pulse {
+    animation: none !important;
+  }
+
+  /* --- modals.css: modal/overlay enter/exit, confirmation, voice pulse --- */
+  .modal-overlay.show {
+    animation: none !important;
+  }
+
+  .modal-content {
+    animation: none !important;
+  }
+
+  .modal-overlay.closing {
+    animation: none !important;
+  }
+
+  .modal-overlay.closing .modal-content {
+    animation: none !important;
+  }
+
+  .confirmation-overlay .confirmation-content {
+    animation: none !important;
+  }
+
+  .fault-confirmation-content {
+    animation: none !important;
+  }
+
+  .voice-note-listening-indicator.active .voice-note-pulse-ring {
+    animation: none !important;
+  }
+
+  .voice-note-mic-btn.recording,
+  .voice-note-mic-btn.loading {
+    animation: none !important;
+  }
+
+  .fault-edit-mic-btn.recording {
+    animation: none !important;
+  }
+
+  /* --- onboarding.css: card slide-in --- */
+  .onboarding-card {
+    animation: none !important;
+  }
+
+  .progress-dot.active {
+    transform: none !important;
+  }
+
+  /* --- Disable :active scale transforms on interactive elements --- */
+  /* These are decorative spring/press effects; the tap still registers */
+  .modal-btn:active,
+  .action-btn:active,
+  .num-btn:active,
+  .timing-point-btn:active,
+  .run-btn:active,
+  .timestamp-btn:active,
+  .radial-clear-btn:active,
+  .radial-time-btn:active,
+  .gate-grid-btn:active,
+  .inline-bib-btn:active,
+  .inline-fault-type-btn:active,
+  .inline-save-fault-btn:active,
+  .ready-toggle-btn:active,
+  .record-fault-btn:active,
+  .fault-bib-btn:active,
+  .fault-gate-btn:active,
+  .fault-type-btn:active,
+  .fault-confirmation-btn:active,
+  .onboarding-btn:active,
+  .role-card:active,
+  .lang-option:active,
+  .recent-races-btn:active,
+  .race-delete-btn:active,
+  .pending-deletion-btn.approve:active,
+  .pending-deletion-btn.reject:active,
+  .chief-judge-toggle-btn:active,
+  .chief-export-btn:active,
+  .finalize-btn:active,
+  .penalty-adj-btn:active,
+  .bib-action-btn:active,
+  .active-bib-card:active,
+  .role-card-setting:active,
+  .onboarding-regenerate-btn:active {
+    transform: none !important;
   }
 }
 

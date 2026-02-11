@@ -17,12 +17,12 @@ vi.mock('../../../src/services/battery', () => ({
   },
 }));
 
-import { batteryService } from '../../../src/services/battery';
 import type {
   RadialDialAnimationCallbacks,
   RadialDialAnimationConfig,
 } from '../../../src/components/RadialDialAnimation';
 import { RadialDialAnimation } from '../../../src/components/RadialDialAnimation';
+import { batteryService } from '../../../src/services/battery';
 
 // RAF mock infrastructure
 let rafCallbacks: Map<number, FrameRequestCallback> = new Map();
@@ -37,7 +37,10 @@ function runNextRaf(timestamp = performance.now()): void {
   }
 }
 
-function runAllRafs(maxIterations = 200, timestamp = performance.now()): number {
+function runAllRafs(
+  maxIterations = 200,
+  timestamp = performance.now(),
+): number {
   let count = 0;
   while (rafCallbacks.size > 0 && count < maxIterations) {
     runNextRaf(timestamp);
@@ -639,8 +642,7 @@ describe('RadialDialAnimation', () => {
       runAllRafs(200);
 
       // The last call should have been with rotation = 0
-      const lastCall =
-        vi.mocked(callbacks.onRotationUpdate).mock.calls.at(-1);
+      const lastCall = vi.mocked(callbacks.onRotationUpdate).mock.calls.at(-1);
       expect(lastCall?.[0]).toBe(0);
     });
   });
@@ -671,6 +673,130 @@ describe('RadialDialAnimation', () => {
       // Second move: 32 more degrees, accumulated = 4 + 32 = 36 >= 36 -> triggers again
       anim.onDragMove(32, 16);
       expect(callbacks.onDigitChange).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // --- 15. prefers-reduced-motion ---
+
+  describe('prefers-reduced-motion', () => {
+    let reducedMotionAnim: RadialDialAnimation;
+    let matchMediaListeners: Map<string, (e: MediaQueryListEvent) => void>;
+
+    beforeEach(() => {
+      matchMediaListeners = new Map();
+
+      // Mock matchMedia to report prefers-reduced-motion: reduce
+      vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => {
+        const mql = {
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(
+            (_event: string, handler: (e: MediaQueryListEvent) => void) => {
+              matchMediaListeners.set(query, handler);
+            },
+          ),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        } as unknown as MediaQueryList;
+        return mql;
+      });
+
+      reducedMotionAnim = new RadialDialAnimation(callbacks, config);
+    });
+
+    afterEach(() => {
+      reducedMotionAnim.destroy();
+    });
+
+    it('should skip momentum spin animation and complete instantly', () => {
+      reducedMotionAnim.onDragStart();
+      reducedMotionAnim.onDragMove(20, 16); // velocity = 16
+
+      reducedMotionAnim.startMomentumSpin();
+
+      // Should complete instantly without scheduling any RAF
+      expect(callbacks.onAnimationComplete).toHaveBeenCalled();
+      expect(reducedMotionAnim.getRotation()).toBe(0);
+      expect(reducedMotionAnim.getVelocity()).toBe(0);
+      expect(callbacks.onRotationUpdate).toHaveBeenCalledWith(0);
+    });
+
+    it('should process digit changes during instant momentum completion', () => {
+      reducedMotionAnim.onDragStart();
+      // Give high velocity that would cross multiple digit thresholds
+      reducedMotionAnim.onDragMove(50, 16); // velocity = 40
+      // onDigitChange already called once from onDragMove (50 >= 36)
+      expect(callbacks.onDigitChange).toHaveBeenCalledTimes(1);
+
+      vi.mocked(callbacks.onDigitChange).mockClear();
+
+      reducedMotionAnim.startMomentumSpin();
+
+      // Should have processed digit changes that would have occurred during momentum
+      expect(callbacks.onDigitChange).toHaveBeenCalled();
+      // All calls should be direction 1 (positive velocity)
+      for (const call of vi.mocked(callbacks.onDigitChange).mock.calls) {
+        expect(call[0]).toBe(1);
+      }
+    });
+
+    it('should skip snap-back animation and reset instantly', () => {
+      reducedMotionAnim.onDragStart();
+      reducedMotionAnim.onDragMove(20, 16); // rotation = 20
+
+      reducedMotionAnim.onDragEndNoMomentum();
+
+      // Should reset immediately without scheduling a timeout
+      expect(reducedMotionAnim.getRotation()).toBe(0);
+      expect(callbacks.onAnimationComplete).toHaveBeenCalled();
+    });
+
+    it('should skip flash animation on dial ring', () => {
+      const dialRing = document.createElement('div');
+      const dialNumbers = document.createElement('div');
+      const num = document.createElement('span');
+      num.classList.add('dial-number');
+      dialNumbers.appendChild(num);
+
+      reducedMotionAnim.flash(dialRing, dialNumbers);
+
+      // Flash class should NOT be added
+      expect(dialRing.classList.contains('flash')).toBe(false);
+      expect(num.classList.contains('flash')).toBe(false);
+    });
+
+    it('should skip flashDigit animation', () => {
+      const el = document.createElement('span');
+
+      reducedMotionAnim.flashDigit(el);
+
+      expect(el.classList.contains('flash')).toBe(false);
+    });
+
+    it('should skip flashPressed animation', () => {
+      const el = document.createElement('span');
+
+      reducedMotionAnim.flashPressed(el);
+
+      expect(el.classList.contains('pressed')).toBe(false);
+    });
+
+    it('should clean up media query listener on destroy', () => {
+      // The matchMedia mock is called during constructor; get the mql instance
+      // that was actually used by the animation (the first call)
+      const matchMediaSpy = vi.mocked(window.matchMedia);
+      const mql = matchMediaSpy.mock.results[0]
+        .value as unknown as MediaQueryList;
+
+      reducedMotionAnim.destroy();
+
+      expect(mql.removeEventListener).toHaveBeenCalledWith(
+        'change',
+        expect.any(Function),
+      );
     });
   });
 });

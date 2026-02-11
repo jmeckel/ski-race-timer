@@ -275,9 +275,9 @@
     font-weight: 600;
     font-family: "JetBrains Mono", monospace;
     color: var(--text-secondary);
-    margin-left: 2px;
+    margin-inline-start: 2px;
     min-width: 32px;
-    text-align: right;
+    text-align: end;
   }
 
   /* Judges Ready Indicator */
@@ -698,12 +698,12 @@
 
     & svg {
       opacity: 0.5;
-      margin-bottom: var(--space-lg);
+      margin-block-end: var(--space-lg);
     }
 
     & .empty-icon {
       font-size: 2.5rem;
-      margin-bottom: var(--space-md);
+      margin-block-end: var(--space-md);
       opacity: 0.4;
       filter: grayscale(0.3);
     }
@@ -711,7 +711,7 @@
     & .empty-subtitle {
       font-size: 0.8rem;
       color: var(--text-tertiary);
-      margin-top: 4px;
+      margin-block-start: 4px;
     }
   }
 
@@ -747,7 +747,7 @@
   .skip-link {
     position: absolute;
     top: -100%;
-    left: 0;
+    inset-inline-start: 0;
     padding: var(--space-md) var(--space-lg);
     background: var(--primary);
     color: white;
@@ -870,7 +870,7 @@
 
   .timer-view .bib-label {
     font-size: 0.875rem;
-    margin-bottom: var(--space-xs);
+    margin-block-end: var(--space-xs);
   }
 
   .timer-view .bib-value {
@@ -909,7 +909,7 @@
     flex-wrap: wrap;
     justify-content: space-evenly !important;
     gap: var(--space-md);
-    margin-top: var(--space-xs);
+    margin-block-start: var(--space-xs);
   }
 
   .timer-view .timing-controls {
@@ -1024,7 +1024,7 @@
 
   .timer-view .bib-label {
     font-size: 0.75rem;
-    margin-bottom: 2px;
+    margin-block-end: 2px;
   }
 
   .timer-view .clock-container .clock-time {
@@ -1041,7 +1041,7 @@
 
   .timer-view .timing-controls {
     gap: 6px;
-    margin-top: 2px;
+    margin-block-start: 2px;
   }
 
   .timer-view .timing-point-btn {
@@ -1163,10 +1163,7 @@
   &::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: radial-gradient(
       ellipse at calc(50% + var(--motion-tilt-x, 0) * 30%)
         calc(30% + var(--motion-tilt-y, 0) * 20%),
