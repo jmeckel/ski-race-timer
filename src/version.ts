@@ -37,6 +37,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       de: 'Responsive Layout-Korrekturen für alle Bildschirmgrößen. Zifferblatt und Zahlen skalieren fließend vom iPhone SE bis iPad Querformat.',
     },
   },
+  '5.22': {
+    name: 'Pavlova Owl',
+    description: {
+      en: 'Signals-based reactivity, view code splitting, reduced-motion support, and 3,700+ new tests for rock-solid reliability.',
+      de: 'Signalbasierte Reaktivität, View-Code-Splitting, Reduced-Motion-Unterstützung und 3.700+ neue Tests für maximale Zuverlässigkeit.',
+    },
+  },
 };
 
 export function getVersionInfo(

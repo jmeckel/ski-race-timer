@@ -24,7 +24,7 @@ footer-right: "\\thepage"
 
 **Get timing in under 2 minutes.**
 
-Version 5.21.3
+Version 5.22.0
 
 ---
 
