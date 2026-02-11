@@ -1,5 +1,6 @@
 import { t } from '../i18n/translations';
 import { store } from '../store';
+import { escapeHtml } from '../utils/format';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -178,7 +179,7 @@ export class Toast {
         <circle cx="12" cy="12" r="10"/>
         ${icons[type]}
       </svg>
-      <span>${this.escapeHtml(message)}</span>
+      <span>${escapeHtml(message)}</span>
     `;
 
     // Add action button if provided
@@ -249,15 +250,6 @@ export class Toast {
     } catch {
       // Clipboard API not available or failed - silent fail
     }
-  }
-
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(str: string): string {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
   }
 
   /**

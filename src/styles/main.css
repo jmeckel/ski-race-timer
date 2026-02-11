@@ -437,6 +437,7 @@
     align-items: center;
     gap: 2px;
     padding: 6px 8px 4px;
+    min-height: 48px;
     border: none;
     background: transparent;
     color: var(--text-tertiary);

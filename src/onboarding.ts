@@ -7,7 +7,7 @@ import { exchangePinForToken, hasAuthToken } from './services/sync';
 import { store } from './store';
 import type { DeviceRole, Language, RaceInfo } from './types';
 import { fetchWithTimeout } from './utils/errors';
-import { escapeHtml } from './utils/format';
+import { debounce, escapeHtml } from './utils/format';
 import { generateDeviceName } from './utils/id';
 import { ListenerManager } from './utils/listenerManager';
 import { logger } from './utils/logger';
@@ -23,20 +23,6 @@ import {
 import { iconCheck, iconHourglass } from './utils/templates';
 
 const ONBOARDING_STORAGE_KEY = 'skiTimerHasCompletedOnboarding';
-
-/**
- * Debounce utility for race check
- */
-function debounce<T extends (...args: unknown[]) => unknown>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
 
 /**
  * Onboarding Controller - manages the first-time user experience wizard

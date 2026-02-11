@@ -822,12 +822,12 @@
 }
 
 .gate-color-btn.red.active {
-  border-color: #ef4444;
+  border-color: var(--error);
   background: rgba(239, 68, 68, 0.1);
 }
 
 .gate-color-btn.blue.active {
-  border-color: #3b82f6;
+  border-color: var(--primary);
   background: rgba(59, 130, 246, 0.1);
 }
 
@@ -897,7 +897,7 @@
   }
 
   .gate-grid-btn {
-    height: 36px;
+    height: 44px;
     font-size: 0.9rem;
   }
 

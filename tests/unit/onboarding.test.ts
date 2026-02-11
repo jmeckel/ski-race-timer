@@ -72,6 +72,7 @@ vi.mock('../../src/utils/errors', () => ({
 
 vi.mock('../../src/utils/format', () => ({
   escapeHtml: vi.fn((s: string) => s),
+  debounce: vi.fn((fn: Function) => fn),
 }));
 
 vi.mock('../../src/utils/id', () => ({

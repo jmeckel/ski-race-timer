@@ -340,15 +340,6 @@ body:not(.ambient-mode) .header:has(~ #main .timer-view.radial-mode.active) {
   }
 
   /* Keyboard focus indicator - visible ring for accessibility */
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 2px 8px rgba(0, 0, 0, 0.3),
-      0 0 0 3px rgba(56, 189, 248, 0.5);
-  }
-
   &:focus-visible {
     outline: none;
     border-color: var(--primary);
