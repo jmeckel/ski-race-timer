@@ -44,6 +44,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       de: 'Signalbasierte Reaktivität, View-Code-Splitting, Reduced-Motion-Unterstützung und 3.700+ neue Tests für maximale Zuverlässigkeit.',
     },
   },
+  '5.23': {
+    name: 'Graupel Hahnenkamm',
+    description: {
+      en: 'Swipe-to-edit/delete in results, click-outside modal dismiss, auto-bib flash cue, and split settings effects for better performance.',
+      de: 'Wischen zum Bearbeiten/Löschen in Ergebnissen, Modal-Schließen per Klick außerhalb, Auto-Bib-Blitz-Hinweis und aufgeteilte Einstellungs-Effekte für bessere Leistung.',
+    },
+  },
 };
 
 export function getVersionInfo(
