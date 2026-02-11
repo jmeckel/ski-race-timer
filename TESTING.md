@@ -38,13 +38,38 @@ tests/
 ├── setup.js                          # Test setup, mocks, utilities
 ├── unit/
 │   ├── utils.test.js                 # Utility function tests
-│   ├── validation.test.js            # Validation function tests
-│   └── store.test.ts                 # State management and persistence tests
+│   ├── validation.test.js            # Validation function tests (JS)
+│   ├── validation.test.ts            # Validation function tests (TS)
+│   ├── validation-extended.test.ts   # Extended validation tests
+│   ├── store.test.ts                 # State management and persistence tests
+│   ├── store-edge-cases.test.ts      # Store edge case tests
+│   ├── format.test.ts                # Format utility tests
+│   ├── id.test.ts                    # ID generation tests
+│   ├── version.test.ts               # Version management tests
+│   ├── onboarding.test.ts            # Onboarding wizard tests
+│   ├── app.test.ts                   # App initialization tests
+│   ├── appEventListeners.test.ts     # App event listener tests
+│   ├── appInitServices.test.ts       # App service initialization tests
+│   ├── appModalHandlers.test.ts      # App modal handler tests
+│   ├── appStateHandlers.test.ts      # App state handler tests
+│   └── appUiUpdates.test.ts          # App UI update tests
 ├── api/
-│   ├── sync.test.js                  # Sync API endpoint tests
+│   ├── sync.test.js                  # Sync API endpoint tests (JS)
+│   ├── sync-handler.test.ts          # Sync handler tests (TS)
 │   ├── faults-role.test.js           # Faults role-based access control tests
+│   ├── faults-handler.test.ts        # Faults handler tests (TS)
 │   ├── pin-hashing.test.js           # PBKDF2 PIN hashing and verification tests
-│   └── voice-auth.test.js            # Voice API fail-closed auth tests
+│   ├── voice-auth.test.js            # Voice API fail-closed auth tests
+│   ├── auth-token.test.js            # Auth token exchange tests (JS)
+│   ├── auth-token-ts.test.ts         # Auth token tests (TS)
+│   ├── admin-races.test.js           # Admin race management tests
+│   ├── admin-pin.test.ts             # Admin PIN management tests
+│   ├── admin-reset-pin.test.ts       # Admin PIN reset tests
+│   ├── apiLogger.test.js             # API logger tests
+│   ├── security-patterns.test.js     # Security pattern tests
+│   ├── schemas.test.ts               # API schema validation tests
+│   ├── redis.test.ts                 # Redis integration tests
+│   └── validation.test.ts            # API validation tests
 ├── integration/
 │   └── (future)                      # Integration tests
 └── e2e/
@@ -56,7 +81,16 @@ tests/
     ├── race-management.spec.js       # Race management E2E tests
     ├── power-optimization.spec.js    # Battery power saver E2E tests
     ├── persistence-optimization.spec.js # Dirty-slice persistence E2E tests
-    └── security-hardening.spec.js    # CSP, PIN security E2E tests
+    ├── security-hardening.spec.js    # CSP, PIN security E2E tests
+    ├── accessibility.spec.js         # Accessibility and ARIA tests
+    ├── i18n.spec.js                  # Internationalization tests
+    ├── onboarding.spec.js            # Onboarding wizard E2E tests
+    ├── gps.spec.js                   # GPS functionality E2E tests
+    ├── export.spec.js                # Export functionality E2E tests
+    ├── sync.spec.js                  # Cloud sync E2E tests
+    ├── voice-note.spec.js            # Voice note E2E tests
+    ├── visual-regression.spec.js     # Visual regression tests
+    └── production.spec.js            # Production build verification tests
 ```
 
 ## Running Tests
@@ -256,7 +290,7 @@ End-to-end tests verify complete user flows using Playwright.
 
 ### Power Optimization (`tests/e2e/power-optimization.spec.js`)
 
-- Battery API integration: `.power-saver` class on normal, low, and critical battery levels
+- Battery API integration: `.power-saver` class on normal, medium, low, and critical battery levels
 - Power saver not applied when charging (even at low battery)
 - Dynamic battery level changes toggle power-saver in real time
 - CSS animation disabling: breathe glow and snowflake spinner paused in power-saver mode
@@ -285,6 +319,62 @@ End-to-end tests verify complete user flows using Playwright.
 - PIN status shows "not set" without pre-existing PIN
 - PIN input uses numeric keypad (type=tel) with 4-digit limit
 - Auth token not exposed in localStorage entries
+
+### Accessibility (`tests/e2e/accessibility.spec.js`)
+
+- ARIA labels on interactive elements
+- Keyboard navigation between views
+- Focus management in modals
+- Screen reader compatibility
+
+### Internationalization (`tests/e2e/i18n.spec.js`)
+
+- Language switching between EN and DE
+- Date and time formatting per locale
+- All UI text translates correctly
+
+### Onboarding (`tests/e2e/onboarding.spec.js`)
+
+- Complete onboarding wizard flow
+- Role selection (Timer, Gate Judge)
+- Device name configuration
+- Cloud sync setup
+- Skip functionality
+
+### GPS (`tests/e2e/gps.spec.js`)
+
+- GPS toggle and permission handling
+- Time synchronization display
+- Graceful degradation without GPS
+
+### Export (`tests/e2e/export.spec.js`)
+
+- CSV export in Race Horology format
+- JSON export
+- Export with filters applied
+
+### Sync (`tests/e2e/sync.spec.js`)
+
+- Cloud sync initialization
+- Race ID configuration
+- Sync status indicators
+
+### Voice Notes (`tests/e2e/voice-note.spec.js`)
+
+- Voice recording in gate judge mode
+- Note attachment to fault entries
+- Manual text input fallback
+
+### Visual Regression (`tests/e2e/visual-regression.spec.js`)
+
+- Screenshot comparison for UI consistency
+- Cross-browser visual checks
+
+### Production (`tests/e2e/production.spec.js`)
+
+- Production build verification
+- Service worker registration
+- PWA manifest validation
 
 ## UI Testing Strategy
 
@@ -337,11 +427,12 @@ test('should work on mobile', async ({ page }) => {
 
 ### Browser Matrix
 
-| Browser | Desktop | Mobile |
-|---------|---------|--------|
-| Chrome | ✅ | ✅ (Pixel 5) |
-| Firefox | ✅ | - |
-| Safari | ✅ | ✅ (iPhone 12) |
+The app is mobile-first, so E2E tests run on mobile viewports only:
+
+| Browser | Portrait | Landscape |
+|---------|----------|-----------|
+| Chrome (Pixel 5) | ✅ 393x851 | ✅ 851x393 |
+| Safari (iPhone 13) | ✅ 390x844 | ✅ 844x390 |
 
 ## Writing New Tests
 

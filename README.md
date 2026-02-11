@@ -209,7 +209,7 @@ vercel --prod
 ## Performance
 
 - **requestAnimationFrame clock** - Smooth display with battery-aware frame skipping
-- **Battery power saver** - CSS `.power-saver` class disables animations on low battery
+- **Battery power saver** - 4-tier adaptive power management (normal/medium/low/critical)
 - **Dirty-slice persistence** - Only changed data slices are serialized to localStorage
 - **AudioContext suspension** - Idle audio contexts suspended after 30 seconds
 - **Virtual list** - Efficient rendering for large result sets
@@ -230,5 +230,5 @@ This project is private. All rights reserved.
 
 ---
 
-**Version:** 5.21.2
+**Version:** 5.21.3
 **Last Updated:** February 2026
