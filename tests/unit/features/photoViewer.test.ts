@@ -32,11 +32,11 @@ vi.mock('../../../src/store', () => ({
 }));
 
 vi.mock('../../../src/utils/format', () => ({
-  formatTime: vi.fn((date: Date) => '12:00:00.000'),
+  formatTime: vi.fn((_date: Date) => '12:00:00.000'),
   getPointColor: vi.fn((point: string) =>
     point === 'S' ? '#f97316' : '#10b981',
   ),
-  getPointLabel: vi.fn((point: string, lang: string) =>
+  getPointLabel: vi.fn((point: string, _lang: string) =>
     point === 'S' ? 'Start' : 'Finish',
   ),
 }));

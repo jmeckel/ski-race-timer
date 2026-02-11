@@ -4,7 +4,7 @@
  *        cloud sync/merge, filtering, sorting
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   addFaultEntry,
   appendToVersionHistory,

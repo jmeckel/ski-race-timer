@@ -37,11 +37,11 @@ function mockBatteryAPI(page, { level = 1.0, charging = true } = {}) {
         // Expose method to simulate battery changes
         _setLevel(newLevel) {
           this.level = newLevel;
-          (listeners['levelchange'] || []).forEach((fn) => fn());
+          (listeners.levelchange || []).forEach((fn) => fn());
         },
         _setCharging(newCharging) {
           this.charging = newCharging;
-          (listeners['chargingchange'] || []).forEach((fn) => fn());
+          (listeners.chargingchange || []).forEach((fn) => fn());
         },
       };
 

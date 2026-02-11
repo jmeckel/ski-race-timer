@@ -130,7 +130,7 @@ function createMockSpeechSynthesis() {
       return [];
     }),
     addEventListener: vi.fn(
-      (event: string, callback: () => void, options?: any) => {
+      (event: string, callback: () => void, _options?: any) => {
         if (event === 'voiceschanged') {
           voicesChangedCallback = callback;
         }
@@ -205,7 +205,7 @@ describe('Speech Synthesis Service', () => {
       voicesReadyImmediately = false;
 
       vi.resetModules();
-      const module = await import('../../../src/services/speechSynthesis');
+      const _module = await import('../../../src/services/speechSynthesis');
 
       expect(mockSynth.addEventListener).toHaveBeenCalledWith(
         'voiceschanged',

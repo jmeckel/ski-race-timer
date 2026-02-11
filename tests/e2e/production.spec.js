@@ -713,7 +713,7 @@ test.describe('Production PWA - Error Handling', () => {
 test.describe('Production PWA - Security Headers', () => {
   test('should have security headers', async ({ page }) => {
     const response = await page.goto(PROD_URL);
-    const headers = response.headers();
+    const _headers = response.headers();
 
     // Check for common security headers (Vercel typically provides these)
     // Note: exact headers depend on Vercel configuration

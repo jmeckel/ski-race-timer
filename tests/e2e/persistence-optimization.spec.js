@@ -12,7 +12,6 @@ import { expect, test } from '@playwright/test';
 import {
   clickToggle,
   enterBib,
-  isToggleOn,
   navigateTo,
   setupPage,
   waitForConfirmationToHide,

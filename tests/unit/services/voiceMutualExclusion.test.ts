@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock SpeechRecognition - track instance count to detect conflicts
 let recognitionInstances: MockSpeechRecognition[] = [];
-let activeRecognitions = 0;
+let _activeRecognitions = 0;
 
 class MockSpeechRecognition {
   continuous = false;
@@ -29,14 +29,14 @@ class MockSpeechRecognition {
       throw new Error('Already started');
     }
     this._active = true;
-    activeRecognitions++;
+    _activeRecognitions++;
     setTimeout(() => this.onstart?.(), 0);
   });
 
   stop = vi.fn(() => {
     if (this._active) {
       this._active = false;
-      activeRecognitions--;
+      _activeRecognitions--;
     }
     setTimeout(() => this.onend?.(), 0);
   });
@@ -44,7 +44,7 @@ class MockSpeechRecognition {
   abort = vi.fn(() => {
     if (this._active) {
       this._active = false;
-      activeRecognitions--;
+      _activeRecognitions--;
     }
     setTimeout(() => this.onend?.(), 0);
   });
@@ -60,7 +60,7 @@ class MockSpeechRecognition {
 
 beforeEach(() => {
   recognitionInstances = [];
-  activeRecognitions = 0;
+  _activeRecognitions = 0;
   (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
     () => new MockSpeechRecognition(),
   );

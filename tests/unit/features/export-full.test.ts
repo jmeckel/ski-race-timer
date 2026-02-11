@@ -37,14 +37,11 @@ vi.mock('../../../src/store', () => ({
 
 import { showToast } from '../../../src/components';
 import {
-  escapeCSVField,
   exportChiefSummary,
   exportFaultSummaryWhatsApp,
   exportJudgeReport,
   exportResults,
   formatDateForExport,
-  formatTimeForRaceHorology,
-  getExportFilename,
 } from '../../../src/features/export';
 import { feedbackSuccess } from '../../../src/services';
 
@@ -52,7 +49,7 @@ describe('Export Feature Module - Full Coverage', () => {
   let mockCreateObjectURL: ReturnType<typeof vi.fn>;
   let mockRevokeObjectURL: ReturnType<typeof vi.fn>;
   let mockClick: ReturnType<typeof vi.fn>;
-  let appendedLink: HTMLAnchorElement | null;
+  let _appendedLink: HTMLAnchorElement | null;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,7 +62,7 @@ describe('Export Feature Module - Full Coverage', () => {
 
     // Track link element creation and clicks
     mockClick = vi.fn();
-    appendedLink = null;
+    _appendedLink = null;
     const origCreateElement = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       const el = origCreateElement(tag);
@@ -73,7 +70,7 @@ describe('Export Feature Module - Full Coverage', () => {
         el.click = mockClick;
         const origAppend = document.body.appendChild.bind(document.body);
         vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
-          appendedLink = node as HTMLAnchorElement;
+          _appendedLink = node as HTMLAnchorElement;
           return origAppend(node);
         });
       }

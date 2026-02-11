@@ -103,7 +103,7 @@ export interface AppCustomEventMap {
   // ===== Settings View Events (from features/settingsView.ts) =====
 
   /** Request photo sync warning modal display */
-  'request-photo-sync-warning': void;
+  'request-photo-sync-warning': undefined;
 
   /** Request race change dialog with export/delete/keep options */
   'request-race-change-dialog': {
@@ -114,7 +114,7 @@ export interface AppCustomEventMap {
   // ===== Gate Judge Events (from features/gateJudgeView.ts) =====
 
   /** Request settings view to update role toggle UI */
-  'update-role-toggle': void;
+  'update-role-toggle': undefined;
 
   // ===== Chief Judge Events (from features/chiefJudgeView.ts) =====
 
@@ -134,13 +134,13 @@ export interface AppCustomEventMap {
   };
 
   /** Trigger inline faults list refresh in gate judge mode */
-  'update-inline-faults-list': void;
+  'update-inline-faults-list': undefined;
 
   /** Trigger inline bib selector refresh in gate judge mode */
-  'update-inline-bib-selector': void;
+  'update-inline-bib-selector': undefined;
 
   /** Trigger inline gate selector refresh in gate judge mode */
-  'update-inline-gate-selector': void;
+  'update-inline-gate-selector': undefined;
 
   // ===== Fault Edit Events (from features/faults/faultOperations.ts) =====
 

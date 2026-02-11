@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Onboarding Flow', () => {
-  // Multi-step flows need more time in CI
-  test.setTimeout(30000);
+  // Multi-step flows need more time in CI (Gate Judge flow takes ~27s on WebKit)
+  test.setTimeout(45000);
 
   test.beforeEach(async ({ page }) => {
     // Clear localStorage to trigger onboarding

@@ -4,7 +4,7 @@
  *        migrateId, generateRaceId
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   generateDeviceId,
   generateDeviceName,

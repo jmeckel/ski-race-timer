@@ -4,11 +4,9 @@
  * Tests for CSV export and Race Horology format
  */
 
+import * as fs from 'node:fs';
 import { expect, test } from '@playwright/test';
-import * as fs from 'fs';
 import {
-  clickToggle,
-  isToggleOn,
   navigateTo,
   setupPage,
   setupPageFullMode,

@@ -2,7 +2,7 @@
  * Voice Mode Service Tests
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { speechSynthesis } from '../../../src/services/speechSynthesis';
 import { voiceModeService } from '../../../src/services/voice';
 

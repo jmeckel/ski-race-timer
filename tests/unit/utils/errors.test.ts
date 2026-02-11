@@ -9,7 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ApiErrorResponse,
   ApiSuccessResponse,
-  ErrorContext,
 } from '../../../src/utils/errors';
 import {
   createApiError,

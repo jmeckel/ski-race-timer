@@ -13,8 +13,6 @@ import {
   isToggleOn,
   navigateTo,
   setupPage,
-  setupPageWithSync,
-  waitForConfirmationToHide,
 } from './helpers.js';
 
 // Skip sync tests unless SYNC_TESTS env var is set
@@ -359,7 +357,7 @@ test.describe('Cloud Sync Improvements', () => {
     test('should show device count badge when sync is connected', async ({
       page,
     }) => {
-      await enableSync(page, 'DEVICE-COUNT-TEST-' + Date.now());
+      await enableSync(page, `DEVICE-COUNT-TEST-${Date.now()}`);
 
       // Wait for sync to attempt connection
       await page.waitForTimeout(3000);
@@ -380,7 +378,7 @@ test.describe('Cloud Sync Improvements', () => {
       page,
       context,
     }) => {
-      const raceId = 'MULTI-DEVICE-TEST-' + Date.now();
+      const raceId = `MULTI-DEVICE-TEST-${Date.now()}`;
 
       // Enable sync on first page
       await enableSync(page, raceId);
@@ -412,7 +410,7 @@ test.describe('Cloud Sync Improvements', () => {
       page,
       context,
     }) => {
-      const baseRaceId = 'CASE-TEST-' + Date.now();
+      const baseRaceId = `CASE-TEST-${Date.now()}`;
 
       // First device uses uppercase
       await enableSync(page, baseRaceId.toUpperCase());
@@ -496,7 +494,7 @@ test.describe('Cloud Sync Improvements', () => {
       // Type a race ID
       const raceIdInput = page.locator('#race-id-input');
       await raceIdInput.clear();
-      await raceIdInput.fill('TEST-RACE-' + Date.now());
+      await raceIdInput.fill(`TEST-RACE-${Date.now()}`);
 
       // Wait for debounced check (500ms + network time)
       await page.waitForTimeout(1500);
@@ -509,7 +507,7 @@ test.describe('Cloud Sync Improvements', () => {
 
     test('should show checkmark for existing race', async ({ page }) => {
       // First create a race with an entry
-      const raceId = 'EXISTS-CHECK-' + Date.now();
+      const raceId = `EXISTS-CHECK-${Date.now()}`;
       await enableSync(page, raceId);
       await addTestEntry(page, '001');
 
@@ -542,7 +540,7 @@ test.describe('Cloud Sync Improvements', () => {
     test('should auto-increment bib correctly with local entries', async ({
       page,
     }) => {
-      await enableSync(page, 'BIB-SYNC-TEST-' + Date.now());
+      await enableSync(page, `BIB-SYNC-TEST-${Date.now()}`);
 
       // Record first entry
       await addTestEntry(page, '001');
@@ -557,7 +555,7 @@ test.describe('Cloud Sync Improvements', () => {
       page,
       context,
     }) => {
-      const raceId = 'BIB-MULTI-TEST-' + Date.now();
+      const raceId = `BIB-MULTI-TEST-${Date.now()}`;
 
       await enableSync(page, raceId);
 
@@ -625,7 +623,7 @@ test.describe('Cloud Sync Improvements', () => {
 
     test('should handle entries with photos in results', async ({ page }) => {
       // Enable sync and photo capture
-      await enableSync(page, 'PHOTO-SYNC-TEST-' + Date.now());
+      await enableSync(page, `PHOTO-SYNC-TEST-${Date.now()}`);
       await navigateTo(page, 'settings');
 
       const photoToggle = page.locator('#photo-toggle');
@@ -658,7 +656,7 @@ test.describe('Verification Steps', () => {
   test('Verification: Device counter shows and updates', async ({ page }) => {
     // Open app with sync enabled
     await setupPage(page);
-    await enableSync(page, 'VERIFY-DEVICE-' + Date.now());
+    await enableSync(page, `VERIFY-DEVICE-${Date.now()}`);
 
     // Wait for sync to connect
     await page.waitForTimeout(3000);
@@ -674,7 +672,7 @@ test.describe('Verification Steps', () => {
   test('Verification: Case-insensitive race ID works', async ({ page }) => {
     // Create race with uppercase
     await setupPage(page);
-    const raceId = 'VERIFY-CASE-UPPER-' + Date.now();
+    const raceId = `VERIFY-CASE-UPPER-${Date.now()}`;
     await enableSync(page, raceId);
     await addTestEntry(page, '001');
 
@@ -723,7 +721,7 @@ test.describe('Verification Steps', () => {
     // Enter a race ID
     const raceIdInput = page.locator('#race-id-input');
     await raceIdInput.clear();
-    await raceIdInput.fill('VERIFY-EXISTS-' + Date.now());
+    await raceIdInput.fill(`VERIFY-EXISTS-${Date.now()}`);
 
     // Wait for check
     await page.waitForTimeout(1500);
@@ -772,7 +770,7 @@ test.describe('Delete Sync', () => {
     page,
   }) => {
     // Enable sync
-    const uniqueRaceId = 'DELETE-TEST-' + Date.now();
+    const uniqueRaceId = `DELETE-TEST-${Date.now()}`;
     await enableSync(page, uniqueRaceId);
 
     // Add an entry
@@ -798,7 +796,7 @@ test.describe('Delete Sync', () => {
 
   test('should sync deletion across page reload', async ({ page }) => {
     // Enable sync
-    const uniqueRaceId = 'DELETE-PERSIST-' + Date.now();
+    const uniqueRaceId = `DELETE-PERSIST-${Date.now()}`;
     await enableSync(page, uniqueRaceId);
 
     // Add multiple entries
@@ -840,7 +838,7 @@ test.describe('Delete Sync', () => {
 
   test('should handle delete with sync enabled', async ({ page }) => {
     // Enable sync
-    const uniqueRaceId = 'DELETE-SYNC-' + Date.now();
+    const uniqueRaceId = `DELETE-SYNC-${Date.now()}`;
     await enableSync(page, uniqueRaceId);
 
     // Add an entry
@@ -866,7 +864,7 @@ test.describe('Delete Sync', () => {
 
   test('should handle multi-delete with sync', async ({ page }) => {
     // Enable sync and disable simple mode for multi-select
-    const uniqueRaceId = 'MULTI-DELETE-' + Date.now();
+    const uniqueRaceId = `MULTI-DELETE-${Date.now()}`;
     await setupPage(page);
     await enableSync(page, uniqueRaceId);
 

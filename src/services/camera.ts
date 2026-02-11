@@ -207,7 +207,9 @@ class CameraService {
 
     // Stop retrying after max attempts to avoid infinite loops
     if (this.reinitRetryCount >= MAX_REINIT_RETRIES) {
-      logger.warn(`Camera reinit failed after ${MAX_REINIT_RETRIES} attempts, giving up`);
+      logger.warn(
+        `Camera reinit failed after ${MAX_REINIT_RETRIES} attempts, giving up`,
+      );
       this.cameraState = 'stopped';
       this.resumingStartedAt = null;
       store.setCameraReady(false, 'Camera reinitialization failed');

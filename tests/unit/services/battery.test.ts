@@ -381,9 +381,9 @@ describe('Battery Service', () => {
           throw new Error('Callback error');
         }
       });
-      let goodCallCount = 0;
+      let _goodCallCount = 0;
       const goodCallback = vi.fn(() => {
-        goodCallCount++;
+        _goodCallCount++;
       });
 
       batteryService.subscribe(badCallback);

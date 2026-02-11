@@ -6,8 +6,6 @@
 
 import { expect, test } from '@playwright/test';
 import {
-  clickToggle,
-  isToggleOn,
   navigateTo,
   setupPage,
   setupPageEnglish,
@@ -16,7 +14,7 @@ import {
 } from './helpers.js';
 
 // Helper to set language
-async function setLanguage(page, lang) {
+async function _setLanguage(page, lang) {
   await navigateTo(page, 'settings');
   const langToggle = page.locator('#lang-toggle');
   const activeLang = await langToggle

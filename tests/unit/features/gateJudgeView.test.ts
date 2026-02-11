@@ -92,7 +92,7 @@ import {
   updateJudgesReadyIndicator,
   updateReadyButtonState,
 } from '../../../src/features/gateJudgeView';
-import { feedbackSuccess, syncService } from '../../../src/services';
+import { feedbackSuccess } from '../../../src/services';
 
 describe('Gate Judge View Module', () => {
   let container: HTMLDivElement;

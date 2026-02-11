@@ -284,7 +284,7 @@ describe('Store - Additional Coverage', () => {
 
   describe('Gate Judge initialization from localStorage', () => {
     it('should load gateJudge device role from storage', async () => {
-      localStorageMock._getStore()['skiTimerDeviceRole'] = 'gateJudge';
+      localStorageMock._getStore().skiTimerDeviceRole = 'gateJudge';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -293,7 +293,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load gate assignment from storage', async () => {
-      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([
+      localStorageMock._getStore().skiTimerGateAssignment = JSON.stringify([
         4, 12,
       ]);
       vi.resetModules();
@@ -303,9 +303,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle invalid gate assignment in storage', async () => {
-      localStorageMock._getStore()['skiTimerGateAssignment'] = JSON.stringify([
-        4,
-      ]);
+      localStorageMock._getStore().skiTimerGateAssignment = JSON.stringify([4]);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -313,7 +311,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load first gate color from storage', async () => {
-      localStorageMock._getStore()['skiTimerFirstGateColor'] = 'blue';
+      localStorageMock._getStore().skiTimerFirstGateColor = 'blue';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -321,7 +319,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should default to red for invalid first gate color', async () => {
-      localStorageMock._getStore()['skiTimerFirstGateColor'] = 'green';
+      localStorageMock._getStore().skiTimerFirstGateColor = 'green';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -345,7 +343,7 @@ describe('Store - Additional Coverage', () => {
           markedForDeletion: false,
         },
       ];
-      localStorageMock._getStore()['skiTimerFaultEntries'] =
+      localStorageMock._getStore().skiTimerFaultEntries =
         JSON.stringify(faults);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
@@ -355,7 +353,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle malformed fault entries in storage', async () => {
-      localStorageMock._getStore()['skiTimerFaultEntries'] = 'not valid json';
+      localStorageMock._getStore().skiTimerFaultEntries = 'not valid json';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -363,7 +361,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle malformed gate assignment JSON', async () => {
-      localStorageMock._getStore()['skiTimerGateAssignment'] = 'invalid-json{';
+      localStorageMock._getStore().skiTimerGateAssignment = 'invalid-json{';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -945,7 +943,7 @@ describe('Store - Additional Coverage', () => {
           lastAttempt: Date.now(),
         },
       ];
-      localStorageMock._getStore()['skiTimerSyncQueue'] =
+      localStorageMock._getStore().skiTimerSyncQueue =
         JSON.stringify(syncQueue);
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
@@ -955,7 +953,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle malformed sync queue in storage', async () => {
-      localStorageMock._getStore()['skiTimerSyncQueue'] = 'bad json';
+      localStorageMock._getStore().skiTimerSyncQueue = 'bad json';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -963,7 +961,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle non-array sync queue in storage', async () => {
-      localStorageMock._getStore()['skiTimerSyncQueue'] = JSON.stringify({
+      localStorageMock._getStore().skiTimerSyncQueue = JSON.stringify({
         not: 'array',
       });
       vi.resetModules();
@@ -985,7 +983,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load lastSyncedRaceId from storage', async () => {
-      localStorageMock._getStore()['skiTimerLastSyncedRaceId'] = 'LOADED-RACE';
+      localStorageMock._getStore().skiTimerLastSyncedRaceId = 'LOADED-RACE';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 
@@ -1167,7 +1165,7 @@ describe('Store - Additional Coverage', () => {
 
   describe('Entries with non-array data in storage', () => {
     it('should handle non-array entries in localStorage', async () => {
-      localStorageMock._getStore()['skiTimerEntries'] = JSON.stringify({
+      localStorageMock._getStore().skiTimerEntries = JSON.stringify({
         not: 'array',
       });
       vi.resetModules();
@@ -1177,7 +1175,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should handle non-array fault entries in localStorage', async () => {
-      localStorageMock._getStore()['skiTimerFaultEntries'] = JSON.stringify({
+      localStorageMock._getStore().skiTimerFaultEntries = JSON.stringify({
         not: 'array',
       });
       vi.resetModules();
@@ -1200,7 +1198,7 @@ describe('Store - Additional Coverage', () => {
     });
 
     it('should load existing device name from storage', async () => {
-      localStorageMock._getStore()['skiTimerDeviceName'] = 'My Timer';
+      localStorageMock._getStore().skiTimerDeviceName = 'My Timer';
       vi.resetModules();
       const { store: newStore } = await import('../../../src/store/index');
 

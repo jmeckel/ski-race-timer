@@ -5,7 +5,7 @@
  * Functions are reimplemented here to match the inline code in index.html.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { localStorageMock } from '../setup.js';
 
 // ============================================
@@ -54,7 +54,7 @@ function generateEntryId() {
 }
 
 function generateDeviceId() {
-  const id = 'dev_' + Math.random().toString(36).substr(2, 9);
+  const id = `dev_${Math.random().toString(36).substr(2, 9)}`;
   localStorage.setItem('skiTimerDeviceId', id);
   return id;
 }

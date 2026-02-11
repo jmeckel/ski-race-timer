@@ -4,7 +4,7 @@
  *        makeNumericInput, and edge cases for existing functions
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { FaultEntry, FaultVersion } from '../../src/types';
 import {
   isValidFaultEntry,

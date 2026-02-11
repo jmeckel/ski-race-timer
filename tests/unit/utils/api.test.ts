@@ -43,7 +43,7 @@ import {
   getPinStatus,
   hasAuthToken,
 } from '../../../src/utils/api';
-import { fetchWithTimeout, logError } from '../../../src/utils/errors';
+import { fetchWithTimeout } from '../../../src/utils/errors';
 import {
   addRecentRace,
   getTodaysRecentRaces,

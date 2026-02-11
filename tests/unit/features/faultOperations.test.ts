@@ -673,7 +673,7 @@ describe('Fault Operations Feature Module', () => {
 
     it('should show toast and feedback on successful restore', () => {
       const fault = createMockFault({ currentVersion: 2 });
-      const restoredFault = { ...fault, currentVersion: 1 };
+      const _restoredFault = { ...fault, currentVersion: 1 };
       const { versionSelect } = setupRestoreDOM();
 
       vi.mocked(store.getState).mockReturnValue({

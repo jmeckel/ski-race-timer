@@ -38,7 +38,7 @@ Object.defineProperty(navigator, 'vibrate', {
 
 // Mock navigator.geolocation
 const geolocationMock = {
-  getCurrentPosition: vi.fn((success, error) => {
+  getCurrentPosition: vi.fn((success, _error) => {
     success({
       coords: {
         latitude: 47.0,
@@ -52,7 +52,7 @@ const geolocationMock = {
       timestamp: Date.now(),
     });
   }),
-  watchPosition: vi.fn((success, error) => {
+  watchPosition: vi.fn((success, _error) => {
     success({
       coords: {
         latitude: 47.0,
@@ -149,7 +149,7 @@ class FileReaderMock {
     this.onerror = null;
   }
 
-  readAsText(blob) {
+  readAsText(_blob) {
     setTimeout(() => {
       this.result = '{"version":"2.1.0","entries":[],"settings":{}}';
       if (this.onload) this.onload({ target: this });

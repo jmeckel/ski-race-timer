@@ -5,10 +5,8 @@
 
 import { expect, test } from '@playwright/test';
 import {
-  clickToggle,
   enterBib,
   navigateTo,
-  recordTimestamp,
   setupPage,
   setupPageFullMode,
   waitForConfirmationToHide,
@@ -22,7 +20,7 @@ test.describe('Timer View', () => {
   test.describe('Clock Display', () => {
     test('should display running clock', async ({ page }) => {
       // Radial clock is split into parts: HH:MM, SS, and mmm
-      const clockHm = page.locator('#radial-time-hm');
+      const _clockHm = page.locator('#radial-time-hm');
       const clockSec = page.locator('#radial-time-seconds');
       const initialSec = await clockSec.textContent();
 

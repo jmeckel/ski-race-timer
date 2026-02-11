@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 // ============================================
 
 const MAX_RACE_ID_LENGTH = 50;
-const MAX_DEVICE_NAME_LENGTH = 100;
+const _MAX_DEVICE_NAME_LENGTH = 100;
 
 function isValidRaceId(raceId) {
   if (!raceId || typeof raceId !== 'string') return false;
@@ -25,7 +25,8 @@ function isValidEntry(entry) {
   if (entry.bib !== undefined && typeof entry.bib !== 'string') return false;
   if (entry.bib && entry.bib.length > 10) return false;
   if (!['S', 'F'].includes(entry.point)) return false;
-  if (!entry.timestamp || isNaN(Date.parse(entry.timestamp))) return false;
+  if (!entry.timestamp || Number.isNaN(Date.parse(entry.timestamp)))
+    return false;
   if (entry.status && !['ok', 'dns', 'dnf', 'dsq'].includes(entry.status))
     return false;
   return true;
@@ -43,7 +44,7 @@ function safeJsonParse(str, defaultValue) {
   try {
     const parsed = JSON.parse(str);
     return parsed;
-  } catch (e) {
+  } catch (_e) {
     return defaultValue;
   }
 }

@@ -271,7 +271,7 @@ test.describe('GPS Timestamp Recording', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
 
-    const gpsToggle = page.locator('#gps-toggle');
+    const _gpsToggle = page.locator('#gps-toggle');
     const isOn = await isToggleOn(page, '#gps-toggle');
     if (!isOn) {
       await clickToggle(page, '#gps-toggle');

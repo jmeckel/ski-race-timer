@@ -7,7 +7,6 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { navigateTo, setupPage } from './helpers.js';
 
 /**
  * Set up page with gate judge role for fault entry access

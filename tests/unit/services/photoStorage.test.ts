@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock IndexedDB
 const mockStoreData = new Map<string, unknown>();
-let mockDbClosed = false;
+let _mockDbClosed = false;
 
 const mockStore = {
   put: vi.fn((record: { entryId: string }) => {
@@ -89,7 +89,7 @@ const mockDb = {
     contains: vi.fn(() => false),
   },
   close: vi.fn(() => {
-    mockDbClosed = true;
+    _mockDbClosed = true;
   }),
 };
 
@@ -136,7 +136,7 @@ describe('PhotoStorage Service', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockStoreData.clear();
-    mockDbClosed = false;
+    _mockDbClosed = false;
     vi.resetModules();
   });
 
@@ -199,7 +199,7 @@ describe('PhotoStorage Service', () => {
   describe('Photo Storage Interface', () => {
     it('PhotoRecord interface should have required fields', async () => {
       // This tests the expected interface by checking returned data structure
-      const module = await import('../../../src/services/photoStorage');
+      const _module = await import('../../../src/services/photoStorage');
 
       // After saving, the mock should have the expected structure
       const testEntryId = 'test-entry-123';
@@ -274,7 +274,7 @@ describe('PhotoStorage - Edge Cases', () => {
     const module = await import('../../../src/services/photoStorage');
 
     // Large base64 string (simulating ~1MB photo)
-    const largePhoto = 'A'.repeat(1_000_000);
+    const _largePhoto = 'A'.repeat(1_000_000);
 
     // The method should accept large data without throwing
     // (actual storage depends on IndexedDB quota)

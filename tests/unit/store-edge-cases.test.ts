@@ -5,7 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entry, Settings } from '../../src/types';
+import type { Entry } from '../../src/types';
 
 // Mock localStorage with QuotaExceeded support
 const localStorageMock = (() => {
@@ -152,7 +152,7 @@ describe('Store Edge Cases', () => {
 
       const reentrantListener = vi.fn(
         (
-          state: unknown,
+          _state: unknown,
           keys: (keyof import('../../src/types').AppState)[],
         ) => {
           if (keys.includes('bibInput') && reentrantCount < maxReentrant) {
@@ -288,8 +288,8 @@ describe('Store Edge Cases', () => {
     });
 
     it('should handle malformed JSON in localStorage gracefully', async () => {
-      localStorageMock._getStore()['skiTimerEntries'] = 'not valid json{{{';
-      localStorageMock._getStore()['skiTimerSettings'] = '{broken}';
+      localStorageMock._getStore().skiTimerEntries = 'not valid json{{{';
+      localStorageMock._getStore().skiTimerSettings = '{broken}';
 
       vi.resetModules();
       const { store: newStore } = await import('../../src/store/index');
@@ -307,7 +307,7 @@ describe('Store Edge Cases', () => {
         42,
         createValidEntry({ id: 'dev_test-2-alsogood' }),
       ];
-      localStorageMock._getStore()['skiTimerEntries'] =
+      localStorageMock._getStore().skiTimerEntries =
         JSON.stringify(entriesWithInvalid);
 
       vi.resetModules();
@@ -343,7 +343,7 @@ describe('Store Edge Cases', () => {
         deviceId: 'dev_test',
         deviceName: 'Test',
       };
-      localStorageMock._getStore()['skiTimerEntries'] = JSON.stringify([
+      localStorageMock._getStore().skiTimerEntries = JSON.stringify([
         legacyEntry,
       ]);
 

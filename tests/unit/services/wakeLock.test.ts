@@ -62,8 +62,8 @@ function createMockWakeLockSentinel() {
     release: vi.fn(async function (this: any) {
       this.released = true;
       // Trigger release event
-      if (listeners['release']) {
-        for (const l of listeners['release']) l();
+      if (listeners.release) {
+        for (const l of listeners.release) l();
       }
     }),
     addEventListener: vi.fn((type: string, listener: () => void) => {
@@ -75,8 +75,8 @@ function createMockWakeLockSentinel() {
     onrelease: null as (() => void) | null,
     // Helper to simulate browser releasing the lock
     _simulateRelease() {
-      if (listeners['release']) {
-        for (const l of listeners['release']) l();
+      if (listeners.release) {
+        for (const l of listeners.release) l();
       }
     },
   };

@@ -121,7 +121,7 @@ describe('VirtualList Component', () => {
       const content = container.querySelector(
         '.virtual-scroll-content',
       ) as HTMLElement;
-      expect(parseInt(content.style.height)).toBe(100 * 72); // ITEM_HEIGHT = 72
+      expect(parseInt(content.style.height, 10)).toBe(100 * 72); // ITEM_HEIGHT = 72
 
       list.destroy();
     });
