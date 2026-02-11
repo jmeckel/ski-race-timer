@@ -11,6 +11,7 @@ import { logCritical, logError } from './errors';
 // Track if we've shown error UI to avoid spam
 let errorOverlayShown = false;
 let recentErrors: { message: string; timestamp: number }[] = [];
+let focusTimerId: ReturnType<typeof setTimeout> | null = null;
 const ERROR_THRESHOLD = 3;
 const ERROR_WINDOW_MS = 10000; // 10 seconds
 
@@ -42,6 +43,10 @@ export function cleanupGlobalErrorHandlers(): void {
     'critical-error',
     handleCriticalError as EventListener,
   );
+  if (focusTimerId !== null) {
+    clearTimeout(focusTimerId);
+    focusTimerId = null;
+  }
 }
 
 /**
@@ -192,7 +197,8 @@ function showErrorOverlay(message: string): void {
   document.body.appendChild(overlay);
 
   // Focus the dismiss button for keyboard accessibility
-  setTimeout(() => {
+  focusTimerId = setTimeout(() => {
+    focusTimerId = null;
     const dismissBtn = document.getElementById('error-dismiss-btn');
     dismissBtn?.focus();
   }, 100);
@@ -201,6 +207,10 @@ function showErrorOverlay(message: string): void {
   document
     .getElementById('error-dismiss-btn')
     ?.addEventListener('click', () => {
+      if (focusTimerId !== null) {
+        clearTimeout(focusTimerId);
+        focusTimerId = null;
+      }
       overlay.remove();
       errorOverlayShown = false;
       recentErrors = []; // Reset error tracking
