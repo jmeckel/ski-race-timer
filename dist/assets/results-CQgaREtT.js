@@ -1,4 +1,4 @@
-var me=Object.defineProperty;var fe=(d,e,i)=>e in d?me(d,e,{enumerable:!0,configurable:!0,writable:!0,value:i}):d[e]=i;var v=(d,e,i)=>fe(d,typeof e!="symbol"?e+"":e,i);import{r as Q,u as be,s as w,w as Y,x as _,y as V,t as g,z as ve,e as L,A as J,B as oe,k as W,C as X,D as G,E as re,F as H,G as j,H as ge,I as z,J as O,S as N,g as le,K as ae,$ as we,M as ye,N as ke,O as Ee,P as de,a as F,Q as xe,L as Ce,o as x,R as Ie,p as ue,T as Le,U as De}from"./chief-judge-CSBb83aQ.js";import{m as $e}from"./vendor-signals-BA-R9xnX.js";import{o as Se,c as Te,a as Be,b as Ae}from"./gate-judge-JcuLKP2m.js";const A=72,M=56,R=72,ce=5,he=16,Me=33,Re=50,Pe=100;function He(d){switch(d){case"critical":return Re;case"low":return Me;default:return he}}class ze{constructor(e){v(this,"container");v(this,"scrollContainer");v(this,"contentContainer");v(this,"entries",[]);v(this,"groups",[]);v(this,"expandedGroups",new Set);v(this,"visibleItems",new Map);v(this,"itemListeners",new Map);v(this,"swipeActions",new Map);v(this,"scrollTop",0);v(this,"containerHeight",0);v(this,"options");v(this,"unsubscribe",null);v(this,"resizeObserver",null);v(this,"scrollHandler",null);v(this,"scrollDebounceTimeout",null);v(this,"resizeDebounceTimeout",null);v(this,"isPaused",!1);v(this,"needsRefreshOnResume",!1);v(this,"isDestroyed",!1);v(this,"domRemovalObserver",null);v(this,"scrollDebounceDelay",he);v(this,"unsubscribeBattery",null);this.options=e,this.container=e.container,this.scrollContainer=document.createElement("div"),this.scrollContainer.className="virtual-scroll-container",this.scrollContainer.style.cssText=`
+var me=Object.defineProperty;var fe=(d,e,i)=>e in d?me(d,e,{enumerable:!0,configurable:!0,writable:!0,value:i}):d[e]=i;var v=(d,e,i)=>fe(d,typeof e!="symbol"?e+"":e,i);import{u as Q,w as be,s as w,x as V,y as Y,z as _,t as g,A as ve,e as L,B as J,C as oe,l as W,D as X,E as G,F as re,G as H,H as j,I as ge,J as z,K as O,S as N,b as le,M as ae,$ as we,N as ye,O as ke,P as Ee,Q as de,a as F,R as xe,L as Ce,p as x,T as Ie,q as ue,U as Le,V as De}from"./chief-judge-CsmrtJiX.js";import{m as $e}from"./vendor-signals-BA-R9xnX.js";import{o as Se,c as Te,a as Be,b as Ae}from"./gate-judge-Cadx4AM8.js";const A=72,M=56,R=72,ce=5,he=16,Me=33,Re=50,Pe=100;function He(d){switch(d){case"critical":return Re;case"low":return Me;default:return he}}class ze{constructor(e){v(this,"container");v(this,"scrollContainer");v(this,"contentContainer");v(this,"entries",[]);v(this,"groups",[]);v(this,"expandedGroups",new Set);v(this,"visibleItems",new Map);v(this,"itemListeners",new Map);v(this,"swipeActions",new Map);v(this,"scrollTop",0);v(this,"containerHeight",0);v(this,"options");v(this,"unsubscribe",null);v(this,"resizeObserver",null);v(this,"scrollHandler",null);v(this,"scrollDebounceTimeout",null);v(this,"resizeDebounceTimeout",null);v(this,"isPaused",!1);v(this,"needsRefreshOnResume",!1);v(this,"isDestroyed",!1);v(this,"domRemovalObserver",null);v(this,"scrollDebounceDelay",he);v(this,"unsubscribeBattery",null);this.options=e,this.container=e.container,this.scrollContainer=document.createElement("div"),this.scrollContainer.className="virtual-scroll-container",this.scrollContainer.style.cssText=`
       height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
@@ -16,7 +16,7 @@ var me=Object.defineProperty;var fe=(d,e,i)=>e in d?me(d,e,{enumerable:!0,config
       border-bottom: 1px solid var(--surface-elevated);
       cursor: pointer;
       transition: background 0.2s;
-    `;const s=Y(e.bib||"---"),l=w.getState().currentLang,c=_(e.run),o=V(e.run,l),a=e.entries.length,r=e.faults.length,b=r>0,h=[];a>0&&h.push(`${a} ${g(a===1?"timeEntry":"timeEntries",l)}`),r>0&&h.push(`${r} ${g(r===1?"faultEntry":"faultEntries",l)}`);const u=h.join(", ");t.innerHTML=`
+    `;const s=V(e.bib||"---"),l=w.getState().currentLang,c=Y(e.run),o=_(e.run,l),a=e.entries.length,r=e.faults.length,b=r>0,h=[];a>0&&h.push(`${a} ${g(a===1?"timeEntry":"timeEntries",l)}`),r>0&&h.push(`${r} ${g(r===1?"faultEntry":"faultEntries",l)}`);const u=h.join(", ");t.innerHTML=`
       ${ve(16,i)}
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${L(s)}
@@ -45,7 +45,7 @@ var me=Object.defineProperty;var fe=(d,e,i)=>e in d?me(d,e,{enumerable:!0,config
       border-bottom: 1px solid var(--surface-elevated);
       cursor: pointer;
       transition: background 0.2s;
-    `;const l=new Date(e.timestamp),c=W(l),o=Y(e.bib||"---"),r=w.getState().currentLang,b=X(e.point),h=G(e.point,r),u=e.run??1,p=_(u),y=V(u,r),D=i.length>0?re({faults:i,lang:r}):"",C=s>0?oe(r):"";n.innerHTML=`
+    `;const l=new Date(e.timestamp),c=W(l),o=V(e.bib||"---"),r=w.getState().currentLang,b=X(e.point),h=G(e.point,r),u=e.run??1,p=Y(u),y=_(u,r),D=i.length>0?re({faults:i,lang:r}):"",C=s>0?oe(r):"";n.innerHTML=`
       <div style="width: 16px; flex-shrink: 0;"></div>
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
         ${L(o)}
@@ -82,7 +82,7 @@ var me=Object.defineProperty;var fe=(d,e,i)=>e in d?me(d,e,{enumerable:!0,config
       border-left: 3px solid ${n?"var(--error)":"var(--warning)"};
       ${n?"opacity: 0.6;":""}
       cursor: pointer;
-    `;const l=Y(e.bib||"---"),c=w.getState(),o=c.currentLang,a=_(e.run),r=V(e.run,o),b=s.sort((E,m)=>E.gateNumber-m.gateNumber).map(E=>`T${E.gateNumber} (${le(E.faultType,o)})${E.markedForDeletion?" ⚠":""}`).join(", "),h=re({faults:s,lang:o}),u=c.usePenaltyMode?g("flt",o):g("dsq",o),p=c.usePenaltyMode?"var(--warning)":"var(--error)",y=p==="var(--warning)"?"#000":"white",D=n?ae():"";t.innerHTML=`
+    `;const l=V(e.bib||"---"),c=w.getState(),o=c.currentLang,a=Y(e.run),r=_(e.run,o),b=s.sort((E,m)=>E.gateNumber-m.gateNumber).map(E=>`T${E.gateNumber} (${le(E.faultType,o)})${E.markedForDeletion?" ⚠":""}`).join(", "),h=re({faults:s,lang:o}),u=c.usePenaltyMode?g("flt",o):g("dsq",o),p=c.usePenaltyMode?"var(--warning)":"var(--error)",y=p==="var(--warning)"?"#000":"white",D=n?ae():"";t.innerHTML=`
       <div style="width: 16px; flex-shrink: 0;"></div>
       <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right; ${n?"text-decoration: line-through; opacity: 0.6;":""}">
         ${L(l)}
