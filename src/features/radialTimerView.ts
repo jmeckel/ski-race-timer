@@ -133,12 +133,14 @@ function initRadialClock(): void {
   const secEl = getElement('radial-time-seconds');
   const subEl = getElement('radial-time-subseconds');
 
-  // Create a Clock instance using the existing (hidden in radial mode) clock-container.
-  // The Clock handles its own RAF loop, visibility pausing, and battery-aware throttling.
-  const container = getElement('clock-container');
+  // Create a Clock instance to reuse its RAF loop, visibility pausing, and battery-aware throttling.
+  // Use existing clock-container if available, otherwise create a hidden one.
+  let container = getElement('clock-container');
   if (!container) {
-    logger.debug('[RadialTimerView] clock-container not found, cannot init radial clock');
-    return;
+    container = document.createElement('div');
+    container.id = 'clock-container';
+    container.style.display = 'none';
+    document.body.appendChild(container);
   }
 
   radialClock = new Clock(container);
