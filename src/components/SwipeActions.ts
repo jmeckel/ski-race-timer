@@ -52,6 +52,7 @@ export class SwipeActions {
     wrapper.className = 'swipe-content';
     wrapper.style.cssText = `
       position: relative;
+      height: 100%;
       transform: translateX(0);
       transition: transform 0.2s ease-out;
       background: inherit;
@@ -134,8 +135,13 @@ export class SwipeActions {
       this.wrapper.appendChild(this.element.firstChild);
     }
 
-    // Set up element styles
-    this.element.style.position = 'relative';
+    // Set up element styles — only override position when it's not already
+    // a containing block (absolute/fixed/sticky all work for action backgrounds).
+    // Overwriting 'absolute' breaks virtual-list translateY positioning.
+    const pos = this.element.style.position;
+    if (!pos || pos === 'static') {
+      this.element.style.position = 'relative';
+    }
     this.element.style.overflow = 'hidden';
 
     // Add components
