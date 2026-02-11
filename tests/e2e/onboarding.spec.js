@@ -38,6 +38,12 @@ test.describe('Onboarding Flow', () => {
       /selected/,
     );
 
+    // Click French
+    await page.click('.lang-btn[data-lang="fr"]');
+    await expect(page.locator('.lang-btn[data-lang="fr"]')).toHaveClass(
+      /selected/,
+    );
+
     // Click German
     await page.click('.lang-btn[data-lang="de"]');
     await expect(page.locator('.lang-btn[data-lang="de"]')).toHaveClass(

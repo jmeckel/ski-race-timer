@@ -707,10 +707,12 @@ export class OnboardingController {
     if (label) {
       const totalSteps = dots.length;
       const lang = store.getState().currentLang;
-      label.textContent =
-        lang === 'de'
-          ? `Schritt ${this.currentStep} von ${totalSteps}`
-          : `Step ${this.currentStep} of ${totalSteps}`;
+      const stepLabels: Record<Language, string> = {
+        de: `Schritt ${this.currentStep} von ${totalSteps}`,
+        fr: `Étape ${this.currentStep} sur ${totalSteps}`,
+        en: `Step ${this.currentStep} of ${totalSteps}`,
+      };
+      label.textContent = stepLabels[lang as Language] || stepLabels.en;
     }
   }
 

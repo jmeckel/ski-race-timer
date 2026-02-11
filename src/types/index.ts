@@ -36,7 +36,7 @@ export type SyncStatus =
   | 'offline';
 
 // Language types
-export type Language = 'en' | 'de';
+export type Language = 'en' | 'de' | 'fr';
 
 // Time source for timing entries
 export type TimeSource = 'gps' | 'system';

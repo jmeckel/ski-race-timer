@@ -5,6 +5,7 @@
  */
 
 import { store } from '../store';
+import { getLocale } from '../utils/format';
 import { logger } from '../utils/logger';
 
 // Speech Recognition types
@@ -96,7 +97,7 @@ class VoiceNoteService {
   private updateLanguage(): void {
     if (!this.recognition) return;
     const lang = store.getState().currentLang;
-    this.recognition.lang = lang === 'de' ? 'de-DE' : 'en-US';
+    this.recognition.lang = getLocale(lang);
   }
 
   /**

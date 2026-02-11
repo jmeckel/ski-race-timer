@@ -3,7 +3,9 @@
  * Provides text-to-speech functionality for voice mode confirmations
  */
 
+import { t } from '../i18n/translations';
 import { store } from '../store';
+import type { Language } from '../types';
 import { logger } from '../utils/logger';
 
 class SpeechSynthesisService {
@@ -51,11 +53,11 @@ class SpeechSynthesisService {
   /**
    * Select appropriate voice for the current language
    */
-  private selectVoiceForLanguage(lang: 'de' | 'en'): void {
+  private selectVoiceForLanguage(lang: Language): void {
     if (!this.synth) return;
 
     const voices = this.synth.getVoices();
-    const langCode = lang === 'de' ? 'de' : 'en';
+    const langCode = lang;
 
     // Try to find a voice that matches the language
     // Prefer female voices as they're often clearer
@@ -83,7 +85,7 @@ class SpeechSynthesisService {
   /**
    * Update voice when language changes
    */
-  setLanguage(lang: 'de' | 'en'): void {
+  setLanguage(lang: Language): void {
     if (this.voicesLoaded) {
       this.selectVoiceForLanguage(lang);
     }
@@ -142,8 +144,7 @@ class SpeechSynthesisService {
    */
   sayRecorded(): Promise<void> {
     const lang = store.getState().currentLang;
-    const text = lang === 'de' ? 'Erfasst' : 'Recorded';
-    return this.speak(text, { rate: 1.1 });
+    return this.speak(t('voiceRecorded', lang), { rate: 1.1 });
   }
 
   /**
@@ -151,8 +152,7 @@ class SpeechSynthesisService {
    */
   sayNotUnderstood(): Promise<void> {
     const lang = store.getState().currentLang;
-    const text = lang === 'de' ? 'Nicht verstanden' : 'Not understood';
-    return this.speak(text, { rate: 1.0 });
+    return this.speak(t('voiceNotUnderstood', lang), { rate: 1.0 });
   }
 
   /**

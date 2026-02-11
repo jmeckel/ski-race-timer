@@ -9,7 +9,12 @@ import { feedbackSuccess, feedbackTap, feedbackWarning } from '../../services';
 import { syncFault } from '../../services/sync';
 import { store } from '../../store';
 import type { FaultEntry, FaultType, Run } from '../../types';
-import { escapeHtml, getFaultTypeLabel, makeNumericInput } from '../../utils';
+import {
+  escapeHtml,
+  getFaultTypeLabel,
+  getLocale,
+  makeNumericInput,
+} from '../../utils';
 import { ListenerManager } from '../../utils/listenerManager';
 import { setModalContext } from '../../utils/modalContext';
 import { closeModal, openModal } from '../modals';
@@ -244,13 +249,10 @@ export function openFaultEditModal(fault: FaultEntry): void {
       const option = document.createElement('option');
       option.value = String(version.version);
       const date = new Date(version.timestamp);
-      const timeStr = date.toLocaleTimeString(
-        lang === 'de' ? 'de-DE' : 'en-US',
-        {
-          hour: '2-digit',
-          minute: '2-digit',
-        },
-      );
+      const timeStr = date.toLocaleTimeString(getLocale(lang), {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
       const changeLabel =
         version.changeType === 'create'
           ? t('originalVersion', lang)

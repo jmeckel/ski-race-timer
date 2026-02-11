@@ -46,6 +46,14 @@ vi.mock('../../../src/store', () => ({
 vi.mock('../../../src/utils', () => ({
   escapeHtml: vi.fn((s: string) => s),
   getFaultTypeLabel: vi.fn((type: string) => type),
+  getLocale: vi.fn((lang: string) => {
+    const map: Record<string, string> = {
+      en: 'en-US',
+      de: 'de-DE',
+      fr: 'fr-FR',
+    };
+    return map[lang] || 'en-US';
+  }),
   makeNumericInput: vi.fn(),
 }));
 

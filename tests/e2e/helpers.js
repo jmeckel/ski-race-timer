@@ -80,6 +80,33 @@ export async function setupPageEnglish(page) {
 }
 
 /**
+ * Setup page with French language
+ */
+export async function setupPageFrench(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
+    // Keys must match the store's DEFAULT_SETTINGS
+    localStorage.setItem(
+      'skiTimerSettings',
+      JSON.stringify({
+        auto: true,
+        haptic: true,
+        sound: false,
+        sync: false,
+        syncPhotos: false,
+        gps: false,
+        simple: false, // Normal mode is default
+        photoCapture: false,
+      }),
+    );
+    localStorage.setItem('skiTimerLang', 'fr');
+  });
+
+  await page.goto('/');
+  await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
+}
+
+/**
  * Setup page with sync enabled
  */
 export async function setupPageWithSync(page, raceId = 'TEST-RACE') {

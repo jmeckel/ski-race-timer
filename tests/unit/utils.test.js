@@ -29,7 +29,8 @@ function formatTime(date) {
 }
 
 function formatDate(date, lang = 'en') {
-  return new Date(date).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', {
+  const localeMap = { en: 'en-US', de: 'de-DE', fr: 'fr-FR' };
+  return new Date(date).toLocaleDateString(localeMap[lang] || 'en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

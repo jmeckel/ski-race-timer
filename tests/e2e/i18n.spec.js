@@ -9,6 +9,7 @@ import {
   navigateTo,
   setupPage,
   setupPageEnglish,
+  setupPageFrench,
   setupPageFullMode,
   waitForConfirmationToHide,
 } from './helpers.js';
@@ -42,8 +43,8 @@ test.describe('Language Toggle', () => {
     const langToggle = page.locator('#lang-toggle');
     const text = await langToggle.textContent();
 
-    // Should show DE or EN
-    expect(text).toMatch(/DE|EN/i);
+    // Should show DE, FR, or EN
+    expect(text).toMatch(/DE|FR|EN/i);
   });
 
   test('should toggle between languages', async ({ page }) => {
@@ -285,5 +286,69 @@ test.describe('Empty State Messages', () => {
     // Use results-list container to avoid matching chief judge empty state
     const emptyState = page.locator('#results-list .empty-state');
     await expect(emptyState).toBeVisible();
+  });
+
+  test('should show empty state message in French', async ({ page }) => {
+    await setupPageFrench(page);
+    await navigateTo(page, 'results');
+
+    // Use results-list container to avoid matching chief judge empty state
+    const emptyState = page.locator('#results-list .empty-state');
+    await expect(emptyState).toBeVisible();
+  });
+});
+
+test.describe('French Language', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupPageFrench(page);
+  });
+
+  test('should show French navigation labels', async ({ page }) => {
+    // Tab labels should be in French
+    const timerTab = page.locator('[data-view="timer"]');
+    const text = await timerTab.textContent();
+    expect(text).toContain('Chrono');
+  });
+
+  test('should show French settings labels', async ({ page }) => {
+    await navigateTo(page, 'settings');
+
+    // Settings section titles should be in French
+    const settingsTitle = page.locator('.settings-section-title').first();
+    const text = await settingsTitle.textContent();
+    expect(text?.length).toBeGreaterThan(0);
+  });
+
+  test('should show Arrivée label in French', async ({ page }) => {
+    // Record an entry via radial dial
+    await page.click('#radial-time-btn');
+    await waitForConfirmationToHide(page);
+
+    // Go to results
+    await navigateTo(page, 'results');
+
+    // Timing point should show "Arrivée" label in French
+    const pointLabel = page.locator('.result-point').first();
+    await expect(pointLabel).toHaveText('Arrivée');
+  });
+
+  test('should show FR in language toggle', async ({ page }) => {
+    await navigateTo(page, 'settings');
+    const langToggle = page.locator('#lang-toggle');
+    const activeOption = langToggle.locator('.lang-option.active');
+    await expect(activeOption).toHaveAttribute('data-lang', 'fr');
+    await expect(activeOption).toHaveText('FR');
+  });
+
+  test('should maintain French across views', async ({ page }) => {
+    // Navigate through all views
+    await navigateTo(page, 'timer');
+    await navigateTo(page, 'results');
+    await navigateTo(page, 'settings');
+
+    // Language toggle should still show FR as active
+    const langToggle = page.locator('#lang-toggle');
+    const activeOption = langToggle.locator('.lang-option.active');
+    await expect(activeOption).toHaveAttribute('data-lang', 'fr');
   });
 });

@@ -96,13 +96,12 @@ describe('getVersionInfo', () => {
       expect(info!.description).toContain('Offline-Banner');
     });
 
-    it('should fall back to English for unknown language', () => {
+    it('should return French description for French language', () => {
       vi.mocked(store.getState).mockReturnValue({
-        currentLang: 'fr' as 'en',
+        currentLang: 'fr',
       } as ReturnType<typeof store.getState>);
       const info = getVersionInfo('5.20.0');
-      // Falls back to English
-      expect(info!.description).toContain('Offline banner');
+      expect(info!.description).toContain('Bannière hors ligne');
     });
   });
 });

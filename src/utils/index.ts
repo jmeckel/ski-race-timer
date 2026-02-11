@@ -43,6 +43,7 @@ export {
   formatFileSize,
   formatTime,
   getFaultTypeLabel,
+  getLocale,
   getPointColor,
   getPointLabel,
   getRunColor,

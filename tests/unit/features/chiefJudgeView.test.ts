@@ -78,6 +78,14 @@ vi.mock('../../../src/utils', () => ({
   escapeAttr: vi.fn((s: string) => s),
   escapeHtml: vi.fn((s: string) => s),
   getFaultTypeLabel: vi.fn((type: string) => type),
+  getLocale: vi.fn((lang: string) => {
+    const map: Record<string, string> = {
+      en: 'en-US',
+      de: 'de-DE',
+      fr: 'fr-FR',
+    };
+    return map[lang] || 'en-US';
+  }),
   iconCheck: vi.fn(() => '<svg>check</svg>'),
   iconEdit: vi.fn(() => '<svg>edit</svg>'),
   iconNote: vi.fn(() => '<svg>note</svg>'),

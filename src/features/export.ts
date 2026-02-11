@@ -8,6 +8,7 @@ import { t } from '../i18n/translations';
 import { feedbackSuccess } from '../services';
 import { store } from '../store';
 import type { FaultEntry, FaultType, Language } from '../types';
+import { getLocale } from '../utils/format';
 import { logger } from '../utils/logger';
 
 /**
@@ -104,11 +105,11 @@ function getExportPointLabel(point: 'S' | 'F'): string {
  */
 function getStatusLabel(status: string, lang: Language): string {
   const statusMap: Record<string, Record<Language, string>> = {
-    ok: { en: 'OK', de: 'OK' },
-    dns: { en: 'DNS', de: 'DNS' },
-    dnf: { en: 'DNF', de: 'DNF' },
-    dsq: { en: 'DSQ', de: 'DSQ' },
-    flt: { en: 'FLT', de: 'SZT' }, // Fault penalty (Strafzeit)
+    ok: { en: 'OK', de: 'OK', fr: 'OK' },
+    dns: { en: 'DNS', de: 'DNS', fr: 'DNS' },
+    dnf: { en: 'DNF', de: 'DNF', fr: 'DNF' },
+    dsq: { en: 'DSQ', de: 'DSQ', fr: 'DSQ' },
+    flt: { en: 'FLT', de: 'SZT', fr: 'PEN' }, // Fault penalty
   };
   return statusMap[status]?.[lang] || status.toUpperCase();
 }
@@ -273,7 +274,7 @@ export function exportJudgeReport(): void {
   lines.push(divider);
   lines.push(`${t('race', lang)}:     ${raceId}`);
   lines.push(
-    `${t('date', lang)}:      ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`,
+    `${t('date', lang)}:      ${new Date().toLocaleDateString(getLocale(lang))}`,
   );
   lines.push(`${t('gateJudgeLabel', lang)}: ${deviceName}`);
   if (gateAssignment) {
@@ -291,9 +292,7 @@ export function exportJudgeReport(): void {
     const bib = f.bib.padStart(5);
     const gate = String(f.gateNumber).padStart(4);
     const type = getFaultTypeCode(f.faultType).padEnd(10);
-    const time = new Date(f.timestamp).toLocaleTimeString(
-      lang === 'de' ? 'de-DE' : 'en-US',
-    );
+    const time = new Date(f.timestamp).toLocaleTimeString(getLocale(lang));
     return `  ${bib}   │  ${gate}  │ ${type} │ ${time}`;
   };
 
@@ -457,7 +456,7 @@ export function exportFaultSummaryWhatsApp(): void {
   // Footer
   const now = new Date();
   lines.push(
-    `📅 ${now.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')} ${now.toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`,
+    `📅 ${now.toLocaleDateString(getLocale(lang))} ${now.toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}`,
   );
 
   const content = lines.join('\n');
@@ -566,9 +565,7 @@ export function exportChiefSummary(): void {
     lines.push('');
   };
 
-  lines.push(
-    `${raceId} - ${new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US')}`,
-  );
+  lines.push(`${raceId} - ${new Date().toLocaleDateString(getLocale(lang))}`);
   lines.push('');
 
   formatRunSummary(run1Bibs, 1);
@@ -576,7 +573,7 @@ export function exportChiefSummary(): void {
 
   lines.push(divider);
   lines.push(
-    `${t('generated', lang)}: ${new Date().toLocaleString(lang === 'de' ? 'de-DE' : 'en-US')}`,
+    `${t('generated', lang)}: ${new Date().toLocaleString(getLocale(lang))}`,
   );
 
   const content = lines.join('\n');

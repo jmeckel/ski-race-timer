@@ -45,8 +45,10 @@ build_pdf() {
 
 build_pdf USER_MANUAL.md USER_MANUAL.pdf
 build_pdf USER_MANUAL_DE.md USER_MANUAL_DE.pdf
+build_pdf USER_MANUAL_FR.md USER_MANUAL_FR.pdf
 build_pdf QUICK_START.md QUICK_START.pdf
 build_pdf QUICK_START_DE.md QUICK_START_DE.pdf
+build_pdf QUICK_START_FR.md QUICK_START_FR.pdf
 
 echo ""
 echo "All PDFs built successfully:"

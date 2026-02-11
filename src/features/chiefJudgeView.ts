@@ -25,6 +25,7 @@ import {
   escapeAttr,
   escapeHtml,
   getFaultTypeLabel,
+  getLocale,
   iconCheck,
   iconEdit,
   iconNote,
@@ -650,7 +651,7 @@ export function updatePendingDeletionsPanel(): void {
     .map((fault) => {
       const timeStr = fault.markedForDeletionAt
         ? new Date(fault.markedForDeletionAt).toLocaleTimeString(
-            lang === 'de' ? 'de-DE' : 'en-US',
+            getLocale(lang),
             {
               hour: '2-digit',
               minute: '2-digit',

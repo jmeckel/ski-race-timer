@@ -4,6 +4,7 @@
  * for hands-free operation of the ski race timer
  */
 
+import { t } from '../i18n/translations';
 import { store } from '../store';
 import type {
   LLMConfig,
@@ -11,6 +12,7 @@ import type {
   VoiceIntent,
   VoiceStatus,
 } from '../types';
+import { getLocale } from '../utils/format';
 import { logger } from '../utils/logger';
 import { processVoiceCommandWithTimeout } from './llmProvider';
 import { speechSynthesis } from './speechSynthesis';
@@ -119,7 +121,7 @@ class VoiceModeService {
   private updateRecognitionLanguage(): void {
     if (!this.recognition) return;
     const lang = store.getState().currentLang;
-    this.recognition.lang = lang === 'de' ? 'de-DE' : 'en-US';
+    this.recognition.lang = getLocale(lang);
     speechSynthesis.setLanguage(lang);
   }
 
@@ -284,9 +286,7 @@ class VoiceModeService {
       } else {
         // Cancelled - just acknowledge
         const lang = store.getState().currentLang;
-        await speechSynthesis.speak(
-          lang === 'de' ? 'Abgebrochen' : 'Cancelled',
-        );
+        await speechSynthesis.speak(t('voiceCancelled', lang));
       }
       this.pendingIntent = null;
       this.setStatus('listening');

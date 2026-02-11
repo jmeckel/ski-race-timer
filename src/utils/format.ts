@@ -1,6 +1,16 @@
 import { t } from '../i18n/translations';
 import type { FaultType, Language, Run, TimingPoint } from '../types';
 
+const LOCALE_MAP: Record<Language, string> = {
+  en: 'en-US',
+  de: 'de-DE',
+  fr: 'fr-FR',
+};
+
+export function getLocale(lang: Language): string {
+  return LOCALE_MAP[lang];
+}
+
 /**
  * Format time as HH:MM:SS.mmm
  */
@@ -22,7 +32,7 @@ export function formatDate(date: Date, lang: Language = 'de'): string {
     month: '2-digit',
     year: 'numeric',
   };
-  return date.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', options);
+  return date.toLocaleDateString(getLocale(lang), options);
 }
 
 /**
@@ -84,6 +94,7 @@ export function getPointLabel(
   const labels: Record<Language, Record<TimingPoint, string>> = {
     en: { S: 'Start', F: 'Finish' },
     de: { S: 'Start', F: 'Ziel' },
+    fr: { S: 'Départ', F: 'Arrivée' },
   };
   return labels[lang][point];
 }
@@ -91,8 +102,10 @@ export function getPointLabel(
 /**
  * Get display label for run
  */
+const RUN_PREFIX: Record<Language, string> = { de: 'L', en: 'R', fr: 'M' };
+
 export function getRunLabel(run: Run, lang: Language = 'de'): string {
-  const prefix = lang === 'de' ? 'L' : 'R';
+  const prefix = RUN_PREFIX[lang];
   return `${prefix}${run}`;
 }
 

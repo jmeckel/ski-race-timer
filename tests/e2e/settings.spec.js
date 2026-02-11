@@ -55,13 +55,24 @@ test.describe('Settings View', () => {
         .locator('.lang-option.active')
         .getAttribute('data-lang');
 
-      const inactiveOption = langToggle.locator('.lang-option:not(.active)');
+      const inactiveOption = langToggle
+        .locator('.lang-option:not(.active)')
+        .first();
       await inactiveOption.click();
 
       const newActiveLang = await langToggle
         .locator('.lang-option.active')
         .getAttribute('data-lang');
       expect(newActiveLang).not.toBe(initialActiveLang);
+    });
+
+    test('should have three language options', async ({ page }) => {
+      const langToggle = page.locator('#lang-toggle');
+      const options = langToggle.locator('.lang-option');
+      await expect(options).toHaveCount(3);
+      await expect(options.nth(0)).toHaveAttribute('data-lang', 'de');
+      await expect(options.nth(1)).toHaveAttribute('data-lang', 'fr');
+      await expect(options.nth(2)).toHaveAttribute('data-lang', 'en');
     });
   });
 });

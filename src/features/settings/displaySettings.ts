@@ -8,6 +8,7 @@ import { showToast } from '../../components';
 import { t } from '../../i18n/translations';
 import { voiceModeService } from '../../services';
 import { store } from '../../store';
+import type { Language } from '../../types';
 import { getElement } from '../../utils';
 import { ListenerManager } from '../../utils/listenerManager';
 
@@ -45,7 +46,7 @@ export function initDisplaySettings(applySettings: () => void): void {
   // Language toggle
   const langToggle = getElement('lang-toggle');
   if (langToggle) {
-    const selectLanguage = (lang: 'de' | 'en') => {
+    const selectLanguage = (lang: Language) => {
       if (lang && lang !== store.getState().currentLang) {
         store.setLanguage(lang);
         // Defer to orchestrator for full translation update
@@ -55,7 +56,7 @@ export function initDisplaySettings(applySettings: () => void): void {
 
     listeners.add(langToggle, 'click', (e) => {
       const target = e.target as HTMLElement;
-      const lang = target.getAttribute('data-lang') as 'de' | 'en';
+      const lang = target.getAttribute('data-lang') as Language;
       selectLanguage(lang);
     });
 
@@ -63,28 +64,34 @@ export function initDisplaySettings(applySettings: () => void): void {
     langToggle.querySelectorAll('.lang-option').forEach((opt) => {
       listeners.add(opt, 'keydown', (e) => {
         const event = e as KeyboardEvent;
-        const lang = (opt as HTMLElement).getAttribute('data-lang') as
-          | 'de'
-          | 'en';
 
         switch (event.key) {
           case 'Enter':
-          case ' ':
+          case ' ': {
             event.preventDefault();
+            const lang = (opt as HTMLElement).getAttribute(
+              'data-lang',
+            ) as Language;
             selectLanguage(lang);
             break;
+          }
           case 'ArrowLeft':
           case 'ArrowRight': {
             event.preventDefault();
-            // Toggle between the two options
-            const otherLang = lang === 'de' ? 'en' : 'de';
-            const otherOpt = langToggle.querySelector(
-              `[data-lang="${otherLang}"]`,
-            ) as HTMLElement;
-            if (otherOpt) {
-              otherOpt.focus();
-              selectLanguage(otherLang);
+            const options = Array.from(
+              langToggle.querySelectorAll('.lang-option'),
+            );
+            const currentIndex = options.indexOf(opt as Element);
+            let nextIndex: number;
+            if (event.key === 'ArrowRight') {
+              nextIndex = (currentIndex + 1) % options.length;
+            } else {
+              nextIndex = (currentIndex - 1 + options.length) % options.length;
             }
+            const nextOpt = options[nextIndex] as HTMLElement;
+            const nextLang = nextOpt.getAttribute('data-lang') as Language;
+            nextOpt.focus();
+            selectLanguage(nextLang);
             break;
           }
         }
