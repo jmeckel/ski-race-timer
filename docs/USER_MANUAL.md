@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.24.0 | Last Updated: February 2026
+Version 5.24.2 | Last Updated: February 2026
 
 ---
 
@@ -650,7 +650,7 @@ Ski Race Timer supports full keyboard and USB numpad navigation for desktop use 
 
 **Report Issues:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.22.0
+**Version:** 5.24.2
 
 ---
 

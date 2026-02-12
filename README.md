@@ -17,7 +17,7 @@ A GPS-synchronized Progressive Web App (PWA) for precise ski race timing. Design
 - **Voice Mode** - Hands-free voice commands for timing operations
 - **Photo Capture** - Optional documentation photos with each timestamp
 - **Race Horology Export** - Industry-standard CSV format with fault penalty columns
-- **Bilingual** - English and German interfaces
+- **Multilingual** - English, German, and French interfaces
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ npm install
 npm start
 ```
 
-The app will be available at `http://localhost:5173`
+The app will be available at `http://localhost:3000`
 
 ### Environment Variables
 
@@ -84,12 +84,12 @@ ski-race-timer/
 │   ├── main.ts             # App entry point
 │   ├── app.ts              # Main application logic
 │   ├── onboarding.ts       # First-run wizard
-│   ├── store/              # Zustand-like state management
+│   ├── store/              # State management (Preact Signals)
 │   ├── services/           # GPS, sync, camera, battery, feedback
 │   ├── components/         # Clock, RadialDial, VirtualList, Toast
 │   ├── features/           # View modules and feature logic
 │   ├── utils/              # Validation, formatting, error handling
-│   ├── i18n/               # EN/DE translations
+│   ├── i18n/               # EN/DE/FR translations
 │   ├── styles/             # CSS stylesheets
 │   └── types/              # TypeScript type definitions
 ├── tests/
@@ -230,5 +230,5 @@ This project is private. All rights reserved.
 
 ---
 
-**Version:** 5.22.0
+**Version:** 5.24.2
 **Last Updated:** February 2026

@@ -489,10 +489,10 @@ export function updateFaultSummaryPanel(): void {
           </div>
           <span class="fault-judge-name">${escapeHtml(fault.deviceName)}</span>
           <div class="fault-row-actions">
-            <button class="fault-row-btn edit-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('edit', lang))}" ${isMarkedForDeletion ? 'disabled' : ''}>
+            <button class="fault-row-btn edit-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('edit', lang))}" aria-label="${escapeAttr(t('edit', lang))}" ${isMarkedForDeletion ? 'disabled' : ''}>
               ${iconEdit(14)}
             </button>
-            <button class="fault-row-btn delete-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}">
+            <button class="fault-row-btn delete-fault-btn" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}" aria-label="${escapeAttr(isMarkedForDeletion ? t('rejectDeletion', lang) : t('markForDeletion', lang))}">
               ${isMarkedForDeletion ? iconTrashDetailed(14) : iconTrash(14)}
             </button>
           </div>
@@ -670,10 +670,10 @@ export function updatePendingDeletionsPanel(): void {
           </span>
         </div>
         <div class="pending-deletion-actions">
-          <button class="pending-deletion-btn approve" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('approveDeletion', lang))}">
+          <button class="pending-deletion-btn approve" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('approveDeletion', lang))}" aria-label="${escapeAttr(t('approveDeletion', lang))}">
             ${iconCheck(16, 2.5)}
           </button>
-          <button class="pending-deletion-btn reject" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('rejectDeletion', lang))}">
+          <button class="pending-deletion-btn reject" data-fault-id="${escapeAttr(fault.id)}" title="${escapeAttr(t('rejectDeletion', lang))}" aria-label="${escapeAttr(t('rejectDeletion', lang))}">
             ${iconX(16)}
           </button>
         </div>
