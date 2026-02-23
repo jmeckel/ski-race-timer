@@ -6,8 +6,8 @@
 import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
+import { ambientModeService } from '../services/ambient';
 import {
-  ambientModeService,
   captureTimingPhoto,
   feedbackSuccess,
   feedbackTap,
