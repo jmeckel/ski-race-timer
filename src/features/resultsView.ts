@@ -134,6 +134,25 @@ export function initResultsView(): void {
   if (pointFilter) listeners.add(pointFilter, 'change', applyFilters);
   if (statusFilter) listeners.add(statusFilter, 'change', applyFilters);
 
+  // Toggle filters button
+  const toggleFiltersBtn = getElement('toggle-filters-btn');
+  const filterBar = document.querySelector('.search-filter-bar');
+  if (toggleFiltersBtn && filterBar) {
+    listeners.add(toggleFiltersBtn, 'click', () => {
+      const isVisible = filterBar.classList.toggle('visible');
+      toggleFiltersBtn.setAttribute('aria-expanded', String(isVisible));
+      toggleFiltersBtn.classList.toggle('active', isVisible);
+    });
+  }
+
+  // Quick export button
+  const quickExportBtn = getElement('quick-export-btn');
+  if (quickExportBtn) {
+    listeners.add(quickExportBtn, 'click', () => {
+      exportResults();
+    });
+  }
+
   // Action buttons
   initResultsActions();
 

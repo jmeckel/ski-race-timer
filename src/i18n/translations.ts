@@ -17,6 +17,8 @@ export const translations = {
     run: 'Run',
     run1: 'R1',
     run2: 'R2',
+    runLabel1: 'Run 1',
+    runLabel2: 'Run 2',
     time: 'Record time',
     lastRecorded: 'Last recorded',
     lastRecordedShort: 'Last:',
@@ -33,6 +35,7 @@ export const translations = {
     total: 'Total',
     racers: 'Racers',
     finished: 'Finished',
+    entriesRecorded: 'entries recorded',
     fastest: 'Fastest',
     average: 'Average',
     timeEntry: 'time',
@@ -263,7 +266,7 @@ export const translations = {
     unknownError: 'Unknown error',
 
     // Onboarding
-    onboardingWelcome: 'Welcome to Ski Race Timer',
+    onboardingWelcome: 'Welcome to CHRONO',
     onboardingWelcomeDesc: 'GPS-synchronized timing for ski races',
     getStarted: 'Get Started',
     skipSetup: 'Skip',
@@ -559,6 +562,8 @@ export const translations = {
     run: 'Lauf',
     run1: 'L1',
     run2: 'L2',
+    runLabel1: 'Lauf 1',
+    runLabel2: 'Lauf 2',
     time: 'Zeit erfassen',
     lastRecorded: 'Zuletzt erfasst',
     lastRecordedShort: 'Letzter:',
@@ -575,6 +580,7 @@ export const translations = {
     total: 'Gesamt',
     racers: 'Fahrer',
     finished: 'Im Ziel',
+    entriesRecorded: 'Einträge erfasst',
     fastest: 'Schnellste',
     average: 'Durchschnitt',
     timeEntry: 'Zeit',
@@ -809,7 +815,7 @@ export const translations = {
     unknownError: 'Unbekannter Fehler',
 
     // Onboarding
-    onboardingWelcome: 'Willkommen bei Ski Race Timer',
+    onboardingWelcome: 'Willkommen bei CHRONO',
     onboardingWelcomeDesc: 'GPS-synchronisierte Zeitmessung für Skirennen',
     getStarted: "Los geht's",
     skipSetup: 'Überspringen',
@@ -1110,6 +1116,8 @@ export const translations = {
     run: 'Manche',
     run1: 'M1',
     run2: 'M2',
+    runLabel1: 'Manche 1',
+    runLabel2: 'Manche 2',
     time: 'Enregistrer le temps',
     lastRecorded: 'Dernier enregistré',
     lastRecordedShort: 'Dernier :',
@@ -1126,6 +1134,7 @@ export const translations = {
     total: 'Total',
     racers: 'Coureurs',
     finished: "À l'arrivée",
+    entriesRecorded: 'entrées enregistrées',
     fastest: 'Plus rapide',
     average: 'Moyenne',
     timeEntry: 'temps',
@@ -1361,7 +1370,7 @@ export const translations = {
     unknownError: 'Erreur inconnue',
 
     // Onboarding
-    onboardingWelcome: 'Bienvenue sur Ski Race Timer',
+    onboardingWelcome: 'Bienvenue sur CHRONO',
     onboardingWelcomeDesc:
       'Chronométrage synchronisé par GPS pour les courses de ski',
     getStarted: "C'est parti",

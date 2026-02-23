@@ -4,6 +4,7 @@
   gap: 6px;
   overflow: hidden;
   height: 100%;
+  background: radial-gradient(ellipse 300px 200px at 50% 30%, rgba(0, 212, 255, 0.03) 0%, transparent 70%);
 }
 
 /* Portrait mode element ordering */
@@ -148,7 +149,7 @@
 
 @keyframes lastRecordedInlinePulse {
   0% {
-    background: rgba(56, 189, 248, 0.2);
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
   }
   100% {
     background: transparent;
@@ -276,8 +277,8 @@
 .run-btn.active {
   border-color: var(--primary);
   color: #fff;
-  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 /* Edit Modal Run Selector */
@@ -303,8 +304,8 @@
 .edit-run-btn.active {
   border-color: var(--primary);
   color: #fff;
-  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 /* Result Run Badge */
@@ -386,17 +387,19 @@
     var(--primary-dark) 100%
   );
   color: white;
+  font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.25s ease-out,
     background 0.2s ease;
   box-shadow:
-    0 0 30px rgba(14, 165, 233, 0.4),
-    0 0 60px rgba(14, 165, 233, 0.2),
+    0 0 30px color-mix(in srgb, var(--primary) 40%, transparent),
+    0 0 60px color-mix(in srgb, var(--primary) 20%, transparent),
     0 8px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
@@ -424,7 +427,7 @@
 .timestamp-btn:active {
   transform: scale(0.96);
   box-shadow:
-    0 0 15px rgba(14, 165, 233, 0.3),
+    0 0 15px color-mix(in srgb, var(--primary) 30%, transparent),
     0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -442,8 +445,8 @@
       var(--primary) 100%
     );
     box-shadow:
-      0 0 50px rgba(56, 189, 248, 0.8),
-      0 0 100px rgba(56, 189, 248, 0.4),
+      0 0 50px color-mix(in srgb, var(--primary-light) 80%, transparent),
+      0 0 100px color-mix(in srgb, var(--primary-light) 40%, transparent),
       0 8px 24px rgba(0, 0, 0, 0.3);
   }
   100% {

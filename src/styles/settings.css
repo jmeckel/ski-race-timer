@@ -199,8 +199,8 @@
 /* Toggle Switch */
 .toggle-switch {
   position: relative;
-  width: 52px;
-  height: 32px;
+  width: 48px;
+  height: 28px;
 }
 
 .toggle-switch input {
@@ -212,34 +212,40 @@
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: var(--surface-elevated);
-  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-elevated) 70%, var(--background));
+  border-radius: 14px;
+  border: 1px solid var(--border);
   cursor: pointer;
-  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toggle-slider::before {
   content: "";
   position: absolute;
-  width: 24px;
-  height: 24px;
-  left: 4px;
-  top: 4px;
-  background: white;
+  width: 22px;
+  height: 22px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-secondary);
   border-radius: 50%;
   transition:
     transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background: var(--primary);
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: var(--primary);
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: var(--primary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .toggle-switch input:disabled + .toggle-slider {
@@ -268,7 +274,7 @@
 .text-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 /* Focus visible styles for all interactive elements */
@@ -460,7 +466,7 @@
 
 .race-delete-btn:active {
   transform: scale(0.95);
-  background: #dc2626;
+  background: color-mix(in srgb, var(--error) 85%, black);
 }
 
 /* ===== Recent Races Dropdown ===== */
@@ -608,6 +614,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  color: var(--text-secondary);
 }
 
 .role-card-setting:active {
@@ -616,12 +623,14 @@
 
 .role-card-setting.active {
   border-color: var(--primary);
-  background: rgba(59, 130, 246, 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
 }
 
 .role-card-setting .role-card-icon {
   font-size: 2rem;
   line-height: 1;
+  color: var(--text-secondary);
 }
 
 .role-card-setting .role-card-content {
@@ -640,4 +649,8 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
   line-height: 1.3;
+}
+
+.role-card-setting.active .role-card-icon {
+  color: var(--primary);
 }

@@ -78,8 +78,8 @@ export function escapeAttr(str: string): string {
  */
 export function getPointColor(point: TimingPoint): string {
   const colors: Record<TimingPoint, string> = {
-    S: 'var(--success)',
-    F: 'var(--secondary)',
+    S: 'var(--start-color)',
+    F: 'var(--finish-color)',
   };
   return colors[point] || 'var(--text-secondary)';
 }

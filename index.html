@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0D0D0D">
-  <meta name="description" content="GPS-synchronized ski race timing application">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="description" content="Precision race timing, GPS-synchronized">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Ski Race Timer">
+  <meta name="apple-mobile-web-app-title" content="CHRONO">
   <link rel="manifest" href="/manifest.json">
   <!-- Favicons -->
   <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -17,29 +17,39 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Ski Race Timer">
-  <meta property="og:description" content="GPS-synchronized ski race timing application">
+  <meta property="og:title" content="CHRONO — Precision Race Timing">
+  <meta property="og:description" content="Precision race timing, GPS-synchronized">
   <meta property="og:image" content="/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Ski Race Timer">
-  <meta name="twitter:description" content="GPS-synchronized ski race timing application">
+  <meta name="twitter:title" content="CHRONO — Precision Race Timing">
+  <meta name="twitter:description" content="Precision race timing, GPS-synchronized">
   <meta name="twitter:image" content="/twitter-image.png">
-  <title>Ski Race Timer</title>
+  <title>CHRONO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Skip Link -->
   <a href="#main" class="skip-link">Skip to main content</a>
 
-  <div class="app" role="application" aria-label="Ski Race Timer">
+  <div class="app" role="application" aria-label="CHRONO Race Timer">
     <!-- Header -->
     <header class="header glass-frosted-top glass-enable-target">
-      <h1 class="header-title">Ski Race Timer</h1>
+      <h1 class="header-title">
+        <svg class="header-logo" width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="50" cy="54" r="38" stroke="#00d4ff" stroke-width="6" stroke-linecap="round" stroke-dasharray="200 40"/>
+          <line x1="50" y1="54" x2="50" y2="28" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="50" y1="54" x2="68" y2="54" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="50" cy="54" r="5" fill="#00d4ff"/>
+          <line x1="42" y1="12" x2="58" y2="12" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="50" y1="12" x2="50" y2="18" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        CHRONO
+      </h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
           <span class="sync-dot" aria-label="Sync status"></span>
@@ -89,7 +99,7 @@
             <!-- Top Left: Bib -->
             <div class="radial-bib-corner">
               <div class="radial-bib-label" data-i18n="bib">Bib</div>
-              <div class="radial-bib-value" id="radial-bib-value">---<span class="radial-bib-cursor"></span></div>
+              <div class="radial-bib-value" id="radial-bib-value">---</div>
             </div>
 
             <!-- Top Right: Clear Button -->
@@ -124,33 +134,32 @@
               <!-- Gesture area -->
               <div class="dial-gesture-area" id="dial-gesture"></div>
 
-              <!-- Center with time and selectors -->
+              <!-- Center: Time Display only -->
               <div class="dial-center">
-                <!-- Timing Point Selector - Left side -->
-                <div class="radial-timing-point" id="radial-timing-point" role="radiogroup" aria-label="Timing point">
-                  <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="startShort" role="radio" aria-checked="false">S</button>
-                  <button class="radial-point-btn finish active" data-point="F" data-i18n="finishShort" role="radio" aria-checked="true">F</button>
-                </div>
-
-                <!-- Time Display - Center -->
                 <div class="radial-time-display" id="radial-time-display">
                   <div class="radial-time-hm" id="radial-time-hm">--:--</div>
                   <div class="radial-time-seconds" id="radial-time-seconds">--</div>
                   <div class="radial-time-subseconds" id="radial-time-subseconds">---</div>
                 </div>
-
-                <!-- Run Selector - Right side -->
-                <div class="radial-run-selector" id="radial-run-selector" role="radiogroup" aria-label="Run selector">
-                  <button class="radial-run-btn active" data-run="1" role="radio" aria-checked="true" aria-label="Run 1">L1</button>
-                  <button class="radial-run-btn" data-run="2" role="radio" aria-checked="false" aria-label="Run 2">L2</button>
-                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bottom Row: Stats + Time Button -->
+          <!-- Controls Row: Timing Point + Run Selector -->
+          <div class="radial-controls-row">
+            <div class="radial-timing-point" id="radial-timing-point" role="radiogroup" aria-label="Timing point">
+              <button class="radial-point-btn start" data-point="S" data-advanced data-i18n="start" role="radio" aria-checked="false">Start</button>
+              <button class="radial-point-btn finish active" data-point="F" data-i18n="finish" role="radio" aria-checked="true">Finish</button>
+            </div>
+            <div class="radial-run-selector" id="radial-run-selector" role="radiogroup" aria-label="Run selector">
+              <button class="radial-run-btn active" data-run="1" role="radio" aria-checked="true" aria-label="Run 1" data-i18n="runLabel1">Run 1</button>
+              <button class="radial-run-btn" data-run="2" role="radio" aria-checked="false" aria-label="Run 2" data-i18n="runLabel2">Run 2</button>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Stats + Record Button -->
           <div class="radial-bottom-row">
-            <!-- Bottom Left: Stats -->
+            <!-- Stats (hidden in portrait, shown in landscape) -->
             <div class="radial-stats-corner">
               <div class="radial-stats-label" data-i18n="lastRecordedShort">Last:</div>
               <div class="radial-stats-last">
@@ -161,14 +170,10 @@
               <div class="radial-stats-count" id="radial-stats-count" aria-live="polite">---</div>
             </div>
 
-            <!-- Bottom Right: Time Button -->
+            <!-- Record Button -->
             <div class="radial-time-btn-corner">
               <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
-                <svg class="radial-time-btn-icon" aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span data-i18n="time">TIME</span>
+                <span data-i18n="time">Record time</span>
               </button>
             </div>
           </div>
@@ -196,7 +201,36 @@
               <span data-i18n="chiefJudge">Chief Judge</span>
             </button>
           </div>
-          <!-- Search & Filter -->
+          <!-- Info Bar -->
+          <div class="results-info-bar" aria-live="polite">
+            <div class="results-info-text">
+              <span class="stat-value" id="stat-total">0</span>
+              <span class="stat-label" data-i18n="entriesRecorded">entries recorded</span>
+            </div>
+            <div class="results-info-actions">
+              <button class="results-info-btn" id="toggle-filters-btn" aria-label="Filter" aria-expanded="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              </button>
+              <span class="results-info-spacer"></span>
+              <button class="results-info-btn" id="undo-btn" aria-label="Undo" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>
+              </button>
+              <button class="results-info-btn danger" id="clear-all-btn" aria-label="Delete All">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+              <span class="results-info-spacer"></span>
+              <button class="results-info-btn" id="quick-export-btn" aria-label="Export">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
+            </div>
+            <!-- Hidden stat elements for JS updates -->
+            <span id="stat-racers" hidden>0</span>
+            <span id="stat-finished" hidden>0</span>
+            <span id="stat-duplicates" hidden>0</span>
+            <span id="stat-duplicates-item" hidden></span>
+          </div>
+
+          <!-- Search & Filter (toggled by filter icon) -->
           <div class="search-filter-bar" data-advanced>
             <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" aria-label="Search results" data-i18n-aria-label="searchResults">
             <select class="filter-select" id="filter-point" aria-label="Filter by point">
@@ -211,26 +245,6 @@
               <option value="dnf">DNF</option>
               <option value="dsq">DSQ</option>
             </select>
-          </div>
-
-          <!-- Stats -->
-          <div class="stats-row" aria-live="polite">
-            <div class="stat-item">
-              <div class="stat-value" id="stat-total">0</div>
-              <div class="stat-label" data-i18n="total">Total</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="stat-racers">0</div>
-              <div class="stat-label" data-i18n="racers">Racers</div>
-            </div>
-            <div class="stat-item" data-advanced>
-              <div class="stat-value" id="stat-finished">0</div>
-              <div class="stat-label" data-i18n="finished">Finished</div>
-            </div>
-            <div class="stat-item stat-duplicates" id="stat-duplicates-item" style="display: none;">
-              <div class="stat-value stat-value-warn" id="stat-duplicates">0</div>
-              <div class="stat-label" data-i18n="multiDeviceDuplicate">Multi-device</div>
-            </div>
           </div>
         </div>
 
@@ -336,28 +350,7 @@
         </div>
 
         <!-- Results Actions -->
-        <div class="results-actions">
-          <button class="action-btn" id="undo-btn" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/>
-            </svg>
-            <span data-i18n="undo">Undo</span>
-          </button>
-          <button class="action-btn" id="export-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span data-i18n="export">Export</span>
-          </button>
-          <button class="action-btn danger" id="clear-all-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-            </svg>
-            <span data-i18n="clearAll">Clear All</span>
-          </button>
-        </div>
+        <!-- Bottom action bar removed — undo, delete-all, export are now in the info bar -->
       </div>
 
       <!-- Gate Judge View -->
@@ -738,12 +731,7 @@
       </button>
       <button class="tab-btn" data-view="results" role="tab" aria-selected="false">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <line x1="8" y1="6" x2="21" y2="6"/>
-          <line x1="8" y1="12" x2="21" y2="12"/>
-          <line x1="8" y1="18" x2="21" y2="18"/>
-          <line x1="3" y1="6" x2="3.01" y2="6"/>
-          <line x1="3" y1="12" x2="3.01" y2="12"/>
-          <line x1="3" y1="18" x2="3.01" y2="18"/>
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6"/>
         </svg>
         <span data-i18n="results">Results</span>
       </button>
@@ -756,8 +744,8 @@
       </button>
       <button class="tab-btn" data-view="settings" role="tab" aria-selected="false">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
         <span data-i18n="settings">Settings</span>
       </button>
@@ -1383,8 +1371,8 @@
       <div class="onboarding-cards">
         <!-- Card 1: Welcome + Language -->
         <div class="onboarding-card" data-step="1">
-          <div class="onboarding-icon"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 5V3"/><path d="M10 3h4"/></svg></div>
-          <h2 data-i18n="onboardingWelcome">Welcome to Ski Race Timer</h2>
+          <div class="onboarding-icon"><svg aria-hidden="true" width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="34" r="24" stroke="#00d4ff" stroke-width="6"/><line x1="32" y1="34" x2="32" y2="18" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round"/><circle cx="32" cy="34" r="5" fill="#00d4ff"/><line x1="32" y1="10" x2="32" y2="4" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="5" x2="38" y2="5" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+          <h2 data-i18n="onboardingWelcome">Welcome to CHRONO</h2>
           <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
           <div class="onboarding-lang-select">
             <button class="lang-btn" data-lang="de">Deutsch</button>

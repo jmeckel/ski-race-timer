@@ -154,12 +154,12 @@ describe('Format Utilities', () => {
   });
 
   describe('getPointColor', () => {
-    it('should return success color for Start', () => {
-      expect(getPointColor('S')).toBe('var(--success)');
+    it('should return start-color for Start', () => {
+      expect(getPointColor('S')).toBe('var(--start-color)');
     });
 
-    it('should return secondary color for Finish', () => {
-      expect(getPointColor('F')).toBe('var(--secondary)');
+    it('should return finish-color for Finish', () => {
+      expect(getPointColor('F')).toBe('var(--finish-color)');
     });
   });
 

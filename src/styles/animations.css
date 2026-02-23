@@ -8,13 +8,13 @@
   0%,
   100% {
     box-shadow:
-      0 0 20px rgba(59, 130, 246, 0.2),
-      0 0 40px rgba(59, 130, 246, 0.1);
+      0 0 20px color-mix(in srgb, var(--primary) 20%, transparent),
+      0 0 40px color-mix(in srgb, var(--primary) 10%, transparent);
   }
   50% {
     box-shadow:
-      0 0 30px rgba(59, 130, 246, 0.35),
-      0 0 60px rgba(59, 130, 246, 0.2);
+      0 0 30px color-mix(in srgb, var(--primary) 35%, transparent),
+      0 0 60px color-mix(in srgb, var(--primary) 20%, transparent);
   }
 }
 
@@ -22,13 +22,13 @@
   0%,
   100% {
     box-shadow:
-      0 0 20px rgba(74, 222, 128, 0.2),
-      0 0 40px rgba(74, 222, 128, 0.1);
+      0 0 20px color-mix(in srgb, var(--success) 20%, transparent),
+      0 0 40px color-mix(in srgb, var(--success) 10%, transparent);
   }
   50% {
     box-shadow:
-      0 0 30px rgba(74, 222, 128, 0.35),
-      0 0 60px rgba(74, 222, 128, 0.2);
+      0 0 30px color-mix(in srgb, var(--success) 35%, transparent),
+      0 0 60px color-mix(in srgb, var(--success) 20%, transparent);
   }
 }
 
@@ -36,13 +36,13 @@
   0%,
   100% {
     box-shadow:
-      0 0 20px rgba(227, 24, 55, 0.2),
-      0 0 40px rgba(227, 24, 55, 0.1);
+      0 0 20px color-mix(in srgb, var(--error) 20%, transparent),
+      0 0 40px color-mix(in srgb, var(--error) 10%, transparent);
   }
   50% {
     box-shadow:
-      0 0 30px rgba(227, 24, 55, 0.35),
-      0 0 60px rgba(227, 24, 55, 0.2);
+      0 0 30px color-mix(in srgb, var(--error) 35%, transparent),
+      0 0 60px color-mix(in srgb, var(--error) 20%, transparent);
   }
 }
 
@@ -83,10 +83,10 @@
 @keyframes tabPulse {
   0%,
   100% {
-    background: rgba(59, 130, 246, 0.15);
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
   }
   50% {
-    background: rgba(59, 130, 246, 0.25);
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
   }
 }
 
@@ -233,7 +233,7 @@
 
 .hover-glow:hover {
   box-shadow:
-    0 0 15px rgba(59, 130, 246, 0.3),
+    0 0 15px color-mix(in srgb, var(--primary) 30%, transparent),
     0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -247,7 +247,7 @@
 .selection-glow.selected {
   box-shadow:
     0 0 0 2px var(--primary),
-    0 0 20px rgba(59, 130, 246, 0.4);
+    0 0 20px color-mix(in srgb, var(--primary) 40%, transparent);
   border-color: var(--primary);
 }
 
@@ -338,11 +338,6 @@
   /* --- radial-dial.css: dial flash, blink cursor, button flash, status pulse --- */
   .dial-ring.flash {
     animation: none !important;
-  }
-
-  .radial-bib-cursor {
-    animation: none !important;
-    opacity: 1;
   }
 
   .radial-time-display.flash {
@@ -510,7 +505,7 @@
   font-size: 1rem;
   color: var(--primary-light);
   animation: snowflakePulse 1.5s ease-in-out infinite;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--primary-light) 50%, transparent);
 }
 
 .snowflake-spinner .flake:nth-child(2) {
@@ -591,7 +586,7 @@
 
 .power-saver .glass-frosted,
 .power-saver .glass-frosted-top {
-  background: var(--surface);
+  background: #0f1d32;
 }
 
 .power-saver .glass-backdrop {

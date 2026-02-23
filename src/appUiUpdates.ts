@@ -108,14 +108,21 @@ export function updateSyncStatusIndicator(): void {
 
   if (dot) {
     dot.classList.remove('connected', 'error', 'offline', 'syncing');
+    if (indicator) {
+      indicator.classList.remove('connected', 'error', 'offline', 'syncing');
+    }
     if (state.syncStatus === 'connected') {
       dot.classList.add('connected');
+      indicator?.classList.add('connected');
     } else if (state.syncStatus === 'syncing') {
       dot.classList.add('syncing');
+      indicator?.classList.add('syncing');
     } else if (state.syncStatus === 'error') {
       dot.classList.add('error');
+      indicator?.classList.add('error');
     } else if (state.syncStatus === 'offline') {
       dot.classList.add('offline');
+      indicator?.classList.add('offline');
     }
     // Set aria-label for the dot based on sync status
     const syncLabel =
@@ -188,15 +195,22 @@ export function updateGpsIndicator(): void {
 
   if (dot) {
     dot.classList.remove('active', 'searching', 'paused');
+    if (indicator) {
+      indicator.classList.remove('active', 'searching', 'inactive');
+    }
     if (state.gpsStatus === 'active') {
       dot.classList.add('active');
+      indicator?.classList.add('active');
     } else if (state.gpsStatus === 'searching') {
       dot.classList.add('searching');
+      indicator?.classList.add('searching');
     } else if (state.gpsStatus === 'paused') {
       // GPS was working but is now paused (e.g., not on timer view) - show green without animation
       dot.classList.add('paused');
+    } else {
+      // 'inactive' status = red (GPS not working or permission denied)
+      indicator?.classList.add('inactive');
     }
-    // 'inactive' status = no class = red (GPS not working or permission denied)
     const lang = state.currentLang;
     const ariaKey =
       state.gpsStatus === 'active' || state.gpsStatus === 'paused'

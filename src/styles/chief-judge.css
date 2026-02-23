@@ -31,9 +31,9 @@
 
 .chief-judge-toggle-btn.active {
   border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .chief-judge-toggle-btn svg {
@@ -56,7 +56,7 @@
 /* Hide normal results when chief panel is active */
 .results-view.chief-mode .results-list,
 .results-view.chief-mode .search-filter-bar,
-.results-view.chief-mode .stats-row {
+.results-view.chief-mode .results-info-bar {
   display: none;
 }
 
