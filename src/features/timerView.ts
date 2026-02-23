@@ -5,8 +5,8 @@
 
 import { Clock, showToast } from '../components';
 import { t } from '../i18n/translations';
+import { ambientModeService } from '../services/ambient';
 import {
-  ambientModeService,
   captureTimingPhoto,
   feedbackSuccess,
   feedbackTap,
@@ -243,9 +243,8 @@ export function initTimestampButton(): void {
   if (!btn) return;
 
   listeners.add(btn, 'click', async () => {
-    // First tap in ambient mode exits without recording
-    if (ambientModeService.isActive()) {
-      ambientModeService.exitAmbientMode();
+    // Suppress recording if ambient mode just exited (first tap only exits)
+    if (ambientModeService.wasRecentlyExited()) {
       feedbackTap();
       return;
     }
@@ -341,9 +340,8 @@ export function initTimestampButton(): void {
     // Space or Enter for timestamp
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      // First keypress in ambient mode exits without recording
-      if (ambientModeService.isActive()) {
-        ambientModeService.exitAmbientMode();
+      // Suppress recording if ambient mode just exited (first keypress only exits)
+      if (ambientModeService.wasRecentlyExited()) {
         feedbackTap();
         return;
       }

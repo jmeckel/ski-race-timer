@@ -22,11 +22,14 @@ vi.mock('../../../src/i18n/translations', () => ({
   t: vi.fn((key: string) => key),
 }));
 
-vi.mock('../../../src/services', () => ({
+vi.mock('../../../src/services/ambient', () => ({
   ambientModeService: {
     isActive: vi.fn(() => false),
     exitAmbientMode: vi.fn(),
   },
+}));
+
+vi.mock('../../../src/services', () => ({
   captureTimingPhoto: vi.fn(() => Promise.resolve(null)),
   feedbackSuccess: vi.fn(),
   feedbackTap: vi.fn(),

@@ -34,8 +34,8 @@ import {
 } from './features/settingsView';
 import { destroyClock, handleTimerVoiceIntent } from './features/timerView';
 import { t } from './i18n/translations';
+import { ambientModeService } from './services/ambient';
 import {
-  ambientModeService,
   cameraService,
   cleanupFeedback,
   feedbackWarning,

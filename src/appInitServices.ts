@@ -7,8 +7,8 @@ import { showToast } from './components';
 import { handleAuthExpired, handleRaceDeleted } from './features/race';
 import { applySettings } from './features/settingsView';
 import { t } from './i18n/translations';
+import { ambientModeService } from './services/ambient';
 import {
-  ambientModeService,
   gpsService,
   resumeAudio,
   syncService,

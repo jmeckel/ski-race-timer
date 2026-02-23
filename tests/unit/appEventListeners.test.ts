@@ -75,8 +75,11 @@ vi.mock('../../src/i18n/translations', () => ({
   t: vi.fn((key: string) => key),
 }));
 
-vi.mock('../../src/services', () => ({
+vi.mock('../../src/services/ambient', () => ({
   ambientModeService: { cleanup: vi.fn() },
+}));
+
+vi.mock('../../src/services', () => ({
   cameraService: { stop: vi.fn() },
   cleanupFeedback: vi.fn(),
   feedbackWarning: vi.fn(),
@@ -128,8 +131,8 @@ import {
 } from '../../src/appEventListeners';
 import { showToast } from '../../src/components';
 import { cleanupPinVerification } from '../../src/features/race';
+import { ambientModeService } from '../../src/services/ambient';
 import {
-  ambientModeService,
   cameraService,
   feedbackWarning,
   gpsService,

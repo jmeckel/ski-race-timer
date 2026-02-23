@@ -48,12 +48,15 @@ vi.mock('../../src/features/timerView', () => ({
   updateTimingPointSelection: vi.fn(),
 }));
 
-vi.mock('../../src/services', () => ({
+vi.mock('../../src/services/ambient', () => ({
   ambientModeService: {
     disable: vi.fn(),
     enable: vi.fn(),
     initialize: vi.fn(),
   },
+}));
+
+vi.mock('../../src/services', () => ({
   wakeLockService: {
     disable: vi.fn(),
     enable: vi.fn(),
@@ -150,7 +153,8 @@ import {
   updateRunSelection,
   updateTimingPointSelection,
 } from '../../src/features/timerView';
-import { ambientModeService, wakeLockService } from '../../src/services';
+import { ambientModeService } from '../../src/services/ambient';
+import { wakeLockService } from '../../src/services';
 import { applyViewServices } from '../../src/utils/viewServices';
 
 describe('App State Handlers', () => {
