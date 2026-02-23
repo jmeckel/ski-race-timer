@@ -2,51 +2,57 @@
 @layer base, components;
 
 /* ===== CSS Variables ===== */
-/* Alpine-inspired color scheme for ski racing */
-/* Optimized for outdoor visibility with high contrast */
+/* CHRONO — Precision Race Timing */
+/* Deep navy base with electric cyan primary and championship gold accent */
 :root {
-  /* Primary Alpine Blues */
-  --primary: #0ea5e9; /* Alpine blue - mountain lake */
-  --primary-dark: #0284c7; /* Deeper alpine blue */
-  --primary-light: #38bdf8; /* Ice blue - glacier */
-  --secondary: #e31837; /* Red - brand accent */
-  --secondary-light: #60a5fa; /* Light blue for gradients */
+  /* Primary Electric Cyan */
+  --primary: #00d4ff; /* Electric cyan */
+  --primary-dark: #00a8cc; /* Cyan dim */
+  --primary-light: #33ddff; /* Cyan bright */
+  --secondary: #ffd700; /* Championship gold */
+  --secondary-light: #ffe066; /* Gold light */
   --accent: #ffffff;
 
   /* Timing Point Colors */
-  --start-color: #f97316; /* Sunset orange for Start */
-  --start-color-dark: #ea580c; /* Darker orange */
-  --finish-color: #10b981; /* Forest green for Finish */
-  --finish-color-dark: #059669; /* Darker green */
+  --start-color: #ff8c42; /* Warm orange for Start */
+  --start-color-dark: #e07530; /* Darker orange */
+  --finish-color: #00e68a; /* Vivid green for Finish */
+  --finish-color-dark: #00c474; /* Darker green */
 
-  /* Surfaces */
-  --background: #0a0a0a; /* Near-black for depth */
-  --surface: #141414; /* Slightly lighter for surfaces */
-  --surface-elevated: #1e1e1e; /* Elevated surfaces */
+  /* Surfaces — Deep Navy */
+  --background: #0a1628; /* Navy deep */
+  --surface: #111d30; /* Navy surface */
+  --surface-elevated: #182844; /* Navy elevated */
 
   /* Text */
   --text-primary: #ffffff; /* Pure white for max contrast */
-  --text-secondary: #d0d0d0; /* Brighter secondary text for outdoor */
-  --text-tertiary: #a0a0a0; /* Brighter tertiary text for outdoor (WCAG AA ~4.6:1) */
+  --text-secondary: #8899aa; /* Muted blue-grey */
+  --text-tertiary: #556677; /* Subtle navy-grey */
 
   /* Status Colors */
-  --success: #10b981; /* Matches finish color */
-  --warning: #fbbf24;
-  --error: #ef4444;
+  --success: #00e68a; /* Vivid green */
+  --warning: #ffd700; /* Championship gold */
+  --error: #ff4757; /* Vivid red */
 
   /* GPS Status */
-  --gps-active: #10b981;
-  --gps-searching: #fbbf24;
-  --gps-inactive: #ef4444;
+  --gps-active: #00e68a;
+  --gps-searching: #ffd700;
+  --gps-inactive: #ff4757;
 
-  /* Borders */
-  --border: rgba(255, 255, 255, 0.1);
+  /* Borders — Cyan-tinted */
+  --border: rgba(0, 212, 255, 0.08);
+
+  /* Typography */
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
   /* Layout */
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
-  --radius: 12px; /* Slightly larger radius for modern feel */
-  --radius-sm: 8px; /* Smaller radius for compact elements */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
 
   /* Spacing Scale */
   --space-xs: 4px;
@@ -55,11 +61,12 @@
   --space-lg: 16px;
   --space-xl: 24px;
   --space-2xl: 32px;
+  --space-3xl: 48px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* Shadows — Cyan-tinted for depth on navy */
+  --shadow-sm: 0 1px 2px rgba(0, 10, 20, 0.4);
+  --shadow-md: 0 2px 8px rgba(0, 10, 20, 0.4);
+  --shadow-lg: 0 4px 16px rgba(0, 10, 20, 0.4);
 
   /* Button Heights */
   --btn-height-sm: 36px;
@@ -90,7 +97,7 @@
     height: 100%;
     height: -webkit-fill-available;
     overflow: hidden;
-    font-family: "Outfit", -apple-system, sans-serif;
+    font-family: var(--font-body);
     background: var(--background);
     color: var(--text-primary);
     line-height: 1.5;
@@ -139,15 +146,15 @@
   }
 
   .ripple-primary {
-    background: rgba(59, 130, 246, 0.4);
+    background: color-mix(in srgb, var(--primary) 40%, transparent);
   }
 
   .ripple-success {
-    background: rgba(74, 222, 128, 0.4);
+    background: color-mix(in srgb, var(--success) 40%, transparent);
   }
 
   .ripple-secondary {
-    background: rgba(227, 24, 55, 0.4);
+    background: color-mix(in srgb, var(--secondary) 40%, transparent);
   }
 
   @keyframes rippleEffect {
@@ -184,6 +191,7 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    order: 2;
   }
 
   /* ===== Header ===== */
@@ -191,19 +199,30 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-xs) var(--space-lg);
-    background: var(--surface);
-    border-bottom: 1px solid var(--surface-elevated);
+    padding: var(--space-sm) var(--space-lg);
+    background: rgba(15, 25, 42, 0.97);
+    border-bottom: none;
+    order: -1;
   }
 
   .header-title {
-    font-size: 1.125rem;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--primary);
     flex-shrink: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .header-logo {
+    flex-shrink: 0;
   }
 
   .header-status {
@@ -219,21 +238,43 @@
   .sync-indicator {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    background: transparent;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 0.8rem;
+    gap: 3px;
+    padding: 2px 7px;
+    background: rgba(0, 230, 138, 0.06);
+    border: 1px solid rgba(0, 230, 138, 0.2);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
     font-weight: 600;
+    letter-spacing: 0.05em;
     flex-shrink: 1;
     min-width: 0;
     overflow: hidden;
+
+    &.connected {
+      background: rgba(0, 230, 138, 0.06);
+      border-color: rgba(0, 230, 138, 0.2);
+    }
+
+    &.error {
+      background: rgba(255, 71, 87, 0.06);
+      border-color: rgba(255, 71, 87, 0.2);
+    }
+
+    &.offline {
+      background: rgba(255, 215, 0, 0.06);
+      border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    &.syncing {
+      background: rgba(0, 212, 255, 0.06);
+      border-color: rgba(0, 212, 255, 0.2);
+    }
   }
 
   .sync-dot {
-    width: 10px;
-    height: 10px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: var(--text-tertiary);
 
@@ -370,26 +411,19 @@
   }
 
   .entry-count-badge {
-    padding: var(--space-xs) 10px;
-    min-width: 28px;
-    background: linear-gradient(
-      135deg,
-      rgba(249, 115, 22, 0.85) 0%,
-      rgba(234, 88, 12, 0.75) 100%
-    );
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: white;
-    border-radius: var(--radius);
-    font-size: 0.85rem;
-    font-weight: 700;
-    font-family: "JetBrains Mono", monospace;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    background: rgba(255, 215, 0, 0.06);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--secondary);
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow:
-      0 0 12px rgba(249, 115, 22, 0.4),
-      0 2px 8px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -423,11 +457,12 @@
   /* ===== Tab Bar ===== */
   .tab-bar {
     display: flex;
-    background: var(--surface);
-    border-top: 1px solid var(--surface-elevated);
+    background: rgba(15, 29, 50, 0.96);
+    border-top: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     flex-shrink: 0;
-    /* Safe area padding so tab bar background fills the bottom safe area */
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    order: 1; /* Move tab bar between header and main content */
+    padding-bottom: 0;
   }
 
   .tab-btn {
@@ -435,13 +470,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 6px 8px 4px;
-    min-height: 48px;
+    gap: 3px;
+    padding: 9px 0 7px;
+    min-height: 50px;
     border: none;
     background: transparent;
     color: var(--text-tertiary);
+    font-family: var(--font-display);
     font-size: 0.7rem;
+    font-weight: 500;
     cursor: pointer;
     transition:
       color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
@@ -449,22 +486,24 @@
     position: relative;
 
     & svg {
-      width: 24px;
-      height: 24px;
-      transition: transform 0.2s ease;
+      width: 18px;
+      height: 18px;
+      opacity: 0.5;
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
     &::after {
       content: "";
       position: absolute;
-      top: 0;
+      bottom: 0;
       left: 50%;
       transform: translateX(-50%) scaleX(0);
-      width: 40px;
-      height: 3px;
+      width: 60%;
+      height: 2px;
       background: var(--primary);
-      border-radius: 0 0 2px 2px;
+      border-radius: 1px 1px 0 0;
       transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
     }
 
     &:active {
@@ -479,7 +518,8 @@
       }
 
       & svg {
-        transform: scale(1.05);
+        transform: scale(1);
+        opacity: 1;
       }
     }
   }
@@ -505,21 +545,38 @@
   .gps-indicator {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    background: transparent;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 0.8rem;
+    gap: 3px;
+    padding: 2px 7px;
+    background: rgba(0, 230, 138, 0.06);
+    border: 1px solid rgba(0, 230, 138, 0.2);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
     font-weight: 600;
+    letter-spacing: 0.05em;
     flex-shrink: 1;
     min-width: 0;
     overflow: hidden;
+
+    &.active {
+      background: rgba(0, 230, 138, 0.06);
+      border-color: rgba(0, 230, 138, 0.2);
+    }
+
+    &.searching {
+      background: rgba(255, 215, 0, 0.08);
+      border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    &.inactive {
+      background: rgba(255, 71, 87, 0.08);
+      border-color: rgba(255, 71, 87, 0.2);
+    }
   }
 
   .gps-dot {
-    width: 10px;
-    height: 10px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: var(--gps-inactive);
     flex-shrink: 0;
@@ -765,6 +822,11 @@
     background: var(--surface-elevated);
   }
 
+  .result-item:hover,
+  .result-group-header:hover {
+    background: rgba(0, 212, 255, 0.08);
+  }
+
   .result-sub-item:active {
     background: var(--surface);
   }
@@ -990,9 +1052,9 @@
   }
 
   .tab-btn {
-    padding: 6px 12px 4px;
+    padding: 8px 0 6px;
     font-size: 0.7rem;
-    min-height: 40px;
+    min-height: 44px;
   }
 
   .tab-btn svg {
@@ -1090,15 +1152,15 @@
   }
 
   .tab-btn {
-    padding: 6px 10px 4px;
+    padding: 8px 0 6px;
     font-size: 0.7rem;
-    min-height: 40px;
-    gap: 1px;
+    min-height: 42px;
+    gap: 2px;
   }
 
   .tab-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 17px;
+    height: 17px;
   }
 
   /* Settings more compact */
@@ -1180,28 +1242,20 @@
   }
 }
 
-/* Header Glass Enhancement - matches bib display style */
+/* Header Glass Enhancement */
 .header.glass-frosted-top {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 25, 42, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: none;
 }
 
 /* Tab Bar Glass Enhancement */
 .tab-bar.glass-frosted {
-  background: linear-gradient(
-    180deg,
-    rgba(20, 20, 20, 0.85) 0%,
-    rgba(20, 20, 20, 0.95) 100%
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 29, 50, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: none;
   position: relative;
 }
 
@@ -1348,26 +1402,18 @@
 
 /* Results Header Glass Enhancement */
 .results-header.glass-frosted-top {
-  background: linear-gradient(
-    180deg,
-    rgba(20, 20, 20, 0.95) 0%,
-    rgba(20, 20, 20, 0.85) 100%
-  );
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 25, 42, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* Results Actions Glass Enhancement */
 .results-actions.glass-frosted {
-  background: linear-gradient(
-    0deg,
-    rgba(20, 20, 20, 0.95) 0%,
-    rgba(20, 20, 20, 0.85) 100%
-  );
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 25, 42, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* Bib Display Glass Enhancement */
@@ -1387,9 +1433,16 @@
 /* Battery-saving, ultra-minimal UI for inactive timer view */
 
 /* Hide all UI except clock when ambient mode is active */
+/* Non-radial elements */
 body.ambient-mode .timer-view .timing-controls,
 body.ambient-mode .timer-view .bib-entry-section,
 body.ambient-mode .timer-view .number-pad,
+/* Radial mode elements */
+body.ambient-mode .timer-view .radial-top-row,
+body.ambient-mode .timer-view .radial-controls-row,
+body.ambient-mode .timer-view .radial-bottom-row,
+body.ambient-mode .timer-view .radial-confirmation-overlay,
+/* Global chrome */
 body.ambient-mode .header,
 body.ambient-mode .tab-bar {
   display: none !important;
@@ -1397,9 +1450,36 @@ body.ambient-mode .tab-bar {
 
 /* Pure black OLED-friendly background */
 body.ambient-mode .timer-view {
+  display: flex !important;
   background: #000000;
   justify-content: center;
   align-items: center;
+}
+
+/* Radial mode: hide dial ring/numbers/ticks, show only clock */
+body.ambient-mode .timer-view .radial-center-area {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.ambient-mode .timer-view .dial-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.ambient-mode .timer-view .dial-center {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.ambient-mode .timer-view .dial-ring,
+body.ambient-mode .timer-view .dial-numbers,
+body.ambient-mode .timer-view .dial-gesture-area,
+body.ambient-mode .timer-view .dial-ticks {
+  display: none !important;
 }
 
 /* Larger clock in ambient mode */
@@ -1413,13 +1493,32 @@ body.ambient-mode .timer-view .clock-time {
   color: rgba(255, 255, 255, 0.85);
 }
 
+body.ambient-mode .timer-view .radial-time-display {
+  font-size: clamp(48px, 15vw, 80px) !important;
+}
+
+body.ambient-mode .timer-view .radial-time-hm {
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.ambient-mode .timer-view .radial-time-seconds {
+  font-size: 1.5em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.ambient-mode .timer-view .radial-time-subseconds {
+  color: rgba(255, 255, 255, 0.4);
+}
+
 /* Hide date row in ambient mode - just show time */
 body.ambient-mode .timer-view .clock-date-row {
   display: none !important;
 }
 
 /* Giant invisible tap target covering entire screen */
-body.ambient-mode .timer-view .timestamp-btn {
+body.ambient-mode .timer-view .timestamp-btn,
+body.ambient-mode .timer-view .radial-time-btn {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -1472,6 +1571,7 @@ body.ambient-mode #main {
   font-size: 0.8rem;
   font-weight: 500;
   max-height: 40px;
+  order: 0;
   opacity: 1;
   transition:
     max-height 0.3s ease,
@@ -1483,7 +1583,7 @@ body.ambient-mode #main {
   justify-content: center;
   gap: var(--space-sm);
   position: relative;
-  z-index: 25;
+  z-index: 101;
 
   &.hidden {
     max-height: 0;
@@ -1594,14 +1694,13 @@ body.ambient-mode #main {
 
   .sync-dot,
   .gps-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   .entry-count-badge {
     padding: 3px 6px;
-    font-size: 0.75rem;
-    min-width: 24px;
+    font-size: 0.6rem;
   }
 
   .judges-ready-indicator {

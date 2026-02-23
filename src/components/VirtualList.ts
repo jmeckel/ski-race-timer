@@ -1,4 +1,5 @@
 import { t } from '../i18n/translations';
+import { ambientModeService } from '../services/ambient';
 import type { BatteryLevel } from '../services/battery';
 import { batteryService } from '../services/battery';
 import {
@@ -29,6 +30,7 @@ import {
   photoButton,
   pointBadge,
   runBadge,
+  runChip,
   statusBadge,
 } from '../utils';
 import { logger } from '../utils/logger';
@@ -46,8 +48,8 @@ interface DisplayGroup {
 }
 
 // Virtual list configuration
-const ITEM_HEIGHT = 72; // Height of each result item in pixels
-const SUB_ITEM_HEIGHT = 56; // Height of sub-items when expanded
+const ITEM_HEIGHT = 78; // Height of each result item in pixels
+const SUB_ITEM_HEIGHT = 64; // Height of sub-items when expanded
 const GROUP_HEADER_HEIGHT = 72; // Height of group header
 const BUFFER_SIZE = 5; // Number of items to render above/below viewport
 const SCROLL_DEBOUNCE_NORMAL = 16; // ~60fps
@@ -674,10 +676,10 @@ export class VirtualList {
       height: ${GROUP_HEADER_HEIGHT}px;
       display: flex;
       align-items: center;
-      padding: 0 8px 0 4px;
-      gap: 8px;
+      padding: 0 16px;
+      gap: 12px;
       background: var(--surface);
-      border-bottom: 1px solid var(--surface-elevated);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
       transition: background 0.2s;
     `;
@@ -708,12 +710,10 @@ export class VirtualList {
 
     header.innerHTML = `
       ${iconChevron(16, isExpanded)}
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
+      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; min-width: 64px; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
         ${escapeHtml(bibStr)}
       </div>
-      <div style="min-width: 48px;"></div>
-      ${runBadge(runLabel, runColor)}
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-inline-start: 4px;">
         <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
           ${escapeHtml(summaryText)}
         </div>
@@ -726,6 +726,7 @@ export class VirtualList {
         </span>`
           : ''
       }
+      ${runBadge(runLabel, runColor)}
     `;
 
     // Create and track event listeners for cleanup
@@ -785,12 +786,13 @@ export class VirtualList {
       left: 0;
       right: 0;
       height: ${ITEM_HEIGHT}px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) auto;
       align-items: center;
-      padding: 0 8px 0 4px;
-      gap: 8px;
+      padding: 0 16px;
+      column-gap: 20px;
       background: var(--surface);
-      border-bottom: 1px solid var(--surface-elevated);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
       transition: background 0.2s;
     `;
@@ -803,7 +805,6 @@ export class VirtualList {
     const pointColor = getPointColor(entry.point);
     const pointLabel = getPointLabel(entry.point, lang);
     const run = entry.run ?? 1;
-    const runColor = getRunColor(run);
     const runLabel = getRunLabel(run, lang);
 
     const faultBadgeHtml =
@@ -812,33 +813,33 @@ export class VirtualList {
     const duplicateBadgeHtml =
       crossDeviceDuplicateCount > 0 ? duplicateBadge(lang) : '';
 
+    const dateStr = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+    const deviceDateStr = entry.deviceName
+      ? `${escapeHtml(entry.deviceName)}  ·  ${dateStr}`
+      : dateStr;
+
     item.innerHTML = `
-      <div style="width: 16px; flex-shrink: 0;"></div>
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right;">
+      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; min-width: 64px; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
         ${escapeHtml(bibStr)}
       </div>
-      ${pointBadge(pointLabel, pointColor)}
-      ${runBadge(runLabel, runColor)}
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-        <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.875rem;">
+      <div class="result-info" style="display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-inline-start: 2px;">
+        <div class="result-time" style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1rem; font-weight: 600; letter-spacing: 0.03em;">
           ${escapeHtml(timeStr)}
         </div>
-        ${
-          entry.deviceName
-            ? `
-          <div class="result-device" style="font-size: 0.7rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            ${escapeHtml(entry.deviceName)}
-          </div>
-        `
-            : ''
-        }
+        <div class="result-device" style="font-size: 0.68rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); letter-spacing: 0.04em;">
+          ${deviceDateStr}
+        </div>
       </div>
-      ${duplicateBadgeHtml}
-      ${faultBadgeHtml}
-      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang)) : ''}
-      ${entry.photo ? photoButton(t('viewPhotoLabel', lang)) : ''}
-      ${editButton({ ariaLabel: t('editEntryLabel', lang) })}
-      ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang) })}
+      <div class="result-tags" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: max-content;">
+        ${duplicateBadgeHtml}
+        ${faultBadgeHtml}
+        ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang)) : ''}
+        ${entry.photo ? photoButton(t('viewPhotoLabel', lang)) : ''}
+        ${pointBadge(pointLabel, pointColor)}
+        ${runChip(runLabel, getRunColor(run))}
+        ${editButton({ ariaLabel: t('editEntryLabel', lang) })}
+        ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang) })}
+      </div>
     `;
 
     // Track all event listeners for cleanup
@@ -979,10 +980,7 @@ export class VirtualList {
     const faultBadgeHtml = faultBadge({ faults, lang });
 
     const statusLabel = state.usePenaltyMode ? t('flt', lang) : t('dsq', lang);
-    const statusColor = state.usePenaltyMode
-      ? 'var(--warning)'
-      : 'var(--error)';
-    const statusTextColor = statusColor === 'var(--warning)' ? '#000' : 'white';
+    const statusColor = state.usePenaltyMode ? '#f59e0b' : '#ef4444';
 
     const deletionPendingHtml = hasMarkedForDeletion
       ? deletionPendingBadge()
@@ -1011,7 +1009,7 @@ export class VirtualList {
       </div>
       ${deletionPendingHtml}
       ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
-      ${!hasMarkedForDeletion ? statusBadge(statusLabel, statusColor, statusTextColor) : ''}
+      ${!hasMarkedForDeletion ? statusBadge(statusLabel, statusColor) : ''}
       ${editButton({ ariaLabel: t('editFaultLabel', lang) })}
       ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), className: 'result-delete fault-delete-btn' })}
     `;
@@ -1191,7 +1189,7 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang), 'var(--error)', 'white', '0.65rem') : ''}
+      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang), 'var(--error)', '0.65rem') : ''}
       ${editButton({ ariaLabel: t('editEntryLabel', lang), size: 16 })}
       ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang), size: 16 })}
     `;
@@ -1204,6 +1202,7 @@ export class VirtualList {
     listeners.editBtn = editBtn;
     listeners.editClick = ((e: Event) => {
       e.stopPropagation();
+      if (ambientModeService.wasRecentlyExited()) return;
       this.options.onItemClick?.(entry, e as MouseEvent);
     }) as EventListener;
     editBtn.addEventListener('click', listeners.editClick);
@@ -1213,12 +1212,14 @@ export class VirtualList {
     listeners.deleteBtn = deleteBtn;
     listeners.deleteClick = ((e: Event) => {
       e.stopPropagation();
+      if (ambientModeService.wasRecentlyExited()) return;
       this.options.onItemDelete?.(entry);
     }) as EventListener;
     deleteBtn.addEventListener('click', listeners.deleteClick);
 
     // Click on row opens edit
     listeners.click = ((e: Event) => {
+      if (ambientModeService.wasRecentlyExited()) return;
       this.options.onItemClick?.(entry, e as MouseEvent);
     }) as EventListener;
     item.addEventListener('click', listeners.click);
@@ -1228,6 +1229,7 @@ export class VirtualList {
     // Keyboard support: Enter/Space to edit, Delete to delete, arrow keys to navigate
     listeners.keydown = ((e: Event) => {
       const ke = e as KeyboardEvent;
+      if (ambientModeService.wasRecentlyExited()) return;
       switch (ke.key) {
         case 'Enter':
         case ' ':
@@ -1262,8 +1264,8 @@ export class VirtualList {
       itemId,
       new SwipeActions({
         element: item,
-        onSwipeRight: () => this.options.onItemClick?.(entry, new MouseEvent('click')),
-        onSwipeLeft: () => this.options.onItemDelete?.(entry),
+        onSwipeRight: () => { if (!ambientModeService.wasRecentlyExited()) this.options.onItemClick?.(entry, new MouseEvent('click')); },
+        onSwipeLeft: () => { if (!ambientModeService.wasRecentlyExited()) this.options.onItemDelete?.(entry); },
       }),
     );
 

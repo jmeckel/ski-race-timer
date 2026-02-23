@@ -176,15 +176,26 @@ export function faultBadge(opts: {
 }
 
 /**
- * Status badge (DNS, DNF, DSQ, FLT)
+ * Map status codes to chip colors (outlined/tinted style)
+ */
+const statusChipColors: Record<string, string> = {
+  dns: '#8899aa', // prototype muted gray-blue
+  dnf: '#ffd700', // prototype warning gold
+  dsq: '#ff4757', // prototype error red
+  flt: '#ffd700', // fault penalty uses warning gold
+};
+
+/**
+ * Status badge (DNS, DNF, DSQ, FLT) — outlined chip style
  */
 export function statusBadge(
   status: string,
-  bgColor = 'var(--error)',
-  textColor = 'white',
-  fontSize = '0.7rem',
+  colorOverride = '',
+  fontSize = '0.65rem',
 ): string {
-  return `<span class="result-status" style="padding: 2px 6px; border-radius: var(--radius); font-size: ${fontSize}; font-weight: 600; background: ${bgColor}; color: ${textColor};">${escapeHtml(status)}</span>`;
+  const color =
+    statusChipColors[status.toLowerCase()] || colorOverride || '#ef4444';
+  return `<span class="result-status" style="padding: 3px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: ${fontSize}; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; background: color-mix(in srgb, ${color} 10%, transparent); color: ${color}; border: 1px solid color-mix(in srgb, ${color} 15%, transparent);">${escapeHtml(status)}</span>`;
 }
 
 /**
@@ -195,20 +206,27 @@ export function deletionPendingBadge(fontSize = '0.7rem'): string {
 }
 
 /**
- * Run label badge (L1/L2 or R1/R2)
+ * Run label badge (L1/L2 or R1/R2) — outlined chip style (matches statusBadge)
  */
 export function runBadge(runLabel: string, runColor: string): string {
-  return `<span class="result-run" data-advanced style="padding: 4px 6px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 600; min-width: 36px; text-align: center; background: ${runColor}20; color: ${runColor};">${escapeHtml(runLabel)}</span>`;
+  return `<span class="result-run" data-advanced style="padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; background: color-mix(in srgb, ${runColor} 10%, transparent); color: ${runColor}; border: 1px solid color-mix(in srgb, ${runColor} 15%, transparent);">${escapeHtml(runLabel)}</span>`;
 }
 
 /**
- * Point label badge (Start/Finish/Gate)
+ * Point label badge (Start/Finish/Gate) — outlined chip style (matches statusBadge)
  */
 export function pointBadge(
   pointLabel: string,
   pointColor: string,
-  minWidth = '48px',
-  fontSize = '0.75rem',
+  _minWidth = '',
+  _fontSize = '',
 ): string {
-  return `<div class="result-point" style="padding: 4px 6px; border-radius: var(--radius); font-size: ${fontSize}; font-weight: 600; min-width: ${minWidth}; text-align: center; background: ${pointColor}20; color: ${pointColor};">${escapeHtml(pointLabel)}</div>`;
+  return `<div class="result-point" style="padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-align: center; text-transform: uppercase; background: color-mix(in srgb, ${pointColor} 10%, transparent); color: ${pointColor}; border: 1px solid color-mix(in srgb, ${pointColor} 15%, transparent);">${escapeHtml(pointLabel)}</div>`;
+}
+
+/**
+ * Run label chip (L1/L2 or R1/R2) — outlined chip style (matches statusBadge)
+ */
+export function runChip(runLabel: string, runColor: string): string {
+  return `<span class="result-run" style="padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; background: color-mix(in srgb, ${runColor} 10%, transparent); color: ${runColor}; border: 1px solid color-mix(in srgb, ${runColor} 15%, transparent);">${escapeHtml(runLabel)}</span>`;
 }
