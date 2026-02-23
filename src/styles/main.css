@@ -191,6 +191,7 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    z-index: 1;
     order: 2;
   }
 
@@ -203,6 +204,8 @@
     background: rgba(15, 25, 42, 0.97);
     border-bottom: none;
     order: -1;
+    position: relative;
+    z-index: 100;
   }
 
   .header-title {
