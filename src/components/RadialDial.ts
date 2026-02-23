@@ -266,6 +266,13 @@ export class RadialDial {
     this.animation.flash(this.dialRing, this.dialNumbers);
   }
 
+  updateAriaLabels(): void {
+    const lang = store.getState().currentLang;
+    for (const [digit, el] of this.cachedNumberElements) {
+      el.setAttribute('aria-label', `${t('numberLabel', lang)} ${digit}`);
+    }
+  }
+
   destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;

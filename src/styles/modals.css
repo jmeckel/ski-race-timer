@@ -29,10 +29,13 @@
 .modal-content {
   width: 100%;
   max-width: 360px;
-  background: rgba(20, 20, 20, 0.85);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(17, 29, 48, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.08);
   border-radius: var(--radius);
   overflow: hidden;
   animation: modalIn 0.15s ease-out;
@@ -84,6 +87,7 @@
 .modal-header {
   padding: 16px;
   border-bottom: 1px solid var(--surface-elevated);
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -93,9 +97,12 @@
 
 .modal-body {
   padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-footer {
+  flex-shrink: 0;
   display: flex;
   gap: 8px;
   padding: 16px;
@@ -131,22 +138,22 @@
   &.primary {
     background: var(--primary);
     color: white;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 30%, transparent);
 
     &:active {
       background: var(--primary-dark);
-      box-shadow: 0 1px 4px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--primary) 40%, transparent);
     }
   }
 
   &.danger {
     background: var(--error);
     color: white;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--error) 30%, transparent);
 
     &:active {
-      background: #dc2626;
-      box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+      background: color-mix(in srgb, var(--error) 85%, black);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--error) 40%, transparent);
     }
   }
 
@@ -300,7 +307,7 @@
 
   & .confirmation-content {
     padding: 32px 48px;
-    background: rgba(10, 10, 10, 0.95);
+    background: rgba(10, 22, 40, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius);
@@ -349,11 +356,11 @@
 }
 
 .confirmation-bib {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 4rem;
   font-weight: 800;
   color: var(--primary);
-  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--primary) 50%, transparent);
 }
 
 .confirmation-point {
@@ -438,7 +445,7 @@
 
   &.selected {
     border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.15);
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
     color: var(--primary);
   }
 }
@@ -557,10 +564,10 @@
 .modal-btn.success {
   background: var(--success);
   color: var(--background);
-  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--success) 30%, transparent);
 
   &:active {
-    background: #22c55e;
+    background: color-mix(in srgb, var(--success) 85%, black);
   }
 }
 
@@ -587,8 +594,8 @@
   padding: 24px 32px;
   background: linear-gradient(
     135deg,
-    rgba(34, 197, 94, 0.95) 0%,
-    rgba(22, 163, 74, 0.95) 100%
+    color-mix(in srgb, var(--success) 95%, transparent) 0%,
+    color-mix(in srgb, var(--success) 80%, black) 100%
   );
   border-radius: var(--radius);
   border: 4px solid rgba(255, 255, 255, 0.3);
@@ -996,4 +1003,31 @@
   border-radius: 4px;
   min-width: 22px;
   text-align: center;
+}
+
+/* Landscape: 2-column grid for shortcuts to use the full width */
+@media (orientation: landscape) and (max-height: 500px) {
+  .shortcuts-modal-content {
+    max-width: 680px;
+    max-height: 90dvh;
+  }
+
+  .shortcuts-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+    max-height: none;
+  }
+
+  .shortcuts-section {
+    margin-block-end: 8px;
+  }
+
+  .shortcut-row {
+    padding: 4px 0;
+  }
+
+  .shortcuts-modal-content .modal-footer {
+    padding: 8px 16px;
+  }
 }

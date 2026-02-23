@@ -107,6 +107,12 @@ export function initRadialTimerView(): void {
     }),
   ];
 
+  // Re-translate dynamic text and dial aria-labels when language changes
+  listeners.add(window, 'settings-language-changed', () => {
+    updateRadialStatsDisplay();
+    radialDial?.updateAriaLabels();
+  });
+
   isInitialized = true;
   logger.debug('[RadialTimerView] Initialized successfully');
 }
