@@ -30,6 +30,7 @@ class AmbientModeService {
   private inactivityCheckId: ReturnType<typeof setInterval> | null = null;
   private batteryUnsubscribe: (() => void) | null = null;
   private callbacks: Set<AmbientChangeCallback> = new Set();
+  private lastExitTimestamp = 0;
 
   // Activity event listeners (stored for cleanup)
   private activityHandler: (() => void) | null = null;
@@ -173,10 +174,19 @@ class AmbientModeService {
     this.isAmbientActive = false;
     this.triggeredBy = null;
     this.lastActivityTimestamp = Date.now();
+    this.lastExitTimestamp = Date.now();
 
     this.notifySubscribers();
 
     logger.debug('[Ambient] Exited ambient mode');
+  }
+
+  /**
+   * Check if ambient mode was exited very recently (within 500ms).
+   * Used by record handlers to suppress the first tap after exiting.
+   */
+  wasRecentlyExited(): boolean {
+    return Date.now() - this.lastExitTimestamp < 500;
   }
 
   /**
@@ -185,10 +195,9 @@ class AmbientModeService {
   resetInactivityTimer(): void {
     this.lastActivityTimestamp = Date.now();
 
-    // If in ambient mode, exit it
+    // Any user interaction exits ambient mode
     if (this.isAmbientActive) {
-      // Don't exit here - let the tap handler in timerView do it
-      // This prevents exiting on the activity event that's also the exit tap
+      this.exitAmbientMode();
     }
   }
 
