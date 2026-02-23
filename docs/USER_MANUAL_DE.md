@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.24.5 | Stand: Februar 2026
+Version 5.24.6 | Stand: Februar 2026
 
 ---
 
@@ -674,7 +674,7 @@ Druckbarer Text im Format einer offiziellen Torrichterkarte:
 
 **Probleme melden:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.24.5
+**Version:** 5.24.6
 
 ---
 

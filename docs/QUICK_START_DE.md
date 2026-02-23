@@ -24,7 +24,7 @@ footer-right: "\\thepage"
 
 **In unter 2 Minuten einsatzbereit.**
 
-Version 5.24.5
+Version 5.24.6
 
 ---
 
