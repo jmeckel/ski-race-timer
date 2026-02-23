@@ -7,6 +7,7 @@ import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import { store } from '../store';
 import { logCritical, logError } from './errors';
+import { escapeHtml } from './format';
 
 // Track if we've shown error UI to avoid spam
 let errorOverlayShown = false;
@@ -219,15 +220,6 @@ function showErrorOverlay(message: string): void {
   document.getElementById('error-reload-btn')?.addEventListener('click', () => {
     window.location.reload();
   });
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**

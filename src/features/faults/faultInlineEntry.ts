@@ -183,7 +183,7 @@ export function updateInlineFaultsList(): void {
           ${hasNotes ? `<span class="gate-judge-fault-note-icon" title="${escapeAttr(t('hasNote', lang))}" aria-label="${escapeAttr(t('hasNote', lang))}">${iconNote(14)}</span>` : ''}
         </div>
       </div>
-      <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">
+      <button class="gate-judge-fault-delete" aria-label="${escapeAttr(t('deleteLabel', lang))}">
         ${iconTrash(18)}
       </button>
     `;

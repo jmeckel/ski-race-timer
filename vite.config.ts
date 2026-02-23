@@ -149,7 +149,7 @@ export default defineConfig({
             // Stale-while-revalidate for sync API GET requests
             // Returns cached response immediately while fetching fresh data in background
             // Enables offline-first reads for race data on slow/spotty cellular connections
-            urlPattern: /\/api\/v1\/sync\?.*$/i,
+            urlPattern: /\/api\/v1\/sync\?(?!.*checkOnly).*$/i,
             handler: 'StaleWhileRevalidate',
             method: 'GET',
             options: {

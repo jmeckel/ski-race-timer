@@ -129,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       if (!chiefPinHash) {
         // No chief judge PIN set yet - this is the first time setup
         // First chief judge sets the PIN
-        const newPinHash = hashPin(pin);
+        const newPinHash = await hashPin(pin);
         await client.set(CHIEF_JUDGE_PIN_KEY, newPinHash);
 
         const token = generateToken({
@@ -147,7 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
 
       // Verify provided PIN against stored chief judge PIN hash
-      const pinValid = verifyPin(pin, chiefPinHash);
+      const pinValid = await verifyPin(pin, chiefPinHash);
 
       if (!pinValid) {
         return sendError(res, 'Invalid Chief Judge PIN', 401);
@@ -155,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       // Migrate legacy SHA-256 hash to PBKDF2 on successful verification
       if (!chiefPinHash.includes(':')) {
-        const upgradedHash = hashPin(pin);
+        const upgradedHash = await hashPin(pin);
         await client.set(CHIEF_JUDGE_PIN_KEY, upgradedHash);
       }
 
@@ -178,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (!storedPinHash) {
       // No PIN set yet - this is the first time setup
       // Hash and store the PIN, then return token
-      const newPinHash = hashPin(pin);
+      const newPinHash = await hashPin(pin);
       await client.set(CLIENT_PIN_KEY, newPinHash);
 
       const token = generateToken({
@@ -197,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     // Verify provided PIN against stored hash
     // SECURITY: Uses timing-safe comparison internally to prevent timing attacks
-    const pinValid = verifyPin(pin, storedPinHash);
+    const pinValid = await verifyPin(pin, storedPinHash);
 
     if (!pinValid) {
       return sendError(res, 'Invalid PIN', 401);
@@ -205,7 +205,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     // Migrate legacy SHA-256 hash to PBKDF2 on successful verification
     if (!storedPinHash.includes(':')) {
-      const upgradedHash = hashPin(pin);
+      const upgradedHash = await hashPin(pin);
       await client.set(CLIENT_PIN_KEY, upgradedHash);
     }
 

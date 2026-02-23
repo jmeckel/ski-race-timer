@@ -101,6 +101,35 @@ interface DeleteRequestBody {
   approvedBy?: string;
 }
 
+/**
+ * Sanitize version history items to prevent stored XSS via Redis
+ */
+function sanitizeVersionHistoryItem(item: unknown): Record<string, unknown> | null {
+  if (!item || typeof item !== 'object') return null;
+  const obj = item as Record<string, unknown>;
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      sanitized[key] = sanitizeString(value, 200);
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      sanitized[key] = value;
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      // Sanitize nested objects (e.g., data field)
+      const nested: Record<string, unknown> = {};
+      for (const [nk, nv] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof nv === 'string') {
+          nested[nk] = sanitizeString(nv, 200);
+        } else if (typeof nv === 'number' || typeof nv === 'boolean') {
+          nested[nk] = nv;
+        }
+      }
+      sanitized[key] = nested;
+    }
+  }
+  return sanitized;
+}
+
 function isValidFaultEntry(fault: unknown): fault is FaultEntry {
   if (!fault || typeof fault !== 'object') return false;
 
@@ -418,14 +447,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         notesTimestamp: fault.notesTimestamp || null,
         // Version tracking fields
         currentVersion: fault.currentVersion || 1,
-        versionHistory: Array.isArray(fault.versionHistory) ? fault.versionHistory.slice(0, 100) : [],
+        versionHistory: Array.isArray(fault.versionHistory)
+          ? fault.versionHistory.slice(0, 100).map(sanitizeVersionHistoryItem).filter(Boolean)
+          : [],
         // Deletion workflow fields
         markedForDeletion: fault.markedForDeletion === true,
         markedForDeletionAt: fault.markedForDeletionAt || null,
-        markedForDeletionBy: fault.markedForDeletionBy || null,
-        markedForDeletionByDeviceId: fault.markedForDeletionByDeviceId || null,
+        markedForDeletionBy: sanitizeString(fault.markedForDeletionBy, 100),
+        markedForDeletionByDeviceId: sanitizeString(fault.markedForDeletionByDeviceId, 50),
         deletionApprovedAt: fault.deletionApprovedAt || null,
-        deletionApprovedBy: fault.deletionApprovedBy || null
+        deletionApprovedBy: sanitizeString(fault.deletionApprovedBy, 100)
       };
 
       const addResult = await atomicAddFault(client, faultsKey, enrichedFault, sanitizedDeviceId);

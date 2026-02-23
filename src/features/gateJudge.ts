@@ -5,7 +5,7 @@
 
 import { t } from '../i18n/translations';
 import type { AppState, FaultEntry, FaultType } from '../types';
-import { escapeHtml, getFaultTypeLabel } from '../utils/format';
+import { escapeAttr, escapeHtml, getFaultTypeLabel } from '../utils/format';
 import { ListenerManager } from '../utils/listenerManager';
 
 // Module state
@@ -118,7 +118,7 @@ export function updateInlineFaultsList(): void {
           <span class="gate-judge-fault-type">${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}</span>
         </div>
       </div>
-      <button class="gate-judge-fault-delete" aria-label="${t('deleteLabel', lang)}">
+      <button class="gate-judge-fault-delete" aria-label="${escapeAttr(t('deleteLabel', lang))}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18"/>
           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>

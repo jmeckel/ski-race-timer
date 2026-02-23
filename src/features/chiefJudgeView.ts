@@ -401,7 +401,7 @@ export function updateJudgesOverview(): void {
     <div class="judge-card${judge.isReady ? ' ready' : ''}">
       <span class="judge-ready-indicator"></span>
       <span class="judge-name" title="${escapeAttr(judge.deviceName)}">${escapeHtml(judge.deviceName)}</span>
-      <span class="judge-gates">${judge.gateStart}–${judge.gateEnd}</span>
+      <span class="judge-gates">${escapeHtml(String(judge.gateStart))}–${escapeHtml(String(judge.gateEnd))}</span>
     </div>
   `,
     )
@@ -543,37 +543,49 @@ export function updateFaultSummaryPanel(): void {
     summaryList.innerHTML = cardsHtml.join('');
   }
 
-  // Add click handlers
-  const finalizeButtons = summaryList.querySelectorAll('.finalize-btn');
-  finalizeButtons.forEach((btn) => {
-    btn.addEventListener('click', handleFinalizeClick);
-  });
+  // Event delegation: register once on summaryList, cleaned up via listeners manager
+  setupSummaryListDelegation(summaryList);
+}
 
-  const editFaultButtons = summaryList.querySelectorAll('.edit-fault-btn');
-  editFaultButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+// Track which containers have delegated handlers to avoid duplicates
+const delegatedContainers = new WeakSet<Element>();
+
+/**
+ * Set up event delegation on the fault summary list container
+ */
+function setupSummaryListDelegation(summaryList: HTMLElement): void {
+  if (delegatedContainers.has(summaryList)) return;
+  delegatedContainers.add(summaryList);
+
+  listeners.add(summaryList, 'click', (e: Event) => {
+    const target = e.target as HTMLElement;
+
+    // Finalize button
+    const finalizeBtn = target.closest('.finalize-btn');
+    if (finalizeBtn) {
+      handleFinalizeClick(e);
+      return;
+    }
+
+    // Edit fault button
+    const editBtn = target.closest('.edit-fault-btn') as HTMLElement | null;
+    if (editBtn) {
       e.stopPropagation();
-      const faultId = (btn as HTMLElement).dataset.faultId;
+      const faultId = editBtn.dataset.faultId;
       if (faultId) {
-        const fault = store
-          .getState()
-          .faultEntries.find((f) => f.id === faultId);
-        if (fault) {
-          dispatchOpenFaultEditModal(fault);
-        }
+        const fault = store.getState().faultEntries.find((f) => f.id === faultId);
+        if (fault) dispatchOpenFaultEditModal(fault);
       }
-    });
-  });
+      return;
+    }
 
-  const deleteFaultButtons = summaryList.querySelectorAll('.delete-fault-btn');
-  deleteFaultButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    // Delete fault button
+    const deleteBtn = target.closest('.delete-fault-btn') as HTMLElement | null;
+    if (deleteBtn) {
       e.stopPropagation();
-      const faultId = (btn as HTMLElement).dataset.faultId;
+      const faultId = deleteBtn.dataset.faultId;
       if (faultId) {
-        const fault = store
-          .getState()
-          .faultEntries.find((f) => f.id === faultId);
+        const fault = store.getState().faultEntries.find((f) => f.id === faultId);
         if (fault) {
           if (fault.markedForDeletion) {
             handleRejectFaultDeletion(fault);
@@ -582,7 +594,43 @@ export function updateFaultSummaryPanel(): void {
           }
         }
       }
-    });
+    }
+  });
+}
+
+/**
+ * Set up event delegation on the pending deletions list container
+ */
+function setupPendingDeletionsDelegation(list: HTMLElement, getPendingDeletions: () => FaultEntry[]): void {
+  if (delegatedContainers.has(list)) return;
+  delegatedContainers.add(list);
+
+  listeners.add(list, 'click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    const pendingDeletions = getPendingDeletions();
+
+    // Approve button
+    const approveBtn = target.closest('.pending-deletion-btn.approve') as HTMLElement | null;
+    if (approveBtn) {
+      e.stopPropagation();
+      const faultId = approveBtn.dataset.faultId;
+      if (faultId) {
+        const fault = pendingDeletions.find((f) => f.id === faultId);
+        if (fault) handleApproveFaultDeletion(fault);
+      }
+      return;
+    }
+
+    // Reject button
+    const rejectBtn = target.closest('.pending-deletion-btn.reject') as HTMLElement | null;
+    if (rejectBtn) {
+      e.stopPropagation();
+      const faultId = rejectBtn.dataset.faultId;
+      if (faultId) {
+        const fault = pendingDeletions.find((f) => f.id === faultId);
+        if (fault) handleRejectFaultDeletion(fault);
+      }
+    }
   });
 }
 
@@ -684,31 +732,8 @@ export function updatePendingDeletionsPanel(): void {
 
   list.innerHTML = itemsHtml;
 
-  list.querySelectorAll('.pending-deletion-btn.approve').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const faultId = (btn as HTMLElement).dataset.faultId;
-      if (faultId) {
-        const fault = pendingDeletions.find((f) => f.id === faultId);
-        if (fault) {
-          handleApproveFaultDeletion(fault);
-        }
-      }
-    });
-  });
-
-  list.querySelectorAll('.pending-deletion-btn.reject').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const faultId = (btn as HTMLElement).dataset.faultId;
-      if (faultId) {
-        const fault = pendingDeletions.find((f) => f.id === faultId);
-        if (fault) {
-          handleRejectFaultDeletion(fault);
-        }
-      }
-    });
-  });
+  // Event delegation: register once on list, cleaned up via listeners manager
+  setupPendingDeletionsDelegation(list, () => store.getPendingDeletions());
 }
 
 /**

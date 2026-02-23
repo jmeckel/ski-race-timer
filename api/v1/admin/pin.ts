@@ -89,14 +89,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
 
       // Verify current PIN using timing-safe comparison
-      const currentPinValid = verifyPin(currentPin, storedPinHash);
+      const currentPinValid = await verifyPin(currentPin, storedPinHash);
 
       if (!currentPinValid) {
         return sendError(res, 'Current PIN is incorrect', 401);
       }
 
       // Hash and store new PIN
-      const newPinHash = hashPin(newPin);
+      const newPinHash = await hashPin(newPin);
       await client.set(CLIENT_PIN_KEY, newPinHash);
 
       apiLogger.info('PIN changed successfully via admin/pin API');

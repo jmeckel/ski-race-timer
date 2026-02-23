@@ -102,7 +102,7 @@ describe('Security Patterns - Source Code Assertions', () => {
   describe('PBKDF2 hashing', () => {
     it('jwt.ts should use PBKDF2 for PIN hashing', () => {
       const source = readSource('api/lib/jwt.ts');
-      expect(source).toContain('pbkdf2Sync');
+      expect(source).toContain('pbkdf2Async');
     });
 
     it('jwt.ts should use at least 100000 iterations', () => {

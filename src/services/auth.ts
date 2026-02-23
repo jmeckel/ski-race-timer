@@ -9,6 +9,20 @@ import { storage } from './storage';
 export const AUTH_TOKEN_KEY = 'skiTimerAuthToken';
 
 /**
+ * Decode a base64url-encoded string (JWT uses base64url, not standard base64)
+ */
+function decodeBase64Url(str: string): string {
+  // Replace base64url chars with standard base64 chars
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  // Pad with '=' to make length a multiple of 4
+  const pad = base64.length % 4;
+  if (pad) {
+    base64 += '='.repeat(4 - pad);
+  }
+  return atob(base64);
+}
+
+/**
  * Get auth headers for API requests
  */
 export function getAuthHeaders(): HeadersInit {
@@ -30,7 +44,7 @@ export function hasAuthToken(): boolean {
   try {
     const parts = token.split('.');
     if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1]!));
+      const payload = JSON.parse(decodeBase64Url(parts[1]!));
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         return false;
       }
@@ -158,8 +172,8 @@ export function getTokenRole(): string | null {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
 
-    // Decode base64 payload
-    const payload = JSON.parse(atob(parts[1]!));
+    // Decode base64url payload
+    const payload = JSON.parse(decodeBase64Url(parts[1]!));
     return payload.role || null;
   } catch {
     return null;

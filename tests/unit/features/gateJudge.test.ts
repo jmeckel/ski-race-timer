@@ -13,6 +13,7 @@ vi.mock('../../../src/i18n/translations', () => ({
 }));
 
 vi.mock('../../../src/utils/format', () => ({
+  escapeAttr: vi.fn((s: string) => s),
   escapeHtml: vi.fn((s: string) => s),
   getFaultTypeLabel: vi.fn((type: string) => type),
 }));

@@ -1,7 +1,10 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { promisify } from 'util';
 import type { VercelRequest } from '@vercel/node';
 import type Redis from 'ioredis';
+
+const pbkdf2Async = promisify(crypto.pbkdf2);
 
 /** Role types for JWT token claims */
 export type UserRole = 'timer' | 'gateJudge' | 'chiefJudge';
@@ -191,9 +194,9 @@ const SALT_LENGTH: number = 16;
  * @param pin - PIN to hash
  * @returns Format: "salt:hash" (both hex-encoded)
  */
-export function hashPin(pin: string): string {
+export async function hashPin(pin: string): Promise<string> {
   const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
-  const hash = crypto.pbkdf2Sync(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST).toString('hex');
+  const hash = (await pbkdf2Async(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST)).toString('hex');
   return `${salt}:${hash}`;
 }
 
@@ -205,12 +208,12 @@ export function hashPin(pin: string): string {
  * @param storedHash - Stored hash to compare against
  * @returns True if PIN matches
  */
-export function verifyPin(pin: string, storedHash: string): boolean {
+export async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
   try {
     if (storedHash.includes(':')) {
       // New PBKDF2 format: salt:hash
       const [salt, hash] = storedHash.split(':');
-      const computedHash = crypto.pbkdf2Sync(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST).toString('hex');
+      const computedHash = (await pbkdf2Async(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST)).toString('hex');
       return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(hash, 'hex'));
     } else {
       // Legacy SHA-256 format (for migration from existing PINs)
