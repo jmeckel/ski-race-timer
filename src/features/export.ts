@@ -193,15 +193,15 @@ export function exportResults(): void {
 
       if (hasFaults) {
         // Calculate penalty time
-        const penaltySeconds =
+        const penaltySecondsVal =
           entryFaults.length > 0 && state.usePenaltyMode
             ? entryFaults.length * state.penaltySeconds
             : 0;
         const faultStr = formatFaultsForCSV(entryFaults);
 
-        return `${bib};${run};${point};${time};${status};${device};${penaltySeconds};${faultStr};${datum}`;
+        return `${bib};${escapeCSVField(String(run))};${escapeCSVField(point)};${escapeCSVField(time)};${escapeCSVField(status)};${device};${escapeCSVField(String(penaltySecondsVal))};${escapeCSVField(faultStr)};${datum}`;
       } else {
-        return `${bib};${run};${point};${time};${status};${device};${datum}`;
+        return `${bib};${escapeCSVField(String(run))};${escapeCSVField(point)};${escapeCSVField(time)};${escapeCSVField(status)};${device};${datum}`;
       }
     });
 

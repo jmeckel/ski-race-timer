@@ -6,8 +6,8 @@
 import { ListenerManager } from '../utils/listenerManager';
 import { iconEdit, iconTrash } from '../utils/templates';
 
-const SWIPE_THRESHOLD = 80; // Pixels to swipe to trigger action
-const SWIPE_VELOCITY_THRESHOLD = 0.5; // Pixels per millisecond
+const SWIPE_THRESHOLD = 64; // Pixels to swipe to trigger action
+const SWIPE_VELOCITY_THRESHOLD = 0.35; // Pixels per millisecond
 
 interface SwipeActionsOptions {
   element: HTMLElement;
@@ -28,7 +28,10 @@ export class SwipeActions {
   private currentX = 0;
   private startTime = 0;
   private isHorizontalSwipe: boolean | null = null;
+  private pointerId: number | null = null;
+  private suppressClickUntil = 0;
   private pendingActionTimeoutId: number | null = null;
+  private usePointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
   private listeners = new ListenerManager();
 
   constructor(options: SwipeActionsOptions) {
@@ -57,6 +60,9 @@ export class SwipeActions {
       transition: transform 0.2s ease-out;
       background: inherit;
       z-index: 1;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
     `;
     return wrapper;
   }
@@ -81,7 +87,7 @@ export class SwipeActions {
       font-weight: 600;
       z-index: 0;
     `;
-    action.innerHTML = this.options.rightContent || iconEdit(24);
+    action.innerHTML = this.options.leftContent || iconEdit(24);
     return action;
   }
 
@@ -105,7 +111,7 @@ export class SwipeActions {
       font-weight: 600;
       z-index: 0;
     `;
-    action.innerHTML = this.options.leftContent || iconTrash(24);
+    action.innerHTML = this.options.rightContent || iconTrash(24);
     return action;
   }
 
@@ -113,22 +119,45 @@ export class SwipeActions {
    * Set up DOM structure
    */
   private setupDOM(): void {
-    // Copy parent's flex layout to wrapper so children render identically.
+    // Copy parent's layout styles to wrapper so children render identically.
     // Read from inline styles since the element may not be in the DOM yet.
     const es = this.element.style;
-    if (es.display === 'flex' || es.display === 'inline-flex') {
+    if (es.display) {
       this.wrapper.style.display = es.display;
-      if (es.alignItems) this.wrapper.style.alignItems = es.alignItems;
-      if (es.justifyContent)
-        this.wrapper.style.justifyContent = es.justifyContent;
-      if (es.gap) this.wrapper.style.gap = es.gap;
-      this.wrapper.style.width = '100%';
-      // Move padding from parent to wrapper (parent needs clean overflow:hidden)
-      if (es.padding) {
-        this.wrapper.style.padding = es.padding;
-        es.padding = '0';
-      }
     }
+    if (es.alignItems) this.wrapper.style.alignItems = es.alignItems;
+    if (es.justifyContent) this.wrapper.style.justifyContent = es.justifyContent;
+    if (es.gap) this.wrapper.style.gap = es.gap;
+    if (es.gridTemplateColumns) {
+      this.wrapper.style.gridTemplateColumns = es.gridTemplateColumns;
+    }
+    if (es.gridTemplateRows) {
+      this.wrapper.style.gridTemplateRows = es.gridTemplateRows;
+    }
+    if (es.gridTemplateAreas) {
+      this.wrapper.style.gridTemplateAreas = es.gridTemplateAreas;
+    }
+    if (es.gridAutoFlow) {
+      this.wrapper.style.gridAutoFlow = es.gridAutoFlow;
+    }
+    this.wrapper.style.width = '100%';
+
+    // Move padding from parent to wrapper (parent needs clean overflow:hidden)
+    if (es.padding) {
+      this.wrapper.style.padding = es.padding;
+      es.padding = '0';
+    }
+
+    // The outer row becomes a neutral container after wrapping.
+    // Keeping grid/flex on the outer row can collapse wrapper width.
+    if (es.display) {
+      es.display = 'block';
+    }
+    if (es.gridTemplateColumns) es.gridTemplateColumns = '';
+    if (es.gridTemplateRows) es.gridTemplateRows = '';
+    if (es.gridTemplateAreas) es.gridTemplateAreas = '';
+    if (es.gridAutoFlow) es.gridAutoFlow = '';
+    if (es.gap) es.gap = '';
 
     // Move element children into wrapper
     while (this.element.firstChild) {
@@ -154,50 +183,86 @@ export class SwipeActions {
    * Bind touch events
    */
   private bindEvents(): void {
-    this.listeners.add(
-      this.wrapper,
-      'touchstart',
-      this.onTouchStart as EventListener,
-      {
-        passive: true,
-      },
-    );
-    this.listeners.add(
-      this.wrapper,
-      'touchmove',
-      this.onTouchMove as EventListener,
-      {
-        passive: false,
-      },
-    );
-    this.listeners.add(
-      this.wrapper,
-      'touchend',
-      this.onTouchEnd as EventListener,
-      {
-        passive: true,
-      },
-    );
+    if (this.usePointerEvents) {
+      this.listeners.add(
+        this.wrapper,
+        'pointerdown',
+        this.onPointerDown as EventListener,
+        { passive: true },
+      );
+      this.listeners.add(
+        this.wrapper,
+        'pointermove',
+        this.onPointerMove as EventListener,
+        { passive: false },
+      );
+      this.listeners.add(
+        this.wrapper,
+        'pointerup',
+        this.onPointerUp as EventListener,
+        { passive: true },
+      );
+      this.listeners.add(
+        this.wrapper,
+        'pointercancel',
+        this.onPointerCancel as EventListener,
+        { passive: true },
+      );
+    } else {
+      this.listeners.add(
+        this.wrapper,
+        'touchstart',
+        this.onTouchStart as EventListener,
+        {
+          passive: true,
+        },
+      );
+      this.listeners.add(
+        this.wrapper,
+        'touchmove',
+        this.onTouchMove as EventListener,
+        {
+          passive: false,
+        },
+      );
+      this.listeners.add(
+        this.wrapper,
+        'touchend',
+        this.onTouchEnd as EventListener,
+        {
+          passive: true,
+        },
+      );
+    }
+
+    // Prevent synthetic click after swipe gestures from opening modals.
+    this.listeners.add(this.wrapper, 'click', this.onClickCapture as EventListener, {
+      capture: true,
+    });
   }
 
   /**
-   * Handle touch start
+   * Initialize a gesture
    */
-  private onTouchStart = (e: TouchEvent): void => {
-    this.startX = e.touches[0]!.clientX;
-    this.startY = e.touches[0]!.clientY;
+  private startGesture(clientX: number, clientY: number): void {
+    this.startX = clientX;
+    this.startY = clientY;
     this.currentX = 0;
     this.startTime = Date.now();
     this.isHorizontalSwipe = null;
     this.wrapper.style.transition = 'none';
-  };
+  }
 
   /**
-   * Handle touch move
+   * Update swipe offset from the latest pointer/touch position
    */
-  private onTouchMove = (e: TouchEvent): void => {
-    const deltaX = e.touches[0]!.clientX - this.startX;
-    const deltaY = e.touches[0]!.clientY - this.startY;
+  private moveGesture(
+    clientX: number,
+    clientY: number,
+    event: Pick<TouchEvent | PointerEvent, 'preventDefault'>,
+  ): void {
+    const deltaX = clientX - this.startX;
+    const deltaY = clientY - this.startY;
 
     // Determine swipe direction on first significant movement
     if (this.isHorizontalSwipe === null) {
@@ -209,26 +274,32 @@ export class SwipeActions {
     // Only handle horizontal swipes
     if (!this.isHorizontalSwipe) return;
 
-    e.preventDefault();
+    event.preventDefault();
 
     // Apply resistance at edges
     const maxSwipe = SWIPE_THRESHOLD * 1.2;
     this.currentX = Math.max(-maxSwipe, Math.min(maxSwipe, deltaX));
-
     this.wrapper.style.transform = `translateX(${this.currentX}px)`;
-  };
+  }
 
   /**
-   * Handle touch end
+   * Complete a swipe gesture
    */
-  private onTouchEnd = (): void => {
-    if (!this.isHorizontalSwipe) return;
+  private endGesture(): void {
+    if (!this.isHorizontalSwipe) {
+      this.wrapper.style.transition = 'transform 0.2s ease-out';
+      return;
+    }
 
-    const duration = Date.now() - this.startTime;
+    const duration = Math.max(Date.now() - this.startTime, 1);
     const velocity = Math.abs(this.currentX) / duration;
-    const isQuickSwipe = velocity > SWIPE_VELOCITY_THRESHOLD;
+    const isQuickSwipe =
+      Math.abs(this.currentX) >= 24 && velocity > SWIPE_VELOCITY_THRESHOLD;
 
     this.wrapper.style.transition = 'transform 0.2s ease-out';
+    if (Math.abs(this.currentX) > 10) {
+      this.suppressClickUntil = Date.now() + 300;
+    }
 
     // Clear any pending action from a previous swipe
     if (this.pendingActionTimeoutId !== null) {
@@ -259,6 +330,80 @@ export class SwipeActions {
       }
     } else {
       this.reset();
+    }
+  }
+
+  /**
+   * Handle touch start
+   */
+  private onTouchStart = (e: TouchEvent): void => {
+    this.startGesture(e.touches[0]!.clientX, e.touches[0]!.clientY);
+  };
+
+  /**
+   * Handle touch move
+   */
+  private onTouchMove = (e: TouchEvent): void => {
+    this.moveGesture(e.touches[0]!.clientX, e.touches[0]!.clientY, e);
+  };
+
+  /**
+   * Handle touch end
+   */
+  private onTouchEnd = (): void => {
+    this.endGesture();
+  };
+
+  /**
+   * Handle pointer start
+   */
+  private onPointerDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    this.pointerId = e.pointerId;
+    this.wrapper.setPointerCapture?.(e.pointerId);
+    this.startGesture(e.clientX, e.clientY);
+  };
+
+  /**
+   * Handle pointer move
+   */
+  private onPointerMove = (e: PointerEvent): void => {
+    if (this.pointerId !== e.pointerId) return;
+    this.moveGesture(e.clientX, e.clientY, e);
+  };
+
+  /**
+   * Handle pointer end
+   */
+  private onPointerUp = (e: PointerEvent): void => {
+    if (this.pointerId !== e.pointerId) return;
+    this.pointerId = null;
+    if (this.wrapper.hasPointerCapture?.(e.pointerId)) {
+      this.wrapper.releasePointerCapture(e.pointerId);
+    }
+    this.endGesture();
+  };
+
+  /**
+   * Handle pointer cancellation
+   */
+  private onPointerCancel = (e: PointerEvent): void => {
+    if (this.pointerId !== e.pointerId) return;
+    this.pointerId = null;
+    if (this.wrapper.hasPointerCapture?.(e.pointerId)) {
+      this.wrapper.releasePointerCapture(e.pointerId);
+    }
+    this.reset();
+  };
+
+  /**
+   * Prevent synthetic click after swipe
+   */
+  private onClickCapture = (e: MouseEvent): void => {
+    if (Date.now() < this.suppressClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   };
 

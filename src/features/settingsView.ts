@@ -158,7 +158,7 @@ export function updateTranslations(): void {
   // Update version description for new language
   const versionDescEl = document.getElementById('app-version-description');
   if (versionDescEl) {
-    const vInfo = getVersionInfo(__APP_VERSION__);
+    const vInfo = getVersionInfo(__APP_VERSION__, store.getState().currentLang);
     versionDescEl.textContent = vInfo?.description ?? '';
   }
 }
