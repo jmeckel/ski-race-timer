@@ -223,10 +223,3 @@ export function pointBadge(
 ): string {
   return `<div class="result-point" style="padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-align: center; text-transform: uppercase; background: color-mix(in srgb, ${pointColor} 10%, transparent); color: ${pointColor}; border: 1px solid color-mix(in srgb, ${pointColor} 15%, transparent);">${escapeHtml(pointLabel)}</div>`;
 }
-
-/**
- * Run label chip (L1/L2 or R1/R2) — outlined chip style (matches statusBadge)
- */
-export function runChip(runLabel: string, runColor: string): string {
-  return `<span class="result-run" style="padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; background: color-mix(in srgb, ${runColor} 10%, transparent); color: ${runColor}; border: 1px solid color-mix(in srgb, ${runColor} 15%, transparent);">${escapeHtml(runLabel)}</span>`;
-}

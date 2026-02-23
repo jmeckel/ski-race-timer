@@ -30,7 +30,6 @@ import {
   photoButton,
   pointBadge,
   runBadge,
-  runChip,
   statusBadge,
 } from '../utils';
 import { logger } from '../utils/logger';
@@ -836,7 +835,7 @@ export class VirtualList {
         ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang)) : ''}
         ${entry.photo ? photoButton(t('viewPhotoLabel', lang)) : ''}
         ${pointBadge(pointLabel, pointColor)}
-        ${runChip(runLabel, getRunColor(run))}
+        ${runBadge(runLabel, getRunColor(run))}
         ${editButton({ ariaLabel: t('editEntryLabel', lang) })}
         ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang) })}
       </div>
