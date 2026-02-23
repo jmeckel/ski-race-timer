@@ -266,6 +266,14 @@ test.describe('Power Saver - Clock Still Works', () => {
     await mockBatteryAPI(page, { level: 0.05, charging: false });
     await setupPage(page);
 
+    // Critical battery triggers ambient mode which covers the button with
+    // an invisible full-screen overlay (opacity: 0). Tap to exit ambient
+    // mode first, then wait for the CSS to restore the button.
+    await page.locator('body').tap();
+    await page.waitForFunction(
+      () => !document.body.classList.contains('ambient-mode'),
+    );
+
     // Record a timestamp
     await page.click('#radial-time-btn');
     await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
