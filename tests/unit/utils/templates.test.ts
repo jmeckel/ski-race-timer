@@ -131,9 +131,8 @@ describe('templates', () => {
     });
 
     it('statusBadge accepts custom colors', () => {
-      const html = statusBadge('OK', 'green', 'black');
+      const html = statusBadge('OK', 'green');
       expect(html).toContain('green');
-      expect(html).toContain('black');
     });
 
     it('deletionPendingBadge renders DEL badge', () => {

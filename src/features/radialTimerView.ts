@@ -7,6 +7,7 @@ import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
 import {
+  ambientModeService,
   captureTimingPhoto,
   feedbackSuccess,
   feedbackTap,
@@ -25,7 +26,7 @@ import {
   store,
 } from '../store';
 import type { Entry, Run, TimingPoint } from '../types';
-import { escapeHtml, getElement, getPointLabel, logWarning } from '../utils';
+import { getElement, getPointLabel, logWarning } from '../utils';
 import { formatTime } from '../utils/format';
 import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
@@ -105,6 +106,12 @@ export function initRadialTimerView(): void {
       updateRadialGpsStatus();
     }),
   ];
+
+  // Re-translate dynamic text and dial aria-labels when language changes
+  listeners.add(window, 'settings-language-changed', () => {
+    updateRadialStatsDisplay();
+    radialDial?.updateAriaLabels();
+  });
 
   isInitialized = true;
   logger.debug('[RadialTimerView] Initialized successfully');
@@ -203,14 +210,11 @@ function updateRadialBibDisplay(value: string): void {
   const bibEl = getElement('radial-bib-value');
   if (!bibEl) return;
 
-  const cursor = '<span class="radial-bib-cursor"></span>';
   if (!value) {
-    bibEl.innerHTML = `---${cursor}`;
+    bibEl.textContent = '---';
     bibEl.classList.remove('active');
   } else {
-    // Escape value for XSS protection (defense in depth)
-    const escapedValue = escapeHtml(value.padStart(3, '0'));
-    bibEl.innerHTML = escapedValue + (value.length < 3 ? cursor : '');
+    bibEl.textContent = value.padStart(3, '0');
     bibEl.classList.add('active');
   }
 }
@@ -390,9 +394,9 @@ function initRadialKeyboard(): void {
     }
 
     // L1/L2 run selection with Alt+1 or Alt+2 (to avoid conflict with bib input)
-    if (e.altKey && (e.key === '1' || e.key === '2')) {
+    if (e.altKey && (e.code === 'Digit1' || e.code === 'Digit2')) {
       e.preventDefault();
-      const run = e.key === '1' ? 1 : 2;
+      const run = e.code === 'Digit1' ? 1 : 2;
       store.setSelectedRun(run);
       feedbackTap();
       updateRadialRunSelection();
@@ -412,6 +416,12 @@ function initRadialKeyboard(): void {
  * Record a timestamp with radial UI feedback
  */
 async function recordRadialTimestamp(): Promise<void> {
+  // Suppress recording if ambient mode just exited (first tap only exits)
+  if (ambientModeService.wasRecentlyExited()) {
+    feedbackTap();
+    return;
+  }
+
   const state = store.getState();
   if (state.isRecording) return;
 

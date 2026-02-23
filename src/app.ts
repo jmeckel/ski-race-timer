@@ -49,7 +49,7 @@ export function initApp(): void {
   if (versionEl) versionEl.textContent = __APP_VERSION__;
 
   // Set version name and description
-  const versionInfo = getVersionInfo(__APP_VERSION__);
+  const versionInfo = getVersionInfo(__APP_VERSION__, store.getState().currentLang);
   const versionNameEl = document.getElementById('app-version-name');
   const versionDescEl = document.getElementById('app-version-description');
   if (versionInfo && versionNameEl) {
@@ -64,10 +64,10 @@ export function initApp(): void {
   if (versionInfoBtn) {
     listeners.add(versionInfoBtn, 'click', async () => {
       const state = store.getState();
-      const vInfo = getVersionInfo(__APP_VERSION__);
+      const vInfo = getVersionInfo(__APP_VERSION__, state.currentLang);
       const versionLabel = vInfo
-        ? `Ski Race Timer v${__APP_VERSION__} "${vInfo.name}"`
-        : `Ski Race Timer v${__APP_VERSION__}`;
+        ? `CHRONO v${__APP_VERSION__} "${vInfo.name}"`
+        : `CHRONO v${__APP_VERSION__}`;
       const debugInfo = [
         versionLabel,
         `Device: ${state.deviceName || 'Unknown'}`,

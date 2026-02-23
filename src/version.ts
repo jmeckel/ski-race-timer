@@ -1,4 +1,4 @@
-import { store } from './store';
+import type { Language } from './types';
 
 interface VersionInfo {
   name: string;
@@ -70,13 +70,13 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
 
 export function getVersionInfo(
   version: string,
+  lang: Language = 'en',
 ): { name: string; description: string } | null {
   const parts = version.split('.');
   if (parts.length < 2) return null;
   const minorKey = `${parts[0]}.${parts[1]}`;
   const info = VERSION_NAMES[minorKey];
   if (!info) return null;
-  const lang = store.getState().currentLang;
   return {
     name: info.name,
     description: info.description[lang] || info.description.en,
