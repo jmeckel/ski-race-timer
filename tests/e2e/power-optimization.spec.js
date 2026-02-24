@@ -273,6 +273,8 @@ test.describe('Power Saver - Clock Still Works', () => {
     await page.waitForFunction(
       () => !document.body.classList.contains('ambient-mode'),
     );
+    // Wait for wasRecentlyExited() guard (500ms) to expire
+    await page.waitForTimeout(600);
 
     // Record a timestamp
     await page.click('#radial-time-btn');

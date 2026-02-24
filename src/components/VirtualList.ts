@@ -673,10 +673,11 @@ export class VirtualList {
       left: 0;
       right: 0;
       height: ${GROUP_HEADER_HEIGHT}px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px 64px minmax(0, 1fr) auto;
       align-items: center;
       padding: 0 16px;
-      gap: 12px;
+      column-gap: 12px;
       background: var(--surface);
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
@@ -709,23 +710,25 @@ export class VirtualList {
 
     header.innerHTML = `
       ${iconChevron(16, isExpanded)}
-      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; min-width: 64px; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
+      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-inline-start: 4px;">
+      <div class="result-info" style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-summary" style="font-size: 0.875rem; color: var(--text-secondary);">
           ${escapeHtml(summaryText)}
         </div>
       </div>
-      ${group.crossDeviceDuplicateCount > 0 ? duplicateBadge(lang) : ''}
-      ${
-        hasFaults
-          ? `<span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
-          ${faultCount}\u00D7 ${t('flt', lang)}
-        </span>`
-          : ''
-      }
-      ${runBadge(runLabel, runColor)}
+      <div class="result-tags" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: max-content;">
+        ${group.crossDeviceDuplicateCount > 0 ? duplicateBadge(lang) : ''}
+        ${
+          hasFaults
+            ? `<span class="result-fault-badge" style="padding: 2px 6px; border-radius: var(--radius); font-size: 0.7rem; font-weight: 600; background: var(--warning); color: #000;">
+            ${faultCount}\u00D7 ${t('flt', lang)}
+          </span>`
+            : ''
+        }
+        ${runBadge(runLabel, runColor)}
+      </div>
     `;
 
     // Create and track event listeners for cleanup
@@ -786,10 +789,10 @@ export class VirtualList {
       right: 0;
       height: ${ITEM_HEIGHT}px;
       display: grid;
-      grid-template-columns: 64px minmax(0, 1fr) auto;
+      grid-template-columns: 28px 64px minmax(0, 1fr) auto;
       align-items: center;
       padding: 0 16px;
-      column-gap: 20px;
+      column-gap: 12px;
       background: var(--surface);
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
@@ -818,10 +821,11 @@ export class VirtualList {
       : dateStr;
 
     item.innerHTML = `
-      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; min-width: 64px; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
+      <div></div>
+      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; text-align: center; color: var(--text-primary); letter-spacing: 0.02em;">
         ${escapeHtml(bibStr)}
       </div>
-      <div class="result-info" style="display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-inline-start: 2px;">
+      <div class="result-info" style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-time" style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1rem; font-weight: 600; letter-spacing: 0.03em;">
           ${escapeHtml(timeStr)}
         </div>
@@ -951,10 +955,11 @@ export class VirtualList {
       left: 0;
       right: 0;
       height: ${ITEM_HEIGHT}px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px 64px minmax(0, 1fr) auto;
       align-items: center;
-      padding: 0 8px 0 4px;
-      gap: 8px;
+      padding: 0 16px;
+      column-gap: 12px;
       background: var(--surface);
       border-bottom: 1px solid var(--surface-elevated);
       border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
@@ -986,13 +991,11 @@ export class VirtualList {
       : '';
 
     item.innerHTML = `
-      <div style="width: 16px; flex-shrink: 0;"></div>
-      <div class="result-bib" style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 600; min-width: 44px; text-align: right; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+      <div></div>
+      <div class="result-bib" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; text-align: center; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
         ${escapeHtml(bibStr)}
       </div>
-      ${pointBadge(t('gate', lang), 'var(--warning)')}
-      ${runBadge(runLabel, runColor)}
-      <div class="result-info" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+      <div class="result-info" style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
         <div class="result-fault-details" style="font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${hasMarkedForDeletion ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
           ${escapeHtml(faultDetails)}
         </div>
@@ -1006,11 +1009,15 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${deletionPendingHtml}
-      ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
-      ${!hasMarkedForDeletion ? statusBadge(statusLabel, statusColor) : ''}
-      ${editButton({ ariaLabel: t('editFaultLabel', lang) })}
-      ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), className: 'result-delete fault-delete-btn' })}
+      <div class="result-tags" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: max-content;">
+        ${deletionPendingHtml}
+        ${!hasMarkedForDeletion ? faultBadgeHtml : ''}
+        ${!hasMarkedForDeletion ? statusBadge(statusLabel, statusColor) : ''}
+        ${pointBadge(t('gate', lang), 'var(--warning)')}
+        ${runBadge(runLabel, runColor)}
+        ${editButton({ ariaLabel: t('editFaultLabel', lang) })}
+        ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), className: 'result-delete fault-delete-btn' })}
+      </div>
     `;
 
     // Track all event listeners for cleanup
@@ -1152,10 +1159,11 @@ export class VirtualList {
       left: 0;
       right: 0;
       height: ${SUB_ITEM_HEIGHT}px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px 64px minmax(0, 1fr) auto;
       align-items: center;
-      padding: 0 8px 0 24px;
-      gap: 8px;
+      padding: 0 16px;
+      column-gap: 12px;
       background: var(--surface-elevated);
       border-bottom: 1px solid var(--background);
       cursor: pointer;
@@ -1170,12 +1178,10 @@ export class VirtualList {
     const pointLabel = getPointLabel(entry.point, lang);
 
     item.innerHTML = `
-      <div style="width: 16px; flex-shrink: 0;"></div>
-      <div style="min-width: 44px;"></div>
-      ${pointBadge(pointLabel, pointColor, '48px', '0.7rem')}
-      <div style="min-width: 36px;"></div>
-      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
-        <div class="result-time" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); font-size: 0.85rem;">
+      <div></div>
+      ${pointBadge(pointLabel, pointColor, '64px', '0.7rem')}
+      <div class="result-info" style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+        <div class="result-time" style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.85rem;">
           ${escapeHtml(timeStr)}
         </div>
         ${
@@ -1188,9 +1194,11 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang), 'var(--error)', '0.65rem') : ''}
-      ${editButton({ ariaLabel: t('editEntryLabel', lang), size: 16 })}
-      ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang), size: 16 })}
+      <div class="result-tags" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: max-content;">
+        ${entry.status !== 'ok' ? statusBadge(t(entry.status, lang), 'var(--error)', '0.65rem') : ''}
+        ${editButton({ ariaLabel: t('editEntryLabel', lang), size: 16 })}
+        ${deleteButton({ ariaLabel: t('deleteEntryLabel', lang), size: 16 })}
+      </div>
     `;
 
     // Track all event listeners for cleanup
@@ -1287,10 +1295,11 @@ export class VirtualList {
       left: 0;
       right: 0;
       height: ${SUB_ITEM_HEIGHT}px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px 64px minmax(0, 1fr) auto;
       align-items: center;
-      padding: 0 8px 0 24px;
-      gap: 8px;
+      padding: 0 16px;
+      column-gap: 12px;
       background: var(--surface-elevated);
       border-bottom: 1px solid var(--background);
       border-left: 3px solid ${hasMarkedForDeletion ? 'var(--error)' : 'var(--warning)'};
@@ -1305,13 +1314,12 @@ export class VirtualList {
     const gateColorHex = gateColor === 'red' ? '#ef4444' : '#3b82f6';
 
     item.innerHTML = `
-      <div style="width: 16px; flex-shrink: 0;"></div>
-      <div style="min-width: 44px;"></div>
-      ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)', '48px', '0.7rem')}
-      <div style="min-width: 36px; display: flex; align-items: center; justify-content: center;">
-        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex};" title="${gateColor}"></div>
+      <div></div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+        ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)', 'auto', '0.7rem')}
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${gateColor}"></div>
       </div>
-      <div class="result-info" style="flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;">
+      <div class="result-info" style="display: flex; align-items: center; gap: 8px; min-width: 0;">
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">
           ${escapeHtml(getFaultTypeLabel(fault.faultType, lang))}
         </span>
@@ -1325,9 +1333,11 @@ export class VirtualList {
             : ''
         }
       </div>
-      ${hasMarkedForDeletion ? deletionPendingBadge('0.65rem') : ''}
-      ${editButton({ ariaLabel: t('editFaultLabel', lang), size: 16 })}
-      ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), size: 16, className: 'result-delete fault-delete-btn' })}
+      <div class="result-tags" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: max-content;">
+        ${hasMarkedForDeletion ? deletionPendingBadge('0.65rem') : ''}
+        ${editButton({ ariaLabel: t('editFaultLabel', lang), size: 16 })}
+        ${deleteButton({ ariaLabel: t('deleteFaultLabel', lang), size: 16, className: 'result-delete fault-delete-btn' })}
+      </div>
     `;
 
     // Track all event listeners for cleanup

@@ -94,6 +94,7 @@ test.describe('Results View', () => {
     });
 
     test('should filter entries by bib number', async ({ page }) => {
+      await page.click('#toggle-filters-btn');
       const searchInput = page.locator('#search-input');
       await searchInput.fill('010');
 
@@ -102,6 +103,7 @@ test.describe('Results View', () => {
     });
 
     test('should show all entries when search cleared', async ({ page }) => {
+      await page.click('#toggle-filters-btn');
       const searchInput = page.locator('#search-input');
       await searchInput.fill('010');
       await searchInput.fill('');
@@ -166,7 +168,7 @@ test.describe('Results View', () => {
     });
 
     test('should show total count', async ({ page }) => {
-      const stats = page.locator('.stats-row');
+      const stats = page.locator('.results-info-text');
       await expect(stats).toContainText('2');
     });
   });
@@ -193,7 +195,7 @@ test.describe('Results View - Export', () => {
     await page.evaluate(() =>
       document.querySelectorAll('.toast').forEach((t) => t.remove()),
     );
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toContain('.csv');

@@ -155,6 +155,11 @@ test.describe('Onboarding Flow', () => {
     await expect(readyCard).toBeVisible();
     await expect(readyCard.locator('h2')).toContainText(/Ready|Bereit/);
 
+    // Dismiss toasts that may overlay the finish button
+    await page.evaluate(() =>
+      document.querySelectorAll('.toast').forEach((t) => t.remove()),
+    );
+
     // Finish
     await page.locator('[data-step="6"] [data-action="finish"]').click();
 
@@ -188,6 +193,11 @@ test.describe('Onboarding Flow', () => {
     // Step 6: Summary - should show gate judge specific text
     const readyCard = page.locator('[data-step="6"]');
     await expect(readyCard).toBeVisible();
+
+    // Dismiss toasts that may overlay the finish button
+    await page.evaluate(() =>
+      document.querySelectorAll('.toast').forEach((t) => t.remove()),
+    );
 
     // Finish
     await page.locator('[data-step="6"] [data-action="finish"]').click();

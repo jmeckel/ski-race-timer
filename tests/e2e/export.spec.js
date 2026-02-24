@@ -62,7 +62,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     // Filename format is: {raceId}_{date}.csv (e.g., race_2026-01-20.csv)
@@ -73,7 +73,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const filename = download.suggestedFilename();
@@ -86,7 +86,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -106,7 +106,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -124,7 +124,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -143,7 +143,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -162,7 +162,7 @@ test.describe('Export - Race Horology CSV', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -205,7 +205,7 @@ test.describe('Export - Edge Cases', () => {
       .catch(() => {});
 
     // Export button should still work or be disabled
-    const exportBtn = page.locator('#export-btn');
+    const exportBtn = page.locator('#quick-export-btn');
     const isVisible = await exportBtn.isVisible();
 
     if (isVisible) {
@@ -245,7 +245,7 @@ test.describe('Export - Edge Cases', () => {
     // Export
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -282,7 +282,7 @@ test.describe('Export - Multiple Runs', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -308,7 +308,7 @@ test.describe('Export - Multiple Runs', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -339,7 +339,7 @@ test.describe('Export - Multiple Runs', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -378,6 +378,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
+    await dismissToasts(page);
     await page.click('#radial-clear-btn');
     await page.click('.radial-point-btn[data-point="F"]');
     await page.click('.dial-number[data-num="1"]');
@@ -388,7 +389,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -415,7 +416,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -441,7 +442,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
@@ -462,6 +463,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
+    await dismissToasts(page);
     await page.click('#radial-clear-btn');
     await page.click('.radial-point-btn[data-point="F"]');
     await page.click('.dial-number[data-num="1"]');
@@ -472,7 +474,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await navigateTo(page, 'results');
     const downloadPromise = page.waitForEvent('download');
     await dismissToasts(page);
-    await page.click('#export-btn');
+    await page.click('#quick-export-btn');
 
     const download = await downloadPromise;
     const downloadPath = await download.path();
