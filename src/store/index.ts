@@ -86,6 +86,9 @@ const STORAGE_KEYS = {
   GATE_ASSIGNMENT: 'skiTimerGateAssignment',
   FIRST_GATE_COLOR: 'skiTimerFirstGateColor',
   FAULT_ENTRIES: 'skiTimerFaultEntries',
+  PENALTY_SECONDS: 'skiTimerPenaltySeconds',
+  USE_PENALTY_MODE: 'skiTimerUsePenaltyMode',
+  FINALIZED_RACERS: 'skiTimerFinalizedRacers',
 } as const;
 
 // All state keys that get persisted to localStorage
@@ -101,6 +104,9 @@ const PERSISTENT_KEYS = [
   'gateAssignment',
   'firstGateColor',
   'faultEntries',
+  'penaltySeconds',
+  'usePenaltyMode',
+  'finalizedRacers',
 ] as const;
 
 /**
@@ -196,6 +202,17 @@ class Store {
       (p) => (Array.isArray(p) ? p : []),
     );
 
+    // Load Chief Judge penalty config
+    const storedPenalty = storage.getRaw(STORAGE_KEYS.PENALTY_SECONDS);
+    const penaltySeconds = storedPenalty ? Math.max(0, Math.min(60, Number(storedPenalty) || 5)) : 5;
+    const storedUsePenalty = storage.getRaw(STORAGE_KEYS.USE_PENALTY_MODE);
+    const usePenaltyMode = storedUsePenalty !== null ? storedUsePenalty !== 'false' : true;
+    const finalizedRacers = parseJson<string[]>(
+      STORAGE_KEYS.FINALIZED_RACERS,
+      [],
+      (p) => (Array.isArray(p) ? p.filter((s): s is string => typeof s === 'string') : []),
+    );
+
     return {
       currentView: deviceRole === 'gateJudge' ? 'gateJudge' : 'timer',
       currentLang: lang,
@@ -214,9 +231,9 @@ class Store {
       selectedFaultBib: '',
       isJudgeReady: false,
       isChiefJudgeView: false,
-      finalizedRacers: new Set<string>(),
-      penaltySeconds: 5,
-      usePenaltyMode: true,
+      finalizedRacers: new Set<string>(finalizedRacers),
+      penaltySeconds,
+      usePenaltyMode,
       undoStack: [],
       redoStack: [],
       settings,
@@ -230,7 +247,6 @@ class Store {
       cloudDeviceCount: 0,
       cloudHighestBib: 0,
       raceExistsInCloud: null,
-      gpsEnabled: settings.gps,
       gpsAccuracy: null,
       gpsStatus: 'inactive',
       cameraReady: false,
@@ -355,6 +371,21 @@ class Store {
         storage.setRaw(
           STORAGE_KEYS.FAULT_ENTRIES,
           JSON.stringify(this.state.faultEntries),
+        );
+      }
+
+      if (dirty.has('penaltySeconds')) {
+        storage.setRaw(STORAGE_KEYS.PENALTY_SECONDS, String(this.state.penaltySeconds));
+      }
+
+      if (dirty.has('usePenaltyMode')) {
+        storage.setRaw(STORAGE_KEYS.USE_PENALTY_MODE, String(this.state.usePenaltyMode));
+      }
+
+      if (dirty.has('finalizedRacers')) {
+        storage.setRaw(
+          STORAGE_KEYS.FINALIZED_RACERS,
+          JSON.stringify(Array.from(this.state.finalizedRacers)),
         );
       }
 

@@ -295,8 +295,12 @@ async function enrichEntry(
   // Include photo if present (base64, limit size and rate)
   let photoSkipped = false;
   let photoRateLimited = false;
+  const ALLOWED_PHOTO_PREFIXES = ['data:image/jpeg;base64,', 'data:image/png;base64,', 'data:image/webp;base64,'];
   if (entry.photo && typeof entry.photo === 'string') {
-    if (entry.photo.length <= 500000) {
+    const hasValidPrefix = ALLOWED_PHOTO_PREFIXES.some(prefix => entry.photo!.startsWith(prefix));
+    if (!hasValidPrefix) {
+      photoSkipped = true;
+    } else if (entry.photo.length <= 500000) {
       const photoRateLimit = await checkPhotoRateLimit(client, normalizedRaceId, sanitizedDeviceId);
       if (photoRateLimit.allowed) {
         enrichedEntry.photo = entry.photo;

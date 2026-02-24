@@ -522,12 +522,14 @@ function showConfirmation(entry: Entry): void {
 
   overlay.dataset.point = entry.point;
   overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden', 'false');
 
   // Trigger snowflake burst
   triggerSnowflakeBurst(entry.point);
 
   const timeoutId = window.setTimeout(() => {
     overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
     timerTimeoutIds.delete(timeoutId);
   }, 1500);
   timerTimeoutIds.add(timeoutId);

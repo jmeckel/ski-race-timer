@@ -38,6 +38,20 @@ function classifySyncError(error: unknown): 'error' | 'offline' {
 }
 
 /**
+ * Prepare an entry for sync by resolving photo data from IndexedDB
+ */
+async function prepareEntryForSync(entry: Entry, syncPhotos: boolean): Promise<Entry> {
+  if (syncPhotos && isPhotoMarker(entry.photo)) {
+    const photoData = await photoStorage.getPhoto(entry.id);
+    return { ...entry, photo: photoData || undefined };
+  }
+  if (entry.photo) {
+    return { ...entry, photo: undefined };
+  }
+  return { ...entry };
+}
+
+/**
  * Callbacks for entry sync operations
  */
 export interface EntrySyncCallbacks {
@@ -339,19 +353,7 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
 
   try {
     // Prepare entry for sync - load photo from IndexedDB if syncPhotos is enabled
-    let entryToSync = { ...entry };
-    if (state.settings.syncPhotos && isPhotoMarker(entry.photo)) {
-      const photoData = await photoStorage.getPhoto(entry.id);
-      if (photoData) {
-        entryToSync = { ...entry, photo: photoData };
-      } else {
-        // Photo not found in IndexedDB, send without photo
-        entryToSync = { ...entry, photo: undefined };
-      }
-    } else if (entry.photo) {
-      // syncPhotos is disabled - strip photo data from sync
-      entryToSync = { ...entry, photo: undefined };
-    }
+    const entryToSync = await prepareEntryForSync(entry, state.settings.syncPhotos);
 
     const response = await fetchWithTimeout(
       `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
@@ -453,19 +455,7 @@ export async function sendEntriesToCloudBatch(
     // Prepare entries for sync - load photos from IndexedDB if needed
     const entriesToSync: Entry[] = [];
     for (const entry of batch) {
-      let entryToSync = { ...entry };
-      if (state.settings.syncPhotos && isPhotoMarker(entry.photo)) {
-        const photoData = await photoStorage.getPhoto(entry.id);
-        if (photoData) {
-          entryToSync = { ...entry, photo: photoData };
-        } else {
-          entryToSync = { ...entry, photo: undefined };
-        }
-      } else if (entry.photo) {
-        // syncPhotos is disabled - strip photo data from sync
-        entryToSync = { ...entry, photo: undefined };
-      }
-      entriesToSync.push(entryToSync);
+      entriesToSync.push(await prepareEntryForSync(entry, state.settings.syncPhotos));
     }
 
     const response = await fetchWithTimeout(

@@ -333,6 +333,7 @@ function dismissFaultConfirmation(): void {
   const overlay = document.getElementById('fault-confirmation-overlay');
   if (overlay?.classList.contains('show')) {
     overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
   }
 }
 

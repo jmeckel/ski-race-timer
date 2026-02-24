@@ -97,20 +97,20 @@ function simulateTouchStart(
   );
 }
 
-function simulateTouchMove(clientX: number, clientY: number): void {
+function simulateTouchMove(clientX: number, clientY: number, target: HTMLElement = document.body): void {
   const touch = {
     clientX,
     clientY,
     identifier: 0,
-    target: window,
+    target,
   } as unknown as Touch;
-  window.dispatchEvent(
+  target.dispatchEvent(
     new TouchEvent('touchmove', { touches: [touch], bubbles: true }),
   );
 }
 
-function simulateTouchEnd(): void {
-  window.dispatchEvent(new TouchEvent('touchend', { bubbles: true }));
+function simulateTouchEnd(target: HTMLElement = document.body): void {
+  target.dispatchEvent(new TouchEvent('touchend', { bubbles: true }));
 }
 
 describe('RadialDialInteraction', () => {
@@ -232,7 +232,7 @@ describe('RadialDialInteraction', () => {
       expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
 
       // Complete the touch
-      simulateTouchEnd();
+      simulateTouchEnd(container);
 
       // Synthetic mouse follows immediately
       simulateMouseDown(container, 380, 230);
@@ -245,7 +245,7 @@ describe('RadialDialInteraction', () => {
 
       simulateTouchStart(container, 380, 230);
       expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
-      simulateTouchEnd();
+      simulateTouchEnd(container);
 
       // Advance past the 500ms suppression window
       vi.advanceTimersByTime(501);
@@ -593,14 +593,14 @@ describe('RadialDialInteraction', () => {
 
     it('should handle touch drag move', () => {
       simulateTouchStart(container, 380, 230);
-      simulateTouchMove(380, 260);
+      simulateTouchMove(380, 260, container);
 
       expect(callbacks.onDragMove).toHaveBeenCalled();
     });
 
     it('should handle touch drag end as tap', () => {
       simulateTouchStart(container, 380, 230);
-      simulateTouchEnd();
+      simulateTouchEnd(container);
 
       expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
     });
@@ -609,8 +609,8 @@ describe('RadialDialInteraction', () => {
       (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(2.0);
 
       simulateTouchStart(container, 380, 230);
-      simulateTouchMove(380, 260);
-      simulateTouchEnd();
+      simulateTouchMove(380, 260, container);
+      simulateTouchEnd(container);
 
       expect(callbacks.onDragStart).toHaveBeenCalled();
       expect(callbacks.onDragMove).toHaveBeenCalled();

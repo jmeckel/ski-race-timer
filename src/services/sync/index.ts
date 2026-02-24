@@ -85,19 +85,13 @@ class SyncService {
     // Start queue processing
     queueProcessor.start();
 
-    // Push existing local entries to cloud
-    try {
-      pushLocalEntries();
-    } catch (error) {
+    // Push existing local entries/faults to cloud (fire-and-forget with error handling)
+    pushLocalEntries().catch(error => {
       logger.error('Failed to push local entries during sync init:', error);
-    }
-
-    // Push existing local faults to cloud
-    try {
-      pushLocalFaults();
-    } catch (error) {
+    });
+    pushLocalFaults().catch(error => {
       logger.error('Failed to push local faults during sync init:', error);
-    }
+    });
 
     // Add visibility change handler: slow down polling when hidden, restore when visible
     if (!this.visibilityHandler) {

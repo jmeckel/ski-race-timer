@@ -119,6 +119,9 @@ function dispatchUpdateInlineGateSelector(): void {
  * Uses CustomEvents instead of callbacks for decoupled communication
  */
 export function initChiefJudgeToggle(): void {
+  // Clean up any existing effects/listeners to prevent stacking on re-init
+  cleanupChiefJudgeView();
+
   const toggleBtn = document.getElementById('chief-judge-toggle-btn');
   if (!toggleBtn) return;
 

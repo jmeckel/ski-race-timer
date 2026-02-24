@@ -146,22 +146,11 @@ export default defineConfig({
             },
           },
           {
-            // Stale-while-revalidate for sync API GET requests
-            // Returns cached response immediately while fetching fresh data in background
-            // Enables offline-first reads for race data on slow/spotty cellular connections
-            urlPattern: /\/api\/v1\/sync\?(?!.*checkOnly).*$/i,
-            handler: 'StaleWhileRevalidate',
-            method: 'GET',
-            options: {
-              cacheName: 'api-sync-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 15, // TTL matches base polling interval for cellular efficiency
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
+            // Exclude authenticated API requests from SW caching entirely.
+            // Authenticated responses must not be cached — stale tokens, race data freshness,
+            // and potential for serving another user's data make this unsafe.
+            urlPattern: /\/api\/v1\/.*/i,
+            handler: 'NetworkOnly',
           },
         ],
       },

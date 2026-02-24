@@ -6,7 +6,7 @@
 import { store } from '../../store';
 import type { DeviceInfo, Entry, FaultEntry } from '../../types';
 import { logger } from '../../utils/logger';
-import { isValidEntry } from '../../utils/validation';
+import { isValidEntry, isValidFaultEntry } from '../../utils/validation';
 
 /**
  * BroadcastChannel manager for cross-tab sync
@@ -50,13 +50,12 @@ class BroadcastManager {
               store.addConnectedDevice(data as DeviceInfo);
             }
           } else if (type === 'fault') {
-            const fault = data as FaultEntry;
-            if (fault?.id) {
-              store.mergeFaultsFromCloud([fault]);
+            if (isValidFaultEntry(data)) {
+              store.mergeFaultsFromCloud([data]);
             }
           } else if (type === 'fault-deleted') {
             const faultId = data as string;
-            if (faultId) {
+            if (typeof faultId === 'string' && faultId) {
               store.markFaultForDeletion(faultId);
             }
           }

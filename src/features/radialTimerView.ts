@@ -46,6 +46,10 @@ let frozenTime: string | null = null;
 let isInitialized = false;
 let effectDisposers: (() => void)[] = [];
 
+// Cached DOM queries for frequently-updated selectors
+let cachedPointBtns: Element[] = [];
+let cachedRunBtns: Element[] = [];
+
 /**
  * Initialize the radial timer view
  */
@@ -239,7 +243,8 @@ function initRadialTimingPoints(): void {
     }
   });
 
-  // Set initial state
+  // Cache buttons and set initial state
+  cachedPointBtns = Array.from(document.querySelectorAll('.radial-point-btn'));
   updateRadialTimingPointSelection();
 }
 
@@ -248,7 +253,7 @@ function initRadialTimingPoints(): void {
  */
 function updateRadialTimingPointSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.radial-point-btn').forEach((btn) => {
+  cachedPointBtns.forEach((btn) => {
     const isActive = btn.getAttribute('data-point') === state.selectedPoint;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
@@ -276,7 +281,8 @@ function initRadialRunSelector(): void {
     }
   });
 
-  // Set initial state
+  // Cache buttons and set initial state
+  cachedRunBtns = Array.from(document.querySelectorAll('.radial-run-btn'));
   updateRadialRunSelection();
 }
 
@@ -285,7 +291,7 @@ function initRadialRunSelector(): void {
  */
 function updateRadialRunSelection(): void {
   const state = store.getState();
-  document.querySelectorAll('.radial-run-btn').forEach((btn) => {
+  cachedRunBtns.forEach((btn) => {
     const runStr = btn.getAttribute('data-run');
     const isActive = runStr === String(state.selectedRun);
     btn.classList.toggle('active', isActive);
@@ -443,6 +449,9 @@ async function recordRadialTimestamp(): Promise<void> {
       captureTimingPhoto()
         .then(async (photo) => {
           if (photo) {
+            // Verify entry still exists (may have been undone/deleted)
+            const exists = store.getState().entries.some(e => e.id === entry.id);
+            if (!exists) return;
             try {
               const saved = await photoStorage.savePhoto(entry.id, photo);
               if (saved) {
@@ -550,6 +559,7 @@ function showRadialConfirmation(entry: Entry): void {
   }
 
   overlay?.classList.add('show');
+  overlay?.setAttribute('aria-hidden', 'false');
 
   // Reset after delay
   setTimeout(() => {
@@ -558,6 +568,7 @@ function showRadialConfirmation(entry: Entry): void {
     timeDisplay?.classList.remove('flash', 'frozen');
     timeBtn?.classList.remove('flash');
     overlay?.classList.remove('show');
+    overlay?.setAttribute('aria-hidden', 'true');
   }, 1200);
 }
 
@@ -683,6 +694,8 @@ export function destroyRadialTimerView(): void {
 
   frozenTime = null;
   isInitialized = false;
+  cachedPointBtns = [];
+  cachedRunBtns = [];
 }
 
 /**

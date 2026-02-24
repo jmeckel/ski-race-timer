@@ -204,11 +204,10 @@ export class VirtualList {
         }
       }
     });
-    // Observe the parent of the container (or body as fallback)
+    // Observe the direct parent for container removal (no subtree needed)
     const observeTarget = this.container.parentElement || document.body;
     this.domRemovalObserver.observe(observeTarget, {
       childList: true,
-      subtree: true,
     });
 
     // Initial setup

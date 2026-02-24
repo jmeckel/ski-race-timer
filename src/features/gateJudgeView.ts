@@ -335,6 +335,7 @@ export function updateJudgesReadyIndicator(
 
   indicator.style.display = 'flex';
   countEl.textContent = `${readyJudges}/${totalJudges}`;
+  indicator.setAttribute('aria-label', `Judges ready: ${readyJudges} of ${totalJudges}`);
 
   // Add highlight when all are ready
   indicator.classList.toggle(

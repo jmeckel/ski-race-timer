@@ -228,7 +228,6 @@ export interface AppState {
   raceExistsInCloud: boolean | null;
 
   // GPS State
-  gpsEnabled: boolean;
   gpsAccuracy: number | null;
   gpsStatus: 'inactive' | 'searching' | 'active' | 'paused';
 

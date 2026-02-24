@@ -85,6 +85,7 @@ export function showFaultConfirmation(fault: FaultEntry): void {
     typeEl.textContent = getFaultTypeLabel(fault.faultType, state.currentLang);
 
   overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden', 'false');
 
   // NO auto-dismiss - user must tap "Done" or "Add Note"
 }

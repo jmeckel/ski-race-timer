@@ -59,7 +59,6 @@ function createState(overrides: Partial<AppState>): AppState {
     cloudDeviceCount: 0,
     cloudHighestBib: 0,
     raceExistsInCloud: null,
-    gpsEnabled: true,
     gpsAccuracy: null,
     gpsStatus: 'inactive',
     cameraReady: false,

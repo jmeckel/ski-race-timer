@@ -77,13 +77,16 @@ export class RadialDialInteraction {
       this.handleDragStart as EventListener,
       { passive: false },
     );
+    // Touch events follow the touchstart target, so touchmove/touchend
+    // on the container receives events even when the finger moves outside it.
+    // Scoping to container avoids a non-passive window-level listener.
     this.listeners.add(
-      window,
+      this.container,
       'touchmove',
       this.handleDragMove as EventListener,
       { passive: false },
     );
-    this.listeners.add(window, 'touchend', this.handleDragEnd as EventListener);
+    this.listeners.add(this.container, 'touchend', this.handleDragEnd as EventListener);
   }
 
   /** Get current drag state */
