@@ -86,7 +86,7 @@ test.describe('Production PWA - Core Functionality', () => {
 
   test.describe('Page Load & Basic UI', () => {
     test('should load the app successfully', async ({ page }) => {
-      await expect(page).toHaveTitle(/Ski Race Timer|Ski-Renntimer/);
+      await expect(page).toHaveTitle(/CHRONO/);
     });
 
     test('should display the clock', async ({ page }) => {
@@ -355,15 +355,23 @@ test.describe('Production PWA - Results View', () => {
   });
 
   test('should display statistics', async ({ page }) => {
-    const stats = page.locator('.stats-row');
-    await expect(stats.first()).toBeVisible();
+    // Stats are stored in hidden span elements updated by JS
+    const statRacers = page.locator('#stat-racers');
+    await expect(statRacers).toBeAttached();
   });
 
   test('should have search input', async ({ page }) => {
+    // Search bar is hidden by default, toggle it via filter button
+    const filterToggle = page.locator('#toggle-filters-btn');
+    await filterToggle.click();
     await expect(page.locator('#search-input')).toBeVisible();
   });
 
   test('should filter by bib search', async ({ page }) => {
+    // Toggle search bar visible
+    const filterToggle = page.locator('#toggle-filters-btn');
+    await filterToggle.click();
+
     const searchInput = page.locator('#search-input');
     await searchInput.fill('1');
 
@@ -379,7 +387,7 @@ test.describe('Production PWA - Results View', () => {
   });
 
   test('should have export button', async ({ page }) => {
-    await expect(page.locator('#export-btn')).toBeVisible();
+    await expect(page.locator('#quick-export-btn')).toBeVisible();
   });
 });
 
@@ -432,7 +440,7 @@ test.describe('Production PWA - Settings View', () => {
     await expect(langToggle).toBeVisible();
     const activeOption = page.locator('#lang-toggle .lang-option.active');
     const text = await activeOption.textContent();
-    expect(['EN', 'DE']).toContain(text?.trim());
+    expect(['EN', 'DE', 'FR']).toContain(text?.trim());
 
     // Clicking should work without errors
     await langToggle.click({ force: true });
@@ -441,7 +449,7 @@ test.describe('Production PWA - Settings View', () => {
     // Should still have an active option after click
     const newActiveOption = page.locator('#lang-toggle .lang-option.active');
     const newText = await newActiveOption.textContent();
-    expect(['EN', 'DE']).toContain(newText?.trim());
+    expect(['EN', 'DE', 'FR']).toContain(newText?.trim());
   });
 });
 
@@ -666,7 +674,7 @@ test.describe('Production PWA - Data Persistence', () => {
     const activeOption = page.locator('#lang-toggle .lang-option.active');
     await expect(activeOption).toBeVisible();
     const text = await activeOption.textContent();
-    expect(['EN', 'DE']).toContain(text?.trim());
+    expect(['EN', 'DE', 'FR']).toContain(text?.trim());
 
     // Click should work without errors
     await langToggle.click({ force: true });
@@ -676,7 +684,7 @@ test.describe('Production PWA - Data Persistence', () => {
     const newActiveOption = page.locator('#lang-toggle .lang-option.active');
     await expect(newActiveOption).toBeVisible();
     const newText = await newActiveOption.textContent();
-    expect(['EN', 'DE']).toContain(newText?.trim());
+    expect(['EN', 'DE', 'FR']).toContain(newText?.trim());
   });
 });
 
