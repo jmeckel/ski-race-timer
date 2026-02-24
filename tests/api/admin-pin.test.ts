@@ -171,6 +171,25 @@ describe('API: /api/v1/admin/pin', () => {
   // ─── POST: Change PIN ───
 
   describe('POST /api/v1/admin/pin', () => {
+    beforeEach(() => {
+      // POST requires chiefJudge role
+      vi.mocked(validateAuth).mockResolvedValue({ valid: true, method: 'jwt', payload: { role: 'chiefJudge' } });
+    });
+
+    it('should return 403 when user is not chiefJudge', async () => {
+      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt', payload: { role: 'timer' } });
+      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      await handler(req, mockRes as any);
+      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'PIN change requires Chief Judge role', 403);
+    });
+
+    it('should return 403 when user has no role', async () => {
+      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt' });
+      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      await handler(req, mockRes as any);
+      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'PIN change requires Chief Judge role', 403);
+    });
+
     it('should return 400 when currentPin is missing', async () => {
       const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { newPin: '5678' } } as any;
       await handler(req, mockRes as any);
@@ -260,6 +279,7 @@ describe('API: /api/v1/admin/pin', () => {
     });
 
     it('should return 500 on unexpected error in POST', async () => {
+      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt', payload: { role: 'chiefJudge' } });
       mockRedisClient.get.mockResolvedValue('hashed:1234');
       vi.mocked(verifyPin).mockImplementationOnce(() => { throw new Error('crypto fail'); });
       const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;

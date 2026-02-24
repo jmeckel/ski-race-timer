@@ -34,7 +34,7 @@
 </head>
 <body>
   <!-- Skip Link -->
-  <a href="#main" class="skip-link">Skip to main content</a>
+  <a href="#main" class="skip-link" data-i18n="skipToMain">Skip to main content</a>
 
   <div class="app" role="application" aria-label="CHRONO Race Timer">
     <!-- Header -->
@@ -56,7 +56,7 @@
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
           <span class="sync-device-count" id="sync-device-count" style="display: none;" aria-live="polite"></span>
         </div>
-        <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
+        <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready" role="status" aria-label="Judges ready: 0 of 0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M20 6L9 17l-5-5"/>
           </svg>

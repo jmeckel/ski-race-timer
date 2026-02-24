@@ -561,9 +561,9 @@ function setupSummaryListDelegation(summaryList: HTMLElement): void {
     const target = e.target as HTMLElement;
 
     // Finalize button
-    const finalizeBtn = target.closest('.finalize-btn');
+    const finalizeBtn = target.closest('.finalize-btn') as HTMLElement | null;
     if (finalizeBtn) {
-      handleFinalizeClick(e);
+      handleFinalizeClick(finalizeBtn);
       return;
     }
 
@@ -739,8 +739,7 @@ export function updatePendingDeletionsPanel(): void {
 /**
  * Handle finalize button click in Chief Judge view
  */
-function handleFinalizeClick(event: Event): void {
-  const btn = event.currentTarget as HTMLElement;
+function handleFinalizeClick(btn: HTMLElement): void {
   const bib = btn.dataset.bib;
   const runStr = btn.dataset.run;
 

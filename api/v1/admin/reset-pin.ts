@@ -116,14 +116,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Verify SERVER_API_PIN with timing-safe comparison (after rate limit)
+  // Use HMAC to normalize both values to fixed-length digests,
+  // avoiding timing side-channel from length differences
   let pinValid = false;
   try {
-    const serverPinBuffer = Buffer.from(serverPin, 'utf8');
-    const providedPinBuffer = Buffer.from(providedPin, 'utf8');
-    // Only compare if lengths match (timingSafeEqual requires equal lengths)
-    if (serverPinBuffer.length === providedPinBuffer.length) {
-      pinValid = crypto.timingSafeEqual(serverPinBuffer, providedPinBuffer);
-    }
+    const hmacKey = 'reset-pin-compare';
+    const serverDigest = crypto.createHmac('sha256', hmacKey).update(serverPin).digest();
+    const providedDigest = crypto.createHmac('sha256', hmacKey).update(providedPin).digest();
+    pinValid = crypto.timingSafeEqual(serverDigest, providedDigest);
   } catch {
     pinValid = false;
   }

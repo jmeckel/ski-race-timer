@@ -69,7 +69,7 @@
   --shadow-lg: 0 4px 16px rgba(0, 10, 20, 0.4);
 
   /* Button Heights */
-  --btn-height-sm: 36px;
+  --btn-height-sm: 44px;
   --btn-height-md: 44px;
   --btn-height-lg: 56px;
 }
@@ -247,7 +247,7 @@
     border: 1px solid rgba(0, 230, 138, 0.2);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 0.55rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     flex-shrink: 1;
@@ -422,7 +422,7 @@
     border: 1px solid rgba(255, 215, 0, 0.2);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 0.55rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     color: var(--secondary);
@@ -554,7 +554,7 @@
     border: 1px solid rgba(0, 230, 138, 0.2);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 0.55rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     flex-shrink: 1;

@@ -548,7 +548,7 @@
   flex: 1;
   width: 100%;
   padding: 14px 16px;
-  background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
   border: none;
   border-radius: var(--radius);
   color: white;
@@ -556,12 +556,12 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
 .inline-save-fault-btn:active {
   transform: scale(0.97);
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
 }
 
 .inline-save-fault-btn:disabled {

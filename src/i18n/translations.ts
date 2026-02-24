@@ -314,6 +314,7 @@ export const translations = {
     errorRecoveryMessage:
       'The app encountered an error. You can dismiss this and continue, or reload the app.',
     dismiss: 'Dismiss',
+    skipToMain: 'Skip to main content',
     reload: 'Reload',
     updateAvailable: 'Update available! Reload to get the latest version.',
     operationFailed: 'Operation failed. Please try again.',
@@ -865,6 +866,7 @@ export const translations = {
     errorRecoveryMessage:
       'Die App hat einen Fehler festgestellt. Sie können diesen Hinweis schließen und fortfahren, oder die App neu laden.',
     dismiss: 'Schließen',
+    skipToMain: 'Zum Hauptinhalt springen',
     reload: 'Neu laden',
     updateAvailable: 'Update verfügbar! Neu laden für die neueste Version.',
     operationFailed: 'Vorgang fehlgeschlagen. Bitte erneut versuchen.',
@@ -1424,6 +1426,7 @@ export const translations = {
     errorRecoveryMessage:
       "L'application a rencontré une erreur. Vous pouvez ignorer cet avis et continuer, ou recharger l'application.",
     dismiss: 'Ignorer',
+    skipToMain: 'Aller au contenu principal',
     reload: 'Recharger',
     updateAvailable:
       'Mise à jour disponible ! Rechargez pour obtenir la dernière version.',

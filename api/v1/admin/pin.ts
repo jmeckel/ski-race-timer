@@ -65,6 +65,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     if (req.method === 'POST') {
+      // PIN change requires chiefJudge role
+      const userRole = auth.payload?.role as string | undefined;
+      if (userRole !== 'chiefJudge') {
+        return sendError(res, 'PIN change requires Chief Judge role', 403);
+      }
+
       // Change PIN - requires current PIN verification
       const { currentPin, newPin } = (req.body || {}) as ChangePinRequestBody;
 

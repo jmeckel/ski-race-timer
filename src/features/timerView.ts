@@ -464,10 +464,12 @@ export async function recordTimestamp(): Promise<void> {
     // Auto-increment bib after recording
     if (state.settings.auto && state.bibInput) {
       const localNext = parseInt(state.bibInput, 10) + 1;
-      const nextBib =
+      const nextBib = Math.min(
         state.settings.sync && state.cloudHighestBib > 0
           ? Math.max(localNext, state.cloudHighestBib + 1)
-          : localNext;
+          : localNext,
+        999,
+      );
       store.setBibInput(String(nextBib));
     } else if (!state.bibInput) {
       store.setBibInput('');
