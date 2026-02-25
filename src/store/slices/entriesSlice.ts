@@ -327,7 +327,7 @@ export function mergeCloudEntries(
   localDeviceId: string,
 ): { entries: Entry[]; addedCount: number } {
   let addedCount = 0;
-  const existingIds = new Set(entries.map((e) => `${e.id}-${e.deviceId}`));
+  const existingIds = new Set(entries.map((e) => `${e.id}:${e.deviceId}`));
   const deletedSet = new Set(deletedIds);
   const newEntries: Entry[] = [];
 
@@ -343,7 +343,7 @@ export function mergeCloudEntries(
     if (deletedSet.has(deleteKey) || deletedSet.has(entry.id)) continue;
 
     // Skip duplicates
-    const key = `${entry.id}-${entry.deviceId}`;
+    const key = `${entry.id}:${entry.deviceId}`;
     if (existingIds.has(key)) continue;
 
     // Ensure run field exists (backwards compat)

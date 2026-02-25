@@ -458,7 +458,10 @@ export async function syncFault(
 
   // Send to cloud if enabled
   if (state.settings.sync && state.raceId) {
-    await syncService.sendFaultToCloud(fault);
+    const success = await syncService.sendFaultToCloud(fault);
+    if (!success) {
+      logger.warn('Failed to sync fault to cloud, will retry on next sync cycle:', fault.id);
+    }
   }
 }
 

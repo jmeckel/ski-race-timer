@@ -75,6 +75,7 @@ let activeFetchPromise: Promise<void> | null = null;
  */
 export function initializeEntrySync(syncCallbacks: EntrySyncCallbacks): void {
   callbacks = syncCallbacks;
+  isCleanedUp = false;
 }
 
 /**
@@ -204,6 +205,9 @@ async function fetchCloudEntriesImpl(): Promise<void> {
       );
     }
 
+    // Bail out if cleanup occurred while fetch was in flight (e.g., race changed)
+    if (isCleanedUp) return;
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -276,6 +280,10 @@ async function fetchCloudEntriesImpl(): Promise<void> {
     if (cloudEntries.length > 0) {
       // Process photos from cloud entries - store in IndexedDB
       const processedEntries = await processCloudPhotos(cloudEntries);
+
+      // Bail out if race changed during photo processing
+      if (isCleanedUp || store.getState().raceId !== state.raceId) return;
+
       const added = store.mergeCloudEntries(processedEntries, deletedIds);
       if (added > 0) {
         hasChanges = true;
@@ -533,10 +541,14 @@ export async function pushLocalEntries(): Promise<void> {
   }
 }
 
+/** Flag to signal that cleanup has occurred, so in-flight fetches bail out */
+let isCleanedUp = false;
+
 /**
  * Cleanup module state
  */
 export function cleanupEntrySync(): void {
+  isCleanedUp = true;
   callbacks = null;
   lastSyncTimestamp = 0;
   activeFetchPromise = null;

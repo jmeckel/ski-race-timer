@@ -14,46 +14,46 @@ describe('Export Feature Module', () => {
   describe('formatTimeForRaceHorology', () => {
     it('should format time as HH:MM:SS,ss (European format)', () => {
       const isoTimestamp = '2024-01-15T14:30:45.123Z';
-      const result = formatTimeForRaceHorology(isoTimestamp);
+      const { time } = formatTimeForRaceHorology(isoTimestamp);
       // Should use comma as decimal separator and show hundredths
-      expect(result).toMatch(/^\d{2}:\d{2}:\d{2},\d{2}$/);
+      expect(time).toMatch(/^\d{2}:\d{2}:\d{2},\d{2}$/);
     });
 
     it('should convert milliseconds to hundredths correctly', () => {
       // 500ms = 50 hundredths
       const date = new Date();
       date.setHours(12, 30, 45, 500);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toContain(',50');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toContain(',50');
     });
 
     it('should pad single digit values with zeros', () => {
       const date = new Date();
       date.setHours(1, 2, 3, 40);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toMatch(/^01:02:03,04$/);
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toMatch(/^01:02:03,04$/);
     });
 
     it('should handle midnight correctly', () => {
       const date = new Date();
       date.setHours(0, 0, 0, 0);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('00:00:00,00');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('00:00:00,00');
     });
 
     it('should handle end of day', () => {
       const date = new Date();
       date.setHours(23, 59, 59, 990);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('23:59:59,99');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('23:59:59,99');
     });
 
     it('should round hundredths correctly', () => {
       // 125ms should round to 13 hundredths (Math.round(125/10) = 13)
       const date = new Date();
       date.setHours(12, 0, 0, 125);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('12:00:00,13');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('12:00:00,13');
     });
   });
 
@@ -67,11 +67,11 @@ describe('Export Feature Module', () => {
       expect(escapeCSVField('123')).toBe('123');
     });
 
-    it('should prefix formula characters with single quote (CSV injection prevention)', () => {
-      expect(escapeCSVField('=SUM(A1)')).toBe("'=SUM(A1)");
-      expect(escapeCSVField('+1234')).toBe("'+1234");
-      expect(escapeCSVField('-1234')).toBe("'-1234");
-      expect(escapeCSVField('@mention')).toBe("'@mention");
+    it('should prefix formula characters with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('=SUM(A1)')).toBe('"\'=SUM(A1)"');
+      expect(escapeCSVField('+1234')).toBe('"\'+1234"');
+      expect(escapeCSVField('-1234')).toBe('"\'-1234"');
+      expect(escapeCSVField('@mention')).toBe('"\'@mention"');
     });
 
     it('should handle tab and newline formula characters', () => {

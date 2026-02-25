@@ -15,12 +15,13 @@ import { logger } from '../utils/logger';
  * Format timestamp for Race Horology CSV export
  * Converts ISO timestamp to HH:MM:SS,ss format (hundredths of seconds)
  */
-export function formatTimeForRaceHorology(isoTimestamp: string): string {
+export function formatTimeForRaceHorology(isoTimestamp: string): { time: string; dateRollover: boolean } {
   const date = new Date(isoTimestamp);
   let h = date.getHours();
   let m = date.getMinutes();
   let s = date.getSeconds();
   let cs = Math.round(date.getMilliseconds() / 10);
+  let dateRollover = false;
 
   // Handle carry-over: 995-999ms rounds to 100 hundredths
   if (cs >= 100) {
@@ -36,10 +37,14 @@ export function formatTimeForRaceHorology(isoTimestamp: string): string {
     }
     if (h >= 24) {
       h = 0;
+      dateRollover = true;
     }
   }
 
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(cs).padStart(2, '0')}`;
+  return {
+    time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(cs).padStart(2, '0')}`,
+    dateRollover,
+  };
 }
 
 /**
@@ -52,14 +57,18 @@ export function escapeCSVField(field: string): string {
   const formulaChars = ['=', '+', '-', '@', '|', '\t', '\r', '\n'];
   let escaped = field;
 
+  let needsQuoting = false;
+
   // Prefix with single quote if starts with formula character
   if (formulaChars.some((char) => escaped.startsWith(char))) {
     escaped = `'${escaped}`;
+    needsQuoting = true; // Always quote formula-prefixed fields for correct CSV parsing
   }
 
   // Also protect hex-like values that Excel may interpret (0x... or +0x...)
   if (/^[+]?0x/i.test(escaped)) {
     escaped = `'${escaped}`;
+    needsQuoting = true;
   }
 
   // Escape quotes by doubling them
@@ -69,6 +78,7 @@ export function escapeCSVField(field: string): string {
 
   // Wrap in quotes if contains special characters (semicolon is CSV delimiter)
   if (
+    needsQuoting ||
     escaped.includes(';') ||
     escaped.includes('"') ||
     escaped.includes('\n') ||
@@ -86,8 +96,12 @@ export function escapeCSVField(field: string): string {
  * Extract date from ISO timestamp as YYYY-MM-DD
  * Useful for multi-day races where entries span different dates
  */
-export function formatDateForExport(isoTimestamp: string): string {
+export function formatDateForExport(isoTimestamp: string, dateRollover: boolean = false): string {
   const date = new Date(isoTimestamp);
+  if (dateRollover) {
+    // Midnight carry-over from rounding: advance to next day
+    date.setDate(date.getDate() + 1);
+  }
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -172,9 +186,9 @@ export function exportResults(): void {
       const bib = escapeCSVField(entry.bib);
       const run = entry.run ?? 1;
       const point = getExportPointLabel(entry.point);
-      const time = formatTimeForRaceHorology(entry.timestamp);
+      const { time, dateRollover } = formatTimeForRaceHorology(entry.timestamp);
       const device = escapeCSVField(entry.deviceName || entry.deviceId);
-      const datum = escapeCSVField(formatDateForExport(entry.timestamp));
+      const datum = escapeCSVField(formatDateForExport(entry.timestamp, dateRollover));
 
       // Get faults for this bib/run (only on Finish entries)
       const entryFaults =

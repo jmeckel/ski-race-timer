@@ -48,87 +48,88 @@ describe('CSV Export Format - Race Horology', () => {
 
   describe('Time format (HH:MM:SS,ss)', () => {
     it('should format time as HH:MM:SS,ss with comma decimal separator', () => {
-      const result = formatTimeForRaceHorology('2024-01-15T14:30:45.123Z');
-      expect(result).toMatch(/^\d{2}:\d{2}:\d{2},\d{2}$/);
+      const { time } = formatTimeForRaceHorology('2024-01-15T14:30:45.123Z');
+      expect(time).toMatch(/^\d{2}:\d{2}:\d{2},\d{2}$/);
     });
 
     it('should use comma as decimal separator (European format)', () => {
-      const result = formatTimeForRaceHorology('2024-01-15T12:00:00.500Z');
+      const { time } = formatTimeForRaceHorology('2024-01-15T12:00:00.500Z');
       // Should contain comma, not period
-      expect(result).toContain(',');
-      expect(result).not.toMatch(/\.\d{2}$/);
+      expect(time).toContain(',');
+      expect(time).not.toMatch(/\.\d{2}$/);
     });
 
     it('should display hundredths of seconds (not milliseconds)', () => {
       const date = new Date();
       date.setHours(10, 0, 0, 500); // 500ms = 50 hundredths
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toContain(',50');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toContain(',50');
     });
 
     it('should pad all fields with leading zeros', () => {
       const date = new Date();
       date.setHours(1, 2, 3, 40); // 40ms = 4 hundredths
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('01:02:03,04');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('01:02:03,04');
     });
 
     it('should handle midnight (00:00:00,00)', () => {
       const date = new Date();
       date.setHours(0, 0, 0, 0);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('00:00:00,00');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('00:00:00,00');
     });
 
     it('should handle end of day (23:59:59,99)', () => {
       const date = new Date();
       date.setHours(23, 59, 59, 990);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      expect(result).toBe('23:59:59,99');
+      const { time } = formatTimeForRaceHorology(date.toISOString());
+      expect(time).toBe('23:59:59,99');
     });
 
     it('should handle carry-over when ms rounds to 1000', () => {
       // 995-999ms rounds to 100 hundredths, triggering carry
       const date = new Date();
       date.setHours(12, 30, 59, 999);
-      const result = formatTimeForRaceHorology(date.toISOString());
+      const { time } = formatTimeForRaceHorology(date.toISOString());
       // 999ms rounds to 100 hundredths = carry: 12:31:00,00
-      expect(result).toBe('12:31:00,00');
+      expect(time).toBe('12:31:00,00');
     });
 
     it('should handle carry-over across minute boundary', () => {
       const date = new Date();
       date.setHours(12, 59, 59, 999);
-      const result = formatTimeForRaceHorology(date.toISOString());
+      const { time } = formatTimeForRaceHorology(date.toISOString());
       // Should carry to 13:00:00,00
-      expect(result).toBe('13:00:00,00');
+      expect(time).toBe('13:00:00,00');
     });
 
     it('should handle carry-over across hour boundary', () => {
       const date = new Date();
       date.setHours(23, 59, 59, 999);
-      const result = formatTimeForRaceHorology(date.toISOString());
-      // Should wrap to 00:00:00,00
-      expect(result).toBe('00:00:00,00');
+      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      // Should wrap to 00:00:00,00 and signal date rollover
+      expect(time).toBe('00:00:00,00');
+      expect(dateRollover).toBe(true);
     });
   });
 
   describe('CSV injection prevention', () => {
-    it('should prefix formula character "=" with single quote', () => {
-      expect(escapeCSVField('=SUM(A1)')).toBe("'=SUM(A1)");
-      expect(escapeCSVField('=CMD()')).toBe("'=CMD()");
+    it('should prefix formula character "=" with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('=SUM(A1)')).toBe('"\'=SUM(A1)"');
+      expect(escapeCSVField('=CMD()')).toBe('"\'=CMD()"');
     });
 
-    it('should prefix formula character "+" with single quote', () => {
-      expect(escapeCSVField('+1234')).toBe("'+1234");
+    it('should prefix formula character "+" with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('+1234')).toBe('"\'+1234"');
     });
 
-    it('should prefix formula character "-" with single quote', () => {
-      expect(escapeCSVField('-1234')).toBe("'-1234");
+    it('should prefix formula character "-" with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('-1234')).toBe('"\'-1234"');
     });
 
-    it('should prefix formula character "@" with single quote', () => {
-      expect(escapeCSVField('@mention')).toBe("'@mention");
+    it('should prefix formula character "@" with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('@mention')).toBe('"\'@mention"');
     });
 
     it('should prefix formula character "|" with single quote and wrap in quotes', () => {
@@ -161,9 +162,10 @@ describe('CSV Export Format - Race Horology', () => {
       expect(escapeCSVField('')).toBe('');
     });
 
-    it('should protect against 0x hex injection', () => {
+    it('should protect against 0x hex injection and wrap in quotes', () => {
       const result = escapeCSVField('0x41414141');
-      expect(result.startsWith("'")).toBe(true);
+      // Hex-prefixed fields get single-quote prefix and are wrapped in double quotes
+      expect(result).toBe('"\'0x41414141"');
     });
   });
 

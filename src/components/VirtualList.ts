@@ -398,9 +398,8 @@ export class VirtualList {
     if (group) {
       const groupItemIds = new Set<string>();
       groupItemIds.add(`header-${groupId}`);
-      if (!group.isMultiItem) {
-        groupItemIds.add(`single-${groupId}`);
-      }
+      // Always clean up single-item variant (may linger if group upgraded from single→multi)
+      groupItemIds.add(`single-${groupId}`);
       for (const entry of group.entries) {
         groupItemIds.add(`sub-entry-${entry.id}`);
       }

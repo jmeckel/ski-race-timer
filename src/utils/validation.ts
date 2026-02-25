@@ -36,7 +36,7 @@ import {
  * Validate that a run number is a positive integer
  */
 function isValidRun(run: unknown): run is Run {
-  return typeof run === 'number' && Number.isInteger(run) && run >= 1;
+  return run === 1 || run === 2;
 }
 const VALID_CHANGE_TYPES = ['create', 'edit', 'restore'] as const;
 

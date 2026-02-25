@@ -123,16 +123,23 @@ function releaseFocus(modal: HTMLElement): void {
  * Close modal with animation
  * Adds closing class, waits for animation, then removes show class
  */
+/** Track closing animation timeouts so they can be cancelled on rapid reopen */
+const closingTimeouts = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+
 export function closeModal(modal: HTMLElement | null): void {
   if (!modal || !modal.classList.contains('show')) return;
+
+  // Release focus trap immediately to avoid race with rapid reopen
+  releaseFocus(modal);
 
   modal.classList.add('closing');
 
   // Wait for animation to complete (150ms)
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
+    closingTimeouts.delete(modal);
     modal.classList.remove('show', 'closing');
-    releaseFocus(modal);
   }, 150);
+  closingTimeouts.set(modal, timeoutId);
 }
 
 /**
@@ -140,6 +147,15 @@ export function closeModal(modal: HTMLElement | null): void {
  */
 export function openModal(modal: HTMLElement | null): void {
   if (!modal) return;
+
+  // Cancel any pending close animation from a rapid close→open
+  const pendingClose = closingTimeouts.get(modal);
+  if (pendingClose) {
+    clearTimeout(pendingClose);
+    closingTimeouts.delete(modal);
+    modal.classList.remove('closing');
+  }
+
   if (!modal.hasAttribute('role')) {
     modal.setAttribute('role', 'dialog');
   }
