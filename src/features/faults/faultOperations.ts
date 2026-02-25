@@ -55,7 +55,7 @@ export function createAndSyncFault(
     .getState()
     .faultEntries.find((f) => f.id === fault.id);
   if (storedFault) {
-    syncFault(storedFault);
+    void syncFault(storedFault).catch(() => { /* handled by queue */ });
     showFaultConfirmation(storedFault);
   }
 
@@ -358,7 +358,7 @@ export function handleSaveFaultEdit(): void {
       .getState()
       .faultEntries.find((f) => f.id === editingFaultId);
     if (updatedFault) {
-      syncFault(updatedFault);
+      void syncFault(updatedFault).catch(() => { /* handled by queue */ });
     }
 
     showToast(t('saved', lang), 'success');
@@ -398,7 +398,7 @@ export function handleRestoreFaultVersion(): void {
       .getState()
       .faultEntries.find((f) => f.id === editingFaultId);
     if (restoredFault) {
-      syncFault(restoredFault);
+      void syncFault(restoredFault).catch(() => { /* handled by queue */ });
     }
 
     const lang = state.currentLang;
@@ -446,7 +446,7 @@ export function handleConfirmMarkDeletion(): void {
       .getState()
       .faultEntries.find((f) => f.id === editingFaultId);
     if (markedFault) {
-      syncFault(markedFault);
+      void syncFault(markedFault).catch(() => { /* handled by queue */ });
     }
 
     const lang = store.getState().currentLang;

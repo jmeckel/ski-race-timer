@@ -29,7 +29,7 @@ vi.mock('../../../src/services', () => ({
   feedbackUndo: vi.fn(),
   syncService: {
     forceRefresh: vi.fn(() => Promise.resolve()),
-    deleteEntryFromCloud: vi.fn(),
+    deleteEntryFromCloud: vi.fn(() => Promise.resolve()),
   },
 }));
 

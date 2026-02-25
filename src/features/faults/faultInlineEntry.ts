@@ -690,7 +690,7 @@ export function openFaultDeleteConfirmation(fault: FaultEntry): void {
       .getState()
       .faultEntries.find((f) => f.id === fault.id);
     if (markedFault) {
-      deleteFaultFromCloud(markedFault);
+      void deleteFaultFromCloud(markedFault).catch(() => { /* handled by queue */ });
     }
     updateInlineFaultsList();
     showToast(t('faultDeleted', store.getState().currentLang), 'success');

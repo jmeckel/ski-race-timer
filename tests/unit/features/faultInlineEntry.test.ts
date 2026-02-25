@@ -21,7 +21,7 @@ vi.mock('../../../src/services', () => ({
 }));
 
 vi.mock('../../../src/services/sync', () => ({
-  deleteFaultFromCloud: vi.fn(),
+  deleteFaultFromCloud: vi.fn(() => Promise.resolve()),
 }));
 
 const mockGetState = vi.fn();

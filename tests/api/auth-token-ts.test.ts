@@ -240,12 +240,13 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
   describe('First-time PIN Setup', () => {
     it('should set PIN and return token with isNewPin flag', async () => {
       mockRedisClient.get.mockResolvedValue(null);
+      mockRedisClient.set.mockResolvedValue('OK'); // SET NX succeeds
 
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
 
       expect(hashPin).toHaveBeenCalledWith('1234');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:clientPin', 'hashed:1234');
+      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:clientPin', 'hashed:1234', 'NX');
       expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
       expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         success: true,
@@ -257,6 +258,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
 
     it('should set PIN with gateJudge role when specified', async () => {
       mockRedisClient.get.mockResolvedValue(null);
+      mockRedisClient.set.mockResolvedValue('OK'); // SET NX succeeds
 
       const req = { method: 'POST', headers: {}, body: { pin: '1234', role: 'gateJudge' } } as any;
       await handler(req, mockRes as any);
@@ -266,6 +268,34 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         role: 'gateJudge',
         isNewPin: true,
       }));
+    });
+
+    it('should handle concurrent PIN setup race condition', async () => {
+      // First GET returns null, but SET NX fails (another request set it first)
+      mockRedisClient.get
+        .mockResolvedValueOnce(null)  // initial check
+        .mockResolvedValueOnce('hashed:1234'); // re-read after NX fail
+      mockRedisClient.set.mockResolvedValue(null); // SET NX fails
+
+      const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
+      await handler(req, mockRes as any);
+
+      // Should still succeed — verifies against the concurrently-set PIN
+      expect(sendSuccess).toHaveBeenCalled();
+    });
+
+    it('should reject when concurrent PIN differs', async () => {
+      // First GET returns null, but SET NX fails and concurrent PIN is different
+      mockRedisClient.get
+        .mockResolvedValueOnce(null)  // initial check
+        .mockResolvedValueOnce('hashed:9999'); // different PIN was set concurrently
+      mockRedisClient.set.mockResolvedValue(null); // SET NX fails
+
+      const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
+      await handler(req, mockRes as any);
+
+      // Should reject — PIN doesn't match the one set concurrently
+      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Invalid PIN', 401);
     });
   });
 
@@ -324,6 +354,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
   describe('Role Handling', () => {
     it('should default to timer role when no role specified', async () => {
       mockRedisClient.get.mockResolvedValue(null);
+      mockRedisClient.set.mockResolvedValue('OK');
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
       expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
@@ -331,6 +362,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
 
     it('should default to timer role for invalid role', async () => {
       mockRedisClient.get.mockResolvedValue(null);
+      mockRedisClient.set.mockResolvedValue('OK');
       const req = { method: 'POST', headers: {}, body: { pin: '1234', role: 'admin' } } as any;
       await handler(req, mockRes as any);
       expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
@@ -349,11 +381,12 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
   describe('Chief Judge PIN', () => {
     it('should set chief judge PIN on first use', async () => {
       mockRedisClient.get.mockResolvedValue(null);
+      mockRedisClient.set.mockResolvedValue('OK'); // SET NX succeeds
       const req = { method: 'POST', headers: {}, body: { pin: '9999', role: 'chiefJudge' } } as any;
       await handler(req, mockRes as any);
 
       expect(hashPin).toHaveBeenCalledWith('9999');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:chiefJudgePin', 'hashed:9999');
+      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:chiefJudgePin', 'hashed:9999', 'NX');
       expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'chiefJudge' }));
       expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         success: true,

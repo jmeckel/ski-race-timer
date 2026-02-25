@@ -73,7 +73,7 @@ export function initModals(): void {
           .getState()
           .faultEntries.find((f) => f.id === faultId);
         if (markedFault) {
-          deleteFaultFromCloud(markedFault);
+          void deleteFaultFromCloud(markedFault).catch(() => { /* handled by queue */ });
         }
         updateInlineFaultsList();
         showToast(t('faultDeleted', store.getState().currentLang), 'success');
@@ -257,20 +257,21 @@ async function handleConfirmDelete(): Promise<void> {
     store.clearAll();
     await photoStorage.clearAll();
 
-    // Sync deletions to cloud
-    if (state.settings.sync && state.raceId) {
+    // Sync deletions to cloud (re-read state after await — raceId may have changed)
+    const postClearState = store.getState();
+    if (postClearState.settings.sync && postClearState.raceId) {
       for (const entry of entriesToDelete) {
-        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+        void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
       }
     }
 
-    showToast(t('cleared', state.currentLang), 'success');
+    showToast(t('cleared', postClearState.currentLang), 'success');
   } else if (action === 'deleteSelected') {
     const ids = Array.from(state.selectedEntries);
     const entriesToDelete = state.entries.filter((e) => ids.includes(e.id));
     await deleteEntriesWithCleanup(entriesToDelete);
 
-    showToast(t('deleted', state.currentLang), 'success');
+    showToast(t('deleted', store.getState().currentLang), 'success');
   } else if (action === 'undoAdd') {
     // Perform the undo operation
     const result = store.undo();
@@ -282,9 +283,10 @@ async function handleConfirmDelete(): Promise<void> {
       const entry = result.data as Entry;
       // Delete orphaned photo from IndexedDB
       await photoStorage.deletePhoto(entry.id);
-      // Sync undo to cloud
-      if (state.settings.sync && state.raceId) {
-        syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      // Sync undo to cloud (re-read state after await)
+      const postUndoState = store.getState();
+      if (postUndoState.settings.sync && postUndoState.raceId) {
+        void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
       }
     }
     closeAllModals();

@@ -48,11 +48,11 @@ vi.mock('../../src/services', () => ({
     clearAll: vi.fn(() => Promise.resolve()),
     deletePhoto: vi.fn(() => Promise.resolve()),
   },
-  syncService: { deleteEntryFromCloud: vi.fn() },
+  syncService: { deleteEntryFromCloud: vi.fn(() => Promise.resolve()) },
 }));
 
 vi.mock('../../src/services/sync', () => ({
-  deleteFaultFromCloud: vi.fn(),
+  deleteFaultFromCloud: vi.fn(() => Promise.resolve()),
   syncEntry: vi.fn(() => Promise.resolve()),
 }));
 

@@ -19,7 +19,7 @@ vi.mock('../../../src/store', () => ({
 
 const mockDeletePhoto = vi.fn(() => Promise.resolve());
 const mockDeletePhotos = vi.fn(() => Promise.resolve());
-const mockDeleteEntryFromCloud = vi.fn();
+const mockDeleteEntryFromCloud = vi.fn(() => Promise.resolve());
 
 vi.mock('../../../src/services', () => ({
   photoStorage: {

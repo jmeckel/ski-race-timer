@@ -648,7 +648,7 @@ function handleRejectFaultDeletion(fault: FaultEntry): void {
       .getState()
       .faultEntries.find((f) => f.id === fault.id);
     if (restoredFault) {
-      syncFault(restoredFault);
+      void syncFault(restoredFault).catch(() => { /* handled by queue */ });
     }
 
     const lang = store.getState().currentLang;
@@ -666,7 +666,7 @@ function handleApproveFaultDeletion(fault: FaultEntry): void {
   const approvedFault = store.approveFaultDeletion(fault.id);
 
   if (approvedFault) {
-    deleteFaultFromCloud(approvedFault);
+    void deleteFaultFromCloud(approvedFault).catch(() => { /* handled by queue */ });
 
     const lang = store.getState().currentLang;
     showToast(t('deletionApproved', lang), 'success');

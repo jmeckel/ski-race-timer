@@ -611,6 +611,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return sendAuthRequired(res, authResult.error, authResult.expired || false);
   }
 
+  // Require real authentication for write operations (POST/DELETE)
+  // method: 'none' means no PIN is set — allow read-only access only
+  if (req.method !== 'GET' && authResult.method === 'none') {
+    return sendError(res, 'Authentication required to write data', 401);
+  }
+
   try {
     if (req.method === 'GET') {
       return await handleGet(req, res, client, normalizedRaceId, redisKey);

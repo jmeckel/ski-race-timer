@@ -205,7 +205,7 @@ function initResultsActions(): void {
             state.raceId
           ) {
             const entry = result.data as Entry;
-            syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+            void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
           }
         }
       }

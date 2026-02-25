@@ -127,10 +127,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const chiefPinHash = await client.get(CHIEF_JUDGE_PIN_KEY);
 
       if (!chiefPinHash) {
-        // No chief judge PIN set yet - this is the first time setup
-        // First chief judge sets the PIN
+        // No chief judge PIN set yet - first request sets the PIN
+        // Use SET NX (set-if-not-exists) to prevent race condition where
+        // two concurrent requests both observe null and both set their PIN
         const newPinHash = await hashPin(pin);
-        await client.set(CHIEF_JUDGE_PIN_KEY, newPinHash);
+        const wasSet = await client.set(CHIEF_JUDGE_PIN_KEY, newPinHash, 'NX');
+
+        if (!wasSet) {
+          // Another request set the PIN concurrently — verify against it
+          const concurrentHash = await client.get(CHIEF_JUDGE_PIN_KEY);
+          if (!concurrentHash || !(await verifyPin(pin, concurrentHash))) {
+            return sendError(res, 'Invalid Chief Judge PIN', 401);
+          }
+        }
 
         const token = generateToken({
           createdAt: Date.now(),
@@ -140,7 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return sendSuccess(res, {
           success: true,
           token,
-          isNewPin: true,
+          isNewPin: !!wasSet,
           role: 'chiefJudge',
           message: 'Chief Judge PIN set successfully'
         });
@@ -176,10 +185,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const storedPinHash = await client.get(CLIENT_PIN_KEY);
 
     if (!storedPinHash) {
-      // No PIN set yet - this is the first time setup
-      // Hash and store the PIN, then return token
+      // No PIN set yet - first request sets the PIN
+      // Use SET NX (set-if-not-exists) to prevent race condition where
+      // two concurrent requests both observe null and both set their PIN
       const newPinHash = await hashPin(pin);
-      await client.set(CLIENT_PIN_KEY, newPinHash);
+      const wasSet = await client.set(CLIENT_PIN_KEY, newPinHash, 'NX');
+
+      if (!wasSet) {
+        // Another request set the PIN concurrently — verify against it
+        const concurrentHash = await client.get(CLIENT_PIN_KEY);
+        if (!concurrentHash || !(await verifyPin(pin, concurrentHash))) {
+          return sendError(res, 'Invalid PIN', 401);
+        }
+      }
 
       const token = generateToken({
         createdAt: Date.now(),
@@ -189,7 +207,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return sendSuccess(res, {
         success: true,
         token,
-        isNewPin: true,
+        isNewPin: !!wasSet,
         role: userRole,
         message: 'PIN set successfully'
       });

@@ -78,6 +78,10 @@ export async function atomicUpdate<TData, TResult>(
     apiLogger.warn(`${operationName}: retry due to concurrent modification`, { retry: retry + 1, maxRetries: MAX_ATOMIC_RETRIES });
   }
 
+  // Release stale WATCH from the last failed retry to prevent spurious
+  // MULTI/EXEC failures on subsequent requests reusing this connection
+  await client.unwatch();
+
   return {
     success: false,
     error: 'Concurrent modification conflict, please retry',

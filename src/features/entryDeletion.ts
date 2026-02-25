@@ -9,7 +9,6 @@ import type { Entry } from '../types';
 export async function deleteEntriesWithCleanup(
   entries: Entry[],
 ): Promise<void> {
-  const state = store.getState();
   const ids = entries.map((e) => e.id);
 
   if (ids.length === 1) {
@@ -25,10 +24,11 @@ export async function deleteEntriesWithCleanup(
     await photoStorage.deletePhotos(ids);
   }
 
-  // Sync deletions to cloud
+  // Sync deletions to cloud (re-read state after await — raceId may have changed)
+  const state = store.getState();
   if (state.settings.sync && state.raceId) {
     for (const entry of entries) {
-      syncService.deleteEntryFromCloud(entry.id, entry.deviceId);
+      void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
     }
   }
 }

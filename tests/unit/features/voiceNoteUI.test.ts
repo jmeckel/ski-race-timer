@@ -21,7 +21,7 @@ vi.mock('../../../src/services', () => ({
 }));
 
 vi.mock('../../../src/services/sync', () => ({
-  syncFault: vi.fn(),
+  syncFault: vi.fn(() => Promise.resolve()),
 }));
 
 const mockIsRecording = vi.fn(() => false);
