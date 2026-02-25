@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **Chronométrage de courses de ski synchronisé par GPS**
 
-Version 5.24.6 | Dernière mise à jour : Février 2026
+Version 5.24.7 | Dernière mise à jour : Février 2026
 
 ---
 
@@ -683,7 +683,7 @@ Ski Race Timer prend en charge la navigation complète au clavier et au pavé nu
 
 **Signaler un problème :** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version :** 5.24.6
+**Version :** 5.24.7
 
 ---
 
