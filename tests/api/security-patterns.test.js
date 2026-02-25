@@ -253,15 +253,15 @@ describe('Security Patterns - Source Code Assertions', () => {
   describe('Role-based access control', () => {
     it('faults.ts DELETE should require chiefJudge role', () => {
       const source = readSource('api/v1/faults.ts');
-      // Should check for chiefJudge role on DELETE
+      // Should check for chiefJudge role on DELETE with 403 response
       expect(source).toContain("userRole !== 'chiefJudge'");
-      expect(source).toContain('403');
+      expect(source).toContain("sendError(res, 'Fault deletion requires Chief Judge role', 403)");
     });
 
     it('admin/races.ts DELETE should require chiefJudge role', () => {
       const source = readSource('api/v1/admin/races.ts');
       expect(source).toContain("userRole !== 'chiefJudge'");
-      expect(source).toContain('403');
+      expect(source).toContain("sendError(res, 'Race deletion requires Chief Judge role', 403)");
     });
   });
 

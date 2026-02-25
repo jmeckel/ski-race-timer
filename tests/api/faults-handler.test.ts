@@ -81,7 +81,7 @@ vi.mock('../../api/lib/response.js', () => ({
   getClientIP: vi.fn(() => '127.0.0.1'),
   sanitizeString: vi.fn((str: unknown, maxLen: number) => {
     if (!str || typeof str !== 'string') return '';
-    return str.slice(0, maxLen).replace(/[<>"'&]/g, '');
+    return str.slice(0, maxLen).replace(/[<>&]/g, '').replace(/[\x00-\x1f\x7f]/g, '');
   }),
   safeJsonParse: vi.fn((str: string | null, defaultValue: any) => {
     if (str === null || str === undefined || str === '') return defaultValue;

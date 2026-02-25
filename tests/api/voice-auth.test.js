@@ -22,7 +22,7 @@ const mockRedisClient = {
 let mockRedisAvailable = true;
 let mockRedisError = false;
 
-vi.mock('../../api/lib/redis.ts', () => ({
+vi.mock('../../api/lib/redis.js', () => ({
   getRedis: vi.fn(() => {
     if (!mockRedisAvailable) return null;
     return mockRedisClient;
@@ -31,7 +31,7 @@ vi.mock('../../api/lib/redis.ts', () => ({
   CLIENT_PIN_KEY: 'admin:clientPin'
 }));
 
-vi.mock('../../api/lib/jwt.ts', () => ({
+vi.mock('../../api/lib/jwt.js', () => ({
   validateAuth: vi.fn(async (req, client, key) => {
     const authHeader = req.headers?.authorization;
     if (!authHeader) {
