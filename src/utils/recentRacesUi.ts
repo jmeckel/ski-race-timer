@@ -3,6 +3,9 @@ import { store } from '../store';
 import { escapeAttr, escapeHtml } from './format';
 import type { RecentRace } from './recentRaces';
 
+// Shared AbortController to remove previous delegation handlers on re-render
+let dropdownAbortController: AbortController | null = null;
+
 export function renderRecentRaceItem(race: RecentRace): string {
   const lang = store.getState().currentLang;
   const entryText =
@@ -28,47 +31,59 @@ export function attachRecentRaceItemHandlers(
   races: RecentRace[],
   onSelect: (race: RecentRace) => void,
 ): void {
-  const items = dropdown.querySelectorAll('.recent-race-item');
-  items.forEach((item, index) => {
-    item.addEventListener('click', () => {
-      const race = races[index];
-      if (race) {
-        onSelect(race);
+  // Abort previous handlers before adding new ones (races array changes)
+  if (dropdownAbortController) {
+    dropdownAbortController.abort();
+  }
+  dropdownAbortController = new AbortController();
+  const { signal } = dropdownAbortController;
+
+  // Delegated click handler on stable dropdown container
+  dropdown.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const item = target.closest('.recent-race-item');
+    if (!item) return;
+    const raceId = item.getAttribute('data-race-id');
+    const race = races.find((r) => r.raceId === raceId);
+    if (race) onSelect(race);
+  }, { signal });
+
+  // Delegated keyboard handler
+  dropdown.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement;
+    const item = target.closest('.recent-race-item') as HTMLElement | null;
+    if (!item) return;
+
+    const items = Array.from(
+      dropdown.querySelectorAll('.recent-race-item'),
+    ) as HTMLElement[];
+    const index = items.indexOf(item);
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ': {
+        e.preventDefault();
+        const raceId = item.getAttribute('data-race-id');
+        const race = races.find((r) => r.raceId === raceId);
+        if (race) onSelect(race);
+        break;
       }
-    });
-
-    // Keyboard support: Enter/Space to select, arrow keys to navigate
-    item.addEventListener('keydown', (e) => {
-      const event = e as KeyboardEvent;
-      const itemsArray = Array.from(items) as HTMLElement[];
-
-      switch (event.key) {
-        case 'Enter':
-        case ' ': {
-          event.preventDefault();
-          const race = races[index];
-          if (race) {
-            onSelect(race);
-          }
-          break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (index < items.length - 1) {
+          items[index + 1]!.focus();
         }
-        case 'ArrowDown':
-          event.preventDefault();
-          if (index < itemsArray.length - 1) {
-            itemsArray[index + 1]!.focus();
-          }
-          break;
-        case 'ArrowUp':
-          event.preventDefault();
-          if (index > 0) {
-            itemsArray[index - 1]!.focus();
-          }
-          break;
-        case 'Escape':
-          event.preventDefault();
-          dropdown.style.display = 'none';
-          break;
-      }
-    });
-  });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (index > 0) {
+          items[index - 1]!.focus();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        dropdown.style.display = 'none';
+        break;
+    }
+  }, { signal });
 }

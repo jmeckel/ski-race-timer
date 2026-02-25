@@ -31,6 +31,8 @@ let inlineSelectedBib = '';
 let inlineSelectedGate = 0;
 let inlineSelectedFaultType: FaultType | null = null;
 let gateSelectorDelegated = false;
+let bibListDelegated = false;
+let faultListDelegated = false;
 
 /**
  * Flash the bib input to visually cue an auto-fill event.
@@ -105,28 +107,34 @@ export function updateActiveBibsList(): void {
       </div>
     `;
 
-    // Click on card to select bib for fault entry
-    card.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const actionBtn = target.closest('.bib-action-btn');
-
-      if (actionBtn) {
-        const action = actionBtn.getAttribute('data-action');
-        if (action === 'fault') {
-          feedbackTap();
-          // Import dynamically to avoid circular dependency
-          import('./faultModals').then(({ openFaultRecordingModal }) => {
-            openFaultRecordingModal(bib);
-          });
-        } else if (action === 'ok') {
-          feedbackTap();
-          // Just tap feedback - bib is OK, no action needed
-          showToast(t('ok', state.currentLang), 'success', 1000);
-        }
-      }
-    });
-
     list.appendChild(card);
+  });
+
+  // Use delegated event handler on the stable list container
+  if (bibListDelegated) return;
+  bibListDelegated = true;
+
+  listeners.add(list, 'click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    const actionBtn = target.closest('.bib-action-btn');
+    const card = target.closest('.active-bib-card');
+    if (!card) return;
+
+    const bib = card.getAttribute('data-bib');
+    if (!bib) return;
+
+    if (actionBtn) {
+      const action = actionBtn.getAttribute('data-action');
+      if (action === 'fault') {
+        feedbackTap();
+        import('./faultModals').then(({ openFaultRecordingModal }) => {
+          openFaultRecordingModal(bib);
+        });
+      } else if (action === 'ok') {
+        feedbackTap();
+        showToast(t('ok', store.getState().currentLang), 'success', 1000);
+      }
+    }
   });
 }
 
@@ -189,17 +197,29 @@ export function updateInlineFaultsList(): void {
       </button>
     `;
 
-    // Delete button handler
-    const deleteBtn = item.querySelector('.gate-judge-fault-delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        feedbackTap();
-        openFaultDeleteConfirmation(fault);
-      });
-    }
-
     listContainer.appendChild(item);
+  });
+
+  // Use delegated event handler on the stable list container
+  if (faultListDelegated) return;
+  faultListDelegated = true;
+
+  listeners.add(listContainer, 'click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    const deleteBtn = target.closest('.gate-judge-fault-delete');
+    if (!deleteBtn) return;
+
+    e.stopPropagation();
+    feedbackTap();
+
+    const faultItem = deleteBtn.closest('.gate-judge-fault-item');
+    const faultId = faultItem?.getAttribute('data-fault-id');
+    if (!faultId) return;
+
+    const fault = store.getState().faultEntries.find((f) => f.id === faultId);
+    if (fault) {
+      openFaultDeleteConfirmation(fault);
+    }
   });
 }
 
@@ -483,6 +503,8 @@ export function initInlineFaultEntry(): void {
   // Clean up old listeners before adding new ones (re-init safe)
   listeners.removeAll();
   gateSelectorDelegated = false;
+  bibListDelegated = false;
+  faultListDelegated = false;
 
   // Bib manual input
   const bibInput = document.getElementById(

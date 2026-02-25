@@ -23,6 +23,7 @@ const ADMIN_API_BASE = '/api/v1/admin/races';
 
 // Module state
 let pendingRaceDelete: string | null = null;
+let raceListDelegated = false;
 
 /**
  * Handle manage races button click
@@ -150,6 +151,19 @@ async function loadRaceList(): Promise<void> {
       const raceItem = createRaceItem(race, lang);
       listContainer.appendChild(raceItem);
     });
+
+    // Use delegated event handler on the stable list container
+    if (!raceListDelegated) {
+      raceListDelegated = true;
+      listeners.add(listContainer, 'click', (e: Event) => {
+        const target = e.target as HTMLElement;
+        const deleteBtn = target.closest('.race-delete-btn');
+        if (!deleteBtn) return;
+        const raceItem = deleteBtn.closest('[data-race-id]');
+        const raceId = raceItem?.getAttribute('data-race-id');
+        if (raceId) promptDeleteRace(raceId);
+      });
+    }
   } catch (error) {
     logError('Admin', 'loadRaceList', error, 'loadError');
     showToast(t('loadError', lang), 'error');
@@ -187,7 +201,6 @@ function createRaceItem(race: RaceInfo, lang: Language): HTMLElement {
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'race-delete-btn danger';
   deleteBtn.textContent = t('delete', lang);
-  deleteBtn.addEventListener('click', () => promptDeleteRace(race.raceId));
 
   item.appendChild(info);
   item.appendChild(deleteBtn);
