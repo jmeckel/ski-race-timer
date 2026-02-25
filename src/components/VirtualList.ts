@@ -9,7 +9,7 @@ import {
   effect,
   store,
 } from '../store';
-import type { Entry, FaultEntry, Run } from '../types';
+import type { Entry, FaultEntry, Language, Run } from '../types';
 import { SwipeActions } from './SwipeActions';
 import {
   // Template helpers
@@ -112,6 +112,7 @@ export class VirtualList {
   private isPaused = false;
   private needsRefreshOnResume = false;
   private isDestroyed = false;
+  private cachedLang: Language = 'de'; // Cached per render() to avoid per-item getState()
   private domRemovalObserver: MutationObserver | null = null;
   private scrollDebounceDelay: number = SCROLL_DEBOUNCE_NORMAL;
   private unsubscribeBattery: (() => void) | null = null;
@@ -483,6 +484,9 @@ export class VirtualList {
    * Render visible items
    */
   render(): void {
+    // Cache language once per render pass to avoid per-item store.getState()
+    this.cachedLang = store.getState().currentLang;
+
     if (this.groups.length === 0) {
       this.renderEmpty();
       return;
@@ -685,8 +689,7 @@ export class VirtualList {
     `;
 
     const bibStr = formatBib(group.bib || '---');
-    const state = store.getState();
-    const lang = state.currentLang;
+    const lang = this.cachedLang;
     const runColor = getRunColor(group.run);
     const runLabel = getRunLabel(group.run, lang);
 
@@ -802,8 +805,7 @@ export class VirtualList {
     const date = new Date(entry.timestamp);
     const timeStr = formatTime(date);
     const bibStr = formatBib(entry.bib || '---');
-    const state = store.getState();
-    const lang = state.currentLang;
+    const lang = this.cachedLang;
     const pointColor = getPointColor(entry.point);
     const pointLabel = getPointLabel(entry.point, lang);
     const run = entry.run ?? 1;
@@ -968,8 +970,7 @@ export class VirtualList {
     `;
 
     const bibStr = formatBib(group.bib || '---');
-    const state = store.getState();
-    const lang = state.currentLang;
+    const lang = this.cachedLang;
     const runColor = getRunColor(group.run);
     const runLabel = getRunLabel(group.run, lang);
 
@@ -983,8 +984,9 @@ export class VirtualList {
 
     const faultBadgeHtml = faultBadge({ faults, lang });
 
-    const statusLabel = state.usePenaltyMode ? t('flt', lang) : t('dsq', lang);
-    const statusColor = state.usePenaltyMode ? '#f59e0b' : '#ef4444';
+    const usePenaltyMode = store.getState().usePenaltyMode;
+    const statusLabel = usePenaltyMode ? t('flt', lang) : t('dsq', lang);
+    const statusColor = usePenaltyMode ? '#f59e0b' : '#ef4444';
 
     const deletionPendingHtml = hasMarkedForDeletion
       ? deletionPendingBadge()
@@ -1172,8 +1174,7 @@ export class VirtualList {
 
     const date = new Date(entry.timestamp);
     const timeStr = formatTime(date);
-    const state = store.getState();
-    const lang = state.currentLang;
+    const lang = this.cachedLang;
     const pointColor = getPointColor(entry.point);
     const pointLabel = getPointLabel(entry.point, lang);
 
@@ -1308,8 +1309,7 @@ export class VirtualList {
       transition: background 0.2s;
     `;
 
-    const state = store.getState();
-    const lang = state.currentLang;
+    const lang = this.cachedLang;
     const gateColor = store.getGateColor(fault.gateNumber);
     const gateColorHex = gateColor === 'red' ? '#ef4444' : '#3b82f6';
 
@@ -1460,12 +1460,11 @@ export class VirtualList {
     }
     this.visibleItems.clear();
 
-    const state = store.getState();
     this.contentContainer.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">⏱️</span>
-        <span>${t('noEntries', state.currentLang)}</span>
-        <span class="empty-subtitle">${t('noEntriesHint', state.currentLang)}</span>
+        <span>${t('noEntries', this.cachedLang)}</span>
+        <span class="empty-subtitle">${t('noEntriesHint', this.cachedLang)}</span>
       </div>
     `;
   }

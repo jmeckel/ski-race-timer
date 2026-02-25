@@ -57,7 +57,7 @@ import {
   store,
   untracked,
 } from './store';
-import { applyViewServices } from './utils/viewServices';
+import { applyCameraService, applyGpsService } from './utils/viewServices';
 
 /**
  * Initialize signal-based state effects.
@@ -207,14 +207,14 @@ export function initStateEffects(): () => void {
     }),
   );
 
-  // 2. GPS + view services: tracks GPS setting and current view
+  // 2. GPS service: tracks GPS setting and current view
   disposers.push(
     effect(() => {
       void $settingsGps.value;
       void $currentView.value;
       untracked(() => updateGpsIndicator());
       // Defer service calls: gpsService.start/stop/pause write to store synchronously
-      queueMicrotask(() => applyViewServices(store.getState()));
+      queueMicrotask(() => applyGpsService(store.getState()));
     }),
   );
 
@@ -225,7 +225,7 @@ export function initStateEffects(): () => void {
       void $currentView.value;
       untracked(() => updatePhotoCaptureIndicator());
       // Defer service calls: cameraService.stop writes to store synchronously
-      queueMicrotask(() => applyViewServices(store.getState()));
+      queueMicrotask(() => applyCameraService(store.getState()));
     }),
   );
 

@@ -103,6 +103,8 @@ export class Clock {
     for (let i = 0; i < 12; i++) {
       const span = document.createElement('span');
       span.className = 'clock-digit';
+      span.style.display = 'inline-block'; // Required for transform
+      span.style.transition = 'transform 0.1s ease-out';
       span.dataset.index = String(i);
       el.appendChild(span);
     }
@@ -306,12 +308,11 @@ export class Clock {
         digit.textContent = newChar;
 
         // Subtle scale animation on change — only on normal battery and when visible
-        // to avoid untracked RAF callbacks that bypass visibility/battery throttling
+        // Uses CSS transition (set on digit creation) instead of untracked RAF
         if (this.frameSkipCount === FRAME_SKIP_NORMAL && !document.hidden) {
           digit.style.transform = 'scale(1.02)';
-          requestAnimationFrame(() => {
-            digit.style.transform = 'scale(1)';
-          });
+          // Reset after a frame — CSS transition handles the easing back
+          setTimeout(() => { digit.style.transform = ''; }, 16);
         }
       }
     }

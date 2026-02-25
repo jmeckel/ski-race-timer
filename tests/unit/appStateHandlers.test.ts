@@ -64,6 +64,8 @@ vi.mock('../../src/services', () => ({
 }));
 
 vi.mock('../../src/utils/viewServices', () => ({
+  applyGpsService: vi.fn(),
+  applyCameraService: vi.fn(),
   applyViewServices: vi.fn(),
 }));
 
@@ -155,7 +157,7 @@ import {
 } from '../../src/features/timerView';
 import { ambientModeService } from '../../src/services/ambient';
 import { wakeLockService } from '../../src/services';
-import { applyViewServices } from '../../src/utils/viewServices';
+import { applyCameraService, applyGpsService } from '../../src/utils/viewServices';
 
 describe('App State Handlers', () => {
   let dispose: () => void;
@@ -271,22 +273,22 @@ describe('App State Handlers', () => {
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
     });
 
-    it('should update GPS indicator and view services when GPS setting changes', () => {
+    it('should update GPS indicator and GPS service when GPS setting changes', () => {
       mockState.value = {
         ...mockState.value,
         settings: { ...mockState.value.settings, gps: false },
       };
       expect(updateGpsIndicator).toHaveBeenCalled();
-      expect(applyViewServices).toHaveBeenCalled();
+      expect(applyGpsService).toHaveBeenCalled();
     });
 
-    it('should update photo capture indicator when photoCapture setting changes', () => {
+    it('should update photo capture indicator and camera service when photoCapture setting changes', () => {
       mockState.value = {
         ...mockState.value,
         settings: { ...mockState.value.settings, photoCapture: true },
       };
       expect(updatePhotoCaptureIndicator).toHaveBeenCalled();
-      expect(applyViewServices).toHaveBeenCalled();
+      expect(applyCameraService).toHaveBeenCalled();
     });
 
     it('should apply glass effects when glassEffects setting changes', () => {
@@ -337,9 +339,10 @@ describe('App State Handlers', () => {
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
 
-    it('should call applyViewServices on view change (GPS/camera lifecycle)', () => {
+    it('should call GPS and camera services on view change', () => {
       mockState.value = { ...mockState.value, currentView: 'results' };
-      expect(applyViewServices).toHaveBeenCalled();
+      expect(applyGpsService).toHaveBeenCalled();
+      expect(applyCameraService).toHaveBeenCalled();
     });
   });
 

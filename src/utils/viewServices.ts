@@ -2,9 +2,9 @@ import { cameraService, gpsService } from '../services';
 import type { AppState } from '../types';
 
 /**
- * Apply view-specific service behavior to reduce battery drain.
+ * Apply GPS service behavior based on current view and settings.
  */
-export function applyViewServices(state: Readonly<AppState>): void {
+export function applyGpsService(state: Readonly<AppState>): void {
   const isTimerView = state.currentView === 'timer';
 
   if (isTimerView && state.settings.gps) {
@@ -14,10 +14,25 @@ export function applyViewServices(state: Readonly<AppState>): void {
   } else {
     gpsService.stop();
   }
+}
+
+/**
+ * Apply camera service behavior based on current view and settings.
+ */
+export function applyCameraService(state: Readonly<AppState>): void {
+  const isTimerView = state.currentView === 'timer';
 
   if (isTimerView && state.settings.photoCapture) {
     cameraService.initialize();
   } else {
     cameraService.stop();
   }
+}
+
+/**
+ * Apply view-specific service behavior to reduce battery drain.
+ */
+export function applyViewServices(state: Readonly<AppState>): void {
+  applyGpsService(state);
+  applyCameraService(state);
 }
