@@ -337,8 +337,10 @@ export function sanitizeString(str: unknown, maxLength: number = 100): string {
   if (!str || typeof str !== 'string') return '';
   return str
     .slice(0, maxLength)
-    .replace(/[<>"'&]/g, '') // Strip HTML-sensitive characters
+    .replace(/[<>&]/g, '') // Strip angle brackets and ampersand (HTML injection)
     .replace(/[\x00-\x1F\x7F]/g, ''); // Strip control characters
+  // Note: quotes (' ") are NOT stripped — they are valid in names (e.g. O'Brien).
+  // Use escapeHtml()/escapeAttr() at render time for XSS prevention.
 }
 
 /**

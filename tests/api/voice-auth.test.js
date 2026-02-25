@@ -129,8 +129,9 @@ describe('Voice API Authentication', () => {
       const fs = await import('fs');
       const source = fs.readFileSync('api/v1/voice.ts', 'utf-8');
 
-      // Should check for Redis unavailability and return error
-      expect(source).toContain('!redisClient || hasRedisError()');
+      // Should check for Redis unavailability via try/catch and hasRedisError
+      expect(source).toContain('redisClient = getRedis()');
+      expect(source).toContain('hasRedisError()');
       expect(source).toContain('sendServiceUnavailable');
 
       // Should NOT have the old pattern that skipped auth

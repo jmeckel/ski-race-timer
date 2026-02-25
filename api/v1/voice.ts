@@ -94,9 +94,14 @@ interface AnthropicResponse {
  * Check rate limit for voice API
  */
 async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
-  const client = await getRedis();
-  if (!client || hasRedisError()) {
-    // SECURITY: Fail closed - deny request if rate limiting cannot be enforced
+  let client: ReturnType<typeof getRedis>;
+  try {
+    client = getRedis();
+  } catch {
+    apiLogger.error('Rate limiting unavailable - denying voice request');
+    return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
+  }
+  if (hasRedisError()) {
     apiLogger.error('Rate limiting unavailable - denying voice request');
     return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
   }
@@ -104,12 +109,12 @@ async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
   const key = `voice:rate:${clientIP}`;
 
   try {
-    const current = await client.incr(key);
-
-    // Set expiry on first request
-    if (current === 1) {
-      await client.expire(key, RATE_LIMIT_WINDOW);
-    }
+    // Use pipeline for atomic incr+expire to prevent key persisting without TTL
+    const multi = client.multi();
+    multi.incr(key);
+    multi.expire(key, RATE_LIMIT_WINDOW);
+    const results = await multi.exec();
+    const current = (results?.[0]?.[1] as number) ?? 1;
 
     const remaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - current);
     return {
@@ -385,8 +390,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // SECURITY: Validate authentication - voice API proxies to expensive LLM APIs
   // Fail closed: if Redis is unavailable, deny access rather than skip auth
-  const redisClient = await getRedis();
-  if (!redisClient || hasRedisError()) {
+  let redisClient: ReturnType<typeof getRedis>;
+  try {
+    redisClient = getRedis();
+  } catch {
+    return sendServiceUnavailable(res, 'Authentication service unavailable');
+  }
+  if (hasRedisError()) {
     return sendServiceUnavailable(res, 'Authentication service unavailable');
   }
   const authResult = await validateAuth(req, redisClient, CLIENT_PIN_KEY);
@@ -442,15 +452,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     apiLogger.error('Voice processing error', { error: message, provider });
 
     // Return unknown intent on error (graceful degradation)
+    // Do not leak internal error details or provider to client
     return sendSuccess(res, {
       success: true,
       intent: {
         action: 'unknown',
         confidence: 0,
         confirmationNeeded: false,
-        error: message
-      },
-      provider
+        error: 'Voice processing failed'
+      }
     });
   }
 }

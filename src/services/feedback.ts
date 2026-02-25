@@ -99,14 +99,24 @@ export function playBeep(
   const ctx = getAudioContext();
   if (!ctx) return;
 
-  // Resume if suspended (from idle timeout)
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch(() => {});
-  }
-
   // Schedule suspension after idle period
   scheduleAudioSuspend();
 
+  // Resume if suspended (from idle timeout), then schedule oscillator
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => scheduleOscillator(ctx, frequency, duration)).catch(() => {});
+    return;
+  }
+
+  scheduleOscillator(ctx, frequency, duration);
+}
+
+/** Schedule an oscillator beep on a running AudioContext */
+function scheduleOscillator(
+  ctx: AudioContext,
+  frequency: number,
+  duration: number,
+): void {
   try {
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();

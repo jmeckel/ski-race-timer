@@ -181,8 +181,8 @@ describe('Security Patterns - Source Code Assertions', () => {
 
     it('voice.ts should fail closed when Redis is unavailable', () => {
       const source = readSource('api/v1/voice.ts');
-      // Should check for Redis unavailability before auth
-      expect(source).toContain('!redisClient || hasRedisError()');
+      // Should check for Redis unavailability before auth (try/catch + hasRedisError)
+      expect(source).toContain('hasRedisError()');
       expect(source).toContain('sendServiceUnavailable');
     });
   });

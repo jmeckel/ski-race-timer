@@ -35,10 +35,12 @@ async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimi
   const key = `reset-pin:rate:${clientIP}`;
 
   try {
-    const current = await client.incr(key);
-    if (current === 1) {
-      await client.expire(key, RATE_LIMIT_WINDOW);
-    }
+    // Use pipeline for atomic incr+expire to prevent key persisting without TTL
+    const multi = client.multi();
+    multi.incr(key);
+    multi.expire(key, RATE_LIMIT_WINDOW);
+    const results = await multi.exec();
+    const current = (results?.[0]?.[1] as number) ?? 1;
     return {
       allowed: current <= RATE_LIMIT_MAX_ATTEMPTS,
       remaining: Math.max(0, RATE_LIMIT_MAX_ATTEMPTS - current)
@@ -116,13 +118,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Verify SERVER_API_PIN with timing-safe comparison (after rate limit)
-  // Use HMAC to normalize both values to fixed-length digests,
-  // avoiding timing side-channel from length differences
+  // Hash both values to fixed-length digests to avoid timing side-channel from length differences
   let pinValid = false;
   try {
-    const hmacKey = 'reset-pin-compare';
-    const serverDigest = crypto.createHmac('sha256', hmacKey).update(serverPin).digest();
-    const providedDigest = crypto.createHmac('sha256', hmacKey).update(providedPin).digest();
+    const serverDigest = crypto.createHash('sha256').update(serverPin).digest();
+    const providedDigest = crypto.createHash('sha256').update(providedPin).digest();
     pinValid = crypto.timingSafeEqual(serverDigest, providedDigest);
   } catch {
     pinValid = false;

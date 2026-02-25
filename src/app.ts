@@ -130,7 +130,7 @@ export function initApp(): void {
 
   // Handle runtime role changes - load views dynamically via signal effect
   let lastRole = role;
-  effect(() => {
+  const disposeRoleEffect = effect(() => {
     const currentRole = $deviceRole.value;
     if (currentRole !== lastRole) {
       lastRole = currentRole;
@@ -139,6 +139,7 @@ export function initApp(): void {
       }
     }
   });
+  listeners.add(window, 'pagehide', () => disposeRoleEffect());
 
   // Set up CustomEvent listeners for decoupled module communication
   initCustomEventListeners();

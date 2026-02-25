@@ -11,12 +11,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mock Dependencies
 // ============================================
 
+const mockExec = vi.fn().mockResolvedValue([[null, 1], [null, 1]]);
+
 const mockRedisClient = {
   get: vi.fn(),
   set: vi.fn().mockResolvedValue('OK'),
   del: vi.fn().mockResolvedValue(1),
-  incr: vi.fn().mockResolvedValue(1),
-  expire: vi.fn().mockResolvedValue(1),
+  multi: vi.fn(() => ({
+    incr: vi.fn().mockReturnThis(),
+    expire: vi.fn().mockReturnThis(),
+    exec: mockExec,
+  })),
   on: vi.fn(),
 };
 
@@ -78,8 +83,7 @@ describe('API: /api/v1/admin/reset-pin', () => {
     vi.clearAllMocks();
     mockRes = createMockRes();
     process.env = { ...ORIGINAL_ENV, SERVER_API_PIN: 'secret-server-pin' };
-    mockRedisClient.incr.mockResolvedValue(1);
-    mockRedisClient.expire.mockResolvedValue(1);
+    mockExec.mockResolvedValue([[null, 1], [null, 1]]);
     mockRedisClient.del.mockResolvedValue(1);
   });
 
@@ -155,7 +159,7 @@ describe('API: /api/v1/admin/reset-pin', () => {
     it('should return 401 for serverPin with different length', async () => {
       const req = { method: 'POST', headers: {}, body: { serverPin: 'short' }, socket: { remoteAddress: '127.0.0.1' } } as any;
       await handler(req, mockRes as any);
-      // timingSafeEqual requires equal lengths, so different length PIN will fail
+      // SHA-256 hashing normalizes length before timingSafeEqual, so different length PIN still fails on hash mismatch
       expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Authorization required', 401);
     });
   });
@@ -182,14 +186,14 @@ describe('API: /api/v1/admin/reset-pin', () => {
 
   describe('Rate Limiting', () => {
     it('should return 429 when rate limit exceeded', async () => {
-      mockRedisClient.incr.mockResolvedValue(4); // 4 > 3 max
+      mockExec.mockResolvedValue([[null, 4], [null, 1]]); // 4 > 3 max
       const req = { method: 'POST', headers: {}, body: { serverPin: 'secret-server-pin' }, socket: { remoteAddress: '127.0.0.1' } } as any;
       await handler(req, mockRes as any);
       expect(sendRateLimitExceeded).toHaveBeenCalled();
     });
 
     it('should fail closed when rate limit check fails', async () => {
-      mockRedisClient.incr.mockRejectedValue(new Error('Redis down'));
+      mockExec.mockRejectedValue(new Error('Redis down'));
       const req = { method: 'POST', headers: {}, body: { serverPin: 'secret-server-pin' }, socket: { remoteAddress: '127.0.0.1' } } as any;
       await handler(req, mockRes as any);
       expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Rate limiting unavailable');
@@ -225,19 +229,19 @@ describe('API: /api/v1/admin/reset-pin', () => {
       const req = { method: 'POST', headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' }, body: { serverPin: 'secret-server-pin' }, socket: { remoteAddress: '127.0.0.1' } } as any;
       await handler(req, mockRes as any);
       // Just verifying it doesn't crash with x-forwarded-for header
-      expect(mockRedisClient.incr).toHaveBeenCalled();
+      expect(mockRedisClient.multi).toHaveBeenCalled();
     });
 
     it('should extract IP from x-real-ip header', async () => {
       const req = { method: 'POST', headers: { 'x-real-ip': '10.0.0.1' }, body: { serverPin: 'secret-server-pin' }, socket: { remoteAddress: '127.0.0.1' } } as any;
       await handler(req, mockRes as any);
-      expect(mockRedisClient.incr).toHaveBeenCalled();
+      expect(mockRedisClient.multi).toHaveBeenCalled();
     });
 
     it('should fallback to socket.remoteAddress', async () => {
       const req = { method: 'POST', headers: {}, body: { serverPin: 'secret-server-pin' }, socket: { remoteAddress: '192.168.1.1' } } as any;
       await handler(req, mockRes as any);
-      expect(mockRedisClient.incr).toHaveBeenCalled();
+      expect(mockRedisClient.multi).toHaveBeenCalled();
     });
   });
 

@@ -692,9 +692,9 @@ describe('Extended Validation Utilities', () => {
       expect(result).toBe('helloworld');
     });
 
-    it('should remove quotes and ampersands', () => {
+    it('should remove angle brackets and ampersands but preserve quotes', () => {
       const result = sanitizeString('test\'value"with&chars');
-      expect(result).toBe('testvaluewithchars');
+      expect(result).toBe('test\'value"withchars');
     });
 
     it('should handle max length of 0', () => {

@@ -156,7 +156,8 @@ export async function validateAuth(req: VercelRequest, redisClient: Redis, clien
     // Check if PIN is required
     const storedPinHash = await redisClient.get(clientPinKey);
     if (!storedPinHash) {
-      // No PIN set, allow access
+      // No PIN set — allow read-only access (data sync, race listing)
+      // Role-restricted operations must still check auth.method !== 'none'
       return { valid: true, method: 'none' };
     }
     return { valid: false, error: 'Authorization required. Set Race Management PIN in settings.' };

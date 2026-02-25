@@ -30,6 +30,7 @@ const listeners = new ListenerManager();
 let inlineSelectedBib = '';
 let inlineSelectedGate = 0;
 let inlineSelectedFaultType: FaultType | null = null;
+let gateSelectorDelegated = false;
 
 /**
  * Flash the bib input to visually cue an auto-fill event.
@@ -87,7 +88,7 @@ export function updateActiveBibsList(): void {
 
     const card = document.createElement('div');
     card.className = `active-bib-card${hasFault ? ' has-fault' : ''}`;
-    card.setAttribute('data-bib', escapeHtml(bib));
+    card.setAttribute('data-bib', escapeAttr(bib));
     card.setAttribute('role', 'listitem');
 
     const timeStr = startTime ? formatTimeDisplay(startTime) : '--:--:--';
@@ -293,72 +294,85 @@ export function updateInlineGateSelector(): void {
       btn.classList.add('selected');
     }
 
-    btn.addEventListener('click', () => {
-      feedbackTap();
-      selectInlineGate(gate);
-    });
-
-    // Keyboard support: Space/Enter to select, arrow keys to navigate, number shortcuts
-    btn.addEventListener('keydown', (e) => {
-      const buttons = Array.from(
-        container.querySelectorAll('.gate-grid-btn'),
-      ) as HTMLElement[];
-      const currentIndex = buttons.indexOf(btn);
-
-      switch (e.key) {
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          feedbackTap();
-          selectInlineGate(gate);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          if (currentIndex > 0) {
-            buttons[currentIndex - 1]!.focus();
-          }
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          if (currentIndex < buttons.length - 1) {
-            buttons[currentIndex + 1]!.focus();
-          }
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          // Move up one row (5 columns)
-          if (currentIndex >= 5) {
-            buttons[currentIndex - 5]!.focus();
-          }
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          // Move down one row (5 columns)
-          if (currentIndex + 5 < buttons.length) {
-            buttons[currentIndex + 5]!.focus();
-          }
-          break;
-        default:
-          // Number shortcuts: 1-9 for gates, 0 for gate 10
-          if (/^[0-9]$/.test(e.key)) {
-            e.preventDefault();
-            const targetGate = e.key === '0' ? 10 : parseInt(e.key, 10);
-            if (targetGate >= start && targetGate <= end) {
-              const targetBtn = container.querySelector(
-                `[data-gate="${targetGate}"]`,
-              ) as HTMLElement;
-              if (targetBtn) {
-                feedbackTap();
-                selectInlineGate(targetGate);
-                targetBtn.focus();
-              }
-            }
-          }
-      }
-    });
-
     container.appendChild(btn);
   }
+
+  // Use delegated event handlers on the container (cleaned up via ListenerManager)
+  // to avoid per-button addEventListener leaks on re-render
+  if (gateSelectorDelegated) return;
+  gateSelectorDelegated = true;
+
+  listeners.add(container, 'click', (e: Event) => {
+    const btn = (e.target as HTMLElement).closest('.gate-grid-btn') as HTMLElement | null;
+    if (!btn) return;
+    const gate = Number(btn.getAttribute('data-gate'));
+    if (!gate) return;
+    feedbackTap();
+    selectInlineGate(gate);
+  });
+
+  listeners.add(container, 'keydown', ((e: KeyboardEvent) => {
+    const btn = (e.target as HTMLElement).closest('.gate-grid-btn') as HTMLElement | null;
+    if (!btn) return;
+    const gate = Number(btn.getAttribute('data-gate'));
+    if (!gate) return;
+
+    const buttons = Array.from(
+      container.querySelectorAll('.gate-grid-btn'),
+    ) as HTMLElement[];
+    const currentIndex = buttons.indexOf(btn);
+
+    switch (e.key) {
+      case ' ':
+      case 'Enter':
+        e.preventDefault();
+        feedbackTap();
+        selectInlineGate(gate);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (currentIndex > 0) {
+          buttons[currentIndex - 1]!.focus();
+        }
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (currentIndex < buttons.length - 1) {
+          buttons[currentIndex + 1]!.focus();
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        // Move up one row (5 columns)
+        if (currentIndex >= 5) {
+          buttons[currentIndex - 5]!.focus();
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        // Move down one row (5 columns)
+        if (currentIndex + 5 < buttons.length) {
+          buttons[currentIndex + 5]!.focus();
+        }
+        break;
+      default:
+        // Number shortcuts: 1-9 for gates, 0 for gate 10
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          const targetGate = e.key === '0' ? 10 : parseInt(e.key, 10);
+          if (targetGate >= start && targetGate <= end) {
+            const targetBtn = container.querySelector(
+              `[data-gate="${targetGate}"]`,
+            ) as HTMLElement;
+            if (targetBtn) {
+              feedbackTap();
+              selectInlineGate(targetGate);
+              targetBtn.focus();
+            }
+          }
+        }
+    }
+  }) as EventListener);
 }
 
 /**
@@ -468,6 +482,7 @@ function autoSelectMostRecentBib(): void {
 export function initInlineFaultEntry(): void {
   // Clean up old listeners before adding new ones (re-init safe)
   listeners.removeAll();
+  gateSelectorDelegated = false;
 
   // Bib manual input
   const bibInput = document.getElementById(
