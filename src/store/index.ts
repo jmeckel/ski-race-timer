@@ -410,12 +410,13 @@ class Store {
         );
       }
     } catch (e) {
-      // Re-add dirty slices so the next scheduleSave() retries them
+      // Re-add dirty slices and schedule a retry
       for (const key of dirty) {
         this.dirtySlices.add(key);
       }
       logger.error('Failed to save to storage:', e);
       this.dispatchStorageError(e as Error);
+      this.scheduleSave();
     }
   }
 

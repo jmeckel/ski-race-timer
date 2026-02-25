@@ -113,6 +113,9 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
 const initListeners = new ListenerManager();
 
 export function initFaultRecordingModal(): void {
+  // Clean up stale handlers from previous initialization to prevent duplicate listeners
+  initListeners.removeAll();
+
   // Fault type buttons - click selects the type (no auto-save)
   const faultTypeButtons = document.getElementById('fault-type-buttons');
   if (faultTypeButtons) {

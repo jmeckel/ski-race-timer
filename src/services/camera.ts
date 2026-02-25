@@ -258,8 +258,11 @@ class CameraService {
         this.videoElement = this.createVideoElement();
       }
 
-      // Request camera access
-      this.stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONFIG);
+      // Request camera access — use lower resolution on low battery
+      const config = batteryService.isLowBattery()
+        ? CAMERA_CONFIG_LOW_BATTERY
+        : CAMERA_CONFIG;
+      this.stream = await navigator.mediaDevices.getUserMedia(config);
       this.videoElement.srcObject = this.stream;
 
       await this.waitForVideoReady();

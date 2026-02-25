@@ -134,6 +134,7 @@ async function processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
  * triggers while a previous request is still in flight.
  */
 export async function fetchCloudEntries(): Promise<void> {
+  if (isCleanedUp) return;
   const state = store.getState();
   if (!state.settings.sync || !state.raceId) return;
 
@@ -256,6 +257,9 @@ async function fetchCloudEntriesImpl(): Promise<void> {
 
     // Update sync status
     store.setSyncStatus('connected');
+
+    // Bail out if cleanup occurred during response parsing
+    if (isCleanedUp) return;
 
     // Update device count
     if (typeof data.deviceCount === 'number') {

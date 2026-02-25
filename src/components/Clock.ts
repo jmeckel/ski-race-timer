@@ -305,11 +305,14 @@ export class Clock {
       if (digit.textContent !== newChar) {
         digit.textContent = newChar;
 
-        // Subtle animation on change
-        digit.style.transform = 'scale(1.02)';
-        requestAnimationFrame(() => {
-          digit.style.transform = 'scale(1)';
-        });
+        // Subtle scale animation on change — only on normal battery to avoid
+        // untracked RAF callbacks that bypass visibility/battery throttling
+        if (this.frameSkipCount === FRAME_SKIP_NORMAL) {
+          digit.style.transform = 'scale(1.02)';
+          requestAnimationFrame(() => {
+            digit.style.transform = 'scale(1)';
+          });
+        }
       }
     }
   }
