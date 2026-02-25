@@ -686,7 +686,7 @@ export function openFaultDeleteConfirmation(fault: FaultEntry): void {
   if (infoEl) {
     infoEl.innerHTML = `
       <strong>#${escapeHtml(fault.bib)}</strong> -
-      <span class="fault-gate ${gateColor}">T${escapeHtml(String(fault.gateNumber))}</span>
+      <span class="fault-gate ${escapeAttr(gateColor)}">T${escapeHtml(String(fault.gateNumber))}</span>
       (${escapeHtml(getFaultTypeLabel(fault.faultType, state.currentLang))}) -
       ${escapeHtml(t(fault.run === 1 ? 'run1' : 'run2', state.currentLang))}
     `;

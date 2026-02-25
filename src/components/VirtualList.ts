@@ -17,6 +17,7 @@ import {
   deletionPendingBadge,
   duplicateBadge,
   editButton,
+  escapeAttr,
   escapeHtml,
   faultBadge,
   formatBib,
@@ -1316,7 +1317,7 @@ export class VirtualList {
       <div></div>
       <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
         ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)', 'auto', '0.7rem')}
-        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${gateColor}"></div>
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${escapeAttr(gateColor)}"></div>
       </div>
       <div class="result-info" style="display: flex; align-items: center; gap: 8px; min-width: 0;">
         <span style="font-size: 0.85rem; color: var(--text-secondary); ${hasMarkedForDeletion ? 'text-decoration: line-through;' : ''}">

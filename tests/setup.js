@@ -108,22 +108,43 @@ globalThis.AudioContext = AudioContextMock;
 globalThis.webkitAudioContext = AudioContextMock;
 
 // Mock BroadcastChannel
+// Real BroadcastChannel does NOT deliver messages back to the sender —
+// only to other BroadcastChannel instances in other tabs/windows.
+// This mock tracks instances per channel name to simulate cross-tab delivery.
+const broadcastChannelInstances = new Map();
+
 class BroadcastChannelMock {
   constructor(name) {
     this.name = name;
     this.onmessage = null;
+    // Track instances per channel name
+    if (!broadcastChannelInstances.has(name)) {
+      broadcastChannelInstances.set(name, new Set());
+    }
+    broadcastChannelInstances.get(name).add(this);
   }
 
   postMessage(message) {
-    // Simulate message to self (for testing)
-    if (this.onmessage) {
-      setTimeout(() => {
-        this.onmessage({ data: message });
-      }, 0);
+    // Deliver to all OTHER instances on the same channel (not self)
+    const instances = broadcastChannelInstances.get(this.name);
+    if (instances) {
+      for (const instance of instances) {
+        if (instance !== this && instance.onmessage) {
+          const target = instance;
+          setTimeout(() => {
+            target.onmessage({ data: message });
+          }, 0);
+        }
+      }
     }
   }
 
-  close() {}
+  close() {
+    const instances = broadcastChannelInstances.get(this.name);
+    if (instances) {
+      instances.delete(this);
+    }
+  }
 }
 
 globalThis.BroadcastChannel = BroadcastChannelMock;

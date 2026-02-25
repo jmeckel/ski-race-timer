@@ -239,6 +239,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const races = await listRaces(client);
         const results: Array<{ raceId: string } & DeleteRaceResult> = [];
         for (const race of races) {
+          // Validate raceId format from Redis keys before deletion
+          if (!/^[a-zA-Z0-9_-]+$/.test(race.raceId) || race.raceId.length > 100) {
+            results.push({ raceId: race.raceId, success: false, error: 'Invalid race ID format' });
+            continue;
+          }
           const result = await deleteRace(client, race.raceId);
           results.push({ raceId: race.raceId, ...result });
         }

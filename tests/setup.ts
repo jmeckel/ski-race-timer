@@ -3,7 +3,7 @@
  * Additional setup for TypeScript tests
  */
 
-import { afterEach, beforeEach, vi } from 'vitest';
+import { vi } from 'vitest';
 
 // Mock crypto.randomUUID for consistent testing
 const mockUUID = vi.fn(() =>
@@ -17,6 +17,7 @@ const mockUUID = vi.fn(() =>
 Object.defineProperty(globalThis.crypto, 'randomUUID', {
   value: mockUUID,
   writable: true,
+  configurable: true,
 });
 
 // Mock MediaDevices for camera tests
@@ -86,15 +87,8 @@ class MockHTMLCanvasElement {
 (globalThis as unknown as Record<string, unknown>).MockHTMLCanvasElement =
   MockHTMLCanvasElement;
 
-// Reset mocks before each test
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockUUID.mockClear();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+// Note: beforeEach/afterEach with clearAllMocks/restoreAllMocks is handled
+// by setup.js to avoid double-registration which can cause mock instability.
 
 // Export mocks for use in tests
 export {
