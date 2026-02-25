@@ -39,13 +39,16 @@ Object.defineProperty(globalThis, 'fetch', {
   writable: true,
 });
 
-// Mock BroadcastChannel
+// Mock BroadcastChannel — track last instance for assertion access
+let lastBroadcastChannel: MockBroadcastChannel | null = null;
+
 class MockBroadcastChannel {
   name: string;
   onmessage: ((event: MessageEvent) => void) | null = null;
 
   constructor(name: string) {
     this.name = name;
+    lastBroadcastChannel = this;
   }
 
   postMessage = vi.fn();
@@ -450,8 +453,11 @@ describe('Sync Service', () => {
       const entry = createValidEntry();
       syncService.broadcastEntry(entry);
 
-      // BroadcastChannel was initialized and postMessage called
-      // The test verifies no error is thrown
+      expect(lastBroadcastChannel).not.toBeNull();
+      expect(lastBroadcastChannel!.postMessage).toHaveBeenCalledWith({
+        type: 'entry',
+        data: entry,
+      });
     });
   });
 
@@ -460,7 +466,17 @@ describe('Sync Service', () => {
       syncService.initialize();
       syncService.broadcastPresence();
 
-      // Test verifies no error is thrown
+      expect(lastBroadcastChannel).not.toBeNull();
+      expect(lastBroadcastChannel!.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'presence',
+          data: expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+            lastSeen: expect.any(Number),
+          }),
+        }),
+      );
     });
   });
 

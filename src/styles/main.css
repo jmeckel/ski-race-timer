@@ -818,6 +818,11 @@
       top: 0;
     }
   }
+
+  /* Skip link target: suppress focus ring when focused via anchor navigation */
+  #main:focus {
+    outline: none;
+  }
   /* ===== Virtual List Touch Feedback ===== */
   /* Replaces inline JS touchstart/touchend handlers with CSS :active */
   .result-item:active,
