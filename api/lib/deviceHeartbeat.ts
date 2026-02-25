@@ -26,7 +26,7 @@ export async function updateDeviceHeartbeat(
   client: Redis,
   normalizedRaceId: string,
   deviceId: string,
-  deviceName: string
+  deviceName: string,
 ): Promise<void> {
   if (!deviceId) return;
 
@@ -50,7 +50,7 @@ export async function updateDeviceHeartbeat(
  */
 export async function getActiveDeviceCount(
   client: Redis,
-  normalizedRaceId: string
+  normalizedRaceId: string,
 ): Promise<number> {
   const devicesKey = `race:${normalizedRaceId}:devices`;
   const devices = await client.hgetall(devicesKey);
@@ -71,7 +71,7 @@ export async function getActiveDeviceCount(
       } else {
         staleDevices.push(deviceId);
       }
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       staleDevices.push(deviceId);
     }
   }

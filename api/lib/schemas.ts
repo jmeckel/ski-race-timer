@@ -15,26 +15,13 @@ export const RaceIdSchema = v.pipe(
   v.regex(/^[a-zA-Z0-9_-]+$/),
 );
 
-export const PinSchema = v.pipe(
-  v.string(),
-  v.regex(/^\d{4}$/),
-);
+export const PinSchema = v.pipe(v.string(), v.regex(/^\d{4}$/));
 
-export const DeviceIdSchema = v.pipe(
-  v.string(),
-  v.maxLength(50),
-);
+export const DeviceIdSchema = v.pipe(v.string(), v.maxLength(50));
 
-export const DeviceNameSchema = v.pipe(
-  v.string(),
-  v.maxLength(100),
-);
+export const DeviceNameSchema = v.pipe(v.string(), v.maxLength(100));
 
-export const BibSchema = v.pipe(
-  v.string(),
-  v.minLength(1),
-  v.maxLength(10),
-);
+export const BibSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(10));
 
 export const RunSchema = v.union([v.literal(1), v.literal(2)]);
 
@@ -64,10 +51,7 @@ export const RoleSchema = v.union([
 
 export const TimestampSchema = v.pipe(
   v.string(),
-  v.check(
-    (val) => !Number.isNaN(Date.parse(val)),
-    'Invalid timestamp format',
-  ),
+  v.check((val) => !Number.isNaN(Date.parse(val)), 'Invalid timestamp format'),
 );
 
 export const EntrySchema = v.object({
@@ -104,10 +88,7 @@ export const SyncDeleteBodySchema = v.object({
 
 // ─── Fault Schemas ───
 
-export const GateRangeSchema = v.pipe(
-  v.array(v.number()),
-  v.length(2),
-);
+export const GateRangeSchema = v.pipe(v.array(v.number()), v.length(2));
 
 export const FaultEntrySchema = v.object({
   id: v.union([v.number(), v.pipe(v.string(), v.minLength(1))]),

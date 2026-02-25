@@ -1,28 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
+import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
+import { getActiveDeviceCount } from '../../lib/deviceHeartbeat.js';
 import { validateAuth } from '../../lib/jwt.js';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../../lib/redis.js';
+import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../../lib/redis.js';
 import {
   handlePreflight,
-  sendSuccess,
-  sendError,
+  sendAuthRequired,
   sendBadRequest,
+  sendError,
   sendMethodNotAllowed,
   sendServiceUnavailable,
-  sendAuthRequired
+  sendSuccess,
 } from '../../lib/response.js';
-import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
-
-// Device stale threshold (same as sync.js)
-const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds
-
-interface DeviceData {
-  lastSeen: number;
-  name?: string;
-}
 
 interface RaceData {
   entries?: unknown[];
@@ -42,32 +35,6 @@ interface DeleteRaceResult {
   raceId?: string;
 }
 
-// Get active device count for a race
-async function getActiveDeviceCount(client: Redis, normalizedRaceId: string): Promise<number> {
-  const devicesKey = `race:${normalizedRaceId}:devices`;
-  const devices = await client.hgetall(devicesKey);
-
-  if (!devices || Object.keys(devices).length === 0) {
-    return 0;
-  }
-
-  const now = Date.now();
-  let activeCount = 0;
-
-  for (const [, deviceJson] of Object.entries(devices)) {
-    try {
-      const device: DeviceData = JSON.parse(deviceJson);
-      if (now - device.lastSeen <= DEVICE_STALE_THRESHOLD) {
-        activeCount++;
-      }
-    } catch {
-      // Ignore invalid device data
-    }
-  }
-
-  return activeCount;
-}
-
 // List all races using SCAN
 async function listRaces(client: Redis): Promise<RaceListItem[]> {
   const races: RaceListItem[] = [];
@@ -75,13 +42,24 @@ async function listRaces(client: Redis): Promise<RaceListItem[]> {
   let cursor = '0';
 
   do {
-    const [nextCursor, keys] = await client.scan(cursor, 'MATCH', 'race:*', 'COUNT', 100);
+    const [nextCursor, keys] = await client.scan(
+      cursor,
+      'MATCH',
+      'race:*',
+      'COUNT',
+      100,
+    );
     cursor = nextCursor;
 
     for (const key of keys) {
       // Skip auxiliary keys (devices, highestBib, deleted*, faults, gate_assignments)
-      if (key.includes(':devices') || key.includes(':highestBib') || key.includes(':deleted') ||
-          key.includes(':faults') || key.includes(':gate_assignments')) {
+      if (
+        key.includes(':devices') ||
+        key.includes(':highestBib') ||
+        key.includes(':deleted') ||
+        key.includes(':faults') ||
+        key.includes(':gate_assignments')
+      ) {
         continue;
       }
 
@@ -94,14 +72,16 @@ async function listRaces(client: Redis): Promise<RaceListItem[]> {
         const data = await client.get(key);
         if (data) {
           const parsed: RaceData = JSON.parse(data);
-          const entryCount = Array.isArray(parsed.entries) ? parsed.entries.length : 0;
+          const entryCount = Array.isArray(parsed.entries)
+            ? parsed.entries.length
+            : 0;
           const deviceCount = await getActiveDeviceCount(client, raceId);
 
           races.push({
             raceId,
             entryCount,
             deviceCount,
-            lastUpdated: parsed.lastUpdated || null
+            lastUpdated: parsed.lastUpdated || null,
           });
         }
       } catch (e: unknown) {
@@ -118,7 +98,10 @@ async function listRaces(client: Redis): Promise<RaceListItem[]> {
 }
 
 // Delete a race and set tombstone
-async function deleteRace(client: Redis, raceId: string): Promise<DeleteRaceResult> {
+async function deleteRace(
+  client: Redis,
+  raceId: string,
+): Promise<DeleteRaceResult> {
   // Validate raceId before proceeding (defensive: check type and non-empty)
   if (!raceId || typeof raceId !== 'string' || raceId.trim() === '') {
     return { success: false, error: 'Invalid race ID' };
@@ -156,39 +139,53 @@ async function deleteRace(client: Redis, raceId: string): Promise<DeleteRaceResu
     `race:${normalizedRaceId}:deleted`,
     JSON.stringify({
       deletedAt: Date.now(),
-      message: 'Race deleted by administrator'
+      message: 'Race deleted by administrator',
     }),
     'EX',
-    TOMBSTONE_EXPIRY_SECONDS
+    TOMBSTONE_EXPIRY_SECONDS,
   );
 
   // Delete all race data including auxiliary keys
   await client.del(
-    raceKey, devicesKey, highestBibKey,
-    faultsKey, deletedEntriesKey, deletedFaultsKey, gateAssignmentsKey
+    raceKey,
+    devicesKey,
+    highestBibKey,
+    faultsKey,
+    deletedEntriesKey,
+    deletedFaultsKey,
+    gateAssignmentsKey,
   );
 
   // Also try to delete any leftover keys with different casing
   if (actualRaceId !== normalizedRaceId) {
     await client.del(
       normalizedKey,
-      `race:${normalizedRaceId}:devices`, `race:${normalizedRaceId}:highestBib`,
-      `race:${normalizedRaceId}:faults`, `race:${normalizedRaceId}:deleted_entries`,
-      `race:${normalizedRaceId}:deleted_faults`, `race:${normalizedRaceId}:gate_assignments`
+      `race:${normalizedRaceId}:devices`,
+      `race:${normalizedRaceId}:highestBib`,
+      `race:${normalizedRaceId}:faults`,
+      `race:${normalizedRaceId}:deleted_entries`,
+      `race:${normalizedRaceId}:deleted_faults`,
+      `race:${normalizedRaceId}:gate_assignments`,
     );
   } else if (raceId !== normalizedRaceId) {
     await client.del(
       originalKey,
-      `race:${raceId}:devices`, `race:${raceId}:highestBib`,
-      `race:${raceId}:faults`, `race:${raceId}:deleted_entries`,
-      `race:${raceId}:deleted_faults`, `race:${raceId}:gate_assignments`
+      `race:${raceId}:devices`,
+      `race:${raceId}:highestBib`,
+      `race:${raceId}:faults`,
+      `race:${raceId}:deleted_entries`,
+      `race:${raceId}:deleted_faults`,
+      `race:${raceId}:gate_assignments`,
     );
   }
 
   return { success: true, raceId: actualRaceId };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'DELETE', 'OPTIONS'])) {
     return;
@@ -205,13 +202,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check for recent Redis errors
   if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+    return sendServiceUnavailable(
+      res,
+      'Database connection issue. Please try again.',
+    );
   }
 
   // Authenticate admin request using JWT or PIN hash
   const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
   if (!auth.valid) {
-    return sendAuthRequired(res, auth.error || 'Unauthorized', auth.expired || false);
+    return sendAuthRequired(
+      res,
+      auth.error || 'Unauthorized',
+      auth.expired || false,
+    );
   }
 
   const reqId = getRequestId(req.headers);
@@ -228,7 +232,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Race deletion requires chiefJudge role for security
       const userRole = auth.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
-        log.warn('Race deletion DENIED', { role: userRole, expected: 'chiefJudge' });
+        log.warn('Race deletion DENIED', {
+          role: userRole,
+          expected: 'chiefJudge',
+        });
         return sendError(res, 'Race deletion requires Chief Judge role', 403);
       }
 
@@ -240,8 +247,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const results: Array<{ raceId: string } & DeleteRaceResult> = [];
         for (const race of races) {
           // Validate raceId format from Redis keys before deletion
-          if (!/^[a-zA-Z0-9_-]+$/.test(race.raceId) || race.raceId.length > 100) {
-            results.push({ raceId: race.raceId, success: false, error: 'Invalid race ID format' });
+          if (
+            !/^[a-zA-Z0-9_-]+$/.test(race.raceId) ||
+            race.raceId.length > 100
+          ) {
+            results.push({
+              raceId: race.raceId,
+              success: false,
+              error: 'Invalid race ID format',
+            });
             continue;
           }
           const result = await deleteRace(client, race.raceId);
@@ -249,14 +263,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         }
         return sendSuccess(res, {
           success: true,
-          deleted: results.filter(r => r.success).length,
+          deleted: results.filter((r) => r.success).length,
           total: races.length,
-          results
+          results,
         });
       }
 
       if (!raceId) {
-        return sendBadRequest(res, 'raceId is required (or use deleteAll=true)');
+        return sendBadRequest(
+          res,
+          'raceId is required (or use deleteAll=true)',
+        );
       }
 
       // Validate raceId format
@@ -279,8 +296,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const err = error instanceof Error ? error : new Error(String(error));
     log.error('Admin API error', { error: err.message });
 
-    if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
-      return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
+    if (
+      err.message.includes('ECONNREFUSED') ||
+      err.message.includes('ETIMEDOUT')
+    ) {
+      return sendServiceUnavailable(
+        res,
+        'Database connection failed. Please try again.',
+      );
     }
 
     return sendError(res, 'Internal server error', 500);

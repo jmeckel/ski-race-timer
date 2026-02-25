@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { promisify } from 'util';
+import crypto from 'node:crypto';
+import { promisify } from 'node:util';
 import type { VercelRequest } from '@vercel/node';
 import type Redis from 'ioredis';
+import jwt from 'jsonwebtoken';
 
 const pbkdf2Async = promisify(crypto.pbkdf2);
 
@@ -50,7 +50,9 @@ const JWT_ISSUER: string = 'ski-race-timer';
  */
 function getJwtSecret(): string {
   if (!process.env.JWT_SECRET) {
-    throw new Error('CRITICAL: JWT_SECRET environment variable must be set. Create a .env.local file for local development.');
+    throw new Error(
+      'CRITICAL: JWT_SECRET environment variable must be set. Create a .env.local file for local development.',
+    );
   }
   return process.env.JWT_SECRET;
 }
@@ -80,14 +82,14 @@ export function generateToken(payload: Record<string, unknown> = {}): string {
   return jwt.sign(
     {
       ...payload,
-      type: 'race-management'
+      type: 'race-management',
     },
     secret,
     {
       algorithm: JWT_ALGORITHM,
       expiresIn: JWT_EXPIRY,
-      issuer: JWT_ISSUER
-    }
+      issuer: JWT_ISSUER,
+    },
   );
 }
 
@@ -105,7 +107,7 @@ export function verifyToken(token: string): VerifyTokenResult {
   try {
     const payload = jwt.verify(token, secret, {
       algorithms: [JWT_ALGORITHM],
-      issuer: JWT_ISSUER
+      issuer: JWT_ISSUER,
     }) as TokenPayload;
 
     // Verify token type
@@ -139,7 +141,7 @@ export function extractToken(authHeader: string | undefined): string | null {
     return null;
   }
 
-  return parts[1];
+  return parts[1] ?? null;
 }
 
 /**
@@ -149,7 +151,11 @@ export function extractToken(authHeader: string | undefined): string | null {
  * @param redisClient - Redis client for PIN validation
  * @param clientPinKey - Redis key for stored PIN hash
  */
-export async function validateAuth(req: VercelRequest, redisClient: Redis, clientPinKey: string = 'admin:clientPin'): Promise<ValidateAuthResult> {
+export async function validateAuth(
+  req: VercelRequest,
+  redisClient: Redis,
+  clientPinKey: string = 'admin:clientPin',
+): Promise<ValidateAuthResult> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -160,12 +166,18 @@ export async function validateAuth(req: VercelRequest, redisClient: Redis, clien
       // Role-restricted operations must still check auth.method !== 'none'
       return { valid: true, method: 'none' };
     }
-    return { valid: false, error: 'Authorization required. Set Race Management PIN in settings.' };
+    return {
+      valid: false,
+      error: 'Authorization required. Set Race Management PIN in settings.',
+    };
   }
 
   const token = extractToken(authHeader);
   if (!token) {
-    return { valid: false, error: 'Invalid authorization format. Use: Bearer <token>' };
+    return {
+      valid: false,
+      error: 'Invalid authorization format. Use: Bearer <token>',
+    };
   }
 
   // Try JWT verification first
@@ -176,7 +188,11 @@ export async function validateAuth(req: VercelRequest, redisClient: Redis, clien
 
   // If JWT failed due to expiry, tell the client to re-authenticate
   if (jwtResult.expired) {
-    return { valid: false, error: 'Token expired. Please re-authenticate.', expired: true };
+    return {
+      valid: false,
+      error: 'Token expired. Please re-authenticate.',
+      expired: true,
+    };
   }
 
   // JWT verification failed - require valid JWT token
@@ -197,7 +213,15 @@ const SALT_LENGTH: number = 16;
  */
 export async function hashPin(pin: string): Promise<string> {
   const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
-  const hash = (await pbkdf2Async(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST)).toString('hex');
+  const hash = (
+    await pbkdf2Async(
+      pin,
+      salt,
+      PBKDF2_ITERATIONS,
+      PBKDF2_KEY_LENGTH,
+      PBKDF2_DIGEST,
+    )
+  ).toString('hex');
   return `${salt}:${hash}`;
 }
 
@@ -209,17 +233,39 @@ export async function hashPin(pin: string): Promise<string> {
  * @param storedHash - Stored hash to compare against
  * @returns True if PIN matches
  */
-export async function verifyPin(pin: string, storedHash: string): Promise<boolean> {
+export async function verifyPin(
+  pin: string,
+  storedHash: string,
+): Promise<boolean> {
   try {
     if (storedHash.includes(':')) {
       // New PBKDF2 format: salt:hash
-      const [salt, hash] = storedHash.split(':');
-      const computedHash = (await pbkdf2Async(pin, salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH, PBKDF2_DIGEST)).toString('hex');
-      return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(hash, 'hex'));
+      const parts = storedHash.split(':');
+      const salt = parts[0] ?? '';
+      const hash = parts[1] ?? '';
+      const computedHash = (
+        await pbkdf2Async(
+          pin,
+          salt,
+          PBKDF2_ITERATIONS,
+          PBKDF2_KEY_LENGTH,
+          PBKDF2_DIGEST,
+        )
+      ).toString('hex');
+      return crypto.timingSafeEqual(
+        Buffer.from(computedHash, 'hex'),
+        Buffer.from(hash, 'hex'),
+      );
     } else {
       // Legacy SHA-256 format (for migration from existing PINs)
-      const computedHash = crypto.createHash('sha256').update(pin).digest('hex');
-      return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(storedHash));
+      const computedHash = crypto
+        .createHash('sha256')
+        .update(pin)
+        .digest('hex');
+      return crypto.timingSafeEqual(
+        Buffer.from(computedHash),
+        Buffer.from(storedHash),
+      );
     }
   } catch {
     return false;

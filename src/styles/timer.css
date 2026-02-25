@@ -308,15 +308,7 @@
   box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-/* Result Run Badge */
-.result-run {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: var(--surface-elevated);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
+/* Result Run Badge — styled via --item-color in main.css chip rules */
 
 /* Number Pad - Collapsible */
 .number-pad {

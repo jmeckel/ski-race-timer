@@ -1,19 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
-import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
-import {
-  handlePreflight,
-  sendSuccess,
-  sendError,
-  sendBadRequest,
-  sendMethodNotAllowed,
-  sendServiceUnavailable,
-  sendRateLimitExceeded,
-  setRateLimitHeaders,
-  getClientIP
-} from '../../lib/response.js';
 import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
+import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
+import {
+  CHIEF_JUDGE_PIN_KEY,
+  CLIENT_PIN_KEY,
+  getRedis,
+  hasRedisError,
+} from '../../lib/redis.js';
+import {
+  getClientIP,
+  handlePreflight,
+  sendBadRequest,
+  sendError,
+  sendMethodNotAllowed,
+  sendRateLimitExceeded,
+  sendServiceUnavailable,
+  sendSuccess,
+  setRateLimitHeaders,
+} from '../../lib/response.js';
 
 // Rate limiting configuration (per IP)
 // Stricter limit to prevent brute-force on 4-digit PINs
@@ -35,7 +40,10 @@ interface TokenRequestBody {
 
 type UserRole = 'timer' | 'gateJudge' | 'chiefJudge';
 
-async function checkRateLimit(client: Redis, ip: string): Promise<RateLimitResult> {
+async function checkRateLimit(
+  client: Redis,
+  ip: string,
+): Promise<RateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - (now % RATE_LIMIT_WINDOW);
   const key = `ratelimit:auth:${ip}:${windowStart}`;
@@ -50,7 +58,7 @@ async function checkRateLimit(client: Redis, ip: string): Promise<RateLimitResul
     return {
       allowed: count <= RATE_LIMIT_MAX_REQUESTS,
       remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - count),
-      reset: windowStart + RATE_LIMIT_WINDOW
+      reset: windowStart + RATE_LIMIT_WINDOW,
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -60,12 +68,15 @@ async function checkRateLimit(client: Redis, ip: string): Promise<RateLimitResul
       allowed: false,
       remaining: 0,
       reset: windowStart + RATE_LIMIT_WINDOW,
-      error: 'Rate limiting unavailable'
+      error: 'Rate limiting unavailable',
     };
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
     return;
@@ -86,7 +97,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check for recent Redis errors
   if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+    return sendServiceUnavailable(
+      res,
+      'Database connection issue. Please try again.',
+    );
   }
 
   const reqId = getRequestId(req.headers);
@@ -109,18 +123,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const rateLimitResult = await checkRateLimit(client, clientIP);
 
     // Set rate limit headers
-    setRateLimitHeaders(res, RATE_LIMIT_MAX_REQUESTS, rateLimitResult.remaining, rateLimitResult.reset);
+    setRateLimitHeaders(
+      res,
+      RATE_LIMIT_MAX_REQUESTS,
+      rateLimitResult.remaining,
+      rateLimitResult.reset,
+    );
 
     if (!rateLimitResult.allowed) {
       if (rateLimitResult.error) {
         return sendServiceUnavailable(res, 'Rate limiting unavailable');
       }
-      return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
+      return sendRateLimitExceeded(
+        res,
+        rateLimitResult.reset - Math.floor(Date.now() / 1000),
+      );
     }
 
     // Validate role if provided
     const validRoles: UserRole[] = ['timer', 'gateJudge', 'chiefJudge'];
-    const userRole: UserRole = role && validRoles.includes(role as UserRole) ? (role as UserRole) : 'timer';
+    const userRole: UserRole =
+      role && validRoles.includes(role as UserRole)
+        ? (role as UserRole)
+        : 'timer';
 
     // For chiefJudge role, use separate PIN validation
     if (userRole === 'chiefJudge') {
@@ -143,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
         const token = generateToken({
           createdAt: Date.now(),
-          role: 'chiefJudge'
+          role: 'chiefJudge',
         });
 
         return sendSuccess(res, {
@@ -151,7 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           token,
           isNewPin: !!wasSet,
           role: 'chiefJudge',
-          message: 'Chief Judge PIN set successfully'
+          message: 'Chief Judge PIN set successfully',
         });
       }
 
@@ -171,13 +196,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Chief Judge PIN is valid, generate JWT token
       const token = generateToken({
         authenticatedAt: Date.now(),
-        role: 'chiefJudge'
+        role: 'chiefJudge',
       });
 
       return sendSuccess(res, {
         success: true,
         token,
-        role: 'chiefJudge'
+        role: 'chiefJudge',
       });
     }
 
@@ -201,7 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       const token = generateToken({
         createdAt: Date.now(),
-        role: userRole
+        role: userRole,
       });
 
       return sendSuccess(res, {
@@ -209,7 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         token,
         isNewPin: !!wasSet,
         role: userRole,
-        message: 'PIN set successfully'
+        message: 'PIN set successfully',
       });
     }
 
@@ -230,15 +255,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // PIN is valid, generate JWT token
     const token = generateToken({
       authenticatedAt: Date.now(),
-      role: userRole
+      role: userRole,
     });
 
     return sendSuccess(res, {
       success: true,
       token,
-      role: userRole
+      role: userRole,
     });
-
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     log.error('Token API error', { error: message });

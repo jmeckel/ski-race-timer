@@ -1403,6 +1403,67 @@
   }
 }
 
+/* ===== Clock Base Styles ===== */
+.clock-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(32px, 10vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  text-shadow: 0 0 40px rgba(56, 189, 248, 0.3);
+}
+
+.clock-digit {
+  display: inline-block;
+  transition: transform 0.1s ease-out;
+}
+
+.clock-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-start: 4px;
+  padding-inline: 8px;
+  width: 100%;
+}
+
+.clock-date {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ===== Outlined Chip Badges (status, run, point) ===== */
+.result-status,
+.result-run,
+.result-point {
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  background: color-mix(in srgb, var(--item-color) 10%, transparent);
+  color: var(--item-color);
+  border: 1px solid color-mix(in srgb, var(--item-color) 15%, transparent);
+}
+
+.result-status {
+  padding: 3px 10px;
+}
+
+.result-run {
+  padding: 2px 8px;
+}
+
+.result-point {
+  padding: 3px 8px;
+}
+
 /* Clock Container Subtle Enhancement */
 .clock-container.glass-enabled {
   position: relative;

@@ -1,18 +1,23 @@
+import crypto from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
-import crypto from 'crypto';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
+import { apiLogger } from '../../lib/apiLogger.js';
+import {
+  CHIEF_JUDGE_PIN_KEY,
+  CLIENT_PIN_KEY,
+  getRedis,
+  hasRedisError,
+} from '../../lib/redis.js';
 import {
   handlePreflight,
-  sendSuccess,
   sendError,
   sendMethodNotAllowed,
-  sendServiceUnavailable,
   sendRateLimitExceeded,
+  sendServiceUnavailable,
+  sendSuccess,
   setCorsHeaders,
-  setSecurityHeaders
+  setSecurityHeaders,
 } from '../../lib/response.js';
-import { apiLogger } from '../../lib/apiLogger.js';
 
 // Rate limiting for PIN reset (critical security endpoint)
 const RATE_LIMIT_WINDOW = 60; // 1 minute
@@ -31,7 +36,10 @@ interface ResetPinRequestBody {
 /**
  * Check rate limit for PIN reset attempts
  */
-async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimitResult> {
+async function checkRateLimit(
+  client: Redis,
+  clientIP: string,
+): Promise<RateLimitResult> {
   const key = `reset-pin:rate:${clientIP}`;
 
   try {
@@ -43,7 +51,7 @@ async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimi
     const current = (results?.[0]?.[1] as number) ?? 1;
     return {
       allowed: current <= RATE_LIMIT_MAX_ATTEMPTS,
-      remaining: Math.max(0, RATE_LIMIT_MAX_ATTEMPTS - current)
+      remaining: Math.max(0, RATE_LIMIT_MAX_ATTEMPTS - current),
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -58,7 +66,10 @@ async function checkRateLimit(client: Redis, clientIP: string): Promise<RateLimi
  * Requires SERVER_API_PIN in request body (serverPin field) for authorization
  * Deletes the stored PIN hash, allowing the next PIN entry to become the new PIN
  */
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     handlePreflight(req, res, ['POST', 'OPTIONS']);
@@ -99,14 +110,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check for recent Redis errors
   if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+    return sendServiceUnavailable(
+      res,
+      'Database connection issue. Please try again.',
+    );
   }
 
   // Rate limiting BEFORE PIN verification to prevent brute-force
-  const clientIP = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
-                   (req.headers['x-real-ip'] as string | undefined) ||
-                   req.socket?.remoteAddress ||
-                   'unknown';
+  const clientIP =
+    (req.headers['x-forwarded-for'] as string | undefined)
+      ?.split(',')[0]
+      ?.trim() ||
+    (req.headers['x-real-ip'] as string | undefined) ||
+    req.socket?.remoteAddress ||
+    'unknown';
 
   const rateLimit = await checkRateLimit(client, clientIP);
   if (!rateLimit.allowed) {
@@ -122,7 +139,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   let pinValid = false;
   try {
     const serverDigest = crypto.createHash('sha256').update(serverPin).digest();
-    const providedDigest = crypto.createHash('sha256').update(providedPin).digest();
+    const providedDigest = crypto
+      .createHash('sha256')
+      .update(providedPin)
+      .digest();
     pinValid = crypto.timingSafeEqual(serverDigest, providedDigest);
   } catch {
     pinValid = false;
@@ -141,7 +161,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     return sendSuccess(res, {
       success: true,
-      message: 'PINs have been reset. The next PINs entered will become the new PINs.'
+      message:
+        'PINs have been reset. The next PINs entered will become the new PINs.',
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

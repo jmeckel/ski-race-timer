@@ -30,7 +30,7 @@ export const PHOTO_RATE_LIMIT_MAX = 20;
 export async function checkPhotoRateLimit(
   client: Redis,
   raceId: string,
-  deviceId: string
+  deviceId: string,
 ): Promise<PhotoRateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - (now % PHOTO_RATE_LIMIT_WINDOW);

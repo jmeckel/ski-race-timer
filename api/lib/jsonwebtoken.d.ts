@@ -13,8 +13,16 @@ declare module 'jsonwebtoken' {
   }
 
   interface Jwt {
-    sign(payload: string | Buffer | object, secretOrPrivateKey: string, options?: SignOptions): string;
-    verify(token: string, secretOrPublicKey: string, options?: VerifyOptions): object;
+    sign(
+      payload: string | Buffer | object,
+      secretOrPrivateKey: string,
+      options?: SignOptions,
+    ): string;
+    verify(
+      token: string,
+      secretOrPublicKey: string,
+      options?: VerifyOptions,
+    ): object;
   }
 
   const jwt: Jwt;

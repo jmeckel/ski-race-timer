@@ -31,7 +31,7 @@ export function getRedis(): Redis {
       apiLogger.info('Attempting Redis reconnection after error');
       try {
         redis.disconnect();
-      } catch (e) {
+      } catch (_e) {
         // Ignore disconnect errors
       }
       redis = null;
@@ -58,8 +58,8 @@ export function getRedis(): Redis {
       reconnectOnError(err: Error): boolean {
         // Reconnect on specific recoverable errors
         const targetErrors: string[] = ['READONLY', 'ECONNRESET', 'ETIMEDOUT'];
-        return targetErrors.some(e => err.message.includes(e));
-      }
+        return targetErrors.some((e) => err.message.includes(e));
+      },
     });
 
     // Handle Redis connection events

@@ -3,21 +3,25 @@
  * Centralizes CORS headers, security headers, and response formatting
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 /** Standard HTTP methods used in API endpoints */
 type HttpMethod = 'GET' | 'POST' | 'DELETE' | 'OPTIONS' | 'PUT' | 'PATCH';
 
 // CORS configuration - use environment variable or default to production domain
-const ALLOWED_ORIGIN: string = process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
+const ALLOWED_ORIGIN: string =
+  process.env.CORS_ORIGIN || 'https://ski-race-timer.vercel.app';
 
 /**
  * Set CORS headers on response
  * @param res - Response object
  * @param methods - Allowed HTTP methods
  */
-export function setCorsHeaders(res: VercelResponse, methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS']): void {
+export function setCorsHeaders(
+  res: VercelResponse,
+  methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS'],
+): void {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', methods.join(', '));
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -38,7 +42,10 @@ export function setSecurityHeaders(res: VercelResponse): void {
  * @param res - Response object
  * @param methods - Allowed HTTP methods
  */
-export function setStandardHeaders(res: VercelResponse, methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS']): void {
+export function setStandardHeaders(
+  res: VercelResponse,
+  methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS'],
+): void {
   setCorsHeaders(res, methods);
   setSecurityHeaders(res);
 }
@@ -50,7 +57,11 @@ export function setStandardHeaders(res: VercelResponse, methods: HttpMethod[] = 
  * @param methods - Allowed HTTP methods
  * @returns True if this was a preflight request (caller should return)
  */
-export function handlePreflight(req: VercelRequest, res: VercelResponse, methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS']): boolean {
+export function handlePreflight(
+  req: VercelRequest,
+  res: VercelResponse,
+  methods: HttpMethod[] = ['GET', 'POST', 'DELETE', 'OPTIONS'],
+): boolean {
   if (req.method === 'OPTIONS') {
     setStandardHeaders(res, methods);
     res.status(200).end();
@@ -66,7 +77,11 @@ export function handlePreflight(req: VercelRequest, res: VercelResponse, methods
  * @param data - Response data
  * @param status - HTTP status code (default 200)
  */
-export function sendSuccess(res: VercelResponse, data: Record<string, unknown>, status: number = 200): void {
+export function sendSuccess(
+  res: VercelResponse,
+  data: Record<string, unknown>,
+  status: number = 200,
+): void {
   res.status(status).json(data);
 }
 
@@ -77,7 +92,12 @@ export function sendSuccess(res: VercelResponse, data: Record<string, unknown>, 
  * @param status - HTTP status code (default 500)
  * @param extra - Additional fields to include in response
  */
-export function sendError(res: VercelResponse, error: string, status: number = 500, extra: Record<string, unknown> = {}): void {
+export function sendError(
+  res: VercelResponse,
+  error: string,
+  status: number = 500,
+  extra: Record<string, unknown> = {},
+): void {
   res.status(status).json({ error, ...extra });
 }
 
@@ -86,8 +106,13 @@ export function sendError(res: VercelResponse, error: string, status: number = 5
  * @param res - Response object
  * @param retryAfter - Seconds until rate limit resets
  */
-export function sendRateLimitExceeded(res: VercelResponse, retryAfter: number): void {
-  sendError(res, 'Too many requests. Please try again later.', 429, { retryAfter });
+export function sendRateLimitExceeded(
+  res: VercelResponse,
+  retryAfter: number,
+): void {
+  sendError(res, 'Too many requests. Please try again later.', 429, {
+    retryAfter,
+  });
 }
 
 /**
@@ -96,7 +121,11 @@ export function sendRateLimitExceeded(res: VercelResponse, retryAfter: number): 
  * @param message - Error message
  * @param expired - Whether the token was expired
  */
-export function sendAuthRequired(res: VercelResponse, message: string = 'Authorization required', expired: boolean = false): void {
+export function sendAuthRequired(
+  res: VercelResponse,
+  message: string = 'Authorization required',
+  expired: boolean = false,
+): void {
   sendError(res, message, 401, expired ? { expired: true } : {});
 }
 
@@ -122,7 +151,10 @@ export function sendBadRequest(res: VercelResponse, message: string): void {
  * @param res - Response object
  * @param message - Error message
  */
-export function sendServiceUnavailable(res: VercelResponse, message: string = 'Service temporarily unavailable'): void {
+export function sendServiceUnavailable(
+  res: VercelResponse,
+  message: string = 'Service temporarily unavailable',
+): void {
   sendError(res, message, 503);
 }
 
@@ -133,7 +165,12 @@ export function sendServiceUnavailable(res: VercelResponse, message: string = 'S
  * @param remaining - Remaining requests
  * @param reset - Unix timestamp when limit resets
  */
-export function setRateLimitHeaders(res: VercelResponse, limit: number, remaining: number, reset: number): void {
+export function setRateLimitHeaders(
+  res: VercelResponse,
+  limit: number,
+  remaining: number,
+  reset: number,
+): void {
   res.setHeader('X-RateLimit-Limit', limit);
   res.setHeader('X-RateLimit-Remaining', remaining);
   res.setHeader('X-RateLimit-Reset', reset);
@@ -147,10 +184,16 @@ export function setRateLimitHeaders(res: VercelResponse, limit: number, remainin
 export function getClientIP(req: VercelRequest): string {
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
-    const forwardedStr = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    return forwardedStr.split(',')[0].trim();
+    const forwardedStr = Array.isArray(forwarded)
+      ? (forwarded[0] ?? '')
+      : forwarded;
+    return forwardedStr.split(',')[0]?.trim() ?? 'unknown';
   }
-  return (req.headers['x-real-ip'] as string) || req.socket?.remoteAddress || 'unknown';
+  return (
+    (req.headers['x-real-ip'] as string) ||
+    req.socket?.remoteAddress ||
+    'unknown'
+  );
 }
 
 /**
@@ -159,7 +202,10 @@ export function getClientIP(req: VercelRequest): string {
  * @param defaultValue - Value to return if parsing fails
  * @returns Parsed value or default
  */
-export function safeJsonParse<T>(str: string | null | undefined, defaultValue: T): T {
+export function safeJsonParse<T>(
+  str: string | null | undefined,
+  defaultValue: T,
+): T {
   if (str === null || str === undefined || str === '') {
     return defaultValue;
   }
@@ -168,7 +214,14 @@ export function safeJsonParse<T>(str: string | null | undefined, defaultValue: T
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     // Intentionally using console.error directly here to avoid circular import with apiLogger
-    console.error(JSON.stringify({ level: 'error', ts: new Date().toISOString(), msg: 'JSON parse error', error: message }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        ts: new Date().toISOString(),
+        msg: 'JSON parse error',
+        error: message,
+      }),
+    );
     return defaultValue;
   }
 }
@@ -182,11 +235,13 @@ export function safeJsonParse<T>(str: string | null | undefined, defaultValue: T
  */
 export function sanitizeString(str: unknown, maxLength: number): string {
   if (!str || typeof str !== 'string') return '';
-  return str
-    .slice(0, maxLength)
-    .replace(/[<>&]/g, '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\x00-\x1f\x7f]/g, '');
+  return (
+    str
+      .slice(0, maxLength)
+      .replace(/[<>&]/g, '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x1f\x7f]/g, '')
+  );
 }
 
 /**
@@ -195,9 +250,7 @@ export function sanitizeString(str: unknown, maxLength: number): string {
  * @returns ETag string (quoted MD5 hash)
  */
 export function generateETag(data: unknown): string {
-  const hash = createHash('md5')
-    .update(JSON.stringify(data))
-    .digest('hex');
+  const hash = createHash('md5').update(JSON.stringify(data)).digest('hex');
   return `"${hash}"`;
 }
 

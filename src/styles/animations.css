@@ -123,46 +123,6 @@
     breatheScale 8s ease-in-out infinite;
 }
 
-/* ===== Staggered Animation Delays ===== */
-/* For wave effects across grid elements */
-
-.breathe-delay-1 {
-  animation-delay: 0s;
-}
-.breathe-delay-2 {
-  animation-delay: 0.5s;
-}
-.breathe-delay-3 {
-  animation-delay: 1s;
-}
-.breathe-delay-4 {
-  animation-delay: 1.5s;
-}
-.breathe-delay-5 {
-  animation-delay: 2s;
-}
-.breathe-delay-6 {
-  animation-delay: 2.5s;
-}
-.breathe-delay-7 {
-  animation-delay: 3s;
-}
-.breathe-delay-8 {
-  animation-delay: 3.5s;
-}
-.breathe-delay-9 {
-  animation-delay: 4s;
-}
-.breathe-delay-10 {
-  animation-delay: 4.5s;
-}
-.breathe-delay-11 {
-  animation-delay: 5s;
-}
-.breathe-delay-12 {
-  animation-delay: 5.5s;
-}
-
 /* ===== Spring Entrance Animation ===== */
 @keyframes springIn {
   0% {

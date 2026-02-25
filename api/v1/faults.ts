@@ -1,24 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
+import { apiLogger, getRequestId } from '../lib/apiLogger.js';
 import { atomicUpdate, CACHE_EXPIRY_SECONDS } from '../lib/atomicOps.js';
 import { validateAuth } from '../lib/jwt.js';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
+import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../lib/redis.js';
 import {
-  handlePreflight,
-  sendSuccess,
-  sendError,
-  sendBadRequest,
-  sendMethodNotAllowed,
-  sendServiceUnavailable,
-  sendRateLimitExceeded,
-  sendAuthRequired,
-  setRateLimitHeaders,
   getClientIP,
+  handlePreflight,
+  safeJsonParse,
   sanitizeString,
-  safeJsonParse
+  sendAuthRequired,
+  sendBadRequest,
+  sendError,
+  sendMethodNotAllowed,
+  sendRateLimitExceeded,
+  sendServiceUnavailable,
+  sendSuccess,
+  setRateLimitHeaders,
 } from '../lib/response.js';
-import { isValidRaceId, checkRateLimit, VALID_FAULT_TYPES, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
-import { apiLogger, getRequestId } from '../lib/apiLogger.js';
+import {
+  checkRateLimit,
+  isValidRaceId,
+  MAX_DEVICE_NAME_LENGTH,
+  VALID_FAULT_TYPES,
+} from '../lib/validation.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
@@ -104,7 +109,9 @@ interface DeleteRequestBody {
 /**
  * Sanitize version history items to prevent stored XSS via Redis
  */
-function sanitizeVersionHistoryItem(item: unknown): Record<string, unknown> | null {
+function sanitizeVersionHistoryItem(
+  item: unknown,
+): Record<string, unknown> | null {
   if (!item || typeof item !== 'object') return null;
   const obj = item as Record<string, unknown>;
   const sanitized: Record<string, unknown> = {};
@@ -150,14 +157,17 @@ function isValidFaultEntry(fault: unknown): fault is FaultEntry {
   if (typeof f.gateNumber !== 'number' || f.gateNumber < 1) return false;
 
   // Fault type must be valid
-  if (!(VALID_FAULT_TYPES as readonly string[]).includes(f.faultType as string)) return false;
+  if (!(VALID_FAULT_TYPES as readonly string[]).includes(f.faultType as string))
+    return false;
 
   // Timestamp required
-  if (!f.timestamp || isNaN(Date.parse(f.timestamp as string))) return false;
+  if (!f.timestamp || Number.isNaN(Date.parse(f.timestamp as string)))
+    return false;
 
   // Gate range must be array of two numbers
   if (!Array.isArray(f.gateRange) || f.gateRange.length !== 2) return false;
-  if (typeof f.gateRange[0] !== 'number' || typeof f.gateRange[1] !== 'number') return false;
+  if (typeof f.gateRange[0] !== 'number' || typeof f.gateRange[1] !== 'number')
+    return false;
 
   return true;
 }
@@ -165,48 +175,65 @@ function isValidFaultEntry(fault: unknown): fault is FaultEntry {
 /**
  * Atomically add fault to race data
  */
-async function atomicAddFault(client: Redis, redisKey: string, enrichedFault: FaultEntry, sanitizedDeviceId: string): Promise<AtomicAddFaultResult> {
+async function atomicAddFault(
+  client: Redis,
+  redisKey: string,
+  enrichedFault: FaultEntry,
+  sanitizedDeviceId: string,
+): Promise<AtomicAddFaultResult> {
   const result = await atomicUpdate<FaultsData, AtomicAddFaultResult>(
-    client, redisKey,
+    client,
+    redisKey,
     { faults: [], lastUpdated: null },
     (existing: FaultsData) => {
       if (!Array.isArray(existing.faults)) existing.faults = [];
 
       // Check limit
       if (existing.faults.length >= MAX_FAULTS_PER_RACE) {
-        return { abort: true, result: {
-          success: false,
-          error: `Maximum faults limit (${MAX_FAULTS_PER_RACE}) reached for this race`,
-          existing
-        }};
+        return {
+          abort: true,
+          result: {
+            success: false,
+            error: `Maximum faults limit (${MAX_FAULTS_PER_RACE}) reached for this race`,
+            existing,
+          },
+        };
       }
 
       // Check for existing fault (same fault from same device)
       const faultId = String(enrichedFault.id);
       const existingIndex = existing.faults.findIndex(
-        (f: FaultEntry) => String(f.id) === faultId && f.deviceId === sanitizedDeviceId
+        (f: FaultEntry) =>
+          String(f.id) === faultId && f.deviceId === sanitizedDeviceId,
       );
 
       if (existingIndex !== -1) {
-        const existingFault = existing.faults[existingIndex];
+        const existingFault = existing.faults[existingIndex]!;
         const shouldUpdate =
-          ((enrichedFault.currentVersion || 1) > (existingFault.currentVersion || 1)) ||
-          (enrichedFault.markedForDeletion !== existingFault.markedForDeletion);
+          (enrichedFault.currentVersion || 1) >
+            (existingFault.currentVersion || 1) ||
+          enrichedFault.markedForDeletion !== existingFault.markedForDeletion;
 
         if (shouldUpdate) {
           existing.faults[existingIndex] = enrichedFault;
           existing.lastUpdated = Date.now();
         } else {
-          return { abort: true, result: { success: true, existing, isDuplicate: true }};
+          return {
+            abort: true,
+            result: { success: true, existing, isDuplicate: true },
+          };
         }
       } else {
         existing.faults.push(enrichedFault);
         existing.lastUpdated = Date.now();
       }
 
-      return { data: existing, result: { success: true, existing, isDuplicate: false }};
+      return {
+        data: existing,
+        result: { success: true, existing, isDuplicate: false },
+      };
     },
-    'atomicAddFault'
+    'atomicAddFault',
   );
   // Handle AtomicConflictError (existing: null) by providing empty default
   if (result.existing === null) {
@@ -218,9 +245,15 @@ async function atomicAddFault(client: Redis, redisKey: string, enrichedFault: Fa
 /**
  * Atomically delete fault from race data
  */
-async function atomicDeleteFault(client: Redis, redisKey: string, faultIdStr: string, sanitizedDeviceId: string): Promise<AtomicDeleteFaultResult> {
+async function atomicDeleteFault(
+  client: Redis,
+  redisKey: string,
+  faultIdStr: string,
+  sanitizedDeviceId: string,
+): Promise<AtomicDeleteFaultResult> {
   const result = await atomicUpdate<FaultsData, AtomicDeleteFaultResult>(
-    client, redisKey,
+    client,
+    redisKey,
     { faults: [], lastUpdated: null },
     (existing: FaultsData) => {
       if (!Array.isArray(existing.faults)) existing.faults = [];
@@ -228,19 +261,26 @@ async function atomicDeleteFault(client: Redis, redisKey: string, faultIdStr: st
       const originalLength = existing.faults.length;
       existing.faults = existing.faults.filter((f: FaultEntry) => {
         const idMatch = String(f.id) === faultIdStr;
-        if (sanitizedDeviceId) return !(idMatch && f.deviceId === sanitizedDeviceId);
+        if (sanitizedDeviceId)
+          return !(idMatch && f.deviceId === sanitizedDeviceId);
         return !idMatch;
       });
 
       const wasRemoved = existing.faults.length < originalLength;
       if (!wasRemoved) {
-        return { abort: true, result: { success: true, wasRemoved: false, existing }};
+        return {
+          abort: true,
+          result: { success: true, wasRemoved: false, existing },
+        };
       }
 
       existing.lastUpdated = Date.now();
-      return { data: existing, result: { success: true, wasRemoved: true, existing }};
+      return {
+        data: existing,
+        result: { success: true, wasRemoved: true, existing },
+      };
     },
-    'atomicDeleteFault'
+    'atomicDeleteFault',
   );
   if (result.existing === null) {
     return { ...result, existing: { faults: [], lastUpdated: null } };
@@ -258,7 +298,7 @@ async function updateGateAssignment(
   deviceName: string,
   gateRange: [number, number],
   isReady: boolean,
-  firstGateColor: string
+  firstGateColor: string,
 ): Promise<void> {
   if (!deviceId || !gateRange) return;
 
@@ -269,7 +309,7 @@ async function updateGateAssignment(
     gateEnd: gateRange[1],
     lastSeen: Date.now(),
     isReady: isReady === true,
-    firstGateColor: firstGateColor || 'red'
+    firstGateColor: firstGateColor || 'red',
   } satisfies GateAssignment);
 
   await client.hset(assignmentsKey, deviceId, assignmentData);
@@ -279,7 +319,10 @@ async function updateGateAssignment(
 /**
  * Get all gate assignments for a race
  */
-async function getGateAssignments(client: Redis, normalizedRaceId: string): Promise<GateAssignmentResult[]> {
+async function getGateAssignments(
+  client: Redis,
+  normalizedRaceId: string,
+): Promise<GateAssignmentResult[]> {
   const assignmentsKey = `race:${normalizedRaceId}:gate_assignments`;
   const assignments = await client.hgetall(assignmentsKey);
 
@@ -303,10 +346,10 @@ async function getGateAssignments(client: Redis, normalizedRaceId: string): Prom
           gateEnd: assignment.gateEnd,
           lastSeen: assignment.lastSeen,
           isReady: assignment.isReady === true,
-          firstGateColor: assignment.firstGateColor || 'red'
+          firstGateColor: assignment.firstGateColor || 'red',
         });
       }
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       // Skip invalid data
     }
   }
@@ -314,7 +357,10 @@ async function getGateAssignments(client: Redis, normalizedRaceId: string): Prom
   return result;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
     return;
@@ -330,7 +376,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
 
   if (!isValidRaceId(raceIdStr)) {
-    return sendBadRequest(res, 'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.');
+    return sendBadRequest(
+      res,
+      'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.',
+    );
   }
 
   const normalizedRaceId = raceIdStr.toLowerCase();
@@ -347,7 +396,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check for recent Redis errors
   if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+    return sendServiceUnavailable(
+      res,
+      'Database connection issue. Please try again.',
+    );
   }
 
   // Apply rate limiting
@@ -356,13 +408,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     keyPrefix: 'faults',
     window: 60,
     maxRequests: 100,
-    maxPosts: 50
+    maxPosts: 50,
   });
 
-  setRateLimitHeaders(res, rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.reset);
+  setRateLimitHeaders(
+    res,
+    rateLimitResult.limit,
+    rateLimitResult.remaining,
+    rateLimitResult.reset,
+  );
 
   if (!rateLimitResult.allowed) {
-    return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
+    return sendRateLimitExceeded(
+      res,
+      rateLimitResult.reset - Math.floor(Date.now() / 1000),
+    );
   }
 
   // Validate sync authorization
@@ -384,23 +444,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (req.method === 'GET') {
       // Fetch faults for race
       const data = await client.get(faultsKey);
-      const parsed = safeJsonParse(data, { faults: [], lastUpdated: null }) as FaultsData;
+      const parsed = safeJsonParse(data, {
+        faults: [],
+        lastUpdated: null,
+      }) as FaultsData;
 
       // Get deleted fault IDs
       const deletedKey = `race:${normalizedRaceId}:deleted_faults`;
       const deletedIds = await client.smembers(deletedKey);
 
       // Get gate assignments
-      const gateAssignments = await getGateAssignments(client, normalizedRaceId);
+      const gateAssignments = await getGateAssignments(
+        client,
+        normalizedRaceId,
+      );
 
       // Update gate assignment if provided in query (with validation)
-      const { deviceId, deviceName, gateStart, gateEnd, isReady, firstGateColor } = req.query;
+      const {
+        deviceId,
+        deviceName,
+        gateStart,
+        gateEnd,
+        isReady,
+        firstGateColor,
+      } = req.query;
       if (deviceId && gateStart && gateEnd) {
         const start = parseInt(gateStart as string, 10);
         const end = parseInt(gateEnd as string, 10);
         // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
-        if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
-          const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
+        if (
+          !Number.isNaN(start) &&
+          !Number.isNaN(end) &&
+          start > 0 &&
+          end >= start &&
+          end <= 100
+        ) {
+          const validColor =
+            firstGateColor === 'red' || firstGateColor === 'blue'
+              ? firstGateColor
+              : 'red';
           await updateGateAssignment(
             client,
             normalizedRaceId,
@@ -408,7 +490,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             deviceName as string,
             [start, end],
             isReady === 'true',
-            validColor
+            validColor,
           );
         }
       }
@@ -417,12 +499,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         faults: Array.isArray(parsed.faults) ? parsed.faults : [],
         lastUpdated: parsed.lastUpdated || null,
         deletedIds: deletedIds || [],
-        gateAssignments
+        gateAssignments,
       });
     }
 
     if (req.method === 'POST') {
-      const { fault, deviceId, deviceName, gateRange, isReady, firstGateColor } = (req.body || {}) as PostRequestBody;
+      const {
+        fault,
+        deviceId,
+        deviceName,
+        gateRange,
+        isReady,
+        firstGateColor,
+      } = (req.body || {}) as PostRequestBody;
 
       if (!fault) {
         return sendBadRequest(res, 'fault is required');
@@ -433,7 +522,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
 
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
-      const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
+      const sanitizedDeviceName = sanitizeString(
+        deviceName,
+        MAX_DEVICE_NAME_LENGTH,
+      );
 
       // Build enriched fault with version history and deletion flags
       const enrichedFault: FaultEntry = {
@@ -449,23 +541,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         syncedAt: Date.now(),
         // Voice notes fields
         notes: fault.notes ? sanitizeString(fault.notes, 500) : null,
-        notesSource: (fault.notesSource === 'voice' || fault.notesSource === 'manual') ? fault.notesSource : null,
-        notesTimestamp: fault.notesTimestamp ? sanitizeString(fault.notesTimestamp, 64) : null,
+        notesSource:
+          fault.notesSource === 'voice' || fault.notesSource === 'manual'
+            ? fault.notesSource
+            : null,
+        notesTimestamp: fault.notesTimestamp
+          ? sanitizeString(fault.notesTimestamp, 64)
+          : null,
         // Version tracking fields
         currentVersion: fault.currentVersion || 1,
         versionHistory: Array.isArray(fault.versionHistory)
-          ? fault.versionHistory.slice(0, 100).map(sanitizeVersionHistoryItem).filter(Boolean)
+          ? fault.versionHistory
+              .slice(0, 100)
+              .map(sanitizeVersionHistoryItem)
+              .filter(Boolean)
           : [],
         // Deletion workflow fields
         markedForDeletion: fault.markedForDeletion === true,
-        markedForDeletionAt: fault.markedForDeletionAt ? sanitizeString(fault.markedForDeletionAt, 64) : null,
+        markedForDeletionAt: fault.markedForDeletionAt
+          ? sanitizeString(fault.markedForDeletionAt, 64)
+          : null,
         markedForDeletionBy: sanitizeString(fault.markedForDeletionBy, 100),
-        markedForDeletionByDeviceId: sanitizeString(fault.markedForDeletionByDeviceId, 50),
-        deletionApprovedAt: fault.deletionApprovedAt ? sanitizeString(fault.deletionApprovedAt, 64) : null,
-        deletionApprovedBy: sanitizeString(fault.deletionApprovedBy, 100)
+        markedForDeletionByDeviceId: sanitizeString(
+          fault.markedForDeletionByDeviceId,
+          50,
+        ),
+        deletionApprovedAt: fault.deletionApprovedAt
+          ? sanitizeString(fault.deletionApprovedAt, 64)
+          : null,
+        deletionApprovedBy: sanitizeString(fault.deletionApprovedBy, 100),
       };
 
-      const addResult = await atomicAddFault(client, faultsKey, enrichedFault, sanitizedDeviceId);
+      const addResult = await atomicAddFault(
+        client,
+        faultsKey,
+        enrichedFault,
+        sanitizedDeviceId,
+      );
 
       if (!addResult.success) {
         const status = addResult.error?.includes('limit') ? 400 : 409;
@@ -477,20 +589,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const start = parseInt(String(gateRange[0]), 10);
         const end = parseInt(String(gateRange[1]), 10);
         // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)
-        if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start && end <= 100) {
-          const validColor = (firstGateColor === 'red' || firstGateColor === 'blue') ? firstGateColor : 'red';
-          await updateGateAssignment(client, normalizedRaceId, sanitizedDeviceId, sanitizedDeviceName, [start, end], isReady === true, validColor);
+        if (
+          !Number.isNaN(start) &&
+          !Number.isNaN(end) &&
+          start > 0 &&
+          end >= start &&
+          end <= 100
+        ) {
+          const validColor =
+            firstGateColor === 'red' || firstGateColor === 'blue'
+              ? firstGateColor
+              : 'red';
+          await updateGateAssignment(
+            client,
+            normalizedRaceId,
+            sanitizedDeviceId,
+            sanitizedDeviceName,
+            [start, end],
+            isReady === true,
+            validColor,
+          );
         }
       }
 
       // Get updated gate assignments
-      const gateAssignments = await getGateAssignments(client, normalizedRaceId);
+      const gateAssignments = await getGateAssignments(
+        client,
+        normalizedRaceId,
+      );
 
       return sendSuccess(res, {
         success: true,
         faults: addResult.existing.faults,
         lastUpdated: addResult.existing.lastUpdated,
-        gateAssignments
+        gateAssignments,
       });
     }
 
@@ -499,11 +631,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Only users with 'chiefJudge' role can delete faults
       const userRole = authResult.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
-        log.warn('Fault deletion DENIED', { role: userRole, expected: 'chiefJudge', ip: clientIP });
+        log.warn('Fault deletion DENIED', {
+          role: userRole,
+          expected: 'chiefJudge',
+          ip: clientIP,
+        });
         return sendError(res, 'Fault deletion requires Chief Judge role', 403);
       }
 
-      const { faultId, deviceId, deviceName, approvedBy } = (req.body || {}) as DeleteRequestBody;
+      const { faultId, deviceId, deviceName, approvedBy } = (req.body ||
+        {}) as DeleteRequestBody;
 
       if (!faultId) {
         return sendBadRequest(res, 'faultId is required');
@@ -511,13 +648,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       const faultIdStr = String(faultId);
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
-      const sanitizedDeviceName = sanitizeString(deviceName, MAX_DEVICE_NAME_LENGTH);
-      const sanitizedApprovedBy = sanitizeString(approvedBy, MAX_DEVICE_NAME_LENGTH);
+      const sanitizedDeviceName = sanitizeString(
+        deviceName,
+        MAX_DEVICE_NAME_LENGTH,
+      );
+      const sanitizedApprovedBy = sanitizeString(
+        approvedBy,
+        MAX_DEVICE_NAME_LENGTH,
+      );
 
       // Audit log for deletion
-      log.info('Fault deletion', { race: normalizedRaceId, faultId: faultIdStr, deviceId: sanitizedDeviceId, deviceName: sanitizedDeviceName, approvedBy: sanitizedApprovedBy, ip: clientIP });
+      log.info('Fault deletion', {
+        race: normalizedRaceId,
+        faultId: faultIdStr,
+        deviceId: sanitizedDeviceId,
+        deviceName: sanitizedDeviceName,
+        approvedBy: sanitizedApprovedBy,
+        ip: clientIP,
+      });
 
-      const deleteResult = await atomicDeleteFault(client, faultsKey, faultIdStr, sanitizedDeviceId);
+      const deleteResult = await atomicDeleteFault(
+        client,
+        faultsKey,
+        faultIdStr,
+        sanitizedDeviceId,
+      );
 
       if (!deleteResult.success) {
         return sendError(res, deleteResult.error!, 409);
@@ -525,14 +680,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       // Track deleted fault ID with metadata
       const deletedKey = `race:${normalizedRaceId}:deleted_faults`;
-      const deleteKey = sanitizedDeviceId ? `${faultIdStr}:${sanitizedDeviceId}` : faultIdStr;
+      const deleteKey = sanitizedDeviceId
+        ? `${faultIdStr}:${sanitizedDeviceId}`
+        : faultIdStr;
       await client.sadd(deletedKey, deleteKey);
       await client.expire(deletedKey, CACHE_EXPIRY_SECONDS);
 
       return sendSuccess(res, {
         success: true,
         deleted: deleteResult.wasRemoved,
-        faultId: faultIdStr
+        faultId: faultIdStr,
       });
     }
 
@@ -541,8 +698,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const err = error instanceof Error ? error : new Error(String(error));
     log.error('Faults API error', { error: err.message });
 
-    if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
-      return sendServiceUnavailable(res, 'Database connection failed. Please try again.');
+    if (
+      err.message.includes('ECONNREFUSED') ||
+      err.message.includes('ETIMEDOUT')
+    ) {
+      return sendServiceUnavailable(
+        res,
+        'Database connection failed. Please try again.',
+      );
     }
 
     return sendError(res, 'Internal server error', 500);

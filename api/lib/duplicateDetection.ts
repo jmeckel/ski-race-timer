@@ -5,7 +5,7 @@
  * from a different device (same bib + same point + same run).
  */
 
-import type { RaceEntry, CrossDeviceDuplicate } from './syncTypes.js';
+import type { CrossDeviceDuplicate, RaceEntry } from './syncTypes.js';
 
 /**
  * Detect if a new entry is a cross-device duplicate of an existing entry.
@@ -19,7 +19,7 @@ import type { RaceEntry, CrossDeviceDuplicate } from './syncTypes.js';
 export function detectCrossDeviceDuplicate(
   existingEntries: RaceEntry[],
   newEntry: RaceEntry,
-  deviceId: string
+  deviceId: string,
 ): CrossDeviceDuplicate | null {
   if (!newEntry.bib) return null;
 
@@ -29,7 +29,7 @@ export function detectCrossDeviceDuplicate(
       e.bib === newEntry.bib &&
       e.point === newEntry.point &&
       (e.run ?? 1) === entryRun &&
-      e.deviceId !== deviceId
+      e.deviceId !== deviceId,
   );
 
   if (!existingMatch) return null;

@@ -1,6 +1,6 @@
 import type Redis from 'ioredis';
-import { safeJsonParse } from './response.js';
 import { apiLogger } from './apiLogger.js';
+import { safeJsonParse } from './response.js';
 
 // Shared constants
 export const CACHE_EXPIRY_SECONDS: number = 86400; // 24 hours
@@ -25,7 +25,9 @@ interface AtomicAbortOutcome<TResult> {
 }
 
 /** Union of possible outcomes from the update function */
-type AtomicOutcome<TData, TResult> = AtomicUpdateOutcome<TData, TResult> | AtomicAbortOutcome<TResult>;
+type AtomicOutcome<TData, TResult> =
+  | AtomicUpdateOutcome<TData, TResult>
+  | AtomicAbortOutcome<TResult>;
 
 /** Error result returned when max retries exceeded */
 interface AtomicConflictError {
@@ -52,7 +54,7 @@ export async function atomicUpdate<TData, TResult>(
   redisKey: string,
   defaultData: TData,
   updateFn: (current: TData) => AtomicOutcome<TData, TResult>,
-  operationName: string
+  operationName: string,
 ): Promise<TResult | AtomicConflictError> {
   for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
     await client.watch(redisKey);
@@ -68,14 +70,22 @@ export async function atomicUpdate<TData, TResult>(
     }
 
     const multi = client.multi();
-    multi.set(redisKey, JSON.stringify(outcome.data), 'EX', CACHE_EXPIRY_SECONDS);
+    multi.set(
+      redisKey,
+      JSON.stringify(outcome.data),
+      'EX',
+      CACHE_EXPIRY_SECONDS,
+    );
     const execResult = await multi.exec();
 
     if (execResult !== null) {
       return outcome.result;
     }
 
-    apiLogger.warn(`${operationName}: retry due to concurrent modification`, { retry: retry + 1, maxRetries: MAX_ATOMIC_RETRIES });
+    apiLogger.warn(`${operationName}: retry due to concurrent modification`, {
+      retry: retry + 1,
+      maxRetries: MAX_ATOMIC_RETRIES,
+    });
   }
 
   // Release stale WATCH from the last failed retry to prevent spurious
@@ -85,6 +95,6 @@ export async function atomicUpdate<TData, TResult>(
   return {
     success: false,
     error: 'Concurrent modification conflict, please retry',
-    existing: null
+    existing: null,
   };
 }

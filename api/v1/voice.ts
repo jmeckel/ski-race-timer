@@ -14,19 +14,19 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { apiLogger } from '../lib/apiLogger.js';
 import { validateAuth } from '../lib/jwt.js';
+import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../lib/redis.js';
 import {
   handlePreflight,
-  sendSuccess,
+  sanitizeString,
+  sendAuthRequired,
   sendBadRequest,
   sendMethodNotAllowed,
-  sendServiceUnavailable,
   sendRateLimitExceeded,
-  sendAuthRequired,
-  sanitizeString
+  sendServiceUnavailable,
+  sendSuccess,
 } from '../lib/response.js';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY } from '../lib/redis.js';
-import { apiLogger } from '../lib/apiLogger.js';
 
 // Configuration
 const MAX_TOKENS = 256;
@@ -99,11 +99,19 @@ async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
     client = getRedis();
   } catch {
     apiLogger.error('Rate limiting unavailable - denying voice request');
-    return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
+    return {
+      allowed: false,
+      remaining: 0,
+      error: 'Service temporarily unavailable',
+    };
   }
   if (hasRedisError()) {
     apiLogger.error('Rate limiting unavailable - denying voice request');
-    return { allowed: false, remaining: 0, error: 'Service temporarily unavailable' };
+    return {
+      allowed: false,
+      remaining: 0,
+      error: 'Service temporarily unavailable',
+    };
   }
 
   const key = `voice:rate:${clientIP}`;
@@ -119,7 +127,7 @@ async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
     const remaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - current);
     return {
       allowed: current <= RATE_LIMIT_MAX_REQUESTS,
-      remaining
+      remaining,
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -136,13 +144,13 @@ const PROVIDERS: Record<string, ProviderConfig> = {
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
     model: 'gpt-4o-mini',
-    envKey: 'OPENAI_API_KEY'
+    envKey: 'OPENAI_API_KEY',
   },
   anthropic: {
     url: 'https://api.anthropic.com/v1/messages',
     model: 'claude-3-haiku-20240307',
-    envKey: 'ANTHROPIC_API_KEY'
-  }
+    envKey: 'ANTHROPIC_API_KEY',
+  },
 };
 
 // System prompt for voice command parsing
@@ -260,10 +268,12 @@ function buildUserMessage(transcript: string, context: VoiceContext): string {
     currentRun: context.currentRun || 1,
     activeBibs: context.activeBibs,
     gateRange: context.gateRange,
-    pendingConfirmation: context.pendingConfirmation ? {
-      action: sanitizeString(context.pendingConfirmation.action, 50)
-      // params intentionally omitted from LLM context to prevent prompt injection
-    } : null
+    pendingConfirmation: context.pendingConfirmation
+      ? {
+          action: sanitizeString(context.pendingConfirmation.action, 50),
+          // params intentionally omitted from LLM context to prevent prompt injection
+        }
+      : null,
   });
 
   return `Context: ${contextJson}\n\nTranscript: "${sanitizeString(transcript, MAX_TRANSCRIPT_LENGTH)}"`;
@@ -272,7 +282,9 @@ function buildUserMessage(transcript: string, context: VoiceContext): string {
 /**
  * Parse LLM response content to extract intent
  */
-function parseIntentFromContent(content: string | null | undefined): VoiceIntent {
+function parseIntentFromContent(
+  content: string | null | undefined,
+): VoiceIntent {
   if (!content) {
     throw new Error('Empty response from LLM');
   }
@@ -280,7 +292,10 @@ function parseIntentFromContent(content: string | null | undefined): VoiceIntent
   // Handle potential markdown code blocks
   let jsonContent = content.trim();
   if (jsonContent.startsWith('```')) {
-    jsonContent = jsonContent.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+    jsonContent = jsonContent
+      .replace(/```json?\n?/g, '')
+      .replace(/```$/g, '')
+      .trim();
   }
 
   const intent: VoiceIntent = JSON.parse(jsonContent);
@@ -302,17 +317,27 @@ function parseIntentFromContent(content: string | null | undefined): VoiceIntent
  * Fetch with timeout and abort handling
  * Shared by both LLM provider implementations
  */
-async function fetchWithTimeout(url: string, options: RequestInit, providerName: string): Promise<unknown> {
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  providerName: string,
+): Promise<unknown> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
-      apiLogger.error(`${providerName} API error`, { status: response.status, body: errorText });
+      apiLogger.error(`${providerName} API error`, {
+        status: response.status,
+        body: errorText,
+      });
       throw new Error(`${providerName} API error: ${response.status}`);
     }
 
@@ -329,25 +354,34 @@ async function fetchWithTimeout(url: string, options: RequestInit, providerName:
 /**
  * Call OpenAI API
  */
-async function callOpenAI(transcript: string, context: VoiceContext, apiKey: string): Promise<VoiceIntent> {
+async function callOpenAI(
+  transcript: string,
+  context: VoiceContext,
+  apiKey: string,
+): Promise<VoiceIntent> {
   const userMessage = buildUserMessage(transcript, context);
 
-  const result = await fetchWithTimeout(PROVIDERS.openai.url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+  const openaiConfig = PROVIDERS.openai!;
+  const result = (await fetchWithTimeout(
+    openaiConfig.url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: openaiConfig.model,
+        max_tokens: MAX_TOKENS,
+        temperature: 0.1, // Low temperature for consistent parsing
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
+        ],
+      }),
     },
-    body: JSON.stringify({
-      model: PROVIDERS.openai.model,
-      max_tokens: MAX_TOKENS,
-      temperature: 0.1, // Low temperature for consistent parsing
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userMessage }
-      ]
-    })
-  }, 'OpenAI') as OpenAIResponse;
+    'OpenAI',
+  )) as OpenAIResponse;
 
   const content = result.choices?.[0]?.message?.content || '';
   return parseIntentFromContent(content);
@@ -356,23 +390,32 @@ async function callOpenAI(transcript: string, context: VoiceContext, apiKey: str
 /**
  * Call Anthropic API
  */
-async function callAnthropic(transcript: string, context: VoiceContext, apiKey: string): Promise<VoiceIntent> {
+async function callAnthropic(
+  transcript: string,
+  context: VoiceContext,
+  apiKey: string,
+): Promise<VoiceIntent> {
   const userMessage = buildUserMessage(transcript, context);
 
-  const result = await fetchWithTimeout(PROVIDERS.anthropic.url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
+  const anthropicConfig = PROVIDERS.anthropic!;
+  const result = (await fetchWithTimeout(
+    anthropicConfig.url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: anthropicConfig.model,
+        max_tokens: MAX_TOKENS,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }],
+      }),
     },
-    body: JSON.stringify({
-      model: PROVIDERS.anthropic.model,
-      max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }]
-    })
-  }, 'Anthropic') as AnthropicResponse;
+    'Anthropic',
+  )) as AnthropicResponse;
 
   // Extract content from Anthropic response format
   let content = '';
@@ -388,7 +431,10 @@ async function callAnthropic(transcript: string, context: VoiceContext, apiKey: 
 /**
  * Main handler
  */
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
     return;
@@ -400,10 +446,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Rate limiting (voice API is expensive - protect against economic DoS)
-  const clientIP = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
-                   (req.headers['x-real-ip'] as string | undefined) ||
-                   req.socket?.remoteAddress ||
-                   'unknown';
+  const clientIP =
+    (req.headers['x-forwarded-for'] as string | undefined)
+      ?.split(',')[0]
+      ?.trim() ||
+    (req.headers['x-real-ip'] as string | undefined) ||
+    req.socket?.remoteAddress ||
+    'unknown';
 
   const rateLimit = await checkRateLimit(clientIP);
   if (!rateLimit.allowed) {
@@ -436,13 +485,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // Determine provider (default to OpenAI)
   const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
 
-  if (!PROVIDERS[provider]) {
+  const providerConfig = PROVIDERS[provider];
+  if (!providerConfig) {
     apiLogger.error('Invalid VOICE_LLM_PROVIDER', { provider });
     return sendServiceUnavailable(res, 'Invalid voice provider configuration');
   }
 
   // Get API key for selected provider
-  const apiKey = process.env[PROVIDERS[provider].envKey];
+  const apiKey = process.env[providerConfig.envKey];
   if (!apiKey) {
     // Log internally but don't expose which API key is missing
     apiLogger.error('Voice API key not configured', { provider });
@@ -453,7 +503,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   let body: unknown;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (e: unknown) {
+  } catch (_e: unknown) {
     return sendBadRequest(res, 'Invalid JSON body');
   }
 
@@ -466,15 +516,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   try {
     // Call appropriate provider
-    const intent: VoiceIntent = provider === 'openai'
-      ? await callOpenAI(transcript!, context!, apiKey)
-      : await callAnthropic(transcript!, context!, apiKey);
+    const intent: VoiceIntent =
+      provider === 'openai'
+        ? await callOpenAI(transcript!, context!, apiKey)
+        : await callAnthropic(transcript!, context!, apiKey);
 
     return sendSuccess(res, {
       success: true,
-      intent
+      intent,
     });
-
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     apiLogger.error('Voice processing error', { error: message, provider });
@@ -487,8 +537,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         action: 'unknown',
         confidence: 0,
         confirmationNeeded: false,
-        error: 'Voice processing failed'
-      }
+        error: 'Voice processing failed',
+      },
     });
   }
 }

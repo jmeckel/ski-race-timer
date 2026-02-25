@@ -1,16 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateAuth, hashPin, verifyPin } from '../../lib/jwt.js';
-import { getRedis, hasRedisError, CLIENT_PIN_KEY, CHIEF_JUDGE_PIN_KEY } from '../../lib/redis.js';
+import type Redis from 'ioredis';
+import { apiLogger } from '../../lib/apiLogger.js';
+import { hashPin, validateAuth, verifyPin } from '../../lib/jwt.js';
+import {
+  CHIEF_JUDGE_PIN_KEY,
+  CLIENT_PIN_KEY,
+  getRedis,
+  hasRedisError,
+} from '../../lib/redis.js';
 import {
   handlePreflight,
-  sendSuccess,
+  sendAuthRequired,
   sendBadRequest,
+  sendError,
   sendMethodNotAllowed,
   sendServiceUnavailable,
-  sendAuthRequired,
-  sendError
+  sendSuccess,
 } from '../../lib/response.js';
-import { apiLogger } from '../../lib/apiLogger.js';
 
 interface ChangePinRequestBody {
   currentPin?: string;
@@ -27,13 +33,16 @@ interface ChangePinRequestBody {
  * - Offline brute-force attacks (4-digit = only 10,000 possibilities)
  * - Hash replay attacks via legacy authentication path
  */
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   // Handle CORS preflight
   if (handlePreflight(req, res, ['GET', 'POST', 'OPTIONS'])) {
     return;
   }
 
-  let client;
+  let client: Redis;
   try {
     client = getRedis();
   } catch (error: unknown) {
@@ -44,7 +53,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check for recent Redis errors
   if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Database connection issue. Please try again.');
+    return sendServiceUnavailable(
+      res,
+      'Database connection issue. Please try again.',
+    );
   }
 
   // Authenticate request using JWT
@@ -60,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const chiefPinHash = await client.get(CHIEF_JUDGE_PIN_KEY);
       return sendSuccess(res, {
         hasPin: !!pinHash,
-        hasChiefPin: !!chiefPinHash
+        hasChiefPin: !!chiefPinHash,
       });
     }
 
@@ -91,7 +103,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Get stored PIN hash
       const storedPinHash = await client.get(CLIENT_PIN_KEY);
       if (!storedPinHash) {
-        return sendBadRequest(res, 'No PIN is set. Use authentication to set initial PIN.');
+        return sendBadRequest(
+          res,
+          'No PIN is set. Use authentication to set initial PIN.',
+        );
       }
 
       // Verify current PIN using timing-safe comparison

@@ -1,6 +1,6 @@
 {
   "name": "chrono-race-timer",
-  "version": "5.24.10",
+  "version": "5.24.11",
   "description": "Precision race timing, GPS-synchronized",
   "private": true,
   "type": "module",
@@ -20,10 +20,11 @@
     "test:e2e:prod": "TEST_ENV=production playwright test",
     "test:e2e:prod:headed": "TEST_ENV=production playwright test --headed",
     "test:all": "npm run test && npm run test:e2e",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome check src tests",
-    "lint:fix": "biome check --write src tests",
-    "format": "biome format --write src tests",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json",
+    "typecheck:api": "tsc --noEmit -p tsconfig.api.json",
+    "lint": "biome check src tests api",
+    "lint:fix": "biome check --write src tests api",
+    "format": "biome format --write src tests api",
     "docs:pdf": "bash docs/build-pdfs.sh",
     "analyze": "ANALYZE=true npm run build"
   },

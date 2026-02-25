@@ -195,7 +195,7 @@ export function statusBadge(
 ): string {
   const color =
     statusChipColors[status.toLowerCase()] || colorOverride || '#ef4444';
-  return `<span class="result-status" style="padding: 3px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: ${fontSize}; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; background: color-mix(in srgb, ${color} 10%, transparent); color: ${color}; border: 1px solid color-mix(in srgb, ${color} 15%, transparent);">${escapeHtml(status)}</span>`;
+  return `<span class="result-status" style="--item-color: ${color}; font-size: ${fontSize};">${escapeHtml(status)}</span>`;
 }
 
 /**
@@ -209,7 +209,7 @@ export function deletionPendingBadge(fontSize = '0.7rem'): string {
  * Run label badge (L1/L2 or R1/R2) — outlined chip style (matches statusBadge)
  */
 export function runBadge(runLabel: string, runColor: string): string {
-  return `<span class="result-run" data-advanced style="padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; background: color-mix(in srgb, ${runColor} 10%, transparent); color: ${runColor}; border: 1px solid color-mix(in srgb, ${runColor} 15%, transparent);">${escapeHtml(runLabel)}</span>`;
+  return `<span class="result-run" data-advanced style="--item-color: ${runColor};">${escapeHtml(runLabel)}</span>`;
 }
 
 /**
@@ -219,5 +219,5 @@ export function pointBadge(
   pointLabel: string,
   pointColor: string,
 ): string {
-  return `<div class="result-point" style="padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-align: center; text-transform: uppercase; background: color-mix(in srgb, ${pointColor} 10%, transparent); color: ${pointColor}; border: 1px solid color-mix(in srgb, ${pointColor} 15%, transparent);">${escapeHtml(pointLabel)}</div>`;
+  return `<div class="result-point" style="--item-color: ${pointColor};">${escapeHtml(pointLabel)}</div>`;
 }

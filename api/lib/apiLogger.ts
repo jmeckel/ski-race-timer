@@ -56,10 +56,12 @@ export const apiLogger = {
 /**
  * Extract or generate a request ID from request headers
  */
-export function getRequestId(headers: Record<string, string | string[] | undefined>): string {
+export function getRequestId(
+  headers: Record<string, string | string[] | undefined>,
+): string {
   const forwarded = headers['x-request-id'] || headers['x-vercel-id'];
   if (forwarded) {
-    return Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    return Array.isArray(forwarded) ? (forwarded[0] ?? '') : forwarded;
   }
   // Generate a short random ID for tracing
   return Math.random().toString(36).slice(2, 10);

@@ -85,26 +85,11 @@ export class Clock {
     el.setAttribute('aria-live', 'polite');
     const lang = store.getState().currentLang;
     el.setAttribute('aria-label', t('currentTime', lang));
-    el.style.cssText = `
-      font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(32px, 10vw, 48px);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-align: center;
-      text-shadow: 0 0 40px rgba(56, 189, 248, 0.3);
-    `;
-
     // Create individual spans for each character position
     // Format: HH:MM:SS.mmm (12 characters)
     for (let i = 0; i < 12; i++) {
       const span = document.createElement('span');
       span.className = 'clock-digit';
-      span.style.display = 'inline-block'; // Required for transform
-      span.style.transition = 'transform 0.1s ease-out';
       span.dataset.index = String(i);
       el.appendChild(span);
     }
@@ -118,21 +103,9 @@ export class Clock {
   private createDateRow(): HTMLElement {
     const row = document.createElement('div');
     row.className = 'clock-date-row';
-    row.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 4px;
-      padding: 0 8px;
-      width: 100%;
-    `;
 
     const dateEl = document.createElement('div');
     dateEl.className = 'clock-date';
-    dateEl.style.cssText = `
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    `;
 
     row.appendChild(dateEl);
     return row;
