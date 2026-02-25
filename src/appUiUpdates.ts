@@ -258,9 +258,11 @@ export function updatePhotoCaptureIndicator(): void {
   const state = store.getState();
   const cameraIndicator = getElement('camera-indicator');
   if (cameraIndicator) {
-    cameraIndicator.style.display = state.settings.photoCapture
-      ? 'flex'
-      : 'none';
+    const isVisible = state.settings.photoCapture;
+    cameraIndicator.style.display = isVisible ? 'flex' : 'none';
+    if (isVisible) {
+      cameraIndicator.setAttribute('aria-label', t('photoCapture', state.currentLang));
+    }
   }
 }
 

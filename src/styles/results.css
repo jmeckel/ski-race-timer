@@ -126,8 +126,8 @@
   min-width: 0;
 }
 
-.search-input:focus,
-.filter-select:focus {
+.search-input:focus-visible,
+.filter-select:focus-visible {
   outline: none;
   border-color: var(--primary);
   background: color-mix(in srgb, var(--primary) 5%, var(--background));

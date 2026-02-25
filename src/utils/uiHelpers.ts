@@ -17,5 +17,9 @@ export function updateButtonGroupState(
   container.querySelectorAll(selector).forEach((btn) => {
     const isActive = btn.getAttribute(attr) === activeValue;
     btn.classList.toggle('active', isActive);
+    // Update aria-checked if the element has a radio role
+    if (btn.getAttribute('role') === 'radio') {
+      btn.setAttribute('aria-checked', String(isActive));
+    }
   });
 }

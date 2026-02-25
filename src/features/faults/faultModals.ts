@@ -125,8 +125,12 @@ export function initFaultRecordingModal(): void {
       if (btn) {
         faultTypeButtons
           .querySelectorAll('.fault-type-btn')
-          .forEach((b) => b.classList.remove('selected'));
+          .forEach((b) => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-pressed', 'false');
+          });
         btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
         feedbackTap();
       }
     };

@@ -104,7 +104,7 @@
 
             <!-- Top Right: Clear Button -->
             <div class="radial-clear-corner">
-              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number">C</button>
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number" data-i18n-aria-label="clearBibLabel">C</button>
             </div>
 
             <!-- Status (hidden, using header instead) -->
@@ -212,14 +212,14 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               </button>
               <span class="results-info-spacer"></span>
-              <button class="results-info-btn" id="undo-btn" aria-label="Undo" disabled>
+              <button class="results-info-btn" id="undo-btn" aria-label="Undo" data-i18n-aria-label="undo" disabled>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>
               </button>
-              <button class="results-info-btn danger" id="clear-all-btn" aria-label="Delete All">
+              <button class="results-info-btn danger" id="clear-all-btn" aria-label="Delete All" data-i18n-aria-label="clearAll">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
               <span class="results-info-spacer"></span>
-              <button class="results-info-btn" id="quick-export-btn" aria-label="Export">
+              <button class="results-info-btn" id="quick-export-btn" aria-label="Export" data-i18n-aria-label="export">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               </button>
             </div>
@@ -392,9 +392,9 @@
           </div>
 
           <!-- Fault Detail Panel (appears after selecting a gate) -->
-          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;" aria-live="polite">
+          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;">
             <div class="fault-detail-header">
-              <span class="fault-detail-gate-label" id="fault-detail-gate-label"></span>
+              <span class="fault-detail-gate-label" id="fault-detail-gate-label" aria-live="polite"></span>
               <button class="fault-detail-close" id="fault-detail-close" aria-label="Close" data-i18n-aria-label="close">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
@@ -711,7 +711,7 @@
 
         <!-- Version (at the very bottom) -->
         <div class="settings-section settings-version-section">
-          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info" data-i18n-aria-label="copyDebugInfo">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
             <span id="app-version-name" class="version-name"></span>
             <div id="app-version-description" class="version-description"></div>
@@ -868,7 +868,7 @@
     <div class="modal-content glass-surface-1 photo-viewer-content">
       <div class="modal-header photo-viewer-header">
         <h2 class="modal-title" id="photo-viewer-modal-title" data-i18n="viewPhoto">View Photo</h2>
-        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
+        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close" data-i18n-aria-label="close">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
@@ -1083,7 +1083,7 @@
             <!-- Populated dynamically with active bibs -->
           </div>
           <div class="manual-bib-row">
-            <span>or enter manually:</span>
+            <span data-i18n="orEnterManually">or enter:</span>
             <input type="text" class="text-input" id="fault-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
           </div>
         </div>
@@ -1100,15 +1100,15 @@
         <div class="fault-type-section">
           <label data-i18n="faultType">Fault Type</label>
           <div class="fault-type-buttons" id="fault-type-buttons">
-            <button class="fault-type-btn" data-fault="MG">
+            <button class="fault-type-btn" data-fault="MG" aria-pressed="false">
               <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
               <span class="fault-type-label" data-i18n="faultMG">Missed Gate</span>
             </button>
-            <button class="fault-type-btn" data-fault="STR">
+            <button class="fault-type-btn" data-fault="STR" aria-pressed="false">
               <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
               <span class="fault-type-label" data-i18n="faultSTR">Straddling</span>
             </button>
-            <button class="fault-type-btn" data-fault="BR">
+            <button class="fault-type-btn" data-fault="BR" aria-pressed="false">
               <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
               <span class="fault-type-label" data-i18n="faultBR">Binding Release</span>
             </button>
@@ -1159,7 +1159,7 @@
         </div>
         <!-- Notes -->
         <div class="fault-edit-notes-section" style="margin-bottom: 16px;">
-          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Notes</label>
+          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultNotes">Notes</label>
           <div class="fault-edit-notes-row">
             <textarea class="text-input fault-edit-notes" id="fault-edit-notes" maxlength="500" rows="2" data-i18n-placeholder="typeNote" placeholder="Type or speak your note..." aria-label="Note text"></textarea>
             <button class="fault-edit-mic-btn" id="fault-edit-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false">

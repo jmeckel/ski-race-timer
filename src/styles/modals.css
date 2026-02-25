@@ -787,7 +787,7 @@
   font-size: 0.95rem;
   resize: vertical;
 
-  &:focus {
+  &:focus-visible {
     outline: none;
     border-color: var(--primary);
   }
@@ -875,7 +875,7 @@
   font-size: 0.9rem;
   resize: vertical;
 
-  &:focus {
+  &:focus-visible {
     outline: none;
     border-color: var(--primary);
   }

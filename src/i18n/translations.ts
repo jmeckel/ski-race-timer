@@ -68,6 +68,10 @@ export const translations = {
     undo: 'Undo',
     export: 'Export',
     clearAll: 'Clear All',
+    clearBibLabel: 'Clear bib number',
+    copyDebugInfo: 'Copy debug info',
+    faultNotes: 'Notes',
+    judgesReadyCount: 'Judges ready',
     selectAll: 'Select All',
     deleteSelected: 'Delete Selected',
 
@@ -614,6 +618,10 @@ export const translations = {
     undo: 'Rückgängig',
     export: 'Exportieren',
     clearAll: 'Alle löschen',
+    clearBibLabel: 'Startnummer löschen',
+    copyDebugInfo: 'Debug-Info kopieren',
+    faultNotes: 'Notizen',
+    judgesReadyCount: 'Torrichter bereit',
     selectAll: 'Alle auswählen',
     deleteSelected: 'Ausgewählte löschen',
 
@@ -1169,6 +1177,10 @@ export const translations = {
     undo: 'Annuler',
     export: 'Exporter',
     clearAll: 'Tout effacer',
+    clearBibLabel: 'Effacer le dossard',
+    copyDebugInfo: 'Copier les infos de débogage',
+    faultNotes: 'Notes',
+    judgesReadyCount: 'Juges prêts',
     selectAll: 'Tout sélectionner',
     deleteSelected: 'Supprimer la sélection',
 
