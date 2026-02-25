@@ -142,6 +142,8 @@ class CameraService {
       // Check if visibility changed during initialization
       if (this.pendingVisibilityChange === 'hidden') {
         this.pendingVisibilityChange = null;
+        // Clean up canvas before pausing (not needed while paused)
+        this.canvasElement = null;
         this.pauseCamera();
         return false;
       }

@@ -142,6 +142,7 @@ export const translations = {
 
     // Photo
     photoCapture: 'Photo Capture',
+    photoCaptureActive: 'Photo capture active',
     photoCaptured: 'Photo captured',
     photoError: 'Photo capture failed',
     photoSaveFailed: 'Photo storage failed',
@@ -692,6 +693,7 @@ export const translations = {
 
     // Photo
     photoCapture: 'Foto aufnehmen',
+    photoCaptureActive: 'Foto-Aufnahme aktiv',
     photoCaptured: 'Foto aufgenommen',
     photoError: 'Foto-Aufnahme fehlgeschlagen',
     photoSaveFailed: 'Foto-Speicherung fehlgeschlagen',
@@ -1252,6 +1254,7 @@ export const translations = {
 
     // Photo
     photoCapture: 'Capture photo',
+    photoCaptureActive: 'Capture photo active',
     photoCaptured: 'Photo capturée',
     photoError: 'Échec de la capture photo',
     photoSaveFailed: 'Échec de la sauvegarde photo',

@@ -223,6 +223,30 @@ function validateRequest(body: unknown): ValidationResult {
     return { valid: false, error: 'Invalid language in context' };
   }
 
+  // Validate activeBibs — must be an array of numeric strings (prevents prompt injection)
+  if (ctx.activeBibs !== undefined) {
+    if (!Array.isArray(ctx.activeBibs) || ctx.activeBibs.length > 200) {
+      return { valid: false, error: 'Invalid activeBibs' };
+    }
+    for (const bib of ctx.activeBibs) {
+      if (typeof bib !== 'string' || !/^\d{1,10}$/.test(bib)) {
+        return { valid: false, error: 'Invalid bib in activeBibs' };
+      }
+    }
+  }
+
+  // Validate gateRange — must be [number, number]
+  if (ctx.gateRange !== undefined) {
+    if (
+      !Array.isArray(ctx.gateRange) ||
+      ctx.gateRange.length !== 2 ||
+      typeof ctx.gateRange[0] !== 'number' ||
+      typeof ctx.gateRange[1] !== 'number'
+    ) {
+      return { valid: false, error: 'Invalid gateRange' };
+    }
+  }
+
   return { valid: true };
 }
 
@@ -264,6 +288,11 @@ function parseIntentFromContent(content: string | null | undefined): VoiceIntent
   // Validate required fields
   if (!intent.action || typeof intent.confidence !== 'number') {
     throw new Error('Invalid intent structure');
+  }
+
+  // Sanitize LLM-generated strings before returning to client
+  if (typeof intent.confirmationPrompt === 'string') {
+    intent.confirmationPrompt = sanitizeString(intent.confirmationPrompt, 200);
   }
 
   return intent;

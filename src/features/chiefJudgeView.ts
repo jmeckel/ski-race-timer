@@ -550,8 +550,10 @@ export function updateFaultSummaryPanel(): void {
   setupSummaryListDelegation(summaryList);
 }
 
-// Track which containers have delegated handlers to avoid duplicates
-const delegatedContainers = new WeakSet<Element>();
+// Track which containers have delegated handlers to avoid duplicates.
+// Reset when listeners.removeAll() is called (via cleanupChiefJudgeView),
+// so we use a plain Set that we clear explicitly rather than a WeakSet.
+let delegatedContainers = new Set<Element>();
 
 /**
  * Set up event delegation on the fault summary list container
@@ -771,9 +773,5 @@ export function cleanupChiefJudgeView(): void {
   effectDisposers.length = 0;
   listeners.removeAll();
   // Clear delegation tracking so handlers are re-registered on next init
-  // (WeakSet has no clear(), so we delete known containers)
-  const summaryList = document.getElementById('fault-summary-list');
-  const pendingList = document.getElementById('pending-deletions-list');
-  if (summaryList) delegatedContainers.delete(summaryList);
-  if (pendingList) delegatedContainers.delete(pendingList);
+  delegatedContainers.clear();
 }
