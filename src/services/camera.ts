@@ -292,6 +292,11 @@ class CameraService {
       }
       this.cameraState = 'stopped';
       this.resumingStartedAt = null;
+      // Remove visibility handler — camera is permanently stopped
+      if (this.visibilityHandler) {
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        this.visibilityHandler = null;
+      }
       store.setCameraReady(false, errorMessage);
     }
   }
@@ -388,8 +393,8 @@ class CameraService {
       this.videoElement.srcObject = null;
       if (this.ownsVideoElement) {
         this.videoElement.remove();
-        this.videoElement = null;
       }
+      this.videoElement = null;
     }
 
     this.canvasElement = null;

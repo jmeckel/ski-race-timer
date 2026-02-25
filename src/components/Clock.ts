@@ -305,9 +305,9 @@ export class Clock {
       if (digit.textContent !== newChar) {
         digit.textContent = newChar;
 
-        // Subtle scale animation on change — only on normal battery to avoid
-        // untracked RAF callbacks that bypass visibility/battery throttling
-        if (this.frameSkipCount === FRAME_SKIP_NORMAL) {
+        // Subtle scale animation on change — only on normal battery and when visible
+        // to avoid untracked RAF callbacks that bypass visibility/battery throttling
+        if (this.frameSkipCount === FRAME_SKIP_NORMAL && !document.hidden) {
           digit.style.transform = 'scale(1.02)';
           requestAnimationFrame(() => {
             digit.style.transform = 'scale(1)';

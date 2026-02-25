@@ -237,8 +237,8 @@ function buildUserMessage(transcript: string, context: VoiceContext): string {
     activeBibs: context.activeBibs,
     gateRange: context.gateRange,
     pendingConfirmation: context.pendingConfirmation ? {
-      action: sanitizeString(context.pendingConfirmation.action, 50),
-      params: context.pendingConfirmation.params
+      action: sanitizeString(context.pendingConfirmation.action, 50)
+      // params intentionally omitted from LLM context to prevent prompt injection
     } : null
   });
 

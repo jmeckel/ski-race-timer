@@ -149,7 +149,8 @@ export function initApp(): void {
   initOfflineBanner();
 
   // Initialize signal-based state effects (replaces callback-based subscribe)
-  initStateEffects();
+  const disposeStateEffects = initStateEffects();
+  listeners.add(window, 'pagehide', () => disposeStateEffects());
 
   // Initialize services (sync, GPS, wake lock, ambient mode, voice)
   initServices();

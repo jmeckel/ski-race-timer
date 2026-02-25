@@ -150,7 +150,9 @@ class SyncService {
   private initializeModules(): void {
     // Initialize polling manager
     pollingManager.initialize(() => {
-      fetchCloudEntries();
+      fetchCloudEntries().catch((err) => {
+        logger.error('Poll fetch failed:', err);
+      });
     });
 
     // Initialize queue processor with single and batch callbacks

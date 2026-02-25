@@ -256,8 +256,12 @@ class GpsService {
       return;
     }
 
-    // Actually restart GPS
-    this.start();
+    // Check battery level to decide between duty cycling vs continuous GPS
+    if (batteryService.isCriticalBattery()) {
+      this.startDutyCycling();
+    } else {
+      this.start();
+    }
   }
 
   /**

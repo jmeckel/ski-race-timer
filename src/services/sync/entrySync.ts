@@ -367,8 +367,12 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
     // Prepare entry for sync - load photo from IndexedDB if syncPhotos is enabled
     const entryToSync = await prepareEntryForSync(entry, state.settings.syncPhotos);
 
+    // Re-check raceId after async photo loading — user may have switched races
+    const currentRaceId = store.getState().raceId;
+    if (!currentRaceId || currentRaceId !== state.raceId) return false;
+
     const response = await fetchWithTimeout(
-      `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+      `${API_BASE}?raceId=${encodeURIComponent(currentRaceId)}`,
       {
         method: 'POST',
         headers: {
@@ -470,8 +474,17 @@ export async function sendEntriesToCloudBatch(
       entriesToSync.push(await prepareEntryForSync(entry, state.settings.syncPhotos));
     }
 
+    // Re-check raceId after async photo loading — user may have switched races
+    const currentRaceId = store.getState().raceId;
+    if (!currentRaceId || currentRaceId !== state.raceId) {
+      for (const entry of batch) {
+        resultMap.set(entry.id, false);
+      }
+      return resultMap;
+    }
+
     const response = await fetchWithTimeout(
-      `${API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+      `${API_BASE}?raceId=${encodeURIComponent(currentRaceId)}`,
       {
         method: 'POST',
         headers: {

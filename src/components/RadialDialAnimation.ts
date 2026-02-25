@@ -329,6 +329,9 @@ export class RadialDialAnimation {
     // Check for digit change
     this.checkDigitChange();
 
+    if (this.spinAnimationId !== null) {
+      cancelAnimationFrame(this.spinAnimationId);
+    }
     this.spinAnimationId = requestAnimationFrame(this.spinWithMomentum);
   };
 
