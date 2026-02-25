@@ -13,33 +13,17 @@
  * - ANTHROPIC_API_KEY: Required if using Anthropic
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { apiLogger } from '../lib/apiLogger.js';
-import { validateAuth } from '../lib/jwt.js';
-import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../lib/redis.js';
+import { createHandler } from '../lib/handler.js';
 import {
-  handlePreflight,
   sanitizeString,
-  sendAuthRequired,
   sendBadRequest,
   sendMethodNotAllowed,
-  sendRateLimitExceeded,
-  sendServiceUnavailable,
   sendSuccess,
 } from '../lib/response.js';
 
 // Configuration
 const MAX_TOKENS = 256;
-
-// Rate limiting configuration (voice API is expensive)
-const RATE_LIMIT_WINDOW = 60; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 voice requests per minute per IP
-
-interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  error?: string;
-}
 
 interface VoiceContext {
   role: 'timer' | 'gateJudge';
@@ -90,52 +74,6 @@ interface AnthropicResponse {
   content?: Array<{ text?: string }> | string;
 }
 
-/**
- * Check rate limit for voice API
- */
-async function checkRateLimit(clientIP: string): Promise<RateLimitResult> {
-  let client: ReturnType<typeof getRedis>;
-  try {
-    client = getRedis();
-  } catch {
-    apiLogger.error('Rate limiting unavailable - denying voice request');
-    return {
-      allowed: false,
-      remaining: 0,
-      error: 'Service temporarily unavailable',
-    };
-  }
-  if (hasRedisError()) {
-    apiLogger.error('Rate limiting unavailable - denying voice request');
-    return {
-      allowed: false,
-      remaining: 0,
-      error: 'Service temporarily unavailable',
-    };
-  }
-
-  const key = `voice:rate:${clientIP}`;
-
-  try {
-    // Use pipeline for atomic incr+expire to prevent key persisting without TTL
-    const multi = client.multi();
-    multi.incr(key);
-    multi.expire(key, RATE_LIMIT_WINDOW);
-    const results = await multi.exec();
-    const current = (results?.[0]?.[1] as number) ?? 1;
-
-    const remaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - current);
-    return {
-      allowed: current <= RATE_LIMIT_MAX_REQUESTS,
-      remaining,
-    };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Rate limit check failed', { error: message });
-    // SECURITY: Fail closed if rate limiting cannot be enforced
-    return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
-  }
-}
 const MAX_TRANSCRIPT_LENGTH = 500;
 const REQUEST_TIMEOUT_MS = 10000;
 
@@ -430,115 +368,83 @@ async function callAnthropic(
 
 /**
  * Main handler
+ * Voice API uses createHandler for Redis/auth but rate limits at 10 req/min
  */
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
-    return;
-  }
-
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res);
-  }
-
-  // Rate limiting (voice API is expensive - protect against economic DoS)
-  const clientIP =
-    (req.headers['x-forwarded-for'] as string | undefined)
-      ?.split(',')[0]
-      ?.trim() ||
-    (req.headers['x-real-ip'] as string | undefined) ||
-    req.socket?.remoteAddress ||
-    'unknown';
-
-  const rateLimit = await checkRateLimit(clientIP);
-  if (!rateLimit.allowed) {
-    apiLogger.warn('Voice API rate limit exceeded', { ip: clientIP });
-    if (rateLimit.error) {
-      return sendServiceUnavailable(res, 'Rate limiting unavailable');
+export default createHandler(
+  {
+    methods: ['POST'],
+    rateLimit: {
+      keyPrefix: 'voice',
+      window: 60,
+      maxRequests: 10,
+      maxPosts: 10,
+    },
+    auth: true,
+  },
+  async (req, res) => {
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return sendMethodNotAllowed(res);
     }
-    return sendRateLimitExceeded(res, RATE_LIMIT_WINDOW);
-  }
 
-  // Set rate limit headers
-  res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+    // Determine provider (default to OpenAI)
+    const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
 
-  // SECURITY: Validate authentication - voice API proxies to expensive LLM APIs
-  // Fail closed: if Redis is unavailable, deny access rather than skip auth
-  let redisClient: ReturnType<typeof getRedis>;
-  try {
-    redisClient = getRedis();
-  } catch {
-    return sendServiceUnavailable(res, 'Authentication service unavailable');
-  }
-  if (hasRedisError()) {
-    return sendServiceUnavailable(res, 'Authentication service unavailable');
-  }
-  const authResult = await validateAuth(req, redisClient, CLIENT_PIN_KEY);
-  if (!authResult.valid) {
-    return sendAuthRequired(res, authResult.error, authResult.expired || false);
-  }
+    const providerConfig = PROVIDERS[provider];
+    if (!providerConfig) {
+      apiLogger.error('Invalid VOICE_LLM_PROVIDER', { provider });
+      return sendBadRequest(res, 'Invalid voice provider configuration');
+    }
 
-  // Determine provider (default to OpenAI)
-  const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
+    // Get API key for selected provider
+    const apiKey = process.env[providerConfig.envKey];
+    if (!apiKey) {
+      // Log internally but don't expose which API key is missing
+      apiLogger.error('Voice API key not configured', { provider });
+      return sendBadRequest(res, 'Voice service temporarily unavailable');
+    }
 
-  const providerConfig = PROVIDERS[provider];
-  if (!providerConfig) {
-    apiLogger.error('Invalid VOICE_LLM_PROVIDER', { provider });
-    return sendServiceUnavailable(res, 'Invalid voice provider configuration');
-  }
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } catch (_e: unknown) {
+      return sendBadRequest(res, 'Invalid JSON body');
+    }
 
-  // Get API key for selected provider
-  const apiKey = process.env[providerConfig.envKey];
-  if (!apiKey) {
-    // Log internally but don't expose which API key is missing
-    apiLogger.error('Voice API key not configured', { provider });
-    return sendServiceUnavailable(res, 'Voice service temporarily unavailable');
-  }
+    const validation = validateRequest(body);
+    if (!validation.valid) {
+      return sendBadRequest(res, validation.error!);
+    }
 
-  // Parse and validate request body
-  let body: unknown;
-  try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (_e: unknown) {
-    return sendBadRequest(res, 'Invalid JSON body');
-  }
+    const { transcript, context } = body as VoiceRequestBody;
 
-  const validation = validateRequest(body);
-  if (!validation.valid) {
-    return sendBadRequest(res, validation.error!);
-  }
+    try {
+      // Call appropriate provider
+      const intent: VoiceIntent =
+        provider === 'openai'
+          ? await callOpenAI(transcript!, context!, apiKey)
+          : await callAnthropic(transcript!, context!, apiKey);
 
-  const { transcript, context } = body as VoiceRequestBody;
+      return sendSuccess(res, {
+        success: true,
+        intent,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      apiLogger.error('Voice processing error', { error: message, provider });
 
-  try {
-    // Call appropriate provider
-    const intent: VoiceIntent =
-      provider === 'openai'
-        ? await callOpenAI(transcript!, context!, apiKey)
-        : await callAnthropic(transcript!, context!, apiKey);
-
-    return sendSuccess(res, {
-      success: true,
-      intent,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Voice processing error', { error: message, provider });
-
-    // Return unknown intent on error (graceful degradation)
-    // Do not leak internal error details or provider to client
-    return sendSuccess(res, {
-      success: true,
-      intent: {
-        action: 'unknown',
-        confidence: 0,
-        confirmationNeeded: false,
-        error: 'Voice processing failed',
-      },
-    });
-  }
-}
+      // Return unknown intent on error (graceful degradation)
+      // Do not leak internal error details or provider to client
+      return sendSuccess(res, {
+        success: true,
+        intent: {
+          action: 'unknown',
+          confidence: 0,
+          confirmationNeeded: false,
+          error: 'Voice processing failed',
+        },
+      });
+    }
+  },
+);

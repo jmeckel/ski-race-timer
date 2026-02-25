@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
-import { apiLogger, getRequestId } from '../lib/apiLogger.js';
+import { apiLogger } from '../lib/apiLogger.js';
 import {
   atomicUpdate,
   CACHE_EXPIRY_SECONDS,
@@ -11,25 +11,19 @@ import {
   updateDeviceHeartbeat,
 } from '../lib/deviceHeartbeat.js';
 import { detectCrossDeviceDuplicate } from '../lib/duplicateDetection.js';
-import { validateAuth } from '../lib/jwt.js';
+import { createHandler } from '../lib/handler.js';
 import { checkPhotoRateLimit } from '../lib/photoRateLimit.js';
-import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../lib/redis.js';
 import {
   checkIfNoneMatch,
   generateETag,
-  getClientIP,
-  handlePreflight,
   safeJsonParse,
   sanitizeString,
-  sendAuthRequired,
   sendBadRequest,
   sendError,
   sendMethodNotAllowed,
-  sendRateLimitExceeded,
-  sendServiceUnavailable,
   sendSuccess,
-  setRateLimitHeaders,
 } from '../lib/response.js';
+import { EntrySchema, validate } from '../lib/schemas.js';
 import type {
   AtomicAddResult,
   AtomicDeleteResult,
@@ -41,12 +35,7 @@ import type {
   RaceData,
   RaceEntry,
 } from '../lib/syncTypes.js';
-import {
-  checkRateLimit,
-  isValidEntry,
-  isValidRaceId,
-  MAX_DEVICE_NAME_LENGTH,
-} from '../lib/validation.js';
+import { isValidRaceId, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
@@ -490,8 +479,10 @@ async function handlePost(
     return sendBadRequest(res, 'entry is required');
   }
 
-  if (!isValidEntry(entry)) {
-    return sendBadRequest(res, 'Invalid entry format');
+  // Validate entry with Valibot schema (replaces hand-written isValidEntry)
+  const entryResult = validate(EntrySchema, entry);
+  if (!entryResult.success) {
+    return sendBadRequest(res, `Invalid entry: ${entryResult.error}`);
   }
 
   // Sanitize device info
@@ -601,8 +592,13 @@ async function handlePostBatch(
   for (const entry of entries) {
     const entryId = String(entry.id || '');
 
-    if (!isValidEntry(entry)) {
-      results.push({ entryId, success: false, error: 'Invalid entry format' });
+    const entryValidation = validate(EntrySchema, entry);
+    if (!entryValidation.success) {
+      results.push({
+        entryId,
+        success: false,
+        error: `Invalid entry: ${entryValidation.error}`,
+      });
       continue;
     }
 
@@ -731,92 +727,39 @@ async function handleDelete(
 
 // ─── Main Handler ───
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
-    return;
-  }
+export default createHandler(
+  {
+    methods: ['GET', 'POST', 'DELETE'],
+    rateLimit: {
+      keyPrefix: 'sync',
+      window: 60,
+      maxRequests: 100,
+      maxPosts: 30,
+    },
+    auth: true,
+    writeRequiresAuth: true,
+  },
+  async (req, res, { client, log }) => {
+    const { raceId } = req.query;
 
-  const { raceId } = req.query;
+    // Validate raceId
+    if (!raceId) {
+      return sendBadRequest(res, 'raceId is required');
+    }
 
-  // Validate raceId
-  if (!raceId) {
-    return sendBadRequest(res, 'raceId is required');
-  }
+    const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
 
-  const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
+    if (!isValidRaceId(raceIdStr)) {
+      return sendBadRequest(
+        res,
+        'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only (max 50 chars).',
+      );
+    }
 
-  if (!isValidRaceId(raceIdStr)) {
-    return sendBadRequest(
-      res,
-      'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only (max 50 chars).',
-    );
-  }
+    // Normalize race ID to lowercase for case-insensitive matching
+    const normalizedRaceId = raceIdStr.toLowerCase();
+    const redisKey = `race:${normalizedRaceId}`;
 
-  // Normalize race ID to lowercase for case-insensitive matching
-  const normalizedRaceId = raceIdStr.toLowerCase();
-  const redisKey = `race:${normalizedRaceId}`;
-
-  let client: Redis;
-  try {
-    client = getRedis();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Redis initialization error', { error: message });
-    return sendServiceUnavailable(res, 'Database service unavailable');
-  }
-
-  // Check for recent Redis errors
-  if (hasRedisError()) {
-    return sendServiceUnavailable(
-      res,
-      'Database connection issue. Please try again.',
-    );
-  }
-
-  const reqId = getRequestId(req.headers);
-  const log = apiLogger.withRequestId(reqId);
-
-  // Apply rate limiting
-  const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method!, {
-    keyPrefix: 'sync',
-    window: 60,
-    maxRequests: 100,
-    maxPosts: 30,
-  });
-
-  // Set rate limit headers
-  setRateLimitHeaders(
-    res,
-    rateLimitResult.limit,
-    rateLimitResult.remaining,
-    rateLimitResult.reset,
-  );
-
-  if (!rateLimitResult.allowed) {
-    return sendRateLimitExceeded(
-      res,
-      rateLimitResult.reset - Math.floor(Date.now() / 1000),
-    );
-  }
-
-  // Validate sync authorization (JWT or PIN hash)
-  const authResult = await validateAuth(req, client, CLIENT_PIN_KEY);
-  if (!authResult.valid) {
-    return sendAuthRequired(res, authResult.error, authResult.expired || false);
-  }
-
-  // Require real authentication for write operations (POST/DELETE)
-  // method: 'none' means no PIN is set — allow read-only access only
-  if (req.method !== 'GET' && authResult.method === 'none') {
-    return sendError(res, 'Authentication required to write data', 401);
-  }
-
-  try {
     if (req.method === 'GET') {
       return await handleGet(req, res, client, normalizedRaceId, redisKey);
     }
@@ -837,21 +780,5 @@ export default async function handler(
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    log.error('Sync API error', { error: err.message });
-
-    // Don't expose internal error details to client
-    if (
-      err.message.includes('ECONNREFUSED') ||
-      err.message.includes('ETIMEDOUT')
-    ) {
-      return sendServiceUnavailable(
-        res,
-        'Database connection failed. Please try again.',
-      );
-    }
-
-    return sendError(res, 'Internal server error', 500);
-  }
-}
+  },
+);

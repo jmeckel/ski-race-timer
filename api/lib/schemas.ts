@@ -1,7 +1,7 @@
 /**
  * Valibot Schemas for API Runtime Validation
  * Provides type-safe runtime validation that generates TypeScript types.
- * These schemas gradually replace manual isValidEntry/isValidFaultEntry functions.
+ * Runtime validation schemas used by all API endpoints via validate() helper.
  */
 
 import * as v from 'valibot';
@@ -153,6 +153,13 @@ export type FaultEntry = v.InferOutput<typeof FaultEntrySchema>;
 export type TokenRequest = v.InferOutput<typeof TokenRequestSchema>;
 export type Role = v.InferOutput<typeof RoleSchema>;
 export type FaultType = v.InferOutput<typeof FaultTypeSchema>;
+
+/** Server-enriched fault entry with fields added during sync */
+export type StoredFaultEntry = FaultEntry & {
+  deviceId: string;
+  deviceName: string;
+  syncedAt: number;
+};
 
 /**
  * Validate data against a schema, returning { success, data, error }

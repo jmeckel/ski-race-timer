@@ -316,7 +316,7 @@ describe('API: /api/v1/sync', () => {
       vi.mocked(safeJsonParse).mockReturnValueOnce(null);
       const invalidEntry = { id: '', point: 'X', timestamp: 'invalid' };
       await handler(makeReq('POST', { raceId: 'test' }, { entry: invalidEntry, deviceId: 'd1' }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid entry format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid entry'));
     });
 
     it('should accept valid entry and return success', async () => {
@@ -346,14 +346,14 @@ describe('API: /api/v1/sync', () => {
       vi.mocked(safeJsonParse).mockReturnValueOnce(null);
       const entry = { bib: '001', point: 'S', timestamp: new Date().toISOString() };
       await handler(makeReq('POST', { raceId: 'test' }, { entry }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid entry format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid entry'));
     });
 
     it('should validate entry point is S or F', async () => {
       vi.mocked(safeJsonParse).mockReturnValueOnce(null);
       const entry = { id: '1', bib: '001', point: 'X', timestamp: new Date().toISOString() };
       await handler(makeReq('POST', { raceId: 'test' }, { entry }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid entry format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid entry'));
     });
   });
 

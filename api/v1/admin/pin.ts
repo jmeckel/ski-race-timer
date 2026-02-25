@@ -1,20 +1,11 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type Redis from 'ioredis';
 import { apiLogger } from '../../lib/apiLogger.js';
-import { hashPin, validateAuth, verifyPin } from '../../lib/jwt.js';
+import { createHandler } from '../../lib/handler.js';
+import { hashPin, verifyPin } from '../../lib/jwt.js';
+import { CHIEF_JUDGE_PIN_KEY, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import {
-  CHIEF_JUDGE_PIN_KEY,
-  CLIENT_PIN_KEY,
-  getRedis,
-  hasRedisError,
-} from '../../lib/redis.js';
-import {
-  handlePreflight,
-  sendAuthRequired,
   sendBadRequest,
   sendError,
   sendMethodNotAllowed,
-  sendServiceUnavailable,
   sendSuccess,
 } from '../../lib/response.js';
 
@@ -33,39 +24,12 @@ interface ChangePinRequestBody {
  * - Offline brute-force attacks (4-digit = only 10,000 possibilities)
  * - Hash replay attacks via legacy authentication path
  */
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['GET', 'POST', 'OPTIONS'])) {
-    return;
-  }
-
-  let client: Redis;
-  try {
-    client = getRedis();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Redis initialization error', { error: message });
-    return sendServiceUnavailable(res, 'Database service unavailable');
-  }
-
-  // Check for recent Redis errors
-  if (hasRedisError()) {
-    return sendServiceUnavailable(
-      res,
-      'Database connection issue. Please try again.',
-    );
-  }
-
-  // Authenticate request using JWT
-  const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
-  if (!auth.valid) {
-    return sendAuthRequired(res, auth.error, auth.expired || false);
-  }
-
-  try {
+export default createHandler(
+  {
+    methods: ['GET', 'POST'],
+    auth: true,
+  },
+  async (req, res, { client, auth }) => {
     if (req.method === 'GET') {
       // Return only boolean flags - NEVER expose actual hashes
       const pinHash = await client.get(CLIENT_PIN_KEY);
@@ -78,7 +42,7 @@ export default async function handler(
 
     if (req.method === 'POST') {
       // PIN change requires chiefJudge role
-      const userRole = auth.payload?.role as string | undefined;
+      const userRole = auth?.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
         return sendError(res, 'PIN change requires Chief Judge role', 403);
       }
@@ -125,9 +89,5 @@ export default async function handler(
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Admin PIN API error', { error: message });
-    return sendError(res, 'Internal server error', 500);
-  }
-}
+  },
+);

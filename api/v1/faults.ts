@@ -1,59 +1,26 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
-import { apiLogger, getRequestId } from '../lib/apiLogger.js';
 import { atomicUpdate, CACHE_EXPIRY_SECONDS } from '../lib/atomicOps.js';
-import { validateAuth } from '../lib/jwt.js';
-import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../lib/redis.js';
+import { createHandler } from '../lib/handler.js';
 import {
-  getClientIP,
-  handlePreflight,
   safeJsonParse,
   sanitizeString,
-  sendAuthRequired,
   sendBadRequest,
   sendError,
   sendMethodNotAllowed,
-  sendRateLimitExceeded,
-  sendServiceUnavailable,
   sendSuccess,
-  setRateLimitHeaders,
 } from '../lib/response.js';
 import {
-  checkRateLimit,
-  isValidRaceId,
-  MAX_DEVICE_NAME_LENGTH,
-  VALID_FAULT_TYPES,
-} from '../lib/validation.js';
+  FaultEntrySchema,
+  type StoredFaultEntry,
+  validate,
+} from '../lib/schemas.js';
+import { isValidRaceId, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
 
 // Configuration
 const MAX_FAULTS_PER_RACE = 5000;
 
-interface FaultEntry {
-  id: string | number;
-  bib: string;
-  run: 1 | 2;
-  gateNumber: number;
-  faultType: string;
-  timestamp: string;
-  gateRange: [number, number];
-  deviceId?: string;
-  deviceName?: string;
-  syncedAt?: number;
-  notes?: string | null;
-  notesSource?: 'voice' | 'manual' | null;
-  notesTimestamp?: string | null;
-  currentVersion?: number;
-  versionHistory?: unknown[];
-  markedForDeletion?: boolean;
-  markedForDeletionAt?: string | null;
-  markedForDeletionBy?: string | null;
-  markedForDeletionByDeviceId?: string | null;
-  deletionApprovedAt?: string | null;
-  deletionApprovedBy?: string | null;
-}
-
 interface FaultsData {
-  faults: FaultEntry[];
+  faults: StoredFaultEntry[];
   lastUpdated: number | null;
 }
 
@@ -91,7 +58,7 @@ interface AtomicDeleteFaultResult {
 }
 
 interface PostRequestBody {
-  fault?: FaultEntry;
+  fault?: Record<string, unknown>;
   deviceId?: string;
   deviceName?: string;
   gateRange?: [number, number];
@@ -137,48 +104,13 @@ function sanitizeVersionHistoryItem(
   return sanitized;
 }
 
-function isValidFaultEntry(fault: unknown): fault is FaultEntry {
-  if (!fault || typeof fault !== 'object') return false;
-
-  const f = fault as Record<string, unknown>;
-
-  // ID must be string or number
-  if (typeof f.id !== 'number' && typeof f.id !== 'string') return false;
-  if (typeof f.id === 'string' && f.id.length === 0) return false;
-
-  // Bib is required
-  if (!f.bib || typeof f.bib !== 'string') return false;
-  if (f.bib.length > 10) return false;
-
-  // Run must be 1 or 2
-  if (f.run !== 1 && f.run !== 2) return false;
-
-  // Gate number must be positive integer
-  if (typeof f.gateNumber !== 'number' || f.gateNumber < 1) return false;
-
-  // Fault type must be valid
-  if (!(VALID_FAULT_TYPES as readonly string[]).includes(f.faultType as string))
-    return false;
-
-  // Timestamp required
-  if (!f.timestamp || Number.isNaN(Date.parse(f.timestamp as string)))
-    return false;
-
-  // Gate range must be array of two numbers
-  if (!Array.isArray(f.gateRange) || f.gateRange.length !== 2) return false;
-  if (typeof f.gateRange[0] !== 'number' || typeof f.gateRange[1] !== 'number')
-    return false;
-
-  return true;
-}
-
 /**
  * Atomically add fault to race data
  */
 async function atomicAddFault(
   client: Redis,
   redisKey: string,
-  enrichedFault: FaultEntry,
+  enrichedFault: StoredFaultEntry,
   sanitizedDeviceId: string,
 ): Promise<AtomicAddFaultResult> {
   const result = await atomicUpdate<FaultsData, AtomicAddFaultResult>(
@@ -203,7 +135,7 @@ async function atomicAddFault(
       // Check for existing fault (same fault from same device)
       const faultId = String(enrichedFault.id);
       const existingIndex = existing.faults.findIndex(
-        (f: FaultEntry) =>
+        (f: StoredFaultEntry) =>
           String(f.id) === faultId && f.deviceId === sanitizedDeviceId,
       );
 
@@ -259,7 +191,7 @@ async function atomicDeleteFault(
       if (!Array.isArray(existing.faults)) existing.faults = [];
 
       const originalLength = existing.faults.length;
-      existing.faults = existing.faults.filter((f: FaultEntry) => {
+      existing.faults = existing.faults.filter((f: StoredFaultEntry) => {
         const idMatch = String(f.id) === faultIdStr;
         if (sanitizedDeviceId)
           return !(idMatch && f.deviceId === sanitizedDeviceId);
@@ -357,90 +289,38 @@ async function getGateAssignments(
   return result;
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['GET', 'POST', 'DELETE', 'OPTIONS'])) {
-    return;
-  }
+export default createHandler(
+  {
+    methods: ['GET', 'POST', 'DELETE'],
+    rateLimit: {
+      keyPrefix: 'faults',
+      window: 60,
+      maxRequests: 100,
+      maxPosts: 50,
+    },
+    auth: true,
+    writeRequiresAuth: true,
+  },
+  async (req, res, { client, clientIP, log, auth }) => {
+    const { raceId } = req.query;
 
-  const { raceId } = req.query;
+    // Validate raceId
+    if (!raceId) {
+      return sendBadRequest(res, 'raceId is required');
+    }
 
-  // Validate raceId
-  if (!raceId) {
-    return sendBadRequest(res, 'raceId is required');
-  }
+    const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
 
-  const raceIdStr = typeof raceId === 'string' ? raceId : String(raceId);
+    if (!isValidRaceId(raceIdStr)) {
+      return sendBadRequest(
+        res,
+        'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.',
+      );
+    }
 
-  if (!isValidRaceId(raceIdStr)) {
-    return sendBadRequest(
-      res,
-      'Invalid raceId format. Use alphanumeric characters, hyphens, and underscores only.',
-    );
-  }
+    const normalizedRaceId = raceIdStr.toLowerCase();
+    const faultsKey = `race:${normalizedRaceId}:faults`;
 
-  const normalizedRaceId = raceIdStr.toLowerCase();
-  const faultsKey = `race:${normalizedRaceId}:faults`;
-
-  let client: Redis;
-  try {
-    client = getRedis();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Redis initialization error', { error: message });
-    return sendServiceUnavailable(res, 'Database service unavailable');
-  }
-
-  // Check for recent Redis errors
-  if (hasRedisError()) {
-    return sendServiceUnavailable(
-      res,
-      'Database connection issue. Please try again.',
-    );
-  }
-
-  // Apply rate limiting
-  const clientIP = getClientIP(req);
-  const rateLimitResult = await checkRateLimit(client, clientIP, req.method!, {
-    keyPrefix: 'faults',
-    window: 60,
-    maxRequests: 100,
-    maxPosts: 50,
-  });
-
-  setRateLimitHeaders(
-    res,
-    rateLimitResult.limit,
-    rateLimitResult.remaining,
-    rateLimitResult.reset,
-  );
-
-  if (!rateLimitResult.allowed) {
-    return sendRateLimitExceeded(
-      res,
-      rateLimitResult.reset - Math.floor(Date.now() / 1000),
-    );
-  }
-
-  // Validate sync authorization
-  const authResult = await validateAuth(req, client, CLIENT_PIN_KEY);
-  if (!authResult.valid) {
-    return sendAuthRequired(res, authResult.error, authResult.expired || false);
-  }
-
-  // Require real authentication for write operations (POST/DELETE)
-  // method: 'none' means no PIN is set — allow read-only access only
-  if (req.method !== 'GET' && authResult.method === 'none') {
-    return sendError(res, 'Authentication required to record faults', 401);
-  }
-
-  const reqId = getRequestId(req.headers);
-  const log = apiLogger.withRequestId(reqId);
-
-  try {
     if (req.method === 'GET') {
       // Fetch faults for race
       const data = await client.get(faultsKey);
@@ -517,9 +397,12 @@ export default async function handler(
         return sendBadRequest(res, 'fault is required');
       }
 
-      if (!isValidFaultEntry(fault)) {
-        return sendBadRequest(res, 'Invalid fault format');
+      // Validate fault with Valibot schema (replaces hand-written isValidFaultEntry)
+      const faultResult = validate(FaultEntrySchema, fault);
+      if (!faultResult.success) {
+        return sendBadRequest(res, `Invalid fault: ${faultResult.error}`);
       }
+      const validFault = faultResult.data;
 
       const sanitizedDeviceId = sanitizeString(deviceId, 50);
       const sanitizedDeviceName = sanitizeString(
@@ -528,48 +411,48 @@ export default async function handler(
       );
 
       // Build enriched fault with version history and deletion flags
-      const enrichedFault: FaultEntry = {
-        id: String(fault.id),
-        bib: sanitizeString(fault.bib, 10),
-        run: fault.run,
-        gateNumber: fault.gateNumber,
-        faultType: fault.faultType,
-        timestamp: fault.timestamp,
+      const enrichedFault: StoredFaultEntry = {
+        id: String(validFault.id),
+        bib: sanitizeString(validFault.bib, 10),
+        run: validFault.run,
+        gateNumber: validFault.gateNumber,
+        faultType: validFault.faultType,
+        timestamp: validFault.timestamp,
         deviceId: sanitizedDeviceId,
         deviceName: sanitizedDeviceName,
-        gateRange: fault.gateRange,
+        gateRange: validFault.gateRange,
         syncedAt: Date.now(),
         // Voice notes fields
-        notes: fault.notes ? sanitizeString(fault.notes, 500) : null,
-        notesSource:
-          fault.notesSource === 'voice' || fault.notesSource === 'manual'
-            ? fault.notesSource
-            : null,
-        notesTimestamp: fault.notesTimestamp
-          ? sanitizeString(fault.notesTimestamp, 64)
+        notes: validFault.notes ? sanitizeString(validFault.notes, 500) : null,
+        notesSource: validFault.notesSource ?? null,
+        notesTimestamp: validFault.notesTimestamp
+          ? sanitizeString(validFault.notesTimestamp, 64)
           : null,
         // Version tracking fields
-        currentVersion: fault.currentVersion || 1,
-        versionHistory: Array.isArray(fault.versionHistory)
-          ? fault.versionHistory
+        currentVersion: validFault.currentVersion || 1,
+        versionHistory: Array.isArray(validFault.versionHistory)
+          ? validFault.versionHistory
               .slice(0, 100)
               .map(sanitizeVersionHistoryItem)
               .filter(Boolean)
           : [],
         // Deletion workflow fields
-        markedForDeletion: fault.markedForDeletion === true,
-        markedForDeletionAt: fault.markedForDeletionAt
-          ? sanitizeString(fault.markedForDeletionAt, 64)
+        markedForDeletion: validFault.markedForDeletion === true,
+        markedForDeletionAt: validFault.markedForDeletionAt
+          ? sanitizeString(validFault.markedForDeletionAt, 64)
           : null,
-        markedForDeletionBy: sanitizeString(fault.markedForDeletionBy, 100),
+        markedForDeletionBy: sanitizeString(
+          validFault.markedForDeletionBy,
+          100,
+        ),
         markedForDeletionByDeviceId: sanitizeString(
-          fault.markedForDeletionByDeviceId,
+          validFault.markedForDeletionByDeviceId,
           50,
         ),
-        deletionApprovedAt: fault.deletionApprovedAt
-          ? sanitizeString(fault.deletionApprovedAt, 64)
+        deletionApprovedAt: validFault.deletionApprovedAt
+          ? sanitizeString(validFault.deletionApprovedAt, 64)
           : null,
-        deletionApprovedBy: sanitizeString(fault.deletionApprovedBy, 100),
+        deletionApprovedBy: sanitizeString(validFault.deletionApprovedBy, 100),
       };
 
       const addResult = await atomicAddFault(
@@ -629,7 +512,7 @@ export default async function handler(
     if (req.method === 'DELETE') {
       // Server-side role validation for fault deletion
       // Only users with 'chiefJudge' role can delete faults
-      const userRole = authResult.payload?.role as string | undefined;
+      const userRole = auth?.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
         log.warn('Fault deletion DENIED', {
           role: userRole,
@@ -694,20 +577,5 @@ export default async function handler(
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    log.error('Faults API error', { error: err.message });
-
-    if (
-      err.message.includes('ECONNREFUSED') ||
-      err.message.includes('ETIMEDOUT')
-    ) {
-      return sendServiceUnavailable(
-        res,
-        'Database connection failed. Please try again.',
-      );
-    }
-
-    return sendError(res, 'Internal server error', 500);
-  }
-}
+  },
+);

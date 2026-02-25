@@ -1,16 +1,11 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
-import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
+import { apiLogger } from '../../lib/apiLogger.js';
 import { getActiveDeviceCount } from '../../lib/deviceHeartbeat.js';
-import { validateAuth } from '../../lib/jwt.js';
-import { CLIENT_PIN_KEY, getRedis, hasRedisError } from '../../lib/redis.js';
+import { createHandler } from '../../lib/handler.js';
 import {
-  handlePreflight,
-  sendAuthRequired,
   sendBadRequest,
   sendError,
   sendMethodNotAllowed,
-  sendServiceUnavailable,
   sendSuccess,
 } from '../../lib/response.js';
 
@@ -182,46 +177,12 @@ async function deleteRace(
   return { success: true, raceId: actualRaceId };
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['GET', 'DELETE', 'OPTIONS'])) {
-    return;
-  }
-
-  let client: Redis;
-  try {
-    client = getRedis();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Redis initialization error', { error: message });
-    return sendServiceUnavailable(res, 'Database service unavailable');
-  }
-
-  // Check for recent Redis errors
-  if (hasRedisError()) {
-    return sendServiceUnavailable(
-      res,
-      'Database connection issue. Please try again.',
-    );
-  }
-
-  // Authenticate admin request using JWT or PIN hash
-  const auth = await validateAuth(req, client, CLIENT_PIN_KEY);
-  if (!auth.valid) {
-    return sendAuthRequired(
-      res,
-      auth.error || 'Unauthorized',
-      auth.expired || false,
-    );
-  }
-
-  const reqId = getRequestId(req.headers);
-  const log = apiLogger.withRequestId(reqId);
-
-  try {
+export default createHandler(
+  {
+    methods: ['GET', 'DELETE'],
+    auth: true,
+  },
+  async (req, res, { client, log, auth }) => {
     if (req.method === 'GET') {
       // List all races
       const races = await listRaces(client);
@@ -230,7 +191,7 @@ export default async function handler(
 
     if (req.method === 'DELETE') {
       // Race deletion requires chiefJudge role for security
-      const userRole = auth.payload?.role as string | undefined;
+      const userRole = auth?.payload?.role as string | undefined;
       if (userRole !== 'chiefJudge') {
         log.warn('Race deletion DENIED', {
           role: userRole,
@@ -292,20 +253,5 @@ export default async function handler(
     }
 
     return sendMethodNotAllowed(res);
-  } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    log.error('Admin API error', { error: err.message });
-
-    if (
-      err.message.includes('ECONNREFUSED') ||
-      err.message.includes('ETIMEDOUT')
-    ) {
-      return sendServiceUnavailable(
-        res,
-        'Database connection failed. Please try again.',
-      );
-    }
-
-    return sendError(res, 'Internal server error', 500);
-  }
-}
+  },
+);

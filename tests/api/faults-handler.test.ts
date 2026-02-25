@@ -50,6 +50,7 @@ vi.mock('../../api/lib/validation.js', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 99, reset: 9999, limit: 100 }),
   VALID_FAULT_TYPES: ['MG', 'STR', 'BR'],
   MAX_DEVICE_NAME_LENGTH: 100,
+  isValidDeviceId: vi.fn(() => true),
 }));
 
 vi.mock('../../api/lib/atomicOps.js', () => ({
@@ -312,37 +313,37 @@ describe('API: /api/v1/faults', () => {
     it('should return 400 for invalid fault format (missing bib)', async () => {
       const fault = { id: '1', run: 1, gateNumber: 5, faultType: 'MG', timestamp: new Date().toISOString(), gateRange: [1, 10] };
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should return 400 for invalid fault type', async () => {
       const fault = validFault({ faultType: 'INVALID' });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should return 400 for invalid run number', async () => {
       const fault = validFault({ run: 3 });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should return 400 for invalid gate range', async () => {
       const fault = validFault({ gateRange: [5] });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should return 400 for negative gate number', async () => {
       const fault = validFault({ gateNumber: -1 });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should return 400 for zero gate number', async () => {
       const fault = validFault({ gateNumber: 0 });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should accept valid fault and return success', async () => {
@@ -406,19 +407,19 @@ describe('API: /api/v1/faults', () => {
     it('should reject fault with bib longer than 10 chars', async () => {
       const fault = validFault({ bib: '12345678901' });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should reject fault with invalid timestamp', async () => {
       const fault = validFault({ timestamp: 'not-a-date' });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
 
     it('should reject fault with non-numeric gate range values', async () => {
       const fault = validFault({ gateRange: ['a', 'b'] });
       await handler(makeReq('POST', { raceId: 'test' }, { fault }), mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Invalid fault format');
+      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('Invalid fault'));
     });
   });
 

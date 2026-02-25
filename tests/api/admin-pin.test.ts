@@ -40,7 +40,7 @@ function createMockRes() {
 }
 
 vi.mock('../../api/lib/response.js', () => ({
-  handlePreflight: vi.fn((req: any, res: any) => {
+  handlePreflight: vi.fn((req: any, res: any, methods: string[]) => {
     if (req.method === 'OPTIONS') {
       res.status(200).end();
       return true;
@@ -53,6 +53,9 @@ vi.mock('../../api/lib/response.js', () => ({
   sendMethodNotAllowed: vi.fn(),
   sendServiceUnavailable: vi.fn(),
   sendAuthRequired: vi.fn(),
+  sendRateLimitExceeded: vi.fn(),
+  setRateLimitHeaders: vi.fn(),
+  getClientIP: vi.fn(() => '127.0.0.1'),
 }));
 
 vi.mock('../../api/lib/apiLogger.js', () => ({
@@ -61,13 +64,20 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
+    withRequestId: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    })),
   },
+  getRequestId: vi.fn(() => 'test-req-id'),
 }));
 
 import handler from '../../api/v1/admin/pin';
 import { getRedis, hasRedisError } from '../../api/lib/redis.js';
 import { validateAuth, hashPin, verifyPin } from '../../api/lib/jwt.js';
-import { sendSuccess, sendError, sendBadRequest, sendMethodNotAllowed, sendServiceUnavailable, sendAuthRequired } from '../../api/lib/response.js';
+import { sendSuccess, sendError, sendBadRequest, sendMethodNotAllowed, sendServiceUnavailable, sendAuthRequired, sendRateLimitExceeded } from '../../api/lib/response.js';
 
 // ============================================
 // Tests

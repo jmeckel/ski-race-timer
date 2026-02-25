@@ -1,37 +1,25 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type Redis from 'ioredis';
-import { apiLogger, getRequestId } from '../../lib/apiLogger.js';
+import { createHandler } from '../../lib/handler.js';
 import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
+import { CHIEF_JUDGE_PIN_KEY, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import {
-  CHIEF_JUDGE_PIN_KEY,
-  CLIENT_PIN_KEY,
-  getRedis,
-  hasRedisError,
-} from '../../lib/redis.js';
-import {
-  getClientIP,
-  handlePreflight,
   sendBadRequest,
   sendError,
-  sendMethodNotAllowed,
   sendRateLimitExceeded,
   sendServiceUnavailable,
   sendSuccess,
   setRateLimitHeaders,
 } from '../../lib/response.js';
+import { checkRateLimit } from '../../lib/validation.js';
 
 // Rate limiting configuration (per IP)
 // Stricter limit to prevent brute-force on 4-digit PINs
 // 5 attempts/min = 300/hour = 33+ hours to brute-force 10,000 PINs
-const RATE_LIMIT_WINDOW = 60; // 1 minute window
-const RATE_LIMIT_MAX_REQUESTS = 5; // Max PIN exchanges per minute per IP
-
-interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  reset: number;
-  error?: string;
-}
+const AUTH_RATE_LIMIT = {
+  keyPrefix: 'auth',
+  window: 60,
+  maxRequests: 5,
+  maxPosts: 5,
+} as const;
 
 interface TokenRequestBody {
   pin?: string;
@@ -40,73 +28,17 @@ interface TokenRequestBody {
 
 type UserRole = 'timer' | 'gateJudge' | 'chiefJudge';
 
-async function checkRateLimit(
-  client: Redis,
-  ip: string,
-): Promise<RateLimitResult> {
-  const now = Math.floor(Date.now() / 1000);
-  const windowStart = now - (now % RATE_LIMIT_WINDOW);
-  const key = `ratelimit:auth:${ip}:${windowStart}`;
+export default createHandler(
+  {
+    methods: ['POST'],
+    // Auth and rate limiting handled manually (rate limit after PIN format validation)
+  },
+  async (req, res, { client, clientIP }) => {
+    if (req.method !== 'POST') {
+      // createHandler already handles preflight, but guard non-POST
+      return sendBadRequest(res, 'Only POST is allowed');
+    }
 
-  try {
-    const multi = client.multi();
-    multi.incr(key);
-    multi.expire(key, RATE_LIMIT_WINDOW + 10);
-    const results = await multi.exec();
-    const count = (results?.[0]?.[1] as number) ?? 0;
-
-    return {
-      allowed: count <= RATE_LIMIT_MAX_REQUESTS,
-      remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - count),
-      reset: windowStart + RATE_LIMIT_WINDOW,
-    };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Rate limit check error', { error: message });
-    // SECURITY: Fail closed if rate limiting cannot be enforced
-    return {
-      allowed: false,
-      remaining: 0,
-      reset: windowStart + RATE_LIMIT_WINDOW,
-      error: 'Rate limiting unavailable',
-    };
-  }
-}
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  // Handle CORS preflight
-  if (handlePreflight(req, res, ['POST', 'OPTIONS'])) {
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res);
-  }
-
-  let client: Redis;
-  try {
-    client = getRedis();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Redis initialization error', { error: message });
-    return sendServiceUnavailable(res, 'Database service unavailable');
-  }
-
-  // Check for recent Redis errors
-  if (hasRedisError()) {
-    return sendServiceUnavailable(
-      res,
-      'Database connection issue. Please try again.',
-    );
-  }
-
-  const reqId = getRequestId(req.headers);
-  const log = apiLogger.withRequestId(reqId);
-
-  try {
     // Validate PIN format before consuming rate limit token
     const { pin, role } = (req.body || {}) as TokenRequestBody;
 
@@ -119,13 +51,17 @@ export default async function handler(
     }
 
     // Apply rate limiting only for structurally-valid auth attempts
-    const clientIP = getClientIP(req);
-    const rateLimitResult = await checkRateLimit(client, clientIP);
+    const rateLimitResult = await checkRateLimit(
+      client,
+      clientIP,
+      'POST',
+      AUTH_RATE_LIMIT,
+    );
 
     // Set rate limit headers
     setRateLimitHeaders(
       res,
-      RATE_LIMIT_MAX_REQUESTS,
+      rateLimitResult.limit,
       rateLimitResult.remaining,
       rateLimitResult.reset,
     );
@@ -263,9 +199,5 @@ export default async function handler(
       token,
       role: userRole,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    log.error('Token API error', { error: message });
-    return sendError(res, 'Internal server error', 500);
-  }
-}
+  },
+);

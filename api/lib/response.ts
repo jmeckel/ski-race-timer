@@ -7,7 +7,13 @@ import { createHash } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 /** Standard HTTP methods used in API endpoints */
-type HttpMethod = 'GET' | 'POST' | 'DELETE' | 'OPTIONS' | 'PUT' | 'PATCH';
+export type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'DELETE'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'PATCH';
 
 // CORS configuration - use environment variable or default to production domain
 const ALLOWED_ORIGIN: string =
