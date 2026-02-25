@@ -297,8 +297,6 @@ class Store {
     if (dirty.size === 0) return;
 
     try {
-      void this.checkStorageQuota();
-
       // Only serialize slices that actually changed
       if (dirty.has('entries')) {
         const entriesToSave = this.state.entries.map((entry) => {
@@ -418,31 +416,6 @@ class Store {
       }
       logger.error('Failed to save to storage:', e);
       this.dispatchStorageError(e as Error);
-    }
-  }
-
-  private async checkStorageQuota() {
-    if (navigator.storage?.estimate) {
-      try {
-        const { usage, quota } = await navigator.storage.estimate();
-        if (quota && usage) {
-          const usagePercent = usage / quota;
-          if (usagePercent > 0.75) {
-            window.dispatchEvent(
-              new CustomEvent('storage-warning', {
-                detail: {
-                  usage,
-                  quota,
-                  percent: Math.round(usagePercent * 100),
-                  critical: usagePercent > 0.9,
-                },
-              }),
-            );
-          }
-        }
-      } catch (e) {
-        logger.warn('Could not check storage quota:', e);
-      }
     }
   }
 

@@ -140,14 +140,15 @@ function getFaultTypeCode(faultType: FaultType): string {
 
 /**
  * Format faults for CSV export
- * Returns string like "T4(MG),T8(EF)"
+ * Returns string like "T4(MG)+T8(EF)"
+ * Uses + separator (not comma) to avoid ambiguity in CSV parsers
  */
 function formatFaultsForCSV(faults: FaultEntry[]): string {
   if (faults.length === 0) return '';
   return faults
     .sort((a, b) => a.gateNumber - b.gateNumber)
     .map((f) => `T${f.gateNumber}(${getFaultTypeCode(f.faultType)})`)
-    .join(',');
+    .join('+');
 }
 
 /**

@@ -190,7 +190,7 @@ describe('App Init Services Module', () => {
       expect(wakeLockService.enable).not.toHaveBeenCalled();
     });
 
-    it('should initialize ambient mode when enabled', () => {
+    it('should not initialize ambient mode directly (handled by appStateHandlers effect)', () => {
       mockGetState.mockReturnValue({
         ...mockGetState(),
         settings: { sync: false, ambientMode: true },
@@ -198,8 +198,8 @@ describe('App Init Services Module', () => {
 
       initServices();
 
-      expect(ambientModeService.initialize).toHaveBeenCalled();
-      expect(ambientModeService.enable).toHaveBeenCalled();
+      // Ambient mode init/enable is now reactive via appStateHandlers, not imperative in initServices
+      expect(ambientModeService.initialize).not.toHaveBeenCalled();
     });
 
     it('should subscribe to ambient mode', () => {

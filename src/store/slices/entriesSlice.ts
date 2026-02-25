@@ -192,8 +192,9 @@ export function undo(
       const index = newEntries.findIndex((e) => e.id === oldEntry.id);
       if (index !== -1) {
         newEntries[index] = oldEntry;
+        result = oldEntry;
       }
-      result = oldEntry;
+      // If entry not found (e.g. cloud-deleted), result stays null — caller skips toast
       break;
     }
   }

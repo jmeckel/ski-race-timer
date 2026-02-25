@@ -121,24 +121,9 @@ class PhotoStorageService {
   }
 
   /**
-   * Save photo with timeout to prevent blocking
+   * Save photo with timeout — aborts the IDB transaction if it takes too long
    */
   private async doSavePhotoWithTimeout(
-    entryId: string,
-    photoBase64: string,
-  ): Promise<boolean> {
-    return Promise.race([
-      this.doSavePhoto(entryId, photoBase64),
-      new Promise<boolean>((_, reject) =>
-        setTimeout(() => reject(new Error('Photo save timeout')), SAVE_TIMEOUT),
-      ),
-    ]);
-  }
-
-  /**
-   * Actually perform the photo save
-   */
-  private async doSavePhoto(
     entryId: string,
     photoBase64: string,
   ): Promise<boolean> {
@@ -163,13 +148,29 @@ class PhotoStorageService {
           timestamp: Date.now(),
         };
 
+        // Abort the transaction if it takes too long (prevents background writes after caller moves on)
+        const timeoutId = setTimeout(() => {
+          try {
+            transaction.abort();
+          } catch {
+            // Transaction may already be complete
+          }
+        }, SAVE_TIMEOUT);
+
+        transaction.onabort = () => {
+          clearTimeout(timeoutId);
+          resolve(false);
+        };
+
         const request = store.put(record);
 
         request.onsuccess = () => {
+          clearTimeout(timeoutId);
           resolve(true);
         };
 
         request.onerror = () => {
+          clearTimeout(timeoutId);
           logger.error('Photo save error:', request.error);
           resolve(false);
         };

@@ -468,8 +468,8 @@ describe('Export Edge Cases', () => {
       const csv = capturedBlobContents[0]!;
       const dataRow = csv.split('\n')[1]!;
       const faultField = dataRow.split(';')[7]; // Torfehler column (index 7)
-      // Should be sorted by gate number: T3(MG),T5(STR),T8(BR)
-      expect(faultField).toBe('T3(MG),T5(STR),T8(BR)');
+      // Should be sorted by gate number, joined with + (not comma, to avoid CSV ambiguity)
+      expect(faultField).toBe('T3(MG)+T5(STR)+T8(BR)');
     });
 
     it('should calculate cumulative penalty for multiple faults', async () => {

@@ -1,6 +1,6 @@
 # Bug Hunt Report
 
-Found 31 bugs across 5 review areas. **27 fixed**, 1 not-a-bug, **4 remaining**.
+Found 31 bugs across 5 review areas. **All 31 resolved** (30 fixed, 1 not-a-bug).
 
 ## Status Legend
 
@@ -242,14 +242,13 @@ Converted to event delegation on container with `gateSelectorDelegated` guard fl
 
 ---
 
-### 🔲 BUG-23: Photo save timeout doesn't cancel IDB transaction
+### ✅ BUG-23: Photo save timeout doesn't cancel IDB transaction
 
-- **File:** `src/services/photoStorage.ts:126-136`
+- **File:** `src/services/photoStorage.ts`
 - **Area:** Services
+- **Fixed in:** Batch 4
 
-`Promise.race` between the save and a 5s timeout. When the timeout wins, the IDB transaction continues in the background and may write stale data.
-
-**Fix:** Use `transaction.abort()` to cancel on timeout.
+Merged timeout into transaction; `transaction.abort()` cancels IDB write when timeout fires.
 
 ---
 
@@ -288,14 +287,13 @@ Changed to `escapeAttr(bib)` for `data-bib` attribute.
 
 ---
 
-### 🔲 BUG-28: Undo for UPDATE_ENTRY silently no-ops if entry was cloud-deleted
+### ✅ BUG-28: Undo for UPDATE_ENTRY silently no-ops if entry was cloud-deleted
 
-- **File:** `src/store/slices/entriesSlice.ts:190-198`
+- **File:** `src/store/slices/entriesSlice.ts`
 - **Area:** Store
+- **Fixed in:** Batch 4
 
-When undoing an `UPDATE_ENTRY` where the entry was deleted via cloud sync, the action is popped from undoStack but nothing changes. User sees false success toast.
-
-**Fix:** Return discriminated result indicating whether the operation changed state.
+Only set `result` when entry is actually found; caller sees `null` and skips false success toast.
 
 ---
 
@@ -309,22 +307,20 @@ Re-check `store.getState().raceId === state.raceId` after awaits before merging.
 
 ---
 
-### 🔲 BUG-30: formatFaultsForCSV joins with commas but field isn't quoted
+### ✅ BUG-30: formatFaultsForCSV joins with commas but field isn't quoted
 
-- **File:** `src/features/export.ts:129-135`
+- **File:** `src/features/export.ts`
 - **Area:** Export
+- **Fixed in:** Batch 4
 
-`formatFaultsForCSV` returns comma-joined strings that aren't quoted. Could confuse comma-aware tools.
-
-**Fix:** Add commas to the quoting condition, or use a different join separator.
+Changed separator from `,` to `+` — unambiguous in any CSV dialect.
 
 ---
 
-### 🔲 BUG-31: Dual storage-warning dispatchers fire overlapping events
+### ✅ BUG-31: Dual storage-warning dispatchers fire overlapping events
 
 - **File:** `src/store/index.ts`
 - **Area:** Store
+- **Fixed in:** Batch 4
 
-Both `checkStorageQuota()` and `checkLocalStorageQuota()` dispatch `storage-warning` events with potentially contradictory data.
-
-**Fix:** Unify or deduplicate the two quota checks.
+Removed async `checkStorageQuota()` (navigator.storage.estimate). Only `checkLocalStorageQuota()` remains — sync, directly relevant, no conflicting events.

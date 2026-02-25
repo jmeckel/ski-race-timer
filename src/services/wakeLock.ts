@@ -23,6 +23,7 @@ class WakeLockService {
   private lastInteraction: number = Date.now();
   private idleCheckInterval: ReturnType<typeof setInterval> | null = null;
   private interactionHandler: (() => void) | null = null;
+  private hasShownFailureToast = false;
 
   /**
    * Check if Wake Lock API is supported
@@ -183,9 +184,12 @@ class WakeLockService {
       logger.warn('Wake Lock request failed:', errorMessage);
       this.wakeLock = null;
 
-      // Notify user that screen may dim during timing
-      const lang = store.getState().currentLang;
-      showToast(t('wakeLockFailed', lang), 'warning', 2000);
+      // Notify user once that screen may dim during timing
+      if (!this.hasShownFailureToast) {
+        this.hasShownFailureToast = true;
+        const lang = store.getState().currentLang;
+        showToast(t('wakeLockFailed', lang), 'warning', 2000);
+      }
 
       return false;
     }

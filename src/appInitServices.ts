@@ -73,15 +73,8 @@ export function initServices(): void {
     wakeLockService.enable();
   }
 
-  // Initialize ambient mode if enabled
-  if (initialState.settings.ambientMode) {
-    ambientModeService.initialize();
-    if (initialState.currentView === 'timer') {
-      ambientModeService.enable();
-    }
-  }
-
-  // Subscribe to ambient mode state changes
+  // Ambient mode initialization is handled reactively in appStateHandlers.ts
+  // Subscribe to ambient mode state changes (CSS class, GPS pause/resume)
   ambientModeService.subscribe((state) => {
     document.body.classList.toggle('ambient-mode', state.isActive);
     if (state.triggeredBy) {
