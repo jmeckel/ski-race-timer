@@ -68,8 +68,9 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
         currentBlobUrl = URL.createObjectURL(blob);
         image.src = currentBlobUrl;
       } else {
-        // Photo not found in IndexedDB
+        // Photo not found in IndexedDB — clear stale state since modal was never opened
         logger.warn('Photo not found in IndexedDB for entry:', entry.id);
+        currentPhotoEntryId = null;
         return;
       }
     } else {

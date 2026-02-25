@@ -281,7 +281,8 @@ export class VirtualList {
 
       const group = groupMap.get(key)!;
       group.entries.push(entry);
-      if (new Date(entry.timestamp) > new Date(group.latestTimestamp)) {
+      // ISO 8601 timestamps are lexicographically sortable — avoid Date allocations
+      if (entry.timestamp > group.latestTimestamp) {
         group.latestTimestamp = entry.timestamp;
       }
     }
@@ -331,7 +332,7 @@ export class VirtualList {
 
       const group = groupMap.get(key)!;
       group.faults.push(fault);
-      if (new Date(fault.timestamp) > new Date(group.latestTimestamp)) {
+      if (fault.timestamp > group.latestTimestamp) {
         group.latestTimestamp = fault.timestamp;
       }
     }

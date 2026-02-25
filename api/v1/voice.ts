@@ -443,8 +443,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     return sendSuccess(res, {
       success: true,
-      intent,
-      provider // Include provider in response for debugging
+      intent
     });
 
   } catch (error: unknown) {

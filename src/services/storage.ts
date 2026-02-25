@@ -110,7 +110,13 @@ class StorageService {
    */
   private scheduleFlush(): void {
     if (this.flushId !== null) return;
-    this.flushId = scheduleIdle(() => this.flush());
+    this.flushId = scheduleIdle(() => {
+      try {
+        this.flush();
+      } catch (e) {
+        logger.error('Deferred storage flush failed:', e);
+      }
+    });
   }
 
   /**

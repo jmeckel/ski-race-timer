@@ -444,7 +444,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         // Voice notes fields
         notes: fault.notes ? sanitizeString(fault.notes, 500) : null,
         notesSource: (fault.notesSource === 'voice' || fault.notesSource === 'manual') ? fault.notesSource : null,
-        notesTimestamp: fault.notesTimestamp || null,
+        notesTimestamp: fault.notesTimestamp ? sanitizeString(fault.notesTimestamp, 64) : null,
         // Version tracking fields
         currentVersion: fault.currentVersion || 1,
         versionHistory: Array.isArray(fault.versionHistory)
@@ -452,10 +452,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           : [],
         // Deletion workflow fields
         markedForDeletion: fault.markedForDeletion === true,
-        markedForDeletionAt: fault.markedForDeletionAt || null,
+        markedForDeletionAt: fault.markedForDeletionAt ? sanitizeString(fault.markedForDeletionAt, 64) : null,
         markedForDeletionBy: sanitizeString(fault.markedForDeletionBy, 100),
         markedForDeletionByDeviceId: sanitizeString(fault.markedForDeletionByDeviceId, 50),
-        deletionApprovedAt: fault.deletionApprovedAt || null,
+        deletionApprovedAt: fault.deletionApprovedAt ? sanitizeString(fault.deletionApprovedAt, 64) : null,
         deletionApprovedBy: sanitizeString(fault.deletionApprovedBy, 100)
       };
 
