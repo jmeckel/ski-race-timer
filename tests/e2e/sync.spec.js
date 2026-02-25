@@ -20,6 +20,31 @@ const skipSyncTests = !process.env.SYNC_TESTS;
 
 test.describe.configure({ mode: 'serial' });
 
+// ============================================
+// Deterministic Wait Helpers
+// ============================================
+
+/** Wait for a sync API response (GET or POST) */
+async function waitForSyncResponse(page, { method = 'GET', timeout = 10000 } = {}) {
+  await page.waitForResponse(
+    (resp) =>
+      resp.url().includes('/api/v1/sync') &&
+      resp.request().method() === method &&
+      resp.status() >= 200 &&
+      resp.status() < 500,
+    { timeout },
+  );
+}
+
+/** Wait for modal to close after clicking a button inside it */
+async function waitForModalClose(page, modalSelector) {
+  await expect(page.locator(modalSelector)).toBeHidden({ timeout: 3000 });
+}
+
+// ============================================
+// Shared Helpers
+// ============================================
+
 // Helper to enable cloud sync with a race ID
 async function enableSync(page, raceId = 'TEST-RACE-001') {
   await navigateTo(page, 'settings');
@@ -38,8 +63,8 @@ async function enableSync(page, raceId = 'TEST-RACE-001') {
   await raceIdInput.fill(raceId);
   await raceIdInput.blur();
 
-  // Wait for sync settings to be applied
-  await page.waitForTimeout(500);
+  // Wait for sync settings to be applied (input value persisted)
+  await expect(raceIdInput).toHaveValue(raceId);
 
   // Handle race change modal if it appears
   await dismissRaceChangeModal(page);
@@ -53,7 +78,7 @@ async function dismissRaceChangeModal(page) {
     const keepBtn = page.locator('#race-change-modal #race-change-keep-btn');
     if (await keepBtn.isVisible()) {
       await keepBtn.click();
-      await page.waitForTimeout(300);
+      await waitForModalClose(page, '#race-change-modal');
     } else {
       // Fallback to cancel if keep button not visible
       const cancelBtn = page.locator(
@@ -61,7 +86,7 @@ async function dismissRaceChangeModal(page) {
       );
       if (await cancelBtn.isVisible()) {
         await cancelBtn.click();
-        await page.waitForTimeout(300);
+        await waitForModalClose(page, '#race-change-modal');
       }
     }
   }
@@ -77,9 +102,13 @@ async function addTestEntry(page, bib = '001') {
     await page.click(`.dial-number[data-num="${digit}"]`);
   }
 
-  // Record timestamp
+  // Record timestamp — wait for bib display to change (auto-increment or clear)
+  const bibBefore = await page.locator('#radial-bib-value').textContent();
   await page.click('#radial-time-btn');
-  await page.waitForTimeout(500);
+  // Wait until the bib display updates (auto-increment changes the value)
+  await expect(page.locator('#radial-bib-value')).not.toHaveText(bibBefore, {
+    timeout: 3000,
+  });
 }
 
 test.describe('Cloud Sync', () => {
@@ -222,7 +251,6 @@ test.describe('Cloud Sync', () => {
 
       // Add entries
       await addTestEntry(page, '010');
-      await page.waitForTimeout(500);
       await addTestEntry(page, '020');
 
       // Reload page
@@ -329,7 +357,6 @@ test.describe('Sync Integration', () => {
     // Rapidly add multiple entries
     for (let i = 1; i <= 5; i++) {
       await addTestEntry(page, String(i).padStart(3, '0'));
-      await page.waitForTimeout(300);
     }
 
     // Verify all entries recorded
@@ -359,8 +386,8 @@ test.describe('Cloud Sync Improvements', () => {
     }) => {
       await enableSync(page, `DEVICE-COUNT-TEST-${Date.now()}`);
 
-      // Wait for sync to attempt connection
-      await page.waitForTimeout(3000);
+      // Wait for sync API call to complete (replaces waitForTimeout(3000))
+      await waitForSyncResponse(page);
 
       // Go to timer view to see status bar
       await navigateTo(page, 'timer');
@@ -388,8 +415,11 @@ test.describe('Cloud Sync Improvements', () => {
       await setupPage(page2);
       await enableSync(page2, raceId);
 
-      // Wait for both to sync
-      await page.waitForTimeout(5000);
+      // Wait for both pages to complete at least one sync cycle
+      await Promise.all([
+        waitForSyncResponse(page),
+        waitForSyncResponse(page2),
+      ]);
 
       // Both pages should show sync indicator
       await navigateTo(page, 'timer');
@@ -416,8 +446,8 @@ test.describe('Cloud Sync Improvements', () => {
       await enableSync(page, baseRaceId.toUpperCase());
       await addTestEntry(page, '001');
 
-      // Wait for sync
-      await page.waitForTimeout(2000);
+      // Wait for entry to sync to server
+      await waitForSyncResponse(page, { method: 'POST' });
 
       // Second device uses lowercase
       const page2 = await context.newPage();
@@ -433,17 +463,16 @@ test.describe('Cloud Sync Improvements', () => {
       await raceIdInput2.clear();
       await raceIdInput2.fill(baseRaceId.toLowerCase());
       await raceIdInput2.blur();
-      await page2.waitForTimeout(500);
+      await expect(raceIdInput2).toHaveValue(baseRaceId.toLowerCase());
 
       // Dismiss race change modal on page2
       await dismissRaceChangeModal(page2);
 
-      // Wait for sync
-      await page2.waitForTimeout(3000);
+      // Wait for page2 to fetch entries from server
+      await waitForSyncResponse(page2);
 
       // Check if entry synced to second device
       await navigateTo(page2, 'results');
-      await page2.waitForTimeout(1000);
 
       // The entry should be visible on page2 if sync works correctly
       // (this depends on actual API being available)
@@ -496,12 +525,8 @@ test.describe('Cloud Sync Improvements', () => {
       await raceIdInput.clear();
       await raceIdInput.fill(`TEST-RACE-${Date.now()}`);
 
-      // Wait for debounced check (500ms + network time)
-      await page.waitForTimeout(1500);
-
-      // Indicator should be visible (showing either "new race" or "race found")
+      // Indicator should appear after debounce completes (Playwright auto-retries)
       const indicator = page.locator('#race-exists-indicator');
-      // Check it exists and is potentially visible
       await expect(indicator).toHaveCount(1);
     });
 
@@ -511,8 +536,8 @@ test.describe('Cloud Sync Improvements', () => {
       await enableSync(page, raceId);
       await addTestEntry(page, '001');
 
-      // Wait for entry to sync
-      await page.waitForTimeout(2000);
+      // Wait for entry to sync to server
+      await waitForSyncResponse(page, { method: 'POST' });
 
       // Clear the race ID and re-enter it to trigger check
       await navigateTo(page, 'settings');
@@ -524,15 +549,11 @@ test.describe('Cloud Sync Improvements', () => {
 
       const raceIdInput = page.locator('#race-id-input');
       await raceIdInput.clear();
-      await page.waitForTimeout(200);
       await raceIdInput.fill(raceId);
 
-      // Wait for debounced check
-      await page.waitForTimeout(1500);
-
-      // The indicator should show race found info
+      // The indicator should show race found info (auto-retries until debounce completes)
       const indicator = page.locator('#race-exists-indicator');
-      await expect(indicator).toBeVisible();
+      await expect(indicator).toBeVisible({ timeout: 5000 });
     });
   });
 
@@ -542,9 +563,8 @@ test.describe('Cloud Sync Improvements', () => {
     }) => {
       await enableSync(page, `BIB-SYNC-TEST-${Date.now()}`);
 
-      // Record first entry
+      // Record first entry — addTestEntry waits for bib to change
       await addTestEntry(page, '001');
-      await page.waitForTimeout(500);
 
       // The bib should have auto-incremented to 002
       const bibDisplay = page.locator('#radial-bib-value');
@@ -559,23 +579,21 @@ test.describe('Cloud Sync Improvements', () => {
 
       await enableSync(page, raceId);
 
-      // Record entries on first device
+      // Record entries on first device — addTestEntry waits for auto-increment
       await addTestEntry(page, '001');
-      await page.waitForTimeout(500);
       await addTestEntry(page, '002');
-      await page.waitForTimeout(500);
       await addTestEntry(page, '003');
 
-      // Wait for sync
-      await page.waitForTimeout(2000);
+      // Wait for entries to sync to server
+      await waitForSyncResponse(page, { method: 'POST' });
 
       // Open second device
       const page2 = await context.newPage();
       await setupPage(page2);
       await enableSync(page2, raceId);
 
-      // Wait for sync
-      await page2.waitForTimeout(3000);
+      // Wait for page2 to fetch entries from server
+      await waitForSyncResponse(page2);
 
       // Second device should show synced entries
       await navigateTo(page2, 'results');
@@ -658,8 +676,8 @@ test.describe('Verification Steps', () => {
     await setupPage(page);
     await enableSync(page, `VERIFY-DEVICE-${Date.now()}`);
 
-    // Wait for sync to connect
-    await page.waitForTimeout(3000);
+    // Wait for sync API call to complete
+    await waitForSyncResponse(page);
 
     // Go to timer view
     await navigateTo(page, 'timer');
@@ -676,8 +694,8 @@ test.describe('Verification Steps', () => {
     await enableSync(page, raceId);
     await addTestEntry(page, '001');
 
-    // Wait for entry to sync
-    await page.waitForTimeout(2000);
+    // Wait for entry to sync to server
+    await waitForSyncResponse(page, { method: 'POST' });
 
     // Reload and use lowercase - manually handle the race change modal
     await page.reload();
@@ -692,14 +710,16 @@ test.describe('Verification Steps', () => {
     await raceIdInput.clear();
     await raceIdInput.fill(raceId.toLowerCase());
     await raceIdInput.blur();
-    await page.waitForTimeout(500);
+    await expect(raceIdInput).toHaveValue(raceId.toLowerCase());
 
     // Dismiss race change modal
     await dismissRaceChangeModal(page);
 
+    // Wait for sync to fetch entries
+    await waitForSyncResponse(page);
+
     // Entry should still be visible
     await navigateTo(page, 'results');
-    await page.waitForTimeout(2000);
     await expect(page.locator('.results-list')).toBeVisible();
   });
 
@@ -718,13 +738,10 @@ test.describe('Verification Steps', () => {
     const indicator = page.locator('#race-exists-indicator');
     await expect(indicator).toHaveCount(1);
 
-    // Enter a race ID
+    // Enter a race ID — indicator will update after debounce (Playwright auto-retries)
     const raceIdInput = page.locator('#race-id-input');
     await raceIdInput.clear();
     await raceIdInput.fill(`VERIFY-EXISTS-${Date.now()}`);
-
-    // Wait for check
-    await page.waitForTimeout(1500);
   });
 
   test('Verification: Auto-increment bib works', async ({ page }) => {
@@ -742,9 +759,12 @@ test.describe('Verification Steps', () => {
     await navigateTo(page, 'timer');
     await enterBib(page, 1);
 
-    // Record timestamp
+    // Record timestamp — wait for bib display to update
+    const bibBefore = await page.locator('#radial-bib-value').textContent();
     await page.click('#radial-time-btn');
-    await page.waitForTimeout(500);
+    await expect(page.locator('#radial-bib-value')).not.toHaveText(bibBefore, {
+      timeout: 3000,
+    });
 
     // Bib should show 002
     const bibDisplay = page.locator('#radial-bib-value');
@@ -787,10 +807,7 @@ test.describe('Delete Sync', () => {
     await page.click('.result-delete');
     await page.click('#confirm-delete-btn');
 
-    // Wait for deletion
-    await page.waitForTimeout(500);
-
-    // Verify entry is removed
+    // Verify entry is removed (Playwright auto-retries)
     await expect(page.locator('.results-view .empty-state')).toBeVisible();
   });
 
@@ -814,9 +831,8 @@ test.describe('Delete Sync', () => {
     // Delete one entry
     await page.click('.result-delete');
     await page.click('#confirm-delete-btn');
-    await page.waitForTimeout(1000);
 
-    // Verify 2 entries remain
+    // Verify 2 entries remain (auto-retry)
     await expect(page.locator('.result-item')).toHaveCount(2);
 
     // Reload page and re-enable sync
@@ -824,12 +840,11 @@ test.describe('Delete Sync', () => {
     await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
     await enableSync(page, uniqueRaceId);
 
-    // Wait for sync
-    await page.waitForTimeout(3000);
+    // Wait for sync to fetch entries from server
+    await waitForSyncResponse(page);
 
     // Go to results
     await navigateTo(page, 'results');
-    await page.waitForTimeout(1000);
 
     // Deleted entry should not reappear (still 2 entries or fewer)
     const count = await page.locator('.result-item').count();
@@ -844,8 +859,8 @@ test.describe('Delete Sync', () => {
     // Add an entry
     await addTestEntry(page, '050');
 
-    // Wait for sync
-    await page.waitForTimeout(2000);
+    // Wait for entry to sync to server
+    await waitForSyncResponse(page, { method: 'POST' });
 
     // Go to results
     await navigateTo(page, 'results');
@@ -855,10 +870,7 @@ test.describe('Delete Sync', () => {
     await page.click('.result-delete');
     await page.click('#confirm-delete-btn');
 
-    // Should show toast or confirmation
-    await page.waitForTimeout(500);
-
-    // Entry should be gone
+    // Entry should be gone (auto-retry)
     await expect(page.locator('.results-view .empty-state')).toBeVisible();
   });
 
@@ -873,8 +885,12 @@ test.describe('Delete Sync', () => {
     for (let i = 1; i <= 3; i++) {
       await page.click('#radial-clear-btn');
       await page.click(`.dial-number[data-num="${i}"]`);
+      const bibBefore = await page.locator('#radial-bib-value').textContent();
       await page.click('#radial-time-btn');
-      await page.waitForTimeout(500);
+      await expect(page.locator('#radial-bib-value')).not.toHaveText(
+        bibBefore,
+        { timeout: 3000 },
+      );
     }
 
     // Go to results
@@ -896,11 +912,9 @@ test.describe('Delete Sync', () => {
         // Delete selected
         await page.click('#delete-selected-btn');
         await page.click('#confirm-delete-btn');
-        await page.waitForTimeout(1000);
 
-        // Should have fewer entries
-        const remaining = await page.locator('.result-item').count();
-        expect(remaining).toBe(1);
+        // Should have fewer entries (auto-retry)
+        await expect(page.locator('.result-item')).toHaveCount(1);
       }
     }
   });
