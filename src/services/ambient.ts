@@ -34,6 +34,7 @@ class AmbientModeService {
 
   // Activity event listeners (stored for cleanup)
   private activityHandler: (() => void) | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   readonly INACTIVITY_THRESHOLD_MS = 30000; // 30 seconds
 
@@ -78,6 +79,17 @@ class AmbientModeService {
     document.addEventListener('keydown', this.activityHandler, {
       passive: true,
     });
+
+    // Pause inactivity monitoring when page is hidden to avoid unnecessary wakeups
+    this.visibilityHandler = () => {
+      if (document.hidden) {
+        this.stopInactivityMonitor();
+      } else if (this.isEnabled) {
+        this.lastActivityTimestamp = Date.now();
+        this.startInactivityMonitor();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   /**
@@ -96,6 +108,11 @@ class AmbientModeService {
       document.removeEventListener('click', this.activityHandler);
       document.removeEventListener('keydown', this.activityHandler);
       this.activityHandler = null;
+    }
+
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
     }
 
     this.callbacks.clear();

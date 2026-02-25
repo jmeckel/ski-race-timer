@@ -237,7 +237,7 @@ function buildUserMessage(transcript: string, context: VoiceContext): string {
     activeBibs: context.activeBibs,
     gateRange: context.gateRange,
     pendingConfirmation: context.pendingConfirmation ? {
-      action: context.pendingConfirmation.action,
+      action: sanitizeString(context.pendingConfirmation.action, 50),
       params: context.pendingConfirmation.params
     } : null
   });

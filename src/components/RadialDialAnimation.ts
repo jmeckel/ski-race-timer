@@ -42,6 +42,7 @@ export class RadialDialAnimation {
   /** Whether the user prefers reduced motion (OS accessibility setting) */
   private prefersReducedMotion = false;
   private motionMediaQuery: MediaQueryList | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   constructor(
     callbacks: RadialDialAnimationCallbacks,
@@ -61,6 +62,14 @@ export class RadialDialAnimation {
         this.onMotionPreferenceChange,
       );
     }
+
+    // Pause momentum/snap-back animations when page becomes hidden
+    this.visibilityHandler = () => {
+      if (document.hidden) {
+        this.cancelAllAnimations();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   // --- Public state accessors ---
@@ -207,6 +216,12 @@ export class RadialDialAnimation {
       this.onMotionPreferenceChange,
     );
     this.motionMediaQuery = null;
+
+    // Remove visibility change listener
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
   }
 
   // --- Private helpers ---

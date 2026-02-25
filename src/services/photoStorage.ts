@@ -54,6 +54,7 @@ class PhotoStorageService {
 
       request.onerror = () => {
         logger.error('IndexedDB open error:', request.error);
+        this.initPromise = null; // Allow retry on transient failures
         resolve(false);
       };
 

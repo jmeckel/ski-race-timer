@@ -293,7 +293,9 @@ class Store {
   }
 
   private saveToStorage() {
-    const dirty = this.dirtySlices;
+    // Snapshot dirty keys to avoid losing changes from re-entrant setState during serialization
+    const dirty = new Set(this.dirtySlices);
+    this.dirtySlices.clear();
     if (dirty.size === 0) return;
 
     try {
@@ -391,10 +393,6 @@ class Store {
       }
       // Flush all pending writes to localStorage synchronously
       storage.flush();
-      // Clear dirty slices only after successful flush
-      for (const key of dirty) {
-        this.dirtySlices.delete(key);
-      }
       // Check localStorage quota after save
       const quotaCheck = checkLocalStorageQuota();
       if (quotaCheck.warning) {

@@ -93,7 +93,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const log = apiLogger.withRequestId(reqId);
 
   try {
-    // Apply rate limiting before PIN processing
+    // Validate PIN format before consuming rate limit token
+    const { pin, role } = (req.body || {}) as TokenRequestBody;
+
+    if (!pin || typeof pin !== 'string') {
+      return sendBadRequest(res, 'PIN is required');
+    }
+
+    if (!/^\d{4}$/.test(pin)) {
+      return sendBadRequest(res, 'PIN must be exactly 4 digits');
+    }
+
+    // Apply rate limiting only for structurally-valid auth attempts
     const clientIP = getClientIP(req);
     const rateLimitResult = await checkRateLimit(client, clientIP);
 
@@ -105,17 +116,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return sendServiceUnavailable(res, 'Rate limiting unavailable');
       }
       return sendRateLimitExceeded(res, rateLimitResult.reset - Math.floor(Date.now() / 1000));
-    }
-
-    const { pin, role } = (req.body || {}) as TokenRequestBody;
-
-    if (!pin || typeof pin !== 'string') {
-      return sendBadRequest(res, 'PIN is required');
-    }
-
-    // Validate PIN format (4 digits)
-    if (!/^\d{4}$/.test(pin)) {
-      return sendBadRequest(res, 'PIN must be exactly 4 digits');
     }
 
     // Validate role if provided
