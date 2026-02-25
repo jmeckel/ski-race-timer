@@ -975,27 +975,11 @@ describe('Store Helper Functions', () => {
     localStorageMock.clear();
   });
 
-  it('getEntries should return entries array', async () => {
-    const { store, getEntries } = await import('../../src/store/index');
-    const entry = createValidEntry();
-    store.addEntry(entry);
+  it('lang() should return current language', async () => {
+    const { store, lang } = await import('../../src/store/index');
 
-    expect(getEntries()).toHaveLength(1);
-  });
-
-  it('getSettings should return settings object', async () => {
-    const { getSettings } = await import('../../src/store/index');
-
-    expect(getSettings()).toHaveProperty('auto');
-    expect(getSettings()).toHaveProperty('haptic');
-  });
-
-  it('getSyncStatus should return sync status', async () => {
-    const { store, getSyncStatus } = await import('../../src/store/index');
-
-    expect(getSyncStatus()).toBe('disconnected');
-
-    store.setSyncStatus('connected');
-    expect(getSyncStatus()).toBe('connected');
+    expect(lang()).toBe('de'); // default
+    store.setLanguage('en');
+    expect(lang()).toBe('en');
   });
 });

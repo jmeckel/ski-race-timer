@@ -20,6 +20,8 @@ import {
   $cloudDeviceCount,
   $entries,
   $gpsStatus,
+  $selectedPoint,
+  $selectedRun,
   $settings,
   $syncStatus,
   effect,
@@ -94,11 +96,11 @@ export function initRadialTimerView(): void {
       updateRadialSyncStatus();
     }),
     effect(() => {
-      void store.$state.value.selectedPoint;
+      void $selectedPoint.value;
       updateRadialTimingPointSelection();
     }),
     effect(() => {
-      void store.$state.value.selectedRun;
+      void $selectedRun.value;
       updateRadialRunSelection();
     }),
     effect(() => {

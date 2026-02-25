@@ -74,6 +74,7 @@ vi.mock('../../src/store', () => ({
     updateSettings: (...args: unknown[]) => mockUpdateSettings(...args),
   },
   $settings: computed(() => mockSettingsSignal.value),
+  $settingsPhotoCapture: computed(() => mockSettingsSignal.value.photoCapture),
   effect,
 }));
 

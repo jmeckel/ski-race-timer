@@ -449,7 +449,6 @@ class Store {
       this.state.entries,
       entry,
       this.state.undoStack,
-      this.state.redoStack,
     );
     this.setState({
       entries: result.entries,
@@ -469,7 +468,6 @@ class Store {
       this.state.entries,
       id,
       this.state.undoStack,
-      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -485,7 +483,6 @@ class Store {
       this.state.entries,
       ids,
       this.state.undoStack,
-      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -502,7 +499,6 @@ class Store {
     const result = entriesSlice.clearAll(
       this.state.entries,
       this.state.undoStack,
-      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -521,7 +517,6 @@ class Store {
       id,
       updates,
       this.state.undoStack,
-      this.state.redoStack,
     );
     if (result) {
       this.setState({
@@ -1149,15 +1144,7 @@ export const $entriesByRun = computed(() => {
 // Re-export effect and untracked for consumers that want signal-based subscriptions
 export { effect, untracked };
 
-// Backward-compatible helper functions (delegate to computed signals)
-export function getEntries(): Entry[] {
-  return $entries.value;
-}
-
-export function getSettings(): Settings {
-  return $settings.value;
-}
-
-export function getSyncStatus(): SyncStatus {
-  return $syncStatus.value;
+/** Shorthand for the current language — avoids verbose `store.getState().currentLang` */
+export function lang(): Language {
+  return $currentLang.value;
 }

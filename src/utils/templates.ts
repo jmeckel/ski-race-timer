@@ -218,8 +218,6 @@ export function runBadge(runLabel: string, runColor: string): string {
 export function pointBadge(
   pointLabel: string,
   pointColor: string,
-  _minWidth = '',
-  _fontSize = '',
 ): string {
   return `<div class="result-point" style="padding: 3px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-align: center; text-transform: uppercase; background: color-mix(in srgb, ${pointColor} 10%, transparent); color: ${pointColor}; border: 1px solid color-mix(in srgb, ${pointColor} 15%, transparent);">${escapeHtml(pointLabel)}</div>`;
 }

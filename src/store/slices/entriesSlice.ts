@@ -16,7 +16,6 @@ export function addEntry(
   entries: Entry[],
   entry: Entry,
   undoStack: Action[],
-  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } {
   const newEntries = [...entries, entry];
   const newUndoStack = pushUndo(undoStack, {
@@ -34,7 +33,6 @@ export function deleteEntry(
   entries: Entry[],
   id: string,
   undoStack: Action[],
-  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
   const entry = entries.find((e) => e.id === id);
   if (!entry) return null;
@@ -59,7 +57,6 @@ export function deleteMultiple(
   entries: Entry[],
   ids: string[],
   undoStack: Action[],
-  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
   const deletedEntries = entries.filter((e) => ids.includes(e.id));
   if (deletedEntries.length === 0) return null;
@@ -83,7 +80,6 @@ export function deleteMultiple(
 export function clearAll(
   entries: Entry[],
   undoStack: Action[],
-  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
   if (entries.length === 0) return null;
 
@@ -104,7 +100,6 @@ export function updateEntry(
   id: string,
   updates: Partial<Entry>,
   undoStack: Action[],
-  _redoStack: Action[],
 ): { entries: Entry[]; undoStack: Action[]; redoStack: Action[] } | null {
   const index = entries.findIndex((e) => e.id === id);
   if (index === -1) return null;

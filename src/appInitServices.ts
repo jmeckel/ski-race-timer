@@ -16,7 +16,7 @@ import {
 } from './services';
 import { cameraService } from './services/camera';
 import { hasAuthToken } from './services/sync';
-import { $settings, effect, store } from './store';
+import { $settingsPhotoCapture, effect, store } from './store';
 import { ListenerManager } from './utils/listenerManager';
 import { applyViewServices } from './utils/viewServices';
 
@@ -98,7 +98,7 @@ export function initServices(): void {
   // App-lifetime effect — cleanup on page unload
   let prevPhotoCapture = initialState.settings.photoCapture;
   const disposePhotoEffect = effect(() => {
-    const currentPhotoCapture = $settings.value.photoCapture;
+    const currentPhotoCapture = $settingsPhotoCapture.value;
     if (prevPhotoCapture && !currentPhotoCapture) {
       // Defer: cameraService.stop() writes to store synchronously
       queueMicrotask(() => cameraService.stop());

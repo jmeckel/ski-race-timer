@@ -1180,7 +1180,7 @@ export class VirtualList {
 
     item.innerHTML = `
       <div></div>
-      ${pointBadge(pointLabel, pointColor, '64px', '0.7rem')}
+      ${pointBadge(pointLabel, pointColor)}
       <div class="result-info" style="display: flex; align-items: center; gap: 8px; min-width: 0;">
         <div class="result-time" style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.85rem;">
           ${escapeHtml(timeStr)}
@@ -1316,7 +1316,7 @@ export class VirtualList {
     item.innerHTML = `
       <div></div>
       <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-        ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)', 'auto', '0.7rem')}
+        ${pointBadge(`T${fault.gateNumber}`, 'var(--warning)')}
         <div style="width: 8px; height: 8px; border-radius: 50%; background: ${gateColorHex}; flex-shrink: 0;" title="${escapeAttr(gateColor)}"></div>
       </div>
       <div class="result-info" style="display: flex; align-items: center; gap: 8px; min-width: 0;">
