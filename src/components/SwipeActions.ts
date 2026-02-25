@@ -233,6 +233,14 @@ export class SwipeActions {
           passive: true,
         },
       );
+      this.listeners.add(
+        this.wrapper,
+        'touchcancel',
+        this.onTouchCancel as EventListener,
+        {
+          passive: true,
+        },
+      );
     }
 
     // Prevent synthetic click after swipe gestures from opening modals.
@@ -355,6 +363,17 @@ export class SwipeActions {
   };
 
   /**
+   * Handle touch cancellation (iOS system interruption, notification, scroll)
+   */
+  private onTouchCancel = (): void => {
+    if (this.pendingActionTimeoutId !== null) {
+      clearTimeout(this.pendingActionTimeoutId);
+      this.pendingActionTimeoutId = null;
+    }
+    this.reset();
+  };
+
+  /**
    * Handle pointer start
    */
   private onPointerDown = (e: PointerEvent): void => {
@@ -393,6 +412,10 @@ export class SwipeActions {
     this.pointerId = null;
     if (this.wrapper.hasPointerCapture?.(e.pointerId)) {
       this.wrapper.releasePointerCapture(e.pointerId);
+    }
+    if (this.pendingActionTimeoutId !== null) {
+      clearTimeout(this.pendingActionTimeoutId);
+      this.pendingActionTimeoutId = null;
     }
     this.reset();
   };

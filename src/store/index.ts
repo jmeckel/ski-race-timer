@@ -294,8 +294,6 @@ class Store {
 
   private saveToStorage() {
     const dirty = this.dirtySlices;
-    this.dirtySlices = new Set();
-
     if (dirty.size === 0) return;
 
     try {
@@ -395,6 +393,10 @@ class Store {
       }
       // Flush all pending writes to localStorage synchronously
       storage.flush();
+      // Clear dirty slices only after successful flush
+      for (const key of dirty) {
+        this.dirtySlices.delete(key);
+      }
       // Check localStorage quota after save
       const quotaCheck = checkLocalStorageQuota();
       if (quotaCheck.warning) {
@@ -410,6 +412,10 @@ class Store {
         );
       }
     } catch (e) {
+      // Re-add dirty slices so the next scheduleSave() retries them
+      for (const key of dirty) {
+        this.dirtySlices.add(key);
+      }
       logger.error('Failed to save to storage:', e);
       this.dispatchStorageError(e as Error);
     }
@@ -717,14 +723,12 @@ class Store {
   finalizeRacer(bib: string, run: Run) {
     this.setState(
       gateJudgeSlice.finalizeRacer(bib, run, this.state.finalizedRacers),
-      false,
     );
   }
 
   unfinalizeRacer(bib: string, run: Run) {
     this.setState(
       gateJudgeSlice.unfinalizeRacer(bib, run, this.state.finalizedRacers),
-      false,
     );
   }
 
@@ -737,15 +741,15 @@ class Store {
   }
 
   clearFinalizedRacers() {
-    this.setState(gateJudgeSlice.clearFinalizedRacers(), false);
+    this.setState(gateJudgeSlice.clearFinalizedRacers());
   }
 
   setPenaltySeconds(seconds: number) {
-    this.setState(gateJudgeSlice.setPenaltySeconds(seconds), false);
+    this.setState(gateJudgeSlice.setPenaltySeconds(seconds));
   }
 
   setUsePenaltyMode(usePenalty: boolean) {
-    this.setState(gateJudgeSlice.setUsePenaltyMode(usePenalty), false);
+    this.setState(gateJudgeSlice.setUsePenaltyMode(usePenalty));
   }
 
   getActiveBibs(run: Run): string[] {

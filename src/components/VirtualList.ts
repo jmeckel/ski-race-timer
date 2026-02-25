@@ -1453,7 +1453,8 @@ export class VirtualList {
    * Render empty state
    */
   private renderEmpty(): void {
-    for (const item of this.visibleItems.values()) {
+    for (const [id, item] of this.visibleItems.entries()) {
+      this.cleanupItemListeners(id, item);
       item.remove();
     }
     this.visibleItems.clear();
@@ -1580,7 +1581,7 @@ export class VirtualList {
    */
   private getItemYPosition(item: HTMLElement): number {
     const transform = item.style.transform;
-    const match = transform.match(/translateY\((\d+)px\)/);
+    const match = transform.match(/translateY\((-?\d+)px\)/);
     return match ? parseInt(match[1]!, 10) : 0;
   }
 

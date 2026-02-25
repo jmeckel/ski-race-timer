@@ -7,3 +7,4 @@ playwright-report/
 test-results/
 dist/stats.html
 .DS_Store
+chrono-prototype.html

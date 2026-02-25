@@ -138,12 +138,12 @@ describe('CSV Export Format - Race Horology', () => {
       expect(result).toBe('"\'|data"');
     });
 
-    it('should prefix tab character with single quote', () => {
-      expect(escapeCSVField('\tdata')).toBe("'\tdata");
+    it('should prefix tab character with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('\tdata')).toBe('"\'\tdata"');
     });
 
-    it('should prefix carriage return with single quote', () => {
-      expect(escapeCSVField('\rdata')).toBe("'\rdata");
+    it('should prefix carriage return with single quote and wrap in quotes', () => {
+      expect(escapeCSVField('\rdata')).toBe('"\'\rdata"');
     });
 
     it('should not prefix normal bib numbers', () => {

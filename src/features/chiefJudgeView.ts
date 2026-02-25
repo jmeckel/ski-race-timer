@@ -770,4 +770,10 @@ export function cleanupChiefJudgeView(): void {
   }
   effectDisposers.length = 0;
   listeners.removeAll();
+  // Clear delegation tracking so handlers are re-registered on next init
+  // (WeakSet has no clear(), so we delete known containers)
+  const summaryList = document.getElementById('fault-summary-list');
+  const pendingList = document.getElementById('pending-deletions-list');
+  if (summaryList) delegatedContainers.delete(summaryList);
+  if (pendingList) delegatedContainers.delete(pendingList);
 }

@@ -72,6 +72,8 @@ export function escapeCSVField(field: string): string {
     escaped.includes(';') ||
     escaped.includes('"') ||
     escaped.includes('\n') ||
+    escaped.includes('\r') ||
+    escaped.includes('\t') ||
     escaped.includes('|')
   ) {
     escaped = `"${escaped}"`;

@@ -75,10 +75,9 @@ describe('Export Feature Module', () => {
     });
 
     it('should handle tab and newline formula characters', () => {
-      // Tab and carriage return are formula chars but don't trigger quote wrapping
-      expect(escapeCSVField('\tdata')).toBe("'\tdata");
-      expect(escapeCSVField('\rdata')).toBe("'\rdata");
-      // Newline triggers both prefix AND quote wrapping
+      // Tab, carriage return, and newline are formula chars that trigger quote wrapping
+      expect(escapeCSVField('\tdata')).toBe('"\'\tdata"');
+      expect(escapeCSVField('\rdata')).toBe('"\'\rdata"');
       expect(escapeCSVField('\ndata')).toBe('"\'\ndata"');
     });
 

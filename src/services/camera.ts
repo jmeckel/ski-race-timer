@@ -80,6 +80,13 @@ class CameraService {
         reject(new Error('Video element not available'));
         return;
       }
+      // If metadata already loaded, play immediately
+      if (this.videoElement.readyState >= 1) {
+        this.videoElement.play()
+          .then(() => resolve())
+          .catch(reject);
+        return;
+      }
       this.videoElement.onloadedmetadata = () => {
         this.videoElement!.play()
           .then(() => resolve())
@@ -154,6 +161,13 @@ class CameraService {
       const errorMessage =
         error instanceof Error ? error.message : 'Camera initialization failed';
       logger.error('Camera initialization error:', errorMessage);
+      if (this.stream) {
+        this.stream.getTracks().forEach((track) => track.stop());
+        this.stream = null;
+      }
+      if (this.videoElement) {
+        this.videoElement.srcObject = null;
+      }
       this.cameraState = 'stopped';
       store.setCameraReady(false, errorMessage);
       return false;
@@ -264,9 +278,18 @@ class CameraService {
       store.setCameraReady(true);
       this.resetIdleTimeout();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Reinitialize failed';
       logger.error('Failed to reinitialize camera:', error);
+      if (this.stream) {
+        this.stream.getTracks().forEach((track) => track.stop());
+        this.stream = null;
+      }
+      if (this.videoElement) {
+        this.videoElement.srcObject = null;
+      }
       this.cameraState = 'stopped';
       this.resumingStartedAt = null;
+      store.setCameraReady(false, errorMessage);
     }
   }
 
