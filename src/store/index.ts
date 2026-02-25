@@ -135,6 +135,8 @@ class Store {
   readonly $state: Signal<Readonly<AppState>>;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   private dirtySlices: Set<string> = new Set(); // Track which slices need saving
+  private saveRetryCount = 0;
+  private static readonly MAX_SAVE_RETRIES = 3;
 
   constructor() {
     this.state = this.loadInitialState();
@@ -393,6 +395,7 @@ class Store {
       }
       // Flush all pending writes to localStorage synchronously
       storage.flush();
+      this.saveRetryCount = 0; // Reset on success
       // Check localStorage quota after save
       const quotaCheck = checkLocalStorageQuota();
       if (quotaCheck.warning) {
@@ -408,13 +411,19 @@ class Store {
         );
       }
     } catch (e) {
-      // Re-add dirty slices and schedule a retry
+      // Re-add dirty slices and schedule a retry (with cap to prevent infinite loop)
       for (const key of dirty) {
         this.dirtySlices.add(key);
       }
       logger.error('Failed to save to storage:', e);
       this.dispatchStorageError(e as Error);
-      this.scheduleSave();
+      this.saveRetryCount++;
+      if (this.saveRetryCount <= Store.MAX_SAVE_RETRIES) {
+        this.scheduleSave();
+      } else {
+        logger.error(`Storage save failed after ${Store.MAX_SAVE_RETRIES} retries, giving up until next state change`);
+        this.saveRetryCount = 0;
+      }
     }
   }
 

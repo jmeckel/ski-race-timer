@@ -255,11 +255,11 @@ async function fetchCloudEntriesImpl(): Promise<void> {
         )
       : [];
 
+    // Bail out if cleanup occurred or race changed during response parsing
+    if (isCleanedUp || store.getState().raceId !== state.raceId) return;
+
     // Update sync status
     store.setSyncStatus('connected');
-
-    // Bail out if cleanup occurred during response parsing
-    if (isCleanedUp) return;
 
     // Update device count
     if (typeof data.deviceCount === 'number') {
@@ -474,9 +474,10 @@ export async function sendEntriesToCloudBatch(
       entriesToSync.push(await prepareEntryForSync(entry, state.settings.syncPhotos));
     }
 
-    // Re-check raceId after async photo loading — user may have switched races
-    const currentRaceId = store.getState().raceId;
-    if (!currentRaceId || currentRaceId !== state.raceId) {
+    // Re-read state after async photo loading — user may have switched races
+    // or device identity may have changed
+    const freshState = store.getState();
+    if (!freshState.raceId || freshState.raceId !== state.raceId) {
       for (const entry of batch) {
         resultMap.set(entry.id, false);
       }
@@ -484,7 +485,7 @@ export async function sendEntriesToCloudBatch(
     }
 
     const response = await fetchWithTimeout(
-      `${API_BASE}?raceId=${encodeURIComponent(currentRaceId)}`,
+      `${API_BASE}?raceId=${encodeURIComponent(freshState.raceId)}`,
       {
         method: 'POST',
         headers: {
@@ -494,8 +495,8 @@ export async function sendEntriesToCloudBatch(
         },
         body: JSON.stringify({
           entries: entriesToSync,
-          deviceId: state.deviceId,
-          deviceName: state.deviceName,
+          deviceId: freshState.deviceId,
+          deviceName: freshState.deviceName,
         }),
       },
       FETCH_TIMEOUT,

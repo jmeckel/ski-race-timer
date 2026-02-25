@@ -87,6 +87,12 @@ export function showFaultConfirmation(fault: FaultEntry): void {
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
 
+  // Focus the Done button for keyboard accessibility
+  const doneBtn = overlay.querySelector<HTMLElement>('#fault-confirmation-done-btn');
+  if (doneBtn) {
+    doneBtn.focus();
+  }
+
   // NO auto-dismiss - user must tap "Done" or "Add Note"
 }
 
