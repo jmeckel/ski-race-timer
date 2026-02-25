@@ -459,7 +459,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   width: auto;
   height: auto;
   min-width: auto;
-  min-height: 32px;
+  min-height: 48px;
   border: none;
   border-radius: 0;
   border-bottom: 2px solid transparent;
@@ -510,7 +510,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   width: auto;
   height: auto;
   min-width: auto;
-  min-height: 32px;
+  min-height: 48px;
   border: none;
   border-radius: 0;
   border-bottom: 2px solid transparent;

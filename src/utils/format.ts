@@ -151,17 +151,20 @@ export function truncate(str: string, maxLength: number): string {
 }
 
 /**
- * Debounce function
+ * Debounce function. Returns a debounced wrapper with a `.cancel()` method
+ * for cleanup in component destroy paths.
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
   delay: number,
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) & { cancel: () => void } {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
+  debounced.cancel = () => clearTimeout(timeoutId);
+  return debounced;
 }
 
 /**
