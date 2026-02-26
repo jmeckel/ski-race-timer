@@ -310,7 +310,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: min(28px, 6.5cqi);
   font-weight: 500;
   color: var(--text-secondary);
@@ -414,7 +414,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-time-hm {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 26px;
   font-weight: 400;
   color: var(--text-secondary);
@@ -422,7 +422,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-time-seconds {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 96px;
   font-weight: 700;
   color: var(--text-primary);
@@ -431,7 +431,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-time-subseconds {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 48px;
   font-weight: 500;
   color: var(--primary);
@@ -580,7 +580,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-stats-bib {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
@@ -604,7 +604,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-stats-time {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   color: var(--text-secondary);
 }
@@ -703,14 +703,14 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 .radial-confirmation-bib {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 48px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .radial-confirmation-time {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 24px;
   color: var(--text-secondary);
   margin-block-start: 8px;

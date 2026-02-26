@@ -300,6 +300,9 @@ export const translations = {
       "Enter the gate numbers you'll be watching. You can change this later.",
     onboardingRaceSetup: 'Join a Race',
     onboardingRaceSetupDesc: 'Enter a race ID to sync with other timers',
+    onboardingRaceIdPlaceholder: 'e.g. RACE-2024',
+    onboardingPinPlaceholder: 'PIN (4 digits)',
+    onboardingStepOf: 'Step {current} of {total}',
     skipForNow: 'Skip for now',
     onboardingReady: 'Ready to Time!',
     onboardingReadyJudge: 'Ready to Judge!',
@@ -864,6 +867,9 @@ export const translations = {
     onboardingRaceSetup: 'Rennen beitreten',
     onboardingRaceSetupDesc:
       'Gib eine Rennen-ID ein um mit anderen Timern zu synchronisieren',
+    onboardingRaceIdPlaceholder: 'z.B. RENNEN-2024',
+    onboardingPinPlaceholder: 'PIN (4 Ziffern)',
+    onboardingStepOf: 'Schritt {current} von {total}',
     skipForNow: 'Vorerst überspringen',
     onboardingReady: 'Bereit zur Zeitmessung!',
     onboardingReadyJudge: 'Bereit als Torrichter!',
@@ -1434,6 +1440,8 @@ export const translations = {
     onboardingRaceSetup: 'Rejoindre une course',
     onboardingRaceSetupDesc:
       "Entrez un ID de course pour synchroniser avec d'autres chronométreurs",
+    onboardingRaceIdPlaceholder: 'ex. COURSE-2024',
+    onboardingPinPlaceholder: 'PIN (4 chiffres)',
     skipForNow: 'Passer pour le moment',
     onboardingReady: 'Prêt à chronométrer !',
     onboardingReadyJudge: 'Prêt à juger !',

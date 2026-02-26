@@ -267,7 +267,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 16px 16px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
 }
 
 .photo-viewer-bib {
@@ -376,7 +376,7 @@
 }
 
 .confirmation-time {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -432,7 +432,7 @@
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-primary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   cursor: pointer;
@@ -461,7 +461,7 @@
 .manual-bib-row .text-input {
   width: 80px;
   text-align: center;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
 }
@@ -479,7 +479,7 @@
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text-primary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -549,7 +549,7 @@
 }
 
 .fault-type-short {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--error);
@@ -608,7 +608,7 @@
 }
 
 .fault-confirmation-bib {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 2.5rem;
   font-weight: 800;
   color: #003320;
@@ -622,7 +622,7 @@
 }
 
 .fault-confirmation-type {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   color: #003320;
@@ -803,7 +803,7 @@
 .voice-note-char-count {
   font-size: 0.75rem;
   color: var(--text-tertiary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
 
   &.near-limit {
     color: var(--warning);
@@ -916,7 +916,7 @@
 .fault-edit-notes-char-count {
   font-size: 0.7rem;
   color: var(--text-tertiary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
 
   &.near-limit {
     color: var(--warning);
@@ -994,7 +994,7 @@
 .shortcuts-body kbd {
   display: inline-block;
   padding: 2px 6px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-primary);

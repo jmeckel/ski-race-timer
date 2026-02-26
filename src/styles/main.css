@@ -317,7 +317,7 @@
   .sync-device-count {
     font-size: 0.7rem;
     font-weight: 600;
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-mono);
     color: var(--text-secondary);
     margin-inline-start: 2px;
     min-width: 32px;
@@ -349,7 +349,7 @@
   .judges-ready-count {
     font-size: 0.75rem;
     font-weight: 600;
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-mono);
     min-width: 24px;
     text-align: center;
   }
@@ -1407,7 +1407,7 @@
 
 /* ===== Clock Base Styles ===== */
 .clock-time {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: clamp(32px, 10vw, 48px);
   font-weight: 700;
   letter-spacing: -0.02em;

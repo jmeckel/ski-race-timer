@@ -85,7 +85,7 @@
 }
 
 .fault-summary-count {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--warning);
@@ -123,7 +123,7 @@
 }
 
 .fault-card-bib {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -136,7 +136,7 @@
 }
 
 .fault-card-penalty {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--warning);
@@ -183,7 +183,7 @@
 }
 
 .fault-gate-num {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -339,7 +339,7 @@
 }
 
 .pending-deletion-fault {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -524,7 +524,7 @@
 }
 
 .penalty-seconds-value {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--warning);
@@ -569,7 +569,7 @@
 }
 
 .judges-overview-count {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--success);
@@ -630,7 +630,7 @@
 }
 
 .judge-gates {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--primary);

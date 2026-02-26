@@ -445,7 +445,7 @@
 }
 
 .race-id {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: 0.875rem;
   color: var(--text-primary);
@@ -569,7 +569,7 @@
 }
 
 .recent-race-id {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: 0.875rem;
   color: var(--text-primary);

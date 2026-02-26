@@ -52,7 +52,7 @@
       </h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
-          <span class="sync-dot" aria-label="Sync status"></span>
+          <span class="sync-dot" aria-hidden="true"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
           <span class="sync-device-count" id="sync-device-count" style="display: none;" aria-live="polite"></span>
         </div>
@@ -63,11 +63,11 @@
           <span class="judges-ready-count" id="judges-ready-count">0/0</span>
         </span>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
-          <span class="gps-dot" aria-label="GPS status"></span>
+          <span class="gps-dot" aria-hidden="true"></span>
           <span class="gps-status-text" data-i18n="gpsInactive">GPS Inactive</span>
         </div>
         <div class="judge-ready-indicator" id="judge-ready-indicator" style="display: none;">
-          <span class="judge-ready-dot"></span>
+          <span class="judge-ready-dot" aria-hidden="true"></span>
           <span class="judge-ready-text" data-i18n="signalReady">Ready</span>
         </div>
         <div class="camera-indicator" id="camera-indicator" style="display: none;" role="status" aria-live="polite" aria-label="Photo capture active" data-i18n-aria-label="photoCaptureActive">
@@ -1480,7 +1480,7 @@
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
-            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024" aria-label="Race ID">
+            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024" data-i18n-placeholder="onboardingRaceIdPlaceholder" aria-label="Race ID">
             <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -1490,7 +1490,7 @@
             <div class="recent-races-dropdown" id="onboarding-recent-races-dropdown" style="display:none"></div>
           </div>
           <div class="race-status" id="onboarding-race-status"></div>
-          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none" aria-label="PIN">
+          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" data-i18n-placeholder="onboardingPinPlaceholder" maxlength="4" inputmode="numeric" style="display:none" aria-label="PIN">
           <label class="onboarding-toggle-row">
             <span data-i18n="enableSync">Enable Cloud Sync</span>
             <label class="toggle-switch">
