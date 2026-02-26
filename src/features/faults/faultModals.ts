@@ -66,7 +66,9 @@ export function openFaultRecordingModal(preselectedBib?: string): void {
       bibSelector
         ?.querySelectorAll('.fault-bib-btn')
         .forEach((b) => b.classList.remove('selected'));
-      store.setSelectedFaultBib(bibInput.value.padStart(3, '0'));
+      store.setSelectedFaultBib(
+        bibInput.value ? bibInput.value.padStart(3, '0') : '',
+      );
     });
   }
 

@@ -1,3 +1,4 @@
+import { disposePhotoEffect } from './appInitServices';
 import {
   openConfirmModal,
   openEditModal,
@@ -317,6 +318,9 @@ export function handleBeforeUnload(): void {
 
   // Cleanup sync service
   syncService.cleanup();
+
+  // Cleanup photo-capture signal effect
+  disposePhotoEffect();
 
   // Cleanup camera service
   cameraService.stop();

@@ -21,6 +21,7 @@ import { ListenerManager } from './utils/listenerManager';
 import { applyViewServices } from './utils/viewServices';
 
 const listeners = new ListenerManager();
+let photoEffectDisposer: (() => void) | null = null;
 
 /**
  * Initialize application services (sync, GPS, wake lock, ambient mode, voice)
@@ -95,9 +96,10 @@ export function initServices(): void {
   });
 
   // Stop camera immediately when photo capture setting is disabled
-  // App-lifetime effect — cleanup on page unload
+  // Dispose previous effect if re-initialized
+  if (photoEffectDisposer) photoEffectDisposer();
   let prevPhotoCapture = initialState.settings.photoCapture;
-  const disposePhotoEffect = effect(() => {
+  photoEffectDisposer = effect(() => {
     const currentPhotoCapture = $settingsPhotoCapture.value;
     if (prevPhotoCapture && !currentPhotoCapture) {
       // Defer: cameraService.stop() writes to store synchronously
@@ -105,10 +107,15 @@ export function initServices(): void {
     }
     prevPhotoCapture = currentPhotoCapture;
   });
-  window.addEventListener('beforeunload', () => disposePhotoEffect(), {
-    once: true,
-  });
 
   // Initialize voice mode service
   initVoiceMode();
+}
+
+/**
+ * Dispose the photo-capture signal effect (called from handleBeforeUnload)
+ */
+export function disposePhotoEffect(): void {
+  photoEffectDisposer?.();
+  photoEffectDisposer = null;
 }

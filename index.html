@@ -76,7 +76,7 @@
             <circle cx="12" cy="13" r="4"/>
           </svg>
         </div>
-        <div class="voice-indicator" id="voice-indicator" style="display: none;">
+        <div class="voice-indicator" id="voice-indicator" role="status" aria-live="polite" style="display: none;">
           <span class="voice-dot"></span>
           <span class="voice-status-text" id="voice-status-text"></span>
         </div>
@@ -172,7 +172,7 @@
 
             <!-- Record Button -->
             <div class="radial-time-btn-corner">
-              <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
+              <button class="radial-time-btn" id="radial-time-btn" aria-label="Record time" data-i18n-aria-label="time">
                 <span data-i18n="time">Record time</span>
               </button>
             </div>
@@ -398,7 +398,7 @@
           </div>
 
           <!-- Fault Detail Panel (appears after selecting a gate) -->
-          <div class="fault-detail-panel" id="fault-detail-panel" aria-live="polite" style="display: none;">
+          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;">
             <div class="fault-detail-header">
               <span class="fault-detail-gate-label" id="fault-detail-gate-label" aria-live="polite"></span>
               <button class="fault-detail-close" id="fault-detail-close" aria-label="Close" data-i18n-aria-label="close">

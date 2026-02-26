@@ -670,6 +670,7 @@
 
 .bib-action-btn {
   padding: 10px 16px;
+  min-height: 48px;
   border: none;
   border-radius: var(--radius);
   font-size: 0.875rem;

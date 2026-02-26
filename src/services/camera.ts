@@ -386,6 +386,9 @@ class CameraService {
 
       return base64;
     } catch (error) {
+      if (error instanceof Error && error.name === 'PhotoTooLargeError') {
+        throw error;
+      }
       logger.error('Photo capture error:', error);
       return null;
     }
