@@ -442,9 +442,9 @@ test.describe('Gate Judge - Accessibility', () => {
     await expect(faultList).toHaveAttribute('aria-live', 'polite');
   });
 
-  test('should have aria-live on fault detail panel', async ({ page }) => {
-    const panel = page.locator('#fault-detail-panel');
-    await expect(panel).toHaveAttribute('aria-live', 'polite');
+  test('should have aria-live on fault detail gate label', async ({ page }) => {
+    const gateLabel = page.locator('#fault-detail-gate-label');
+    await expect(gateLabel).toHaveAttribute('aria-live', 'polite');
   });
 });
 
