@@ -5,6 +5,7 @@
 
 import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
+import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import {
   captureTimingPhoto,
@@ -479,7 +480,12 @@ async function recordRadialTimestamp(): Promise<void> {
           }
         })
         .catch((err) => {
-          logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
+          if (err instanceof Error && err.name === 'PhotoTooLargeError') {
+            const lang = store.getState().currentLang;
+            showToast(t('photoTooLarge', lang), 'warning');
+          } else {
+            logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
+          }
         });
     }
 
