@@ -6,7 +6,7 @@
   height: 100%;
   background: radial-gradient(
     ellipse 300px 200px at 50% 30%,
-    rgba(0, 212, 255, 0.03) 0%,
+    color-mix(in srgb, var(--primary) 3%, transparent) 0%,
     transparent 70%
   );
 }

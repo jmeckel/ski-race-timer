@@ -40,7 +40,7 @@
   --gps-inactive: #ff4757;
 
   /* Borders — Cyan-tinted */
-  --border: rgba(0, 212, 255, 0.08);
+  --border: color-mix(in srgb, var(--primary) 8%, transparent);
 
   /* Typography */
   --font-display: "Space Grotesk", sans-serif;
@@ -270,8 +270,8 @@
     }
 
     &.syncing {
-      background: rgba(0, 212, 255, 0.06);
-      border-color: rgba(0, 212, 255, 0.2);
+      background: color-mix(in srgb, var(--primary) 6%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 20%, transparent);
     }
   }
 
@@ -508,7 +508,7 @@
       background: var(--primary);
       border-radius: 1px 1px 0 0;
       transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 40%, transparent);
     }
 
     &:active {
@@ -834,7 +834,7 @@
 
   .result-item:hover,
   .result-group-header:hover {
-    background: rgba(0, 212, 255, 0.08);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
 
   .result-sub-item:active {
