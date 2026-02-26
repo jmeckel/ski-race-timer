@@ -423,6 +423,14 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
       const data = await response.json();
       const lang = store.getState().currentLang;
 
+      // Check if race was deleted — server returns 200 with deleted flag
+      if (data.deleted) {
+        logger.warn('Race was deleted on server, entry not saved:', entry.id);
+        callbacks?.showToast(t('raceDeleted', lang), 'error', 5000);
+        // Keep entry in sync queue for potential re-association
+        return false;
+      }
+
       if (data.photoSkipped) {
         callbacks?.showToast(t('photoTooLarge', lang), 'warning');
       }

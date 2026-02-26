@@ -224,8 +224,8 @@ export function exportResults(): void {
 
     const csvContent = [header, ...rows].join('\n');
 
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Create and download file — prepend UTF-8 BOM so Windows Excel interprets umlauts correctly
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement('a');

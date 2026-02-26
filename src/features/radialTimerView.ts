@@ -37,6 +37,12 @@ import {
   isDuplicateEntry,
 } from '../utils/timestampRecorder';
 
+/** Check if bib is all zeros (e.g., "0", "00", "000") */
+function isZeroBib(bib: string): boolean {
+  if (!bib) return false;
+  return /^0+$/.test(bib);
+}
+
 // Module-level listener manager for lifecycle cleanup
 const listeners = new ListenerManager();
 
@@ -47,6 +53,7 @@ let clockTickUnsubscribe: (() => void) | null = null;
 let frozenTime: string | null = null;
 let isInitialized = false;
 let effectDisposers: (() => void)[] = [];
+let confirmationTimeoutId: number | null = null;
 
 // Cached DOM queries for frequently-updated selectors
 let cachedPointBtns: Element[] = [];
@@ -471,21 +478,24 @@ async function recordRadialTimestamp(): Promise<void> {
         });
     }
 
-    // Check for duplicate
+    // Check for duplicate and zero bib
     const isDuplicate = isDuplicateEntry(entry, state.entries);
+    const hasZeroBib = isZeroBib(entry.bib);
 
     // Add entry
     store.addEntry(entry);
 
-    // Feedback
+    // Feedback + visual warnings
     if (isDuplicate) {
       feedbackWarning();
+      showRadialConfirmation(entry, 'duplicate');
+    } else if (hasZeroBib) {
+      feedbackWarning();
+      showRadialConfirmation(entry, 'zeroBib');
     } else {
       feedbackSuccess();
+      showRadialConfirmation(entry);
     }
-
-    // Visual feedback
-    showRadialConfirmation(entry);
 
     // Sync: eager cloud push + broadcast to other tabs
     void syncEntry(entry);
@@ -519,7 +529,7 @@ async function recordRadialTimestamp(): Promise<void> {
 /**
  * Show confirmation with radial effects
  */
-function showRadialConfirmation(entry: Entry): void {
+function showRadialConfirmation(entry: Entry, warning?: 'duplicate' | 'zeroBib'): void {
   const now = new Date(entry.timestamp);
   const h = String(now.getHours()).padStart(2, '0');
   const m = String(now.getMinutes()).padStart(2, '0');
@@ -562,18 +572,41 @@ function showRadialConfirmation(entry: Entry): void {
     confirmPoint.className = `radial-confirmation-point ${entry.point === 'S' ? 'start' : 'finish'}`;
   }
 
+  // Show warning if applicable
+  const warningEl = getElement('radial-confirm-warning');
+  const warningText = getElement('radial-confirm-warning-text');
+  if (warningEl && warningText) {
+    if (warning) {
+      const state2 = store.getState();
+      warningText.textContent = warning === 'duplicate'
+        ? t('duplicateWarning', state2.currentLang)
+        : t('zeroBibWarning', state2.currentLang);
+      warningEl.style.display = 'flex';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  }
+
   overlay?.classList.add('show');
   overlay?.setAttribute('aria-hidden', 'false');
 
+  // Clear any previous confirmation timeout
+  if (confirmationTimeoutId !== null) {
+    clearTimeout(confirmationTimeoutId);
+  }
+
   // Reset after delay
-  setTimeout(() => {
+  const delay = warning ? 2500 : 1200;
+  confirmationTimeoutId = window.setTimeout(() => {
+    confirmationTimeoutId = null;
     frozenTime = null;
     dialRing?.classList.remove('flash');
     timeDisplay?.classList.remove('flash', 'frozen');
     timeBtn?.classList.remove('flash');
     overlay?.classList.remove('show');
     overlay?.setAttribute('aria-hidden', 'true');
-  }, 1200);
+    if (warningEl) warningEl.style.display = 'none';
+  }, delay);
 }
 
 /**
@@ -694,6 +727,11 @@ export function destroyRadialTimerView(): void {
   if (radialDial) {
     radialDial.destroy();
     radialDial = null;
+  }
+
+  if (confirmationTimeoutId !== null) {
+    clearTimeout(confirmationTimeoutId);
+    confirmationTimeoutId = null;
   }
 
   frozenTime = null;

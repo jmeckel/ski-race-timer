@@ -729,6 +729,19 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   }
 }
 
+.radial-confirmation-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-start: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* Responsive adjustments */
 @media (max-width: 500px) {
   .radial-time-seconds {

@@ -213,10 +213,12 @@ export function initSyncSettings(): void {
               exportResults();
               store.clearAll();
               store.clearFaultEntries();
+              store.clearSyncQueue();
               await photoStorage.clearAll();
             } else if (action === 'delete') {
               store.clearAll();
               store.clearFaultEntries();
+              store.clearSyncQueue();
               await photoStorage.clearAll();
             } else {
               // Cancelled - restore old race ID
@@ -232,6 +234,7 @@ export function initSyncSettings(): void {
             if (action === 'delete') {
               store.clearAll();
               store.clearFaultEntries();
+              store.clearSyncQueue();
               await photoStorage.clearAll();
             } else if (action === 'cancel') {
               // Cancelled - restore old race ID

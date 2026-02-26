@@ -28,6 +28,9 @@ let callbacks: FaultSyncCallbacks | null = null;
 // Gate assignments from other devices (for UI display)
 let otherGateAssignments: GateAssignment[] = [];
 
+// Concurrency guard for pushLocalFaults
+let isPushingFaults = false;
+
 /**
  * Initialize fault sync with callbacks
  */
@@ -150,9 +153,11 @@ export async function sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
   const state = store.getState();
   if (!state.settings.sync || !state.raceId) return false;
 
+  const originalRaceId = state.raceId;
+
   try {
     const response = await fetchWithTimeout(
-      `${FAULTS_API_BASE}?raceId=${encodeURIComponent(state.raceId)}`,
+      `${FAULTS_API_BASE}?raceId=${encodeURIComponent(originalRaceId)}`,
       {
         method: 'POST',
         headers: {
@@ -175,6 +180,10 @@ export async function sendFaultToCloud(fault: FaultEntry): Promise<boolean> {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
+
+    // Re-check raceId after async fetch — user may have switched races
+    const currentRaceId = store.getState().raceId;
+    if (!currentRaceId || currentRaceId !== originalRaceId) return false;
 
     // Mark fault as synced
     store.markFaultSynced(fault.id);
@@ -235,14 +244,20 @@ export async function deleteFaultFromCloudApi(
  * Push local faults to cloud
  */
 export async function pushLocalFaults(): Promise<void> {
-  const state = store.getState();
-  if (!state.settings.sync || !state.raceId) return;
+  if (isPushingFaults) return;
+  isPushingFaults = true;
+  try {
+    const state = store.getState();
+    if (!state.settings.sync || !state.raceId) return;
 
-  for (const fault of state.faultEntries) {
-    // Only push faults from this device that haven't been synced
-    if (fault.deviceId === state.deviceId && !fault.syncedAt) {
-      await sendFaultToCloud(fault);
+    for (const fault of state.faultEntries) {
+      // Only push faults from this device that haven't been synced
+      if (fault.deviceId === state.deviceId && !fault.syncedAt) {
+        await sendFaultToCloud(fault);
+      }
     }
+  } finally {
+    isPushingFaults = false;
   }
 }
 

@@ -674,6 +674,9 @@ async function handleDelete(
   if (!entryId) {
     return sendBadRequest(res, 'entryId is required');
   }
+  if (!deviceId) {
+    return sendBadRequest(res, 'deviceId is required');
+  }
 
   const entryIdStr = String(entryId);
   const sanitizedDeviceId = sanitizeString(deviceId, 50);

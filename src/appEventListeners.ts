@@ -292,8 +292,10 @@ export function handleStorageWarning(
  * Handle page unload - cleanup to prevent memory leaks
  */
 export function handleBeforeUnload(): void {
-  // Flush pending storage writes before cleanup to prevent data loss
+  // Force-save any pending store changes (bypasses 100ms deferred timeout)
+  // then flush to localStorage to prevent data loss on fast navigation
   try {
+    store.forceSave();
     storage.flush();
   } catch (e) {
     logger.warn('Storage flush error on unload:', e);

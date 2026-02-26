@@ -362,11 +362,16 @@ export default createHandler(
             firstGateColor === 'red' || firstGateColor === 'blue'
               ? firstGateColor
               : 'red';
+          const sanitizedDeviceId = sanitizeString(deviceId as string, 64);
+          const sanitizedDeviceName = sanitizeString(
+            deviceName as string,
+            MAX_DEVICE_NAME_LENGTH,
+          );
           await updateGateAssignment(
             client,
             normalizedRaceId,
-            deviceId as string,
-            deviceName as string,
+            sanitizedDeviceId,
+            sanitizedDeviceName,
             [start, end],
             isReady === 'true',
             validColor,

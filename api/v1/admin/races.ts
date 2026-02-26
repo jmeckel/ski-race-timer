@@ -5,7 +5,7 @@ import { createHandler } from '../../lib/handler.js';
 import { sendBadRequest, sendError, sendSuccess } from '../../lib/response.js';
 
 // Configuration
-const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
+const TOMBSTONE_EXPIRY_SECONDS = 600; // 10 minutes - must exceed worst-case poll interval (ultra-low battery = 5min)
 
 interface RaceData {
   entries?: unknown[];

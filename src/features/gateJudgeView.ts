@@ -271,10 +271,10 @@ export function updateOtherJudgesCoverage(): void {
   coverageList.innerHTML = otherAssignments
     .map(
       (a) => `
-    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(a.deviceName)}${a.isReady ? t('readySuffix', lang) : ''}">
+    <div class="coverage-badge ${a.isReady ? 'ready' : ''}" title="${escapeAttr(`${a.deviceName}${a.isReady ? t('readySuffix', lang) : ''}`)}">
       ${a.isReady ? `<span class="ready-check" aria-hidden="true">${iconCheck(14)}</span>` : ''}
       <span class="device-name">${escapeHtml(a.deviceName.slice(0, 15))}</span>
-      <span class="gate-range">${a.gateStart}–${a.gateEnd}</span>
+      <span class="gate-range">${escapeHtml(String(a.gateStart))}–${escapeHtml(String(a.gateEnd))}</span>
     </div>
   `,
     )

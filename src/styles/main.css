@@ -26,8 +26,8 @@
 
   /* Text */
   --text-primary: #ffffff; /* Pure white for max contrast */
-  --text-secondary: #8899aa; /* Muted blue-grey */
-  --text-tertiary: #556677; /* Subtle navy-grey */
+  --text-secondary: #a0b0bf; /* Muted blue-grey — 4.6:1 on --background */
+  --text-tertiary: #788999; /* Subtle navy-grey — 3.4:1 decorative/large text */
 
   /* Status Colors */
   --success: #00e68a; /* Vivid green */
