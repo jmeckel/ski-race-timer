@@ -116,6 +116,16 @@ class NetworkMonitor {
   }
 
   /**
+   * Get effective round-trip time from Network Information API.
+   * Returns RTT in milliseconds, or 0 if unavailable.
+   * Useful for adapting fetch timeouts on high-latency cellular connections.
+   */
+  getEffectiveRtt(): number {
+    const connection = this.getConnection();
+    return connection?.rtt ?? 0;
+  }
+
+  /**
    * Get the current connection quality ('good', 'slow', or 'offline').
    * Uses the Network Information API when available, falls back to
    * navigator.onLine for basic online/offline detection.

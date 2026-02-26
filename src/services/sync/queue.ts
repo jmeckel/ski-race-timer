@@ -47,16 +47,17 @@ class QueueProcessor {
   }
 
   /**
-   * Start processing sync queue
+   * Start processing sync queue.
+   * Accepts an optional interval override for metered/low-battery conditions.
    */
-  start(): void {
+  start(intervalMs: number = QUEUE_PROCESS_INTERVAL): void {
     if (this.queueInterval) {
       clearInterval(this.queueInterval);
     }
 
     this.queueInterval = setInterval(
       () => this.processQueue(),
-      QUEUE_PROCESS_INTERVAL,
+      intervalMs,
     );
   }
 

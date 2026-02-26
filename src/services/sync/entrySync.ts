@@ -19,7 +19,28 @@ import {
   getTokenExpiryMs,
 } from '../auth';
 import { photoStorage } from '../photoStorage';
-import { API_BASE, FETCH_TIMEOUT, SYNC_BATCH_SIZE } from './types';
+import { networkMonitor } from './networkMonitor';
+import {
+  API_BASE,
+  FETCH_TIMEOUT,
+  FETCH_TIMEOUT_HIGH_LATENCY,
+  SYNC_BATCH_SIZE,
+} from './types';
+
+/** High-latency RTT threshold in ms — above this, use extended fetch timeout */
+const HIGH_LATENCY_RTT_THRESHOLD = 1000;
+
+/**
+ * Get adaptive fetch timeout based on network RTT.
+ * On high-latency cellular (RTT > 1000ms), use extended timeout to avoid
+ * premature abort-and-retry loops that waste battery.
+ */
+function getAdaptiveTimeout(): number {
+  const rtt = networkMonitor.getEffectiveRtt();
+  return rtt > HIGH_LATENCY_RTT_THRESHOLD
+    ? FETCH_TIMEOUT_HIGH_LATENCY
+    : FETCH_TIMEOUT;
+}
 
 /**
  * Classify a sync error into a SyncStatus for the UI
@@ -203,7 +224,7 @@ async function fetchCloudEntriesImpl(): Promise<void> {
           ...getAuthHeaders(),
         },
       },
-      FETCH_TIMEOUT,
+      getAdaptiveTimeout(),
     );
 
     // Handle authentication errors specially
@@ -360,7 +381,7 @@ export async function deleteEntryFromCloud(
           deviceName: state.deviceName,
         }),
       },
-      FETCH_TIMEOUT,
+      getAdaptiveTimeout(),
     );
 
     if (!response.ok) {
@@ -407,7 +428,7 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
           deviceName: state.deviceName,
         }),
       },
-      FETCH_TIMEOUT,
+      getAdaptiveTimeout(),
     );
 
     if (!response.ok) {
@@ -524,7 +545,7 @@ export async function sendEntriesToCloudBatch(
           deviceName: freshState.deviceName,
         }),
       },
-      FETCH_TIMEOUT,
+      getAdaptiveTimeout(),
     );
 
     if (!response.ok) {

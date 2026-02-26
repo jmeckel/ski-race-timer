@@ -34,7 +34,11 @@ import {
 import { networkMonitor } from './networkMonitor';
 import { pollingManager } from './polling';
 import { queueProcessor } from './queue';
-import { API_BASE, FETCH_TIMEOUT } from './types';
+import {
+  API_BASE,
+  FETCH_TIMEOUT,
+  QUEUE_PROCESS_INTERVAL_METERED,
+} from './types';
 
 // Re-export auth functions for backwards compatibility
 export {
@@ -90,8 +94,8 @@ class SyncService {
     // Start independent fault polling (slower cadence than entry polling)
     this.startFaultPolling();
 
-    // Start queue processing
-    queueProcessor.start();
+    // Start queue processing (slower on metered to reduce cellular wake-ups)
+    queueProcessor.start(this.getQueueInterval());
 
     // Push existing local entries/faults to cloud (fire-and-forget with error handling)
     pushLocalEntries().catch((error) => {
@@ -117,7 +121,7 @@ class SyncService {
           pollingManager.setTabHidden(false);
           // Resume queue processing if it was active
           if (this.wasQueueProcessingBeforeHidden) {
-            queueProcessor.start();
+            queueProcessor.start(this.getQueueInterval());
           }
           // Resume fault polling
           this.startFaultPolling();
@@ -197,6 +201,16 @@ class SyncService {
       showToast: (message, type, duration) =>
         this.showSyncToast(message, type, duration),
     });
+  }
+
+  /**
+   * Get queue processing interval based on network state.
+   * Uses slower interval on metered/cellular to reduce wake-ups.
+   */
+  private getQueueInterval(): number | undefined {
+    return networkMonitor.isMeteredConnection()
+      ? QUEUE_PROCESS_INTERVAL_METERED
+      : undefined;
   }
 
   /**

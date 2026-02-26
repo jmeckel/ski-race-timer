@@ -242,6 +242,14 @@ export function cleanupFeedback(): void {
     clearTimeout(audioIdleTimeoutId);
     audioIdleTimeoutId = null;
   }
+  // Cancel any in-progress speech synthesis to release audio subsystem
+  if (typeof speechSynthesis !== 'undefined') {
+    try {
+      speechSynthesis.cancel();
+    } catch {
+      // Ignore — not all browsers support speechSynthesis
+    }
+  }
   if (audioContext) {
     audioContext.close().catch(() => {});
     audioContext = null;

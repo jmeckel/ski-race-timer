@@ -15,7 +15,9 @@ export const POLL_INTERVAL_ERROR = 30000; // 30 seconds on error
 export const MAX_RETRIES = 5;
 export const RETRY_BACKOFF_BASE = 2000; // 2 seconds
 export const QUEUE_PROCESS_INTERVAL = 10000; // 10 seconds
+export const QUEUE_PROCESS_INTERVAL_METERED = 25000; // 25 seconds on cellular/metered
 export const FETCH_TIMEOUT = 8000; // 8 seconds timeout for sync requests
+export const FETCH_TIMEOUT_HIGH_LATENCY = 15000; // 15 seconds for high-latency cellular
 export const SYNC_BATCH_SIZE = 10; // Max entries per batch sync request
 
 // Adaptive polling configuration
@@ -70,6 +72,8 @@ export interface NetworkInformation extends EventTarget {
     | 'other'
     | 'unknown';
   effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
+  downlink?: number; // Mbps
+  rtt?: number; // Round-trip time in ms
   saveData?: boolean;
   onchange?: ((this: NetworkInformation, ev: Event) => unknown) | null;
 }
