@@ -1,14 +1,12 @@
 /**
  * API Validation Utilities
- * Core validation (isValidRaceId, isValidEntry, etc.) imported from shared/validation.ts
+ * Core validation (isValidRaceId, constants) imported from shared/validation.ts
  */
 
 import type Redis from 'ioredis';
 
 // Re-export shared validation functions and constants
 export {
-  isValidDeviceId,
-  isValidEntry,
   isValidRaceId,
   MAX_BIB_LENGTH,
   MAX_DEVICE_NAME_LENGTH,
@@ -17,9 +15,6 @@ export {
   VALID_POINTS,
   VALID_STATUSES,
 } from '../../shared/validation.js';
-
-/** Valid fault type codes */
-export type FaultType = 'MG' | 'STR' | 'BR';
 
 /** Rate limit configuration */
 export interface RateLimitConfig {

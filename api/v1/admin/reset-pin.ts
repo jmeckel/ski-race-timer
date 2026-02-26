@@ -9,6 +9,7 @@ import {
   hasRedisError,
 } from '../../lib/redis.js';
 import {
+  getClientIP,
   handlePreflight,
   sendError,
   sendMethodNotAllowed,
@@ -16,49 +17,21 @@ import {
   sendServiceUnavailable,
   sendSuccess,
   setCorsHeaders,
+  setRateLimitHeaders,
   setSecurityHeaders,
 } from '../../lib/response.js';
+import { checkRateLimit } from '../../lib/validation.js';
 
 // Rate limiting for PIN reset (critical security endpoint)
-const RATE_LIMIT_WINDOW = 60; // 1 minute
-const RATE_LIMIT_MAX_ATTEMPTS = 3; // Only 3 attempts per minute per IP
-
-interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  error?: string;
-}
+const RESET_PIN_RATE_LIMIT = {
+  keyPrefix: 'reset-pin',
+  window: 60,
+  maxRequests: 3,
+  maxPosts: 3,
+} as const;
 
 interface ResetPinRequestBody {
   serverPin?: string;
-}
-
-/**
- * Check rate limit for PIN reset attempts
- */
-async function checkRateLimit(
-  client: Redis,
-  clientIP: string,
-): Promise<RateLimitResult> {
-  const key = `reset-pin:rate:${clientIP}`;
-
-  try {
-    // Use pipeline for atomic incr+expire to prevent key persisting without TTL
-    const multi = client.multi();
-    multi.incr(key);
-    multi.expire(key, RATE_LIMIT_WINDOW);
-    const results = await multi.exec();
-    const current = (results?.[0]?.[1] as number) ?? 1;
-    return {
-      allowed: current <= RATE_LIMIT_MAX_ATTEMPTS,
-      remaining: Math.max(0, RATE_LIMIT_MAX_ATTEMPTS - current),
-    };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    apiLogger.error('Rate limit check failed', { error: message });
-    // SECURITY: Fail closed if rate limiting cannot be enforced
-    return { allowed: false, remaining: 0, error: 'Rate limiting unavailable' };
-  }
 }
 
 /**
@@ -117,21 +90,29 @@ export default async function handler(
   }
 
   // Rate limiting BEFORE PIN verification to prevent brute-force
-  const clientIP =
-    (req.headers['x-forwarded-for'] as string | undefined)
-      ?.split(',')[0]
-      ?.trim() ||
-    (req.headers['x-real-ip'] as string | undefined) ||
-    req.socket?.remoteAddress ||
-    'unknown';
+  const clientIP = getClientIP(req);
 
-  const rateLimit = await checkRateLimit(client, clientIP);
+  const rateLimit = await checkRateLimit(
+    client,
+    clientIP,
+    req.method!,
+    RESET_PIN_RATE_LIMIT,
+  );
+  setRateLimitHeaders(
+    res,
+    rateLimit.limit,
+    rateLimit.remaining,
+    rateLimit.reset,
+  );
   if (!rateLimit.allowed) {
     apiLogger.warn('PIN reset rate limit exceeded', { ip: clientIP });
     if (rateLimit.error) {
       return sendServiceUnavailable(res, 'Rate limiting unavailable');
     }
-    return sendRateLimitExceeded(res, RATE_LIMIT_WINDOW);
+    return sendRateLimitExceeded(
+      res,
+      rateLimit.reset - Math.floor(Date.now() / 1000),
+    );
   }
 
   // Verify SERVER_API_PIN with timing-safe comparison (after rate limit)

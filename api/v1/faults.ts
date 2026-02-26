@@ -6,7 +6,6 @@ import {
   sanitizeString,
   sendBadRequest,
   sendError,
-  sendMethodNotAllowed,
   sendSuccess,
 } from '../lib/response.js';
 import {
@@ -575,7 +574,5 @@ export default createHandler(
         faultId: faultIdStr,
       });
     }
-
-    return sendMethodNotAllowed(res);
   },
 );

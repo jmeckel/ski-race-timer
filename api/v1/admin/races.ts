@@ -2,12 +2,7 @@ import type Redis from 'ioredis';
 import { apiLogger } from '../../lib/apiLogger.js';
 import { getActiveDeviceCount } from '../../lib/deviceHeartbeat.js';
 import { createHandler } from '../../lib/handler.js';
-import {
-  sendBadRequest,
-  sendError,
-  sendMethodNotAllowed,
-  sendSuccess,
-} from '../../lib/response.js';
+import { sendBadRequest, sendError, sendSuccess } from '../../lib/response.js';
 
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 300; // 5 minutes - enough for all clients to poll
@@ -251,7 +246,5 @@ export default createHandler(
 
       return sendSuccess(res, { ...result });
     }
-
-    return sendMethodNotAllowed(res);
   },
 );

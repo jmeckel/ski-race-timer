@@ -49,11 +49,13 @@ vi.mock('../../api/lib/response.js', () => ({
     }
     return false;
   }),
+  getClientIP: vi.fn(() => '127.0.0.1'),
   sendSuccess: vi.fn(),
   sendError: vi.fn(),
   sendMethodNotAllowed: vi.fn(),
   sendServiceUnavailable: vi.fn(),
   sendRateLimitExceeded: vi.fn(),
+  setRateLimitHeaders: vi.fn(),
   setCorsHeaders: vi.fn(),
   setSecurityHeaders: vi.fn(),
 }));

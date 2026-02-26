@@ -34,11 +34,6 @@ export default createHandler(
     // Auth and rate limiting handled manually (rate limit after PIN format validation)
   },
   async (req, res, { client, clientIP }) => {
-    if (req.method !== 'POST') {
-      // createHandler already handles preflight, but guard non-POST
-      return sendBadRequest(res, 'Only POST is allowed');
-    }
-
     // Validate PIN format before consuming rate limit token
     const { pin, role } = (req.body || {}) as TokenRequestBody;
 

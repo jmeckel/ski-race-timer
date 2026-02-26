@@ -125,19 +125,19 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
     it('should reject GET requests', async () => {
       const req = { method: 'GET', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Only POST is allowed');
+      expect(sendMethodNotAllowed).toHaveBeenCalledWith(expect.anything());
     });
 
     it('should reject PUT requests', async () => {
       const req = { method: 'PUT', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Only POST is allowed');
+      expect(sendMethodNotAllowed).toHaveBeenCalledWith(expect.anything());
     });
 
     it('should reject DELETE requests', async () => {
       const req = { method: 'DELETE', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'Only POST is allowed');
+      expect(sendMethodNotAllowed).toHaveBeenCalledWith(expect.anything());
     });
   });
 

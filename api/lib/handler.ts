@@ -16,6 +16,7 @@ import {
   handlePreflight,
   sendAuthRequired,
   sendError,
+  sendMethodNotAllowed,
   sendRateLimitExceeded,
   sendServiceUnavailable,
   setRateLimitHeaders,
@@ -59,6 +60,11 @@ export function createHandler(
   return async (req: VercelRequest, res: VercelResponse): Promise<void> => {
     // CORS preflight
     if (handlePreflight(req, res, [...options.methods, 'OPTIONS'])) return;
+
+    // Method enforcement
+    if (!options.methods.includes(req.method as HttpMethod)) {
+      return sendMethodNotAllowed(res);
+    }
 
     // Redis init
     let client: Redis;

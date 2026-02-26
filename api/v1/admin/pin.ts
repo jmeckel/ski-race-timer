@@ -2,12 +2,7 @@ import { apiLogger } from '../../lib/apiLogger.js';
 import { createHandler } from '../../lib/handler.js';
 import { hashPin, verifyPin } from '../../lib/jwt.js';
 import { CHIEF_JUDGE_PIN_KEY, CLIENT_PIN_KEY } from '../../lib/redis.js';
-import {
-  sendBadRequest,
-  sendError,
-  sendMethodNotAllowed,
-  sendSuccess,
-} from '../../lib/response.js';
+import { sendBadRequest, sendError, sendSuccess } from '../../lib/response.js';
 
 interface ChangePinRequestBody {
   currentPin?: string;
@@ -87,7 +82,5 @@ export default createHandler(
       apiLogger.info('PIN changed successfully via admin/pin API');
       return sendSuccess(res, { success: true });
     }
-
-    return sendMethodNotAllowed(res);
   },
 );

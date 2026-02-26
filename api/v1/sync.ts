@@ -20,7 +20,6 @@ import {
   sanitizeString,
   sendBadRequest,
   sendError,
-  sendMethodNotAllowed,
   sendSuccess,
 } from '../lib/response.js';
 import { EntrySchema, validate } from '../lib/schemas.js';
@@ -778,7 +777,5 @@ export default createHandler(
     if (req.method === 'DELETE') {
       return await handleDelete(req, res, client, normalizedRaceId, redisKey);
     }
-
-    return sendMethodNotAllowed(res);
   },
 );

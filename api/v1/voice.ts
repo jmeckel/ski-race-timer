@@ -18,7 +18,6 @@ import { createHandler } from '../lib/handler.js';
 import {
   sanitizeString,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendSuccess,
 } from '../lib/response.js';
 
@@ -382,11 +381,6 @@ export default createHandler(
     auth: true,
   },
   async (req, res) => {
-    // Only allow POST
-    if (req.method !== 'POST') {
-      return sendMethodNotAllowed(res);
-    }
-
     // Determine provider (default to OpenAI)
     const provider = (process.env.VOICE_LLM_PROVIDER || 'openai').toLowerCase();
 
