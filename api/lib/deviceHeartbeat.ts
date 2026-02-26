@@ -11,7 +11,7 @@ import { CACHE_EXPIRY_SECONDS } from './atomicOps.js';
 import type { DeviceData } from './syncTypes.js';
 
 /** Device considered inactive after this many milliseconds */
-export const DEVICE_STALE_THRESHOLD = 30000; // 30 seconds
+export const DEVICE_STALE_THRESHOLD = 60000; // 60 seconds — 2× normal poll interval to tolerate one missed poll
 
 /**
  * Update device heartbeat in Redis.

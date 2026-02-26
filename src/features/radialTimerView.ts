@@ -6,7 +6,6 @@
 import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
-import { ambientModeService } from '../services/ambient';
 import {
   captureTimingPhoto,
   feedbackSuccess,
@@ -14,8 +13,9 @@ import {
   feedbackWarning,
   gpsService,
   photoStorage,
-  syncService,
+  syncEntry,
 } from '../services';
+import { ambientModeService } from '../services/ambient';
 import {
   $cloudDeviceCount,
   $entries,
@@ -452,7 +452,9 @@ async function recordRadialTimestamp(): Promise<void> {
         .then(async (photo) => {
           if (photo) {
             // Verify entry still exists (may have been undone/deleted)
-            const exists = store.getState().entries.some(e => e.id === entry.id);
+            const exists = store
+              .getState()
+              .entries.some((e) => e.id === entry.id);
             if (!exists) return;
             try {
               const saved = await photoStorage.savePhoto(entry.id, photo);
@@ -485,8 +487,8 @@ async function recordRadialTimestamp(): Promise<void> {
     // Visual feedback
     showRadialConfirmation(entry);
 
-    // Sync
-    syncService.broadcastEntry(entry);
+    // Sync: eager cloud push + broadcast to other tabs
+    void syncEntry(entry);
 
     // Auto-increment bib or clear after recording
     if (state.settings.auto && state.bibInput) {

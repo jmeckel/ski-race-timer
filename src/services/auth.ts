@@ -186,3 +186,25 @@ export function getTokenRole(): string | null {
 export function hasChiefJudgeRole(): boolean {
   return getTokenRole() === 'chiefJudge';
 }
+
+/**
+ * Get milliseconds until token expires.
+ * Returns Infinity if no token, can't parse, or no expiry claim.
+ */
+export function getTokenExpiryMs(): number {
+  const token = storage.getRaw(AUTH_TOKEN_KEY);
+  if (!token) return Infinity;
+
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(decodeBase64Url(parts[1]!));
+      if (payload.exp) {
+        return payload.exp * 1000 - Date.now();
+      }
+    }
+  } catch {
+    // Can't parse
+  }
+  return Infinity;
+}

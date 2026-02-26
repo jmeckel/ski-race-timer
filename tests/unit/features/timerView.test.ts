@@ -39,6 +39,7 @@ vi.mock('../../../src/services', () => ({
     savePhoto: vi.fn(() => Promise.resolve(true)),
     deletePhoto: vi.fn(() => Promise.resolve()),
   },
+  syncEntry: vi.fn(),
   syncService: { broadcastEntry: vi.fn() },
 }));
 
@@ -125,7 +126,7 @@ import {
 import {
   feedbackSuccess,
   feedbackTap,
-  syncService,
+  syncEntry,
 } from '../../../src/services';
 
 describe('Timer View Module', () => {
@@ -455,7 +456,7 @@ describe('Timer View Module', () => {
       expect(mockSetRecording).toHaveBeenCalledWith(true);
       expect(mockAddEntry).toHaveBeenCalled();
       expect(feedbackSuccess).toHaveBeenCalled();
-      expect(syncService.broadcastEntry).toHaveBeenCalled();
+      expect(syncEntry).toHaveBeenCalled();
       expect(mockSetRecording).toHaveBeenCalledWith(false);
     });
 

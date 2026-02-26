@@ -34,7 +34,6 @@ import {
 } from './features/settingsView';
 import { destroyClock, handleTimerVoiceIntent } from './features/timerView';
 import { t } from './i18n/translations';
-import { ambientModeService } from './services/ambient';
 import {
   cameraService,
   cleanupFeedback,
@@ -44,6 +43,7 @@ import {
   voiceModeService,
   wakeLockService,
 } from './services';
+import { ambientModeService } from './services/ambient';
 import { storage } from './services/storage';
 import { store } from './store';
 import type { Entry, FaultEntry, Language, VoiceStatus } from './types';
@@ -226,12 +226,16 @@ export function handleStorageError(
     message: string;
     isQuotaError: boolean;
     entryCount: number;
+    retriesExhausted?: boolean;
   }>,
 ): void {
-  const { isQuotaError, entryCount } = event.detail;
+  const { isQuotaError, entryCount, retriesExhausted } = event.detail;
   const lang = store.getState().currentLang;
 
-  if (isQuotaError) {
+  if (retriesExhausted) {
+    // All retries failed — data is in memory only, at risk of loss
+    showToast(t('storageSaveGaveUp', lang), 'error', 15000);
+  } else if (isQuotaError) {
     // Storage quota exceeded - show actionable message
     showToast(t('storageNearlyFull', lang), 'error', TOAST_DURATION.CRITICAL);
   } else {
@@ -245,6 +249,7 @@ export function handleStorageError(
   logger.error('[Storage] saveEntries:', event.detail.message, {
     entryCount,
     isQuotaError,
+    retriesExhausted,
   });
 }
 

@@ -733,7 +733,7 @@ export default createHandler(
       keyPrefix: 'sync',
       window: 60,
       maxRequests: 100,
-      maxPosts: 30,
+      maxPosts: 100,
     },
     auth: true,
     writeRequiresAuth: true,

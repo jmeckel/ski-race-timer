@@ -71,6 +71,7 @@ vi.mock('../../../../src/services/auth', () => ({
   clearAuthToken: vi.fn(),
   dispatchAuthExpired: vi.fn(),
   getAuthHeaders: vi.fn(() => ({ Authorization: 'Bearer test-token' })),
+  getTokenExpiryMs: vi.fn(() => Infinity),
 }));
 
 vi.mock('../../../../src/services/photoStorage', () => ({

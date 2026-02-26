@@ -80,7 +80,7 @@ export default defineConfig({
   },
   plugins: [
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       manifestFilename: 'manifest.json',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {

@@ -206,13 +206,19 @@ class Store {
 
     // Load Chief Judge penalty config
     const storedPenalty = storage.getRaw(STORAGE_KEYS.PENALTY_SECONDS);
-    const penaltySeconds = storedPenalty ? Math.max(0, Math.min(60, Number(storedPenalty) || 5)) : 5;
+    const penaltySeconds = storedPenalty
+      ? Math.max(0, Math.min(60, Number(storedPenalty) || 5))
+      : 5;
     const storedUsePenalty = storage.getRaw(STORAGE_KEYS.USE_PENALTY_MODE);
-    const usePenaltyMode = storedUsePenalty !== null ? storedUsePenalty !== 'false' : true;
+    const usePenaltyMode =
+      storedUsePenalty !== null ? storedUsePenalty !== 'false' : true;
     const finalizedRacers = parseJson<string[]>(
       STORAGE_KEYS.FINALIZED_RACERS,
       [],
-      (p) => (Array.isArray(p) ? p.filter((s): s is string => typeof s === 'string') : []),
+      (p) =>
+        Array.isArray(p)
+          ? p.filter((s): s is string => typeof s === 'string')
+          : [],
     );
 
     return {
@@ -375,11 +381,17 @@ class Store {
       }
 
       if (dirty.has('penaltySeconds')) {
-        storage.setRaw(STORAGE_KEYS.PENALTY_SECONDS, String(this.state.penaltySeconds));
+        storage.setRaw(
+          STORAGE_KEYS.PENALTY_SECONDS,
+          String(this.state.penaltySeconds),
+        );
       }
 
       if (dirty.has('usePenaltyMode')) {
-        storage.setRaw(STORAGE_KEYS.USE_PENALTY_MODE, String(this.state.usePenaltyMode));
+        storage.setRaw(
+          STORAGE_KEYS.USE_PENALTY_MODE,
+          String(this.state.usePenaltyMode),
+        );
       }
 
       if (dirty.has('finalizedRacers')) {
@@ -421,13 +433,16 @@ class Store {
       if (this.saveRetryCount <= Store.MAX_SAVE_RETRIES) {
         this.scheduleSave();
       } else {
-        logger.error(`Storage save failed after ${Store.MAX_SAVE_RETRIES} retries, giving up until next state change`);
+        logger.error(
+          `Storage save failed after ${Store.MAX_SAVE_RETRIES} retries, giving up until next state change`,
+        );
+        this.dispatchStorageError(e as Error, true);
         this.saveRetryCount = 0;
       }
     }
   }
 
-  private dispatchStorageError(error: Error) {
+  private dispatchStorageError(error: Error, retriesExhausted = false) {
     window.dispatchEvent(
       new CustomEvent('storage-error', {
         detail: {
@@ -437,6 +452,7 @@ class Store {
             error.message.includes('quota') ||
             error.message.includes('storage'),
           entryCount: this.state.entries.length,
+          retriesExhausted,
         },
       }),
     );

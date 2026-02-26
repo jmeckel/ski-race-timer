@@ -5,7 +5,6 @@
 
 import { Clock, showToast } from '../components';
 import { t } from '../i18n/translations';
-import { ambientModeService } from '../services/ambient';
 import {
   captureTimingPhoto,
   feedbackSuccess,
@@ -13,8 +12,9 @@ import {
   feedbackWarning,
   gpsService,
   photoStorage,
-  syncService,
+  syncEntry,
 } from '../services';
+import { ambientModeService } from '../services/ambient';
 import { store } from '../store';
 import type { Entry, TimingPoint, VoiceIntent } from '../types';
 import {
@@ -458,8 +458,8 @@ export async function recordTimestamp(): Promise<void> {
       showConfirmation(entry);
     }
 
-    // Sync to cloud
-    syncService.broadcastEntry(entry);
+    // Sync: eager cloud push + broadcast to other tabs
+    void syncEntry(entry);
 
     // Auto-increment bib after recording
     if (state.settings.auto && state.bibInput) {

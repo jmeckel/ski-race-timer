@@ -41,6 +41,7 @@ export interface AppCustomEventMap {
     message: string;
     isQuotaError: boolean;
     entryCount: number;
+    retriesExhausted?: boolean;
   };
 
   // ===== Auth Events (from services/auth.ts) =====

@@ -242,6 +242,8 @@ export const translations = {
     storageWarning: 'Storage almost full',
     storageNearlyFull:
       'Storage nearly full. Export data and clear old entries.',
+    storageSaveGaveUp:
+      'Data NOT saved to disk! Export entries now to prevent data loss.',
 
     // Network errors
     networkError: 'Network error - check connection',
@@ -507,6 +509,8 @@ export const translations = {
 
     // Auth
     sessionExpired: 'Session expired. Please re-enter your PIN.',
+    sessionExpiryWarning:
+      'Session expires soon. Re-enter PIN to stay connected.',
     authSuccess: 'Authentication successful',
 
     // Keyboard Shortcuts
@@ -796,6 +800,8 @@ export const translations = {
     storageWarning: 'Speicher fast voll',
     storageNearlyFull:
       'Speicher fast voll. Daten exportieren und alte Einträge löschen.',
+    storageSaveGaveUp:
+      'Daten NICHT auf Gerät gespeichert! Einträge jetzt exportieren.',
 
     // Network errors
     networkError: 'Netzwerkfehler - Verbindung prüfen',
@@ -1067,6 +1073,8 @@ export const translations = {
 
     // Auth
     sessionExpired: 'Sitzung abgelaufen. Bitte PIN erneut eingeben.',
+    sessionExpiryWarning:
+      'Sitzung läuft bald ab. PIN erneut eingeben, um verbunden zu bleiben.',
     authSuccess: 'Authentifizierung erfolgreich',
 
     // Keyboard Shortcuts
@@ -1357,6 +1365,8 @@ export const translations = {
     storageWarning: 'Stockage presque plein',
     storageNearlyFull:
       'Stockage presque plein. Exportez les données et supprimez les anciennes entrées.',
+    storageSaveGaveUp:
+      'Données NON enregistrées ! Exportez les entrées maintenant.',
 
     // Network errors
     networkError: 'Erreur réseau - vérifiez la connexion',
@@ -1634,6 +1644,8 @@ export const translations = {
 
     // Auth
     sessionExpired: 'Session expirée. Veuillez ressaisir votre PIN.',
+    sessionExpiryWarning:
+      'Session expire bientôt. Ressaisir le PIN pour rester connecté.',
     authSuccess: 'Authentification réussie',
 
     // Keyboard Shortcuts

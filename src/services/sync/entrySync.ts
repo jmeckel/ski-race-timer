@@ -12,7 +12,12 @@ import { logger } from '../../utils/logger';
 import { hasFullPhotoData, isPhotoMarker } from '../../utils/photoHelpers';
 import { addRecentRace } from '../../utils/recentRaces';
 import { isValidEntry } from '../../utils/validation';
-import { clearAuthToken, dispatchAuthExpired, getAuthHeaders } from '../auth';
+import {
+  clearAuthToken,
+  dispatchAuthExpired,
+  getAuthHeaders,
+  getTokenExpiryMs,
+} from '../auth';
 import { photoStorage } from '../photoStorage';
 import { API_BASE, FETCH_TIMEOUT, SYNC_BATCH_SIZE } from './types';
 
@@ -40,7 +45,10 @@ function classifySyncError(error: unknown): 'error' | 'offline' {
 /**
  * Prepare an entry for sync by resolving photo data from IndexedDB
  */
-async function prepareEntryForSync(entry: Entry, syncPhotos: boolean): Promise<Entry> {
+async function prepareEntryForSync(
+  entry: Entry,
+  syncPhotos: boolean,
+): Promise<Entry> {
   if (syncPhotos && isPhotoMarker(entry.photo)) {
     const photoData = await photoStorage.getPhoto(entry.id);
     return { ...entry, photo: photoData || undefined };
@@ -69,6 +77,10 @@ export interface EntrySyncCallbacks {
 let callbacks: EntrySyncCallbacks | null = null;
 let lastSyncTimestamp = 0;
 let activeFetchPromise: Promise<void> | null = null;
+let tokenExpiryWarned = false;
+
+/** Warn once when token is within 1 hour of expiry */
+const TOKEN_EXPIRY_WARNING_MS = 60 * 60 * 1000; // 1 hour
 
 /**
  * Initialize entry sync with callbacks
@@ -154,6 +166,16 @@ export async function fetchCloudEntries(): Promise<void> {
  */
 async function fetchCloudEntriesImpl(): Promise<void> {
   const state = store.getState();
+
+  // Proactive token expiry warning (show once when <1 hour remaining)
+  if (!tokenExpiryWarned) {
+    const msRemaining = getTokenExpiryMs();
+    if (msRemaining > 0 && msRemaining < TOKEN_EXPIRY_WARNING_MS) {
+      tokenExpiryWarned = true;
+      const lang = state.currentLang;
+      callbacks?.showToast(t('sessionExpiryWarning', lang), 'warning', 10000);
+    }
+  }
 
   // Set syncing status to show activity indicator
   const previousStatus = state.syncStatus;
@@ -365,7 +387,10 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
 
   try {
     // Prepare entry for sync - load photo from IndexedDB if syncPhotos is enabled
-    const entryToSync = await prepareEntryForSync(entry, state.settings.syncPhotos);
+    const entryToSync = await prepareEntryForSync(
+      entry,
+      state.settings.syncPhotos,
+    );
 
     // Re-check raceId after async photo loading — user may have switched races
     const currentRaceId = store.getState().raceId;
@@ -471,7 +496,9 @@ export async function sendEntriesToCloudBatch(
     // Prepare entries for sync - load photos from IndexedDB if needed
     const entriesToSync: Entry[] = [];
     for (const entry of batch) {
-      entriesToSync.push(await prepareEntryForSync(entry, state.settings.syncPhotos));
+      entriesToSync.push(
+        await prepareEntryForSync(entry, state.settings.syncPhotos),
+      );
     }
 
     // Re-read state after async photo loading — user may have switched races
@@ -570,4 +597,5 @@ export function cleanupEntrySync(): void {
   callbacks = null;
   lastSyncTimestamp = 0;
   activeFetchPromise = null;
+  tokenExpiryWarned = false;
 }
