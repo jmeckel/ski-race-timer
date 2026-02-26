@@ -251,6 +251,23 @@ describe('CSV Export Format - Race Horology', () => {
     });
   });
 
+  describe('UTF-8 BOM', () => {
+    it('should prepend UTF-8 BOM (\\uFEFF) to CSV content in export source code', async () => {
+      // Source-code assertion: verify the production export.ts contains the BOM character
+      // for Windows Excel compatibility with German umlauts (e.g., Gerät).
+      // The Blob is created internally in exportResults() so we verify at source level.
+      const fs = await import('fs');
+      const path = await import('path');
+      const source = fs.readFileSync(
+        path.join(__dirname, '../../../src/features/export.ts'),
+        'utf-8',
+      );
+
+      // The BOM must appear in the Blob constructor call
+      expect(source).toContain("'\\uFEFF'");
+    });
+  });
+
   describe('Row format validation', () => {
     it('should produce rows with correct number of semicolon-separated fields', () => {
       // A standard row without faults has 6 fields

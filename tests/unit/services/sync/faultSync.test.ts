@@ -451,5 +451,32 @@ describe('Fault Sync Module', () => {
       await pushLocalFaults();
       expect(mockFetch).not.toHaveBeenCalled();
     });
+
+    it('should prevent overlapping calls via isPushingFaults guard', async () => {
+      // Set up state with 2 unsynced faults from this device
+      mockGetState.mockReturnValue({
+        ...baseState,
+        faultEntries: [
+          { id: 'f1', deviceId: 'dev_1', syncedAt: undefined, bib: '001', run: 1, gateNumber: 3, faultType: 'MG', timestamp: '2024-01-15T10:00:00.000Z', deviceName: 'Judge 1', gateRange: [1, 10], currentVersion: 1, versionHistory: [], markedForDeletion: false },
+          { id: 'f2', deviceId: 'dev_1', syncedAt: undefined, bib: '002', run: 1, gateNumber: 5, faultType: 'STR', timestamp: '2024-01-15T10:01:00.000Z', deviceName: 'Judge 1', gateRange: [1, 10], currentVersion: 1, versionHistory: [], markedForDeletion: false },
+        ],
+      });
+
+      // Make sendFaultToCloud slow — each call takes 50ms
+      mockFetch.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 50)),
+      );
+
+      // Fire two concurrent pushLocalFaults calls
+      const push1 = pushLocalFaults();
+      const push2 = pushLocalFaults();
+
+      await Promise.all([push1, push2]);
+
+      // The first call should process both faults (2 fetch calls).
+      // The second call should return immediately due to isPushingFaults guard.
+      // So total fetch calls should be exactly 2 (not 4).
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
   });
 });

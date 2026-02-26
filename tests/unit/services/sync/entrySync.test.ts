@@ -1254,6 +1254,42 @@ describe('Entry Sync Module', () => {
       expect(result).toBe(true);
       expect(mockRemoveFromSyncQueue).toHaveBeenCalledWith(entry.id);
     });
+
+    // Deleted race handling
+
+    it('should return false and NOT remove from sync queue when server responds with deleted flag', async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ deleted: true }),
+      );
+
+      const entry = createEntry({ id: 'entry-deleted-race' });
+      const result = await sendEntryToCloud(entry);
+
+      // deleted: true means race was deleted — entry was NOT saved
+      expect(result).toBe(false);
+
+      // Must NOT remove from sync queue — entry might be re-associated later
+      expect(mockRemoveFromSyncQueue).not.toHaveBeenCalled();
+
+      // Should show error toast about deleted race
+      expect(mockCallbacks.showToast).toHaveBeenCalledWith(
+        'raceDeleted',
+        'error',
+        5000,
+      );
+    });
+
+    it('should not call onResetFastPolling when server responds with deleted flag', async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ deleted: true }),
+      );
+
+      const entry = createEntry();
+      await sendEntryToCloud(entry);
+
+      // Polling should NOT be reset since the entry was not accepted
+      expect(mockCallbacks.onResetFastPolling).not.toHaveBeenCalled();
+    });
   });
 
   // =========================================================================
