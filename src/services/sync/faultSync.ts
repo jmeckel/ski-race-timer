@@ -124,6 +124,12 @@ export async function fetchCloudFaults(): Promise<void> {
     if (Array.isArray(data.gateAssignments)) {
       updateGateAssignments(data.gateAssignments);
     }
+
+    // Retry any local faults that failed to sync earlier (fire-and-forget)
+    // This mirrors how entries use a queue processor for retries
+    pushLocalFaults().catch((error) => {
+      logger.error('Failed to push local faults after fetch:', error);
+    });
   } catch (error) {
     logger.error('Fault sync fetch error:', error);
     // Dispatch event so UI can show fault sync status

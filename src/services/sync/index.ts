@@ -128,6 +128,10 @@ class SyncService {
         if (store.getState().syncStatus === 'offline') {
           store.setSyncStatus('connecting');
           pollingManager.start();
+          // Push any faults that failed to sync while offline
+          pushLocalFaults().catch((error) => {
+            logger.error('Failed to push local faults on reconnect:', error);
+          });
         }
       },
       () => {
@@ -462,7 +466,7 @@ export async function syncFault(
   if (state.settings.sync && state.raceId) {
     const success = await syncService.sendFaultToCloud(fault);
     if (!success) {
-      logger.warn('Failed to sync fault to cloud, will retry on next sync cycle:', fault.id);
+      logger.warn('Failed to sync fault to cloud, will retry on next poll:', fault.id);
     }
   }
 }
