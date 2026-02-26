@@ -2,14 +2,13 @@
  * Unit Tests for Validation Utilities
  * Tests: isValidEntry, isValidSettings, isValidSyncQueueItem, isValidRaceId,
  *        isValidDeviceId, isValidDataSchema, sanitizeString, sanitizeEntry,
- *        migrateSchema, calculateChecksum, verifyChecksum
+ *        migrateSchema
  */
 
 import { describe, expect, it } from 'vitest';
 import type { Entry, Settings, SyncQueueItem } from '../../src/types';
 import { SCHEMA_VERSION } from '../../src/types';
 import {
-  calculateChecksum,
   isValidDataSchema,
   isValidDeviceId,
   isValidEntry,
@@ -19,7 +18,6 @@ import {
   migrateSchema,
   sanitizeEntry,
   sanitizeString,
-  verifyChecksum,
 } from '../../src/utils/validation';
 
 describe('Validation Utilities', () => {
@@ -547,49 +545,4 @@ describe('Validation Utilities', () => {
     });
   });
 
-  describe('calculateChecksum', () => {
-    it('should return consistent checksum for same data', () => {
-      const data = 'test data';
-      const checksum1 = calculateChecksum(data);
-      const checksum2 = calculateChecksum(data);
-      expect(checksum1).toBe(checksum2);
-    });
-
-    it('should return different checksum for different data', () => {
-      const checksum1 = calculateChecksum('data1');
-      const checksum2 = calculateChecksum('data2');
-      expect(checksum1).not.toBe(checksum2);
-    });
-
-    it('should handle empty string', () => {
-      const checksum = calculateChecksum('');
-      expect(typeof checksum).toBe('string');
-    });
-
-    it('should handle complex JSON data', () => {
-      const data = JSON.stringify({ entries: [{ id: 1 }, { id: 2 }] });
-      const checksum = calculateChecksum(data);
-      expect(checksum.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('verifyChecksum', () => {
-    it('should return true for matching checksum', () => {
-      const data = 'test data';
-      const checksum = calculateChecksum(data);
-      expect(verifyChecksum(data, checksum)).toBe(true);
-    });
-
-    it('should return false for non-matching checksum', () => {
-      const data = 'test data';
-      expect(verifyChecksum(data, 'wrongchecksum')).toBe(false);
-    });
-
-    it('should detect data tampering', () => {
-      const originalData = 'original';
-      const checksum = calculateChecksum(originalData);
-      const tamperedData = 'tampered';
-      expect(verifyChecksum(tamperedData, checksum)).toBe(false);
-    });
-  });
 });

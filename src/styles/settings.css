@@ -326,7 +326,11 @@
 .version-info-btn:focus-visible,
 .pending-deletion-btn:focus-visible,
 .fault-row-btn:focus-visible,
-.finalize-btn:focus-visible {
+.finalize-btn:focus-visible,
+.modal-close-btn:focus-visible,
+.gate-judge-fault-delete:focus-visible,
+.voice-note-mic-btn:focus-visible,
+.onboarding-skip-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }

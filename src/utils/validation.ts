@@ -482,25 +482,3 @@ export function makeNumericInput(
   });
 }
 
-/**
- * Calculate checksum for data integrity verification
- */
-export function calculateChecksum(data: string): string {
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return hash.toString(16);
-}
-
-/**
- * Verify data integrity
- */
-export function verifyChecksum(
-  data: string,
-  expectedChecksum: string,
-): boolean {
-  return calculateChecksum(data) === expectedChecksum;
-}

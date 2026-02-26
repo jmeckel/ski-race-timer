@@ -26,6 +26,7 @@ vi.mock('../../../src/services/ambient', () => ({
   ambientModeService: {
     isActive: vi.fn(() => false),
     exitAmbientMode: vi.fn(),
+    wasRecentlyExited: vi.fn(() => false),
   },
 }));
 

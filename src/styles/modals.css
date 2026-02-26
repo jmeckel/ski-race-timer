@@ -98,7 +98,7 @@
 .modal-body {
   padding: 16px;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+
 }
 
 .modal-footer {
@@ -940,7 +940,7 @@
 
 .shortcuts-body {
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+
   max-height: 60vh;
 }
 

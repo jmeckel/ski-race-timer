@@ -35,6 +35,7 @@ export class OnboardingController {
   private updateTranslationsCallback: (() => void) | null = null;
   private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
     null;
+  private debouncedCheckRace: (ReturnType<typeof debounce>) | null = null;
   private listeners = new ListenerManager();
 
   constructor() {
@@ -229,10 +230,10 @@ export class OnboardingController {
       'onboarding-race-id',
     ) as HTMLInputElement;
     if (raceIdInput) {
-      const debouncedCheck = debounce(() => this.checkRaceExists(), 500);
+      this.debouncedCheckRace = debounce(() => this.checkRaceExists(), 500);
 
       this.listeners.add(raceIdInput, 'input', () => {
-        debouncedCheck();
+        this.debouncedCheckRace!();
         // Show/hide PIN field based on race ID input
         const pinInput = document.getElementById(
           'onboarding-pin',
@@ -458,6 +459,12 @@ export class OnboardingController {
       if (gateJudgeTab) gateJudgeTab.style.display = '';
     } else {
       store.setView('timer');
+    }
+
+    // Cancel any pending debounced race check
+    if (this.debouncedCheckRace) {
+      this.debouncedCheckRace.cancel();
+      this.debouncedCheckRace = null;
     }
 
     // Clean up all event listeners

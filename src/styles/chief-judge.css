@@ -94,7 +94,7 @@
 .fault-summary-list {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+
 }
 
 /* Fault Summary Card (per racer) */

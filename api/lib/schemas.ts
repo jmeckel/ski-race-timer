@@ -94,7 +94,7 @@ export const FaultEntrySchema = v.object({
   id: v.union([v.number(), v.pipe(v.string(), v.minLength(1))]),
   bib: BibSchema,
   run: RunSchema,
-  gateNumber: v.pipe(v.number(), v.minValue(1)),
+  gateNumber: v.pipe(v.number(), v.minValue(1), v.maxValue(100)),
   faultType: FaultTypeSchema,
   timestamp: TimestampSchema,
   gateRange: GateRangeSchema,

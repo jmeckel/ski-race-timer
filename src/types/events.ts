@@ -103,6 +103,9 @@ export interface AppCustomEventMap {
 
   // ===== Settings View Events (from features/settingsView.ts) =====
 
+  /** Language changed in settings — triggers translation refresh */
+  'settings-language-changed': undefined;
+
   /** Request photo sync warning modal display */
   'request-photo-sync-warning': undefined;
 

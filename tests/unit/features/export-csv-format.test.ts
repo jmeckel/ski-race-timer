@@ -13,28 +13,31 @@ import {
 
 describe('CSV Export Format - Race Horology', () => {
   describe('Header format', () => {
-    it('should define correct Race Horology column headers', () => {
-      // The standard Race Horology header (without fault columns)
-      const expectedHeader = 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät';
+    it('should define correct Race Horology column headers (with Datum)', () => {
+      // The standard Race Horology header (without fault columns) — matches production export.ts
+      const expectedHeader = 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Datum';
       const columns = expectedHeader.split(';');
 
-      expect(columns).toHaveLength(6);
+      expect(columns).toHaveLength(7);
       expect(columns[0]).toBe('Startnummer');
       expect(columns[1]).toBe('Lauf');
       expect(columns[2]).toBe('Messpunkt');
       expect(columns[3]).toBe('Zeit');
       expect(columns[4]).toBe('Status');
       expect(columns[5]).toBe('Gerät');
+      expect(columns[6]).toBe('Datum');
     });
 
     it('should define extended header with fault columns when faults exist', () => {
+      // Matches production export.ts extended header
       const extendedHeader =
-        'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler';
+        'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Torstrafzeit;Torfehler;Datum';
       const columns = extendedHeader.split(';');
 
-      expect(columns).toHaveLength(8);
+      expect(columns).toHaveLength(9);
       expect(columns[6]).toBe('Torstrafzeit');
       expect(columns[7]).toBe('Torfehler');
+      expect(columns[8]).toBe('Datum');
     });
 
     it('should use semicolon as delimiter (not comma)', () => {

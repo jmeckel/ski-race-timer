@@ -88,7 +88,6 @@ export {
 } from './templates';
 
 export {
-  calculateChecksum,
   isValidDataSchema,
   isValidDeviceId,
   isValidEntry,
@@ -108,5 +107,4 @@ export {
   VALID_FAULT_TYPES,
   VALID_POINTS,
   VALID_STATUSES,
-  verifyChecksum,
 } from './validation';
