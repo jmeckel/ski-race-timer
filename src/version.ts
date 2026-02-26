@@ -66,6 +66,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       fr: 'Support complet de la langue française. Interface trilingue (DE/FR/EN), terminologie du ski de course en français et documentation complète en français.',
     },
   },
+  '5.25': {
+    name: 'Rime Olympia',
+    description: {
+      en: 'UI polish and design token consistency. Unified color system, 48px touch targets, accessible ARIA patterns, and cellular-optimized performance.',
+      de: 'UI-Feinschliff und einheitliche Design-Tokens. Vereinheitlichtes Farbsystem, 48px-Touchziele, barrierefreie ARIA-Muster und mobilfunkoptimierte Leistung.',
+      fr: "Finitions UI et cohérence des tokens de design. Système de couleurs unifié, zones tactiles 48px, modèles ARIA accessibles et performances optimisées pour le réseau mobile.",
+    },
+  },
 };
 
 export function getVersionInfo(
