@@ -1442,6 +1442,7 @@ export const translations = {
       "Entrez un ID de course pour synchroniser avec d'autres chronométreurs",
     onboardingRaceIdPlaceholder: 'ex. COURSE-2024',
     onboardingPinPlaceholder: 'PIN (4 chiffres)',
+    onboardingStepOf: 'Étape {current} sur {total}',
     skipForNow: 'Passer pour le moment',
     onboardingReady: 'Prêt à chronométrer !',
     onboardingReadyJudge: 'Prêt à juger !',
