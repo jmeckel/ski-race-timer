@@ -225,7 +225,7 @@
   color: var(--background);
   font-size: 0.75rem;
   font-weight: 700;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,7 +321,7 @@
   color: var(--background);
   font-size: 0.7rem;
   font-weight: 700;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .fault-count-badge:empty,
