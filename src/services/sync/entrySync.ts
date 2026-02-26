@@ -71,7 +71,6 @@ export interface EntrySyncCallbacks {
     type?: 'success' | 'warning' | 'error',
     duration?: number,
   ) => void;
-  fetchFaults: () => Promise<void>;
 }
 
 let callbacks: EntrySyncCallbacks | null = null;
@@ -326,9 +325,6 @@ async function fetchCloudEntriesImpl(): Promise<void> {
     if (state.raceId) {
       addRecentRace(state.raceId, lastSyncTimestamp, cloudEntries.length);
     }
-
-    // Also fetch faults (for gate judge view and results display)
-    await callbacks?.fetchFaults();
 
     callbacks?.onPollingAdjust(true, hasChanges);
   } catch (error) {

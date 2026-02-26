@@ -248,6 +248,30 @@ async function handleGet(
     return sendSuccess(res, { exists, entryCount });
   }
 
+  // Handle statsOnly query - return photo statistics without full entry data
+  // Avoids downloading all entries on cellular just to count photos
+  if (req.query.statsOnly === 'true') {
+    const data = await client.get(redisKey);
+    const parsed = safeJsonParse(data, {
+      entries: [],
+      lastUpdated: null,
+    }) as RaceData;
+    const allEntries = Array.isArray(parsed.entries) ? parsed.entries : [];
+    let photoCount = 0;
+    let photoTotalSize = 0;
+    for (const entry of allEntries) {
+      if (
+        entry.photo &&
+        typeof entry.photo === 'string' &&
+        entry.photo.startsWith('data:image/')
+      ) {
+        photoCount++;
+        photoTotalSize += entry.photo.length;
+      }
+    }
+    return sendSuccess(res, { photoCount, photoTotalSize, total: allEntries.length });
+  }
+
   // Update device heartbeat if deviceId provided (from query params)
   const { deviceId: queryDeviceId, deviceName: queryDeviceName } = req.query;
   if (queryDeviceId) {
@@ -327,6 +351,10 @@ async function handleGet(
     deletedIds: deletedIds || [],
     ...(paginationMeta && { pagination: paginationMeta }),
   };
+
+  // Cache-Control: allow browser to serve from disk cache for rapid back-to-back
+  // polls, avoiding full DNS+TLS round-trips on cellular networks
+  res.setHeader('Cache-Control', 'private, max-age=5');
 
   // ETag support: allow clients to skip re-downloading unchanged data
   const etag = generateETag(responseData);

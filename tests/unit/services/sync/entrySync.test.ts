@@ -133,7 +133,6 @@ describe('Entry Sync Module', () => {
     onResetFastPolling: vi.fn(),
     onCleanup: vi.fn(),
     showToast: vi.fn(),
-    fetchFaults: vi.fn(() => Promise.resolve()),
   };
 
   const baseState = {
@@ -176,7 +175,6 @@ describe('Entry Sync Module', () => {
       // Callbacks should have been invoked
       expect(mockCallbacks.showToast).toHaveBeenCalled();
       expect(mockCallbacks.onPollingAdjust).toHaveBeenCalledWith(true, true);
-      expect(mockCallbacks.fetchFaults).toHaveBeenCalled();
     });
 
     it('should not call callbacks after cleanup', async () => {
@@ -512,19 +510,6 @@ describe('Entry Sync Module', () => {
 
       await fetchCloudEntries();
       expect(addRecentRace).toHaveBeenCalledWith('test-race', 77777, 1);
-    });
-
-    it('should call fetchFaults callback', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({
-          entries: [],
-          lastUpdated: Date.now(),
-          deletedIds: [],
-        }),
-      );
-
-      await fetchCloudEntries();
-      expect(mockCallbacks.fetchFaults).toHaveBeenCalled();
     });
 
     it('should call onPollingAdjust(true, hasChanges) on success', async () => {

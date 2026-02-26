@@ -117,8 +117,10 @@ class QueueProcessor {
           continue;
         }
 
-        // Check backoff delay
-        const backoffDelay = RETRY_BACKOFF_BASE * 2 ** item.retryCount;
+        // Check backoff delay with jitter to prevent thundering herd
+        // when multiple devices reconnect simultaneously after cellular drop
+        const baseDelay = RETRY_BACKOFF_BASE * 2 ** item.retryCount;
+        const backoffDelay = baseDelay * (0.5 + Math.random());
         if (now - item.lastAttempt < backoffDelay) {
           continue; // Not ready to retry yet
         }

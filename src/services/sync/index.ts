@@ -6,7 +6,7 @@
 import { store } from '../../store';
 import { fetchWithTimeout } from '../../utils/errors';
 import { logger } from '../../utils/logger';
-import { hasFullPhotoData, isPhotoMarker } from '../../utils/photoHelpers';
+import { isPhotoMarker } from '../../utils/photoHelpers';
 import { getAuthHeaders } from '../auth';
 import { batteryService } from '../battery';
 import { photoStorage } from '../photoStorage';
@@ -55,9 +55,14 @@ export type {
 /**
  * SyncService facade - coordinates all sync modules
  */
+// Fault polling interval: faults change less frequently than entries,
+// so poll separately at a slower cadence to save cellular data/battery
+const FAULT_POLL_INTERVAL = 120000; // 2 minutes
+
 class SyncService {
   private visibilityHandler: (() => void) | null = null;
   private wasQueueProcessingBeforeHidden = false;
+  private faultPollInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize sync service
@@ -82,6 +87,9 @@ class SyncService {
     // Start cloud sync polling
     pollingManager.start();
 
+    // Start independent fault polling (slower cadence than entry polling)
+    this.startFaultPolling();
+
     // Start queue processing
     queueProcessor.start();
 
@@ -100,9 +108,10 @@ class SyncService {
           // Page is hidden - slow down polling instead of stopping entirely
           // This keeps data flowing at a reduced rate while saving battery
           pollingManager.setTabHidden(true);
-          // Stop queue processing to save battery (not time-sensitive)
+          // Stop queue processing and fault polling to save battery (not time-sensitive)
           this.wasQueueProcessingBeforeHidden = queueProcessor.isProcessing();
           queueProcessor.stop();
+          this.stopFaultPolling();
         } else {
           // Page is visible - restore normal polling (triggers immediate poll)
           pollingManager.setTabHidden(false);
@@ -110,6 +119,8 @@ class SyncService {
           if (this.wasQueueProcessingBeforeHidden) {
             queueProcessor.start();
           }
+          // Resume fault polling
+          this.startFaultPolling();
         }
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
@@ -176,7 +187,6 @@ class SyncService {
       onCleanup: () => this.cleanup(),
       showToast: (message, type, duration) =>
         this.showSyncToast(message, type, duration),
-      fetchFaults: () => fetchCloudFaults(),
     });
 
     // Initialize fault sync
@@ -187,6 +197,34 @@ class SyncService {
       showToast: (message, type, duration) =>
         this.showSyncToast(message, type, duration),
     });
+  }
+
+  /**
+   * Start independent fault polling at a slower cadence than entry polling.
+   * Faults change less frequently than entries, so a separate 2-minute
+   * interval avoids doubling request count on cellular networks.
+   */
+  private startFaultPolling(): void {
+    this.stopFaultPolling();
+    // Initial fault fetch
+    fetchCloudFaults().catch((err) => {
+      logger.error('Initial fault fetch failed:', err);
+    });
+    this.faultPollInterval = setInterval(() => {
+      fetchCloudFaults().catch((err) => {
+        logger.error('Fault poll failed:', err);
+      });
+    }, FAULT_POLL_INTERVAL);
+  }
+
+  /**
+   * Stop fault polling
+   */
+  private stopFaultPolling(): void {
+    if (this.faultPollInterval) {
+      clearInterval(this.faultPollInterval);
+      this.faultPollInterval = null;
+    }
   }
 
   /**
@@ -208,8 +246,9 @@ class SyncService {
    * Cleanup sync service
    */
   cleanup(): void {
-    // Stop polling and queue processing
+    // Stop polling, fault polling, and queue processing
     pollingManager.cleanup();
+    this.stopFaultPolling();
     queueProcessor.cleanup();
 
     // Close broadcast channel
@@ -379,13 +418,14 @@ class SyncService {
       }
     }
 
-    // Estimate photos to download from cloud
+    // Estimate photos to download from cloud using lightweight stats endpoint
     if (state.settings.sync && state.raceId) {
       try {
         const params = new URLSearchParams({
           raceId: state.raceId,
           deviceId: state.deviceId,
           deviceName: state.deviceName,
+          statsOnly: 'true',
         });
         const response = await fetchWithTimeout(
           `${API_BASE}?${params}`,
@@ -400,26 +440,13 @@ class SyncService {
 
         if (response.ok) {
           const data = await response.json();
-          const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
-
-          for (const cloudEntry of cloudEntries) {
-            if (
-              hasFullPhotoData(cloudEntry.photo) &&
-              cloudEntry.deviceId !== state.deviceId
-            ) {
-              const localEntry = state.entries.find(
-                (e) =>
-                  e.id === cloudEntry.id && e.deviceId === cloudEntry.deviceId,
-              );
-              if (!localEntry || !localEntry.photo) {
-                downloadCount++;
-                downloadSize += cloudEntry.photo.length;
-              }
-            }
-          }
+          downloadCount =
+            typeof data.photoCount === 'number' ? data.photoCount : 0;
+          downloadSize =
+            typeof data.photoTotalSize === 'number' ? data.photoTotalSize : 0;
         }
       } catch (error) {
-        logger.warn('Failed to fetch cloud entries for photo stats:', error);
+        logger.warn('Failed to fetch cloud photo stats:', error);
       }
     }
 

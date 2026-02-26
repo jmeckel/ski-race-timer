@@ -499,20 +499,21 @@ describe('Sync Service', () => {
 
       syncService.initialize();
 
-      // Wait for initial async operations to complete (entries + faults fetch)
+      // Wait for initial async operations to complete
+      // Initial: 1 entry fetch + 1 fault fetch (independent) = 2 calls
       await vi.advanceTimersByTimeAsync(100);
-      // Initial fetch: 1 entry fetch + 1 fault fetch = 2 calls
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      // Advance timer past poll interval (15 seconds)
+      // Advance timer past entry poll interval (15 seconds)
+      // Entry polling fires every 15s, fault polling every 120s (independent)
       await vi.advanceTimersByTimeAsync(15000);
-      // Poll 1: entry fetch + fault fetch = 2 more calls, total 4
-      expect(mockFetch).toHaveBeenCalledTimes(4);
+      // Poll 1: 1 entry fetch, total 3
+      expect(mockFetch).toHaveBeenCalledTimes(3);
 
-      // Another interval
+      // Another entry poll interval
       await vi.advanceTimersByTimeAsync(15000);
-      // Poll 2: entry fetch + fault fetch = 2 more calls, total 6
-      expect(mockFetch).toHaveBeenCalledTimes(6);
+      // Poll 2: 1 entry fetch, total 4
+      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it('should slow down polling after errors', async () => {
