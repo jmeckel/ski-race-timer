@@ -1650,6 +1650,51 @@ body.ambient-mode #main {
   background: #000000;
 }
 
+/* ===== Toast Notifications ===== */
+#toast-container {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  pointer-events: none;
+}
+
+#toast-container .toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface-elevated);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: auto;
+  max-width: 90vw;
+}
+
+.toast-action-btn {
+  background: none;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-inline-start: var(--space-xs);
+  white-space: nowrap;
+}
+
 /* ===== Offline Banner ===== */
 .offline-banner {
   background: var(--warning, #f59e0b);
@@ -1688,6 +1733,8 @@ body.ambient-mode #main {
   font-weight: 700;
   cursor: pointer;
   padding: 8px 12px;
+  min-height: 40px;
+  min-width: 40px;
   line-height: 1;
   opacity: 0.6;
 

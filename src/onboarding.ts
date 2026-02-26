@@ -135,7 +135,9 @@ export class OnboardingController {
     const currentLang = store.getState().currentLang;
     this.modal.querySelectorAll('.lang-btn').forEach((btn) => {
       const lang = (btn as HTMLElement).dataset.lang;
-      btn.classList.toggle('selected', lang === currentLang);
+      const isSelected = lang === currentLang;
+      btn.classList.toggle('selected', isSelected);
+      btn.setAttribute('aria-checked', String(isSelected));
     });
   }
 
@@ -167,10 +169,12 @@ export class OnboardingController {
         const lang = target.dataset.lang as Language;
         if (lang) {
           store.setLanguage(lang);
-          this.modal!.querySelectorAll('.lang-btn').forEach((b) =>
-            b.classList.remove('selected'),
-          );
+          this.modal!.querySelectorAll('.lang-btn').forEach((b) => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-checked', 'false');
+          });
           target.classList.add('selected');
+          target.setAttribute('aria-checked', 'true');
           feedbackTap();
 
           // Update translations in the whole app

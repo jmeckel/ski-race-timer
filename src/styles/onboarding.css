@@ -251,7 +251,8 @@
   color: var(--text-tertiary);
   font-size: 0.875rem;
   font-weight: 500;
-  padding: 8px;
+  padding: 12px 8px;
+  min-height: var(--btn-height-md);
   margin-block-start: 4px;
 }
 

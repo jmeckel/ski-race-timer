@@ -53,18 +53,6 @@ export class Toast {
     container.setAttribute('role', 'status');
     container.setAttribute('aria-live', 'polite');
     container.setAttribute('aria-atomic', 'true');
-    container.style.cssText = `
-      position: fixed;
-      bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      pointer-events: none;
-    `;
     return container;
   }
 
@@ -156,49 +144,18 @@ export class Toast {
       info: '<path d="M12 16v-4M12 8h.01"/>',
     };
 
-    toast.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      background: var(--surface-elevated);
-      border-left: 3px solid ${colors[type]};
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      font-size: 0.875rem;
-      color: var(--text-primary);
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.2s, transform 0.2s;
-      pointer-events: auto;
-      max-width: 90vw;
-    `;
+    toast.style.borderInlineStartColor = colors[type];
 
-    toast.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${colors[type]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        ${icons[type]}
-      </svg>
-      <span>${escapeHtml(message)}</span>
-    `;
+    // SVG icon is static markup; message is escaped via escapeHtml()
+    toast.innerHTML = `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${colors[type]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>${icons[type]}</svg><span>${escapeHtml(message)}</span>`;
 
     // Add action button if provided
     if (action) {
       const actionBtn = document.createElement('button');
       actionBtn.textContent = action.label;
-      actionBtn.setAttribute('aria-label', action.label);
-      actionBtn.style.cssText = `
-        background: none;
-        border: 1px solid ${colors[type]};
-        color: ${colors[type]};
-        padding: 2px 10px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
-        margin-left: 4px;
-        white-space: nowrap;
-      `;
+      actionBtn.className = 'toast-action-btn';
+      actionBtn.style.borderColor = colors[type];
+      actionBtn.style.color = colors[type];
       actionBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();

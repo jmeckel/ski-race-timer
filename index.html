@@ -1380,10 +1380,10 @@
           <div class="onboarding-icon"><svg aria-hidden="true" width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="34" r="24" stroke="#00d4ff" stroke-width="6"/><line x1="32" y1="34" x2="32" y2="18" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round"/><circle cx="32" cy="34" r="5" fill="#00d4ff"/><line x1="32" y1="10" x2="32" y2="4" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="5" x2="38" y2="5" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/></svg></div>
           <h2 data-i18n="onboardingWelcome">Welcome to CHRONO</h2>
           <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
-          <div class="onboarding-lang-select">
-            <button class="lang-btn" data-lang="de">Deutsch</button>
-            <button class="lang-btn" data-lang="fr">Français</button>
-            <button class="lang-btn" data-lang="en">English</button>
+          <div class="onboarding-lang-select" role="radiogroup" aria-label="Language">
+            <button class="lang-btn" data-lang="de" role="radio" aria-checked="true">Deutsch</button>
+            <button class="lang-btn" data-lang="fr" role="radio" aria-checked="false">Français</button>
+            <button class="lang-btn" data-lang="en" role="radio" aria-checked="false">English</button>
           </div>
           <button class="onboarding-btn primary" data-action="next" data-i18n="getStarted">Get Started</button>
         </div>

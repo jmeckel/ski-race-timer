@@ -204,13 +204,13 @@
 
 .gate-grid-btn.blue {
   color: var(--primary);
-  border-color: rgba(59, 130, 246, 0.25);
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
 .gate-grid-btn.blue.selected {
-  background: rgba(59, 130, 246, 0.2);
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
   border-color: var(--primary);
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 /* Fault count badge on gate button */
@@ -824,6 +824,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
+  min-height: var(--btn-height-md);
   border: 2px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface);
