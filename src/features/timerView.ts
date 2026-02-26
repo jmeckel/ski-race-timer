@@ -41,6 +41,7 @@ const listeners = new ListenerManager();
 // Module state
 let clock: Clock | null = null;
 const timerTimeoutIds: Set<number> = new Set();
+let warningHideTimeoutId: number | null = null;
 
 /**
  * Check if bib is all zeros (e.g., "0", "00", "000")
@@ -581,35 +582,35 @@ function triggerSnowflakeBurst(point: 'S' | 'F'): void {
  * Show duplicate warning
  */
 function showDuplicateWarning(entry: Entry): void {
-  const overlay = getElement('confirmation-overlay');
-  if (!overlay) return;
-
-  const warningEl = overlay.querySelector(
-    '.confirmation-duplicate',
-  ) as HTMLElement | null;
-  if (warningEl) {
-    warningEl.style.display = 'flex';
-  }
-
-  showConfirmation(entry);
-
-  const timeoutId = window.setTimeout(() => {
-    if (warningEl) warningEl.style.display = 'none';
-    timerTimeoutIds.delete(timeoutId);
-  }, 2500);
-  timerTimeoutIds.add(timeoutId);
+  showWarningOverlay('.confirmation-duplicate', entry);
 }
 
 /**
  * Show zero bib warning
  */
 function showZeroBibWarning(entry: Entry): void {
+  showWarningOverlay('.confirmation-zero-bib', entry);
+}
+
+/**
+ * Show a warning overlay element alongside the confirmation
+ */
+function showWarningOverlay(selector: string, entry: Entry): void {
   const overlay = getElement('confirmation-overlay');
   if (!overlay) return;
 
-  const warningEl = overlay.querySelector(
-    '.confirmation-zero-bib',
-  ) as HTMLElement | null;
+  // Hide any previously visible warning and cancel pending hide
+  if (warningHideTimeoutId !== null) {
+    clearTimeout(warningHideTimeoutId);
+    timerTimeoutIds.delete(warningHideTimeoutId);
+    warningHideTimeoutId = null;
+  }
+  for (const cls of ['.confirmation-duplicate', '.confirmation-zero-bib']) {
+    const el = overlay.querySelector(cls) as HTMLElement | null;
+    if (el) el.style.display = 'none';
+  }
+
+  const warningEl = overlay.querySelector(selector) as HTMLElement | null;
   if (warningEl) {
     warningEl.style.display = 'flex';
   }
@@ -619,7 +620,9 @@ function showZeroBibWarning(entry: Entry): void {
   const timeoutId = window.setTimeout(() => {
     if (warningEl) warningEl.style.display = 'none';
     timerTimeoutIds.delete(timeoutId);
+    warningHideTimeoutId = null;
   }, 2500);
+  warningHideTimeoutId = timeoutId;
   timerTimeoutIds.add(timeoutId);
 }
 

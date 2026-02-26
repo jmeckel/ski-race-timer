@@ -1419,7 +1419,15 @@
 
 .clock-digit {
   display: inline-block;
-  transition: transform 0.1s ease-out;
+}
+
+.clock-digit.digit-pop {
+  animation: digitPop 0.1s ease-out;
+}
+
+@keyframes digitPop {
+  from { transform: scale(1.02); }
+  to { transform: scale(1); }
 }
 
 .clock-date-row {
@@ -1668,7 +1676,7 @@ body.ambient-mode #main {
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 8px 12px;
   line-height: 1;
   opacity: 0.6;
 

@@ -2,6 +2,7 @@
 .settings-view {
   overflow-y: auto;
   padding: 16px;
+  padding-block-end: max(16px, env(safe-area-inset-bottom));
 }
 
 /* Settings Groups */

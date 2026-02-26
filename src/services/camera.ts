@@ -292,12 +292,16 @@ class CameraService {
       if (this.videoElement) {
         this.videoElement.srcObject = null;
       }
-      this.cameraState = 'stopped';
       this.resumingStartedAt = null;
-      // Remove visibility handler — camera is permanently stopped
-      if (this.visibilityHandler) {
-        document.removeEventListener('visibilitychange', this.visibilityHandler);
-        this.visibilityHandler = null;
+      // Only permanently stop camera if all retries are exhausted
+      if (this.reinitRetryCount >= MAX_REINIT_RETRIES) {
+        this.cameraState = 'stopped';
+        if (this.visibilityHandler) {
+          document.removeEventListener('visibilitychange', this.visibilityHandler);
+          this.visibilityHandler = null;
+        }
+      } else {
+        this.cameraState = 'paused';
       }
       store.setCameraReady(false, errorMessage);
     }

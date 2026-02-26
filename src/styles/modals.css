@@ -692,7 +692,7 @@
 }
 
 .modal-close-btn {
-  padding: 8px;
+  padding: 12px;
   background: transparent;
   border: none;
   color: var(--text-secondary);

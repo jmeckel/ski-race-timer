@@ -22,7 +22,8 @@ import {
   $gpsStatus,
   $selectedPoint,
   $selectedRun,
-  $settings,
+  $settingsGps,
+  $settingsSync,
   $syncStatus,
   effect,
   store,
@@ -91,9 +92,13 @@ export function initRadialTimerView(): void {
   // Subscribe to store changes via signal effects (auto-tracks dependencies)
   effectDisposers = [
     effect(() => {
-      // Re-run when settings change (gps/sync toggles affect status indicators)
-      void $settings.value;
+      // Re-run GPS status only when GPS setting changes
+      void $settingsGps.value;
       updateRadialGpsStatus();
+    }),
+    effect(() => {
+      // Re-run sync status only when sync setting changes
+      void $settingsSync.value;
       updateRadialSyncStatus();
     }),
     effect(() => {

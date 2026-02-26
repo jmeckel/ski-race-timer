@@ -212,7 +212,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 10px;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -354,8 +354,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--btn-height-sm);
-  height: var(--btn-height-sm);
+  width: var(--btn-height-md);
+  height: var(--btn-height-md);
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -497,8 +497,8 @@
 }
 
 .penalty-adj-btn {
-  width: var(--btn-height-sm);
-  height: var(--btn-height-sm);
+  width: var(--btn-height-md);
+  height: var(--btn-height-md);
   border: 1px solid var(--surface-elevated);
   border-radius: 8px;
   background: var(--surface);
