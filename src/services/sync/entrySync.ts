@@ -447,12 +447,6 @@ export async function sendEntryToCloud(entry: Entry): Promise<boolean> {
           'warning',
           5000,
         );
-        // Dispatch event for UI to show more prominent warning
-        window.dispatchEvent(
-          new CustomEvent('cross-device-duplicate', {
-            detail: dup,
-          }),
-        );
       }
 
       // Update device count and highest bib from response

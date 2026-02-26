@@ -1,5 +1,6 @@
 import { cameraService, gpsService } from '../services';
 import type { AppState } from '../types';
+import { logger } from './logger';
 
 /**
  * Apply GPS service behavior based on current view and settings.
@@ -23,7 +24,9 @@ export function applyCameraService(state: Readonly<AppState>): void {
   const isTimerView = state.currentView === 'timer';
 
   if (isTimerView && state.settings.photoCapture) {
-    cameraService.initialize();
+    void cameraService.initialize().catch((error) => {
+      logger.error('[Camera] Failed to initialize from view service:', error);
+    });
   } else {
     cameraService.stop();
   }

@@ -267,4 +267,5 @@ export async function pushLocalFaults(): Promise<void> {
 export function cleanupFaultSync(): void {
   callbacks = null;
   otherGateAssignments = [];
+  isPushingFaults = false;
 }

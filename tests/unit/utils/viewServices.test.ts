@@ -12,7 +12,7 @@ vi.mock('../../../src/services', () => ({
     pause: vi.fn(),
   },
   cameraService: {
-    initialize: vi.fn(),
+    initialize: vi.fn(() => Promise.resolve(true)),
     stop: vi.fn(),
   },
 }));

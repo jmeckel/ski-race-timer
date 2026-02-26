@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Format Utilities
  * Tests: formatTime, formatDate, formatDuration, formatBib, escapeHtml,
- *        getPointColor, getPointLabel, debounce, throttle
+ *        getPointColor, getPointLabel, debounce
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +15,6 @@ import {
   formatTime,
   getPointColor,
   getPointLabel,
-  throttle,
   truncate,
 } from '../../src/utils/format';
 
@@ -258,55 +257,6 @@ describe('Format Utilities', () => {
       debouncedFn('arg1', 'arg2');
       vi.advanceTimersByTime(100);
 
-      expect(fn).toHaveBeenCalledWith('arg1', 'arg2');
-    });
-  });
-
-  describe('throttle', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('should execute immediately on first call', () => {
-      const fn = vi.fn();
-      const throttledFn = throttle(fn, 100);
-
-      throttledFn();
-      expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it('should throttle subsequent calls', () => {
-      const fn = vi.fn();
-      const throttledFn = throttle(fn, 100);
-
-      throttledFn();
-      throttledFn();
-      throttledFn();
-
-      expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it('should allow execution after throttle period', () => {
-      const fn = vi.fn();
-      const throttledFn = throttle(fn, 100);
-
-      throttledFn();
-      expect(fn).toHaveBeenCalledTimes(1);
-
-      vi.advanceTimersByTime(100);
-      throttledFn();
-      expect(fn).toHaveBeenCalledTimes(2);
-    });
-
-    it('should pass arguments to the function', () => {
-      const fn = vi.fn();
-      const throttledFn = throttle(fn, 100);
-
-      throttledFn('arg1', 'arg2');
       expect(fn).toHaveBeenCalledWith('arg1', 'arg2');
     });
   });

@@ -16,7 +16,6 @@ import { store } from '../../store';
 import type { Language } from '../../types';
 import { logWarning, makeNumericInput } from '../../utils';
 import { ListenerManager } from '../../utils/listenerManager';
-import { logger } from '../../utils/logger';
 import { closeModal, openModal } from '../modals';
 
 // Module-level listener manager for lifecycle cleanup
@@ -53,18 +52,8 @@ export async function authenticateWithPin(
   return result;
 }
 
-/**
- * Initialize admin PIN state
- * No longer auto-authenticates with a default PIN.
- * Users must set their own PIN during setup or when enabling sync.
- */
-async function initializeAdminPin(): Promise<void> {
-  // If we already have a valid token, nothing to do
-  if (hasAuthToken()) {
-    return;
-  }
-  // No default PIN - user must authenticate explicitly when needed
-}
+// initializeAdminPin removed — was an empty async function.
+// Users must authenticate explicitly when needed.
 
 /**
  * Validate PIN format: exactly 4 digits
@@ -470,17 +459,7 @@ export function hasPendingPinVerification(): boolean {
  * Initialize PIN management handlers
  */
 export function initPinManagement(): void {
-  // Initialize admin PIN (sync from cloud or set default) - fire and forget
-  initializeAdminPin()
-    .then(() => {
-      // Update PIN status display after sync completes
-      updatePinStatusDisplay();
-    })
-    .catch((error) => {
-      logger.error('Failed to initialize admin PIN:', error);
-    });
-
-  // Update PIN status display immediately (will be updated again after sync)
+  // Update PIN status display
   updatePinStatusDisplay();
 
   // Change PIN button

@@ -93,7 +93,7 @@
     <!-- Main Content -->
     <main id="main" tabindex="-1">
         <!-- Timer View (Radial Dial Mode) -->
-        <div class="view timer-view radial-mode active">
+        <div class="view timer-view radial-mode active" id="timer-panel" role="tabpanel" aria-labelledby="timer-tab">
           <!-- Top Row: Bib + Status -->
           <div class="radial-top-row">
             <!-- Top Left: Bib -->
@@ -194,7 +194,7 @@
         </div>
 
       <!-- Results View -->
-      <div class="view results-view">
+      <div class="view results-view" id="results-panel" role="tabpanel" aria-labelledby="results-tab">
         <div class="results-header">
           <!-- Chief Judge Toggle -->
           <div class="chief-judge-toggle-row" id="chief-judge-toggle-row">
@@ -239,12 +239,12 @@
           <!-- Search & Filter (toggled by filter icon) -->
           <div class="search-filter-bar" data-advanced>
             <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" aria-label="Search results" data-i18n-aria-label="searchResults">
-            <select class="filter-select" id="filter-point" aria-label="Filter by point">
+            <select class="filter-select" id="filter-point" aria-label="Filter by point" data-i18n-aria-label="filterByPoint">
               <option value="all" data-i18n="all">All</option>
               <option value="S" data-i18n="start">Start</option>
               <option value="F" data-i18n="finish">Finish</option>
             </select>
-            <select class="filter-select" id="filter-status" aria-label="Filter by status">
+            <select class="filter-select" id="filter-status" aria-label="Filter by status" data-i18n-aria-label="filterByStatus">
               <option value="all" data-i18n="all">All</option>
               <option value="ok">OK</option>
               <option value="dns">DNS</option>
@@ -360,7 +360,7 @@
       </div>
 
       <!-- Gate Judge View -->
-      <div class="view gate-judge-view">
+      <div class="view gate-judge-view" id="gate-judge-panel" role="tabpanel" aria-labelledby="gate-judge-tab">
         <!-- Gate Assignment Header -->
         <div class="gate-judge-header">
           <div class="gate-assignment-display">
@@ -460,7 +460,7 @@
       </div>
 
       <!-- Settings View -->
-      <div class="view settings-view">
+      <div class="view settings-view" id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
         <!-- ===== Race Setup Group ===== -->
         <div class="settings-group">
           <h3 class="settings-group-title" data-i18n="settingsRaceSetup">Race Setup</h3>
@@ -728,27 +728,27 @@
 
     <!-- Tab Bar -->
     <nav class="tab-bar glass-frosted glass-enable-target" role="tablist" aria-label="Main navigation">
-      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true" id="timer-tab">
+      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true" id="timer-tab" aria-controls="timer-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
         <span data-i18n="timer">Timer</span>
       </button>
-      <button class="tab-btn" data-view="results" role="tab" aria-selected="false">
+      <button class="tab-btn" data-view="results" role="tab" aria-selected="false" id="results-tab" aria-controls="results-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6"/>
         </svg>
         <span data-i18n="results">Results</span>
       </button>
-      <button class="tab-btn" data-view="gateJudge" role="tab" aria-selected="false" id="gate-judge-tab" style="display: none;">
+      <button class="tab-btn" data-view="gateJudge" role="tab" aria-selected="false" id="gate-judge-tab" aria-controls="gate-judge-panel" style="display: none;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
           <line x1="4" y1="22" x2="4" y2="15"/>
         </svg>
         <span data-i18n="gateJudgeTab">Gate</span>
       </button>
-      <button class="tab-btn" data-view="settings" role="tab" aria-selected="false">
+      <button class="tab-btn" data-view="settings" role="tab" aria-selected="false" id="settings-tab" aria-controls="settings-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
           <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>

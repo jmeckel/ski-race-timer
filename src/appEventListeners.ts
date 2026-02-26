@@ -159,6 +159,12 @@ export function initCustomEventListeners(): void {
   addCustomEventListener('update-inline-gate-selector', (() => {
     updateInlineGateSelector();
   }) as EventListener);
+
+  // Fault sync error — notify user when fault data may be stale
+  addCustomEventListener('fault-sync-error', (() => {
+    const lang = store.getState().currentLang;
+    showToast(t('faultSyncError', lang), 'error', 4000);
+  }) as EventListener);
 }
 
 /**

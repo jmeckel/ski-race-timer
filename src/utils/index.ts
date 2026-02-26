@@ -48,7 +48,6 @@ export {
   getPointLabel,
   getRunColor,
   getRunLabel,
-  throttle,
   truncate,
 } from './format';
 

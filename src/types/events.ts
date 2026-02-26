@@ -10,7 +10,7 @@
 
 import type { ConfirmModalAction } from '../features/resultsView';
 import type { ErrorContext } from '../utils/errors';
-import type { Entry, FaultEntry, Language, TimingPoint } from './index';
+import type { Entry, FaultEntry, Language } from './index';
 
 // ===== Window-level Custom Events =====
 // Dispatched via window.dispatchEvent(new CustomEvent(...))
@@ -63,13 +63,6 @@ export interface AppCustomEventMap {
     raceId: string;
     deletedAt: number;
     message: string;
-  };
-
-  /** Same bib+point recorded on multiple devices */
-  'cross-device-duplicate': {
-    bib: string;
-    point: TimingPoint;
-    deviceName: string;
   };
 
   /** Show a toast notification (used by sync service to avoid circular imports) */

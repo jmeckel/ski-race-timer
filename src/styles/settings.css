@@ -213,7 +213,11 @@
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--surface-elevated) 70%, var(--background));
+  background: color-mix(
+    in srgb,
+    var(--surface-elevated) 70%,
+    var(--background)
+  );
   border-radius: 14px;
   border: 1px solid var(--border);
   cursor: pointer;
@@ -369,7 +373,8 @@
 }
 
 .lang-option {
-  padding: 8px 16px;
+  padding: 12px 16px;
+  min-height: var(--btn-height-md);
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -455,7 +460,8 @@
 }
 
 .race-delete-btn {
-  padding: 8px 12px;
+  padding: 10px 12px;
+  min-height: var(--btn-height-md);
   border: none;
   border-radius: var(--radius);
   background: var(--error);

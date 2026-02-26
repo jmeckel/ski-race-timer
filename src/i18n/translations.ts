@@ -82,6 +82,9 @@ export const translations = {
     offline: 'X',
     syncError: '!',
     syncReceived: 'Synced from cloud',
+    faultSyncError: 'Fault sync failed — data may be stale',
+    filterByPoint: 'Filter by point',
+    filterByStatus: 'Filter by status',
     raceId: 'Race ID',
     invalidRaceId:
       'Invalid Race ID. Use letters, numbers, hyphens, underscores only.',
@@ -637,6 +640,9 @@ export const translations = {
     offline: 'X',
     syncError: '!',
     syncReceived: 'Von Cloud synchronisiert',
+    faultSyncError: 'Fehlersync fehlgeschlagen — Daten evtl. veraltet',
+    filterByPoint: 'Nach Messpunkt filtern',
+    filterByStatus: 'Nach Status filtern',
     raceId: 'Rennen-ID',
     invalidRaceId:
       'Ungültige Rennen-ID. Nur Buchstaben, Zahlen, Bindestriche, Unterstriche.',
@@ -1201,6 +1207,9 @@ export const translations = {
     offline: 'X',
     syncError: '!',
     syncReceived: 'Synchronisé depuis le cloud',
+    faultSyncError: 'Sync des fautes échoué — données peut-être obsolètes',
+    filterByPoint: 'Filtrer par point',
+    filterByStatus: 'Filtrer par statut',
     raceId: 'ID de course',
     invalidRaceId:
       'ID de course invalide. Utilisez uniquement lettres, chiffres, tirets et underscores.',

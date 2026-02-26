@@ -1189,9 +1189,6 @@ describe('Entry Sync Module', () => {
     // Cross-device duplicate warning
 
     it('should show warning toast on cross-device duplicate', async () => {
-      const duplicateHandler = vi.fn();
-      window.addEventListener('cross-device-duplicate', duplicateHandler);
-
       mockFetch.mockResolvedValue(
         mockResponse({
           success: true,
@@ -1211,17 +1208,6 @@ describe('Entry Sync Module', () => {
         'warning',
         5000,
       );
-
-      // Should also dispatch CustomEvent
-      expect(duplicateHandler).toHaveBeenCalled();
-      const event = duplicateHandler.mock.calls[0][0] as CustomEvent;
-      expect(event.detail).toEqual({
-        bib: '042',
-        point: 'S',
-        deviceName: 'Other Timer',
-      });
-
-      window.removeEventListener('cross-device-duplicate', duplicateHandler);
     });
 
     it('should update deviceCount and highestBib from send response', async () => {
@@ -1258,9 +1244,7 @@ describe('Entry Sync Module', () => {
     // Deleted race handling
 
     it('should return false and NOT remove from sync queue when server responds with deleted flag', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ deleted: true }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ deleted: true }));
 
       const entry = createEntry({ id: 'entry-deleted-race' });
       const result = await sendEntryToCloud(entry);
@@ -1280,9 +1264,7 @@ describe('Entry Sync Module', () => {
     });
 
     it('should not call onResetFastPolling when server responds with deleted flag', async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ deleted: true }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ deleted: true }));
 
       const entry = createEntry();
       await sendEntryToCloud(entry);

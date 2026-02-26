@@ -31,7 +31,11 @@
 
 .chief-judge-toggle-btn.active {
   border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
   color: white;
   box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent);
 }
@@ -94,7 +98,6 @@
 .fault-summary-list {
   flex: 1;
   overflow-y: auto;
-
 }
 
 /* Fault Summary Card (per racer) */
@@ -470,7 +473,8 @@
 }
 
 .penalty-mode-btn {
-  padding: 8px 16px;
+  padding: 12px 16px;
+  min-height: var(--btn-height-md);
   border: none;
   border-radius: 6px;
   background: transparent;
