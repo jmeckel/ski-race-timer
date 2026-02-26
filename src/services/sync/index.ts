@@ -119,7 +119,9 @@ class SyncService {
     }
 
     // Initialize battery service for adaptive polling
-    batteryService.initialize();
+    batteryService.initialize().catch((err) => {
+      logger.warn('[Sync] Battery service init failed:', err);
+    });
 
     // Register online/offline handlers
     networkMonitor.registerOnlineHandlers(

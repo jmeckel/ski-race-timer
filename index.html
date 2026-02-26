@@ -214,7 +214,7 @@
               <span class="stat-label" data-i18n="entriesRecorded">entries recorded</span>
             </div>
             <div class="results-info-actions">
-              <button class="results-info-btn" id="toggle-filters-btn" aria-label="Filter" aria-expanded="false">
+              <button class="results-info-btn" id="toggle-filters-btn" aria-label="Filter" aria-expanded="false" aria-controls="search-filter-bar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               </button>
               <span class="results-info-spacer"></span>
@@ -237,7 +237,7 @@
           </div>
 
           <!-- Search & Filter (toggled by filter icon) -->
-          <div class="search-filter-bar" data-advanced>
+          <div class="search-filter-bar" id="search-filter-bar" data-advanced>
             <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" aria-label="Search results" data-i18n-aria-label="searchResults">
             <select class="filter-select" id="filter-point" aria-label="Filter by point" data-i18n-aria-label="filterByPoint">
               <option value="all" data-i18n="all">All</option>
@@ -759,10 +759,10 @@
   </div>
 
   <!-- Confirmation Overlay (outside app, same level as modals) -->
-  <div class="confirmation-overlay" id="confirmation-overlay" aria-hidden="true">
+  <div class="confirmation-overlay" id="confirmation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirmation-bib" aria-hidden="true">
     <div class="confirmation-content">
       <div class="snowflake-burst" id="snowflake-burst"></div>
-      <div class="confirmation-bib">---</div>
+      <div class="confirmation-bib" id="confirmation-bib">---</div>
       <div class="confirmation-point">-</div>
       <div class="confirmation-run" data-advanced>-</div>
       <div class="confirmation-time">--:--:--.---</div>
@@ -1261,7 +1261,7 @@
               <line x1="8" y1="23" x2="16" y2="23"/>
             </svg>
           </div>
-          <span class="voice-note-status-text" data-i18n="listening">Listening...</span>
+          <span class="voice-note-status-text" aria-live="polite" data-i18n="listening">Listening...</span>
         </div>
 
         <!-- Note Textarea -->

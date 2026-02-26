@@ -40,7 +40,7 @@ vi.mock('../../../src/services', () => ({
     savePhoto: vi.fn(() => Promise.resolve(true)),
     deletePhoto: vi.fn(() => Promise.resolve()),
   },
-  syncEntry: vi.fn(),
+  syncEntry: vi.fn(() => Promise.resolve()),
   syncService: { broadcastEntry: vi.fn() },
 }));
 

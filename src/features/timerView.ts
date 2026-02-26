@@ -460,7 +460,9 @@ export async function recordTimestamp(): Promise<void> {
     }
 
     // Sync: eager cloud push + broadcast to other tabs
-    void syncEntry(entry);
+    void syncEntry(entry).catch((err) => {
+      logger.error('syncEntry failed:', err);
+    });
 
     // Auto-increment bib after recording
     if (state.settings.auto && state.bibInput) {

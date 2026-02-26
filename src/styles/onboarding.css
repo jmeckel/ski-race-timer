@@ -29,7 +29,8 @@
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
   inset-inline-end: 12px;
-  padding: 8px 16px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: transparent;
   border: 1px solid var(--text-tertiary);
   border-radius: 20px;

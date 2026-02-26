@@ -239,8 +239,7 @@ describe('Entry Sync Module', () => {
       expect(getLastSyncTimestamp()).toBe(999999);
     });
 
-    it('should use Date.now() when lastUpdated is null/falsy', async () => {
-      const before = Date.now();
+    it('should fall back to 0 when lastUpdated is null/falsy (triggers full sync next poll)', async () => {
       mockFetch.mockResolvedValue(
         mockResponse({
           entries: [],
@@ -251,8 +250,7 @@ describe('Entry Sync Module', () => {
 
       await fetchCloudEntries();
       const ts = getLastSyncTimestamp();
-      expect(ts).toBeGreaterThanOrEqual(before);
-      expect(ts).toBeLessThanOrEqual(Date.now());
+      expect(ts).toBe(0);
     });
   });
 

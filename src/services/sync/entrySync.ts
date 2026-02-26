@@ -102,13 +102,13 @@ export function getLastSyncTimestamp(): number {
  * Only processes photos if syncPhotos setting is enabled
  */
 async function processCloudPhotos(entries: Entry[]): Promise<Entry[]> {
-  const state = store.getState();
   const processedEntries: Entry[] = [];
 
   for (const entry of entries) {
     if (hasFullPhotoData(entry.photo)) {
-      // Entry has full photo data from cloud
-      if (state.settings.syncPhotos) {
+      // Re-read syncPhotos per iteration — setting may change across await boundaries
+      const { syncPhotos } = store.getState().settings;
+      if (syncPhotos) {
         // Skip download if photo is already cached in IndexedDB
         const alreadyCached = await photoStorage.hasPhoto(entry.id);
         if (alreadyCached) {
@@ -320,7 +320,7 @@ async function fetchCloudEntriesImpl(): Promise<void> {
       }
     }
 
-    lastSyncTimestamp = data.lastUpdated || Date.now();
+    lastSyncTimestamp = data.lastUpdated || 0;
 
     // Track this race as recently synced
     if (state.raceId) {

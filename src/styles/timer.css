@@ -74,8 +74,8 @@
   inset-inline-end: 16px;
   width: 8px;
   height: 8px;
-  border-right: 2px solid var(--text-tertiary);
-  border-bottom: 2px solid var(--text-tertiary);
+  border-inline-end: 2px solid var(--text-tertiary);
+  border-block-end: 2px solid var(--text-tertiary);
   transform: rotate(45deg);
   transition: transform 0.2s ease;
 }
