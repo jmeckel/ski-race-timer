@@ -124,11 +124,7 @@ import {
   updateRunSelection,
   updateTimingPointSelection,
 } from '../../../src/features/timerView';
-import {
-  feedbackSuccess,
-  feedbackTap,
-  syncEntry,
-} from '../../../src/services';
+import { feedbackSuccess, feedbackTap, syncEntry } from '../../../src/services';
 
 describe('Timer View Module', () => {
   let container: HTMLDivElement;

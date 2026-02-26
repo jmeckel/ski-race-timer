@@ -49,7 +49,10 @@ export function initApp(): void {
   if (versionEl) versionEl.textContent = __APP_VERSION__;
 
   // Set version name and description
-  const versionInfo = getVersionInfo(__APP_VERSION__, store.getState().currentLang);
+  const versionInfo = getVersionInfo(
+    __APP_VERSION__,
+    store.getState().currentLang,
+  );
   const versionNameEl = document.getElementById('app-version-name');
   const versionDescEl = document.getElementById('app-version-description');
   if (versionInfo && versionNameEl) {

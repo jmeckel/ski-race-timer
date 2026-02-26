@@ -121,7 +121,6 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   }
 }
 
-
 /* Top Right: Clear Button Corner */
 .radial-clear-corner {
   display: flex;
@@ -212,7 +211,11 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   min-height: 0;
   padding: var(--space-2xl) 0;
   margin: 0;
-  background: radial-gradient(ellipse 300px 200px at 50% 30%, rgba(0, 212, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(
+    ellipse 300px 200px at 50% 30%,
+    rgba(0, 212, 255, 0.03) 0%,
+    transparent 70%
+  );
 }
 
 /* Dial Container - Constrained to parent width and available height.

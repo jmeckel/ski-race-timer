@@ -6,8 +6,8 @@
  * and legacy SHA-256 migration path.
  */
 
-import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
+import { describe, expect, it } from 'vitest';
 import { hashPin, verifyPin } from '../../api/lib/jwt.ts';
 
 describe('PIN Hashing (PBKDF2)', () => {
@@ -94,7 +94,10 @@ describe('PIN Hashing (PBKDF2)', () => {
   describe('migration path', () => {
     it('PBKDF2 hash contains colon, legacy does not', async () => {
       const pbkdf2Hash = await hashPin('1234');
-      const legacyHash = crypto.createHash('sha256').update('1234').digest('hex');
+      const legacyHash = crypto
+        .createHash('sha256')
+        .update('1234')
+        .digest('hex');
 
       // This is how the migration code distinguishes formats
       expect(pbkdf2Hash.includes(':')).toBe(true);

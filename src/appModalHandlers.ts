@@ -73,7 +73,9 @@ export function initModals(): void {
           .getState()
           .faultEntries.find((f) => f.id === faultId);
         if (markedFault) {
-          void deleteFaultFromCloud(markedFault).catch(() => { /* handled by queue */ });
+          void deleteFaultFromCloud(markedFault).catch(() => {
+            /* handled by queue */
+          });
         }
         updateInlineFaultsList();
         showToast(t('faultDeleted', store.getState().currentLang), 'success');
@@ -261,7 +263,11 @@ async function handleConfirmDelete(): Promise<void> {
     const postClearState = store.getState();
     if (postClearState.settings.sync && postClearState.raceId) {
       for (const entry of entriesToDelete) {
-        void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
+        void syncService
+          .deleteEntryFromCloud(entry.id, entry.deviceId)
+          .catch(() => {
+            /* handled by queue */
+          });
       }
     }
 
@@ -286,7 +292,11 @@ async function handleConfirmDelete(): Promise<void> {
       // Sync undo to cloud (re-read state after await)
       const postUndoState = store.getState();
       if (postUndoState.settings.sync && postUndoState.raceId) {
-        void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
+        void syncService
+          .deleteEntryFromCloud(entry.id, entry.deviceId)
+          .catch(() => {
+            /* handled by queue */
+          });
       }
     }
     closeAllModals();

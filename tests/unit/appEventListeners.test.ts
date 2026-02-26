@@ -131,7 +131,6 @@ import {
 } from '../../src/appEventListeners';
 import { showToast } from '../../src/components';
 import { cleanupPinVerification } from '../../src/features/race';
-import { ambientModeService } from '../../src/services/ambient';
 import {
   cameraService,
   feedbackWarning,
@@ -140,6 +139,7 @@ import {
   voiceModeService,
   wakeLockService,
 } from '../../src/services';
+import { ambientModeService } from '../../src/services/ambient';
 
 describe('App Event Listeners Module', () => {
   beforeEach(() => {

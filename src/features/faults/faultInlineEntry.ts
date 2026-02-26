@@ -323,7 +323,9 @@ export function updateInlineGateSelector(): void {
   gateSelectorDelegated = true;
 
   listeners.add(container, 'click', (e: Event) => {
-    const btn = (e.target as HTMLElement).closest('.gate-grid-btn') as HTMLElement | null;
+    const btn = (e.target as HTMLElement).closest(
+      '.gate-grid-btn',
+    ) as HTMLElement | null;
     if (!btn) return;
     const gate = Number(btn.getAttribute('data-gate'));
     if (!gate) return;
@@ -332,7 +334,9 @@ export function updateInlineGateSelector(): void {
   });
 
   listeners.add(container, 'keydown', ((e: KeyboardEvent) => {
-    const btn = (e.target as HTMLElement).closest('.gate-grid-btn') as HTMLElement | null;
+    const btn = (e.target as HTMLElement).closest(
+      '.gate-grid-btn',
+    ) as HTMLElement | null;
     if (!btn) return;
     const gate = Number(btn.getAttribute('data-gate'));
     if (!gate) return;
@@ -690,7 +694,9 @@ export function openFaultDeleteConfirmation(fault: FaultEntry): void {
       .getState()
       .faultEntries.find((f) => f.id === fault.id);
     if (markedFault) {
-      void deleteFaultFromCloud(markedFault).catch(() => { /* handled by queue */ });
+      void deleteFaultFromCloud(markedFault).catch(() => {
+        /* handled by queue */
+      });
     }
     updateInlineFaultsList();
     showToast(t('faultDeleted', store.getState().currentLang), 'success');

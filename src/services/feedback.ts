@@ -101,10 +101,13 @@ export function playBeep(
 
   // Resume if suspended (from idle timeout), then schedule oscillator
   if (ctx.state === 'suspended') {
-    ctx.resume().then(() => {
-      scheduleOscillator(ctx, frequency, duration);
-      scheduleAudioSuspend();
-    }).catch(() => {});
+    ctx
+      .resume()
+      .then(() => {
+        scheduleOscillator(ctx, frequency, duration);
+        scheduleAudioSuspend();
+      })
+      .catch(() => {});
     return;
   }
 

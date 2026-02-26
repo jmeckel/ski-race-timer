@@ -261,7 +261,10 @@ export function updatePhotoCaptureIndicator(): void {
     const isVisible = state.settings.photoCapture;
     cameraIndicator.style.display = isVisible ? 'flex' : 'none';
     if (isVisible) {
-      cameraIndicator.setAttribute('aria-label', t('photoCapture', state.currentLang));
+      cameraIndicator.setAttribute(
+        'aria-label',
+        t('photoCapture', state.currentLang),
+      );
     }
   }
 }

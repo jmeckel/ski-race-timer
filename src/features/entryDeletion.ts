@@ -28,7 +28,11 @@ export async function deleteEntriesWithCleanup(
   const state = store.getState();
   if (state.settings.sync && state.raceId) {
     for (const entry of entries) {
-      void syncService.deleteEntryFromCloud(entry.id, entry.deviceId).catch(() => { /* handled by queue */ });
+      void syncService
+        .deleteEntryFromCloud(entry.id, entry.deviceId)
+        .catch(() => {
+          /* handled by queue */
+        });
     }
   }
 }

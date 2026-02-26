@@ -215,9 +215,6 @@ export function runBadge(runLabel: string, runColor: string): string {
 /**
  * Point label badge (Start/Finish/Gate) — outlined chip style (matches statusBadge)
  */
-export function pointBadge(
-  pointLabel: string,
-  pointColor: string,
-): string {
+export function pointBadge(pointLabel: string, pointColor: string): string {
   return `<div class="result-point" style="--item-color: ${pointColor};">${escapeHtml(pointLabel)}</div>`;
 }

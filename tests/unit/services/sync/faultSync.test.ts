@@ -457,14 +457,43 @@ describe('Fault Sync Module', () => {
       mockGetState.mockReturnValue({
         ...baseState,
         faultEntries: [
-          { id: 'f1', deviceId: 'dev_1', syncedAt: undefined, bib: '001', run: 1, gateNumber: 3, faultType: 'MG', timestamp: '2024-01-15T10:00:00.000Z', deviceName: 'Judge 1', gateRange: [1, 10], currentVersion: 1, versionHistory: [], markedForDeletion: false },
-          { id: 'f2', deviceId: 'dev_1', syncedAt: undefined, bib: '002', run: 1, gateNumber: 5, faultType: 'STR', timestamp: '2024-01-15T10:01:00.000Z', deviceName: 'Judge 1', gateRange: [1, 10], currentVersion: 1, versionHistory: [], markedForDeletion: false },
+          {
+            id: 'f1',
+            deviceId: 'dev_1',
+            syncedAt: undefined,
+            bib: '001',
+            run: 1,
+            gateNumber: 3,
+            faultType: 'MG',
+            timestamp: '2024-01-15T10:00:00.000Z',
+            deviceName: 'Judge 1',
+            gateRange: [1, 10],
+            currentVersion: 1,
+            versionHistory: [],
+            markedForDeletion: false,
+          },
+          {
+            id: 'f2',
+            deviceId: 'dev_1',
+            syncedAt: undefined,
+            bib: '002',
+            run: 1,
+            gateNumber: 5,
+            faultType: 'STR',
+            timestamp: '2024-01-15T10:01:00.000Z',
+            deviceName: 'Judge 1',
+            gateRange: [1, 10],
+            currentVersion: 1,
+            versionHistory: [],
+            markedForDeletion: false,
+          },
         ],
       });
 
       // Make sendFaultToCloud slow — each call takes 50ms
       mockFetch.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 50)),
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 50)),
       );
 
       // Fire two concurrent pushLocalFaults calls

@@ -100,7 +100,9 @@ describe('Export Edge Cases', () => {
     it('should carry 995ms to next second (cs=100 triggers carry)', () => {
       const date = new Date();
       date.setHours(10, 20, 30, 995);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // 995ms -> Math.round(995/10) = Math.round(99.5) = 100 -> carry
       expect(time).toBe('10:20:31,00');
       expect(dateRollover).toBe(false);
@@ -109,7 +111,9 @@ describe('Export Edge Cases', () => {
     it('should cascade carry from seconds to minutes (59s + carry)', () => {
       const date = new Date();
       date.setHours(10, 20, 59, 995);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // s=59 + carry -> s=0, m=21
       expect(time).toBe('10:21:00,00');
       expect(dateRollover).toBe(false);
@@ -118,7 +122,9 @@ describe('Export Edge Cases', () => {
     it('should cascade carry from seconds to minutes to hours (59:59 + carry)', () => {
       const date = new Date();
       date.setHours(10, 59, 59, 995);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // Full cascade: s=0, m=0, h=11
       expect(time).toBe('11:00:00,00');
       expect(dateRollover).toBe(false);
@@ -127,7 +133,9 @@ describe('Export Edge Cases', () => {
     it('should wrap 23:59:59.995 to 00:00:00,00 (24h boundary) with dateRollover', () => {
       const date = new Date();
       date.setHours(23, 59, 59, 995);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // h=24 wraps to 0, date rolls over
       expect(time).toBe('00:00:00,00');
       expect(dateRollover).toBe(true);
@@ -136,7 +144,9 @@ describe('Export Edge Cases', () => {
     it('should NOT carry at 994ms (rounds to 99, not 100)', () => {
       const date = new Date();
       date.setHours(10, 20, 30, 994);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // 994ms -> Math.round(994/10) = Math.round(99.4) = 99 -> no carry
       expect(time).toBe('10:20:30,99');
       expect(dateRollover).toBe(false);

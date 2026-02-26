@@ -282,7 +282,11 @@ export class Clock {
 
         // Subtle scale animation on change — only on normal battery and when visible
         // Skip subsecond digits (indices 9-11) to avoid ~240 animations/sec
-        if (this.frameSkipCount === FRAME_SKIP_NORMAL && !document.hidden && i < 9) {
+        if (
+          this.frameSkipCount === FRAME_SKIP_NORMAL &&
+          !document.hidden &&
+          i < 9
+        ) {
           digit.classList.remove('digit-pop');
           // Force reflow to restart the animation
           void digit.offsetWidth;

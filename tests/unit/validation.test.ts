@@ -544,5 +544,4 @@ describe('Validation Utilities', () => {
       expect(result.syncQueue).toHaveLength(1);
     });
   });
-
 });

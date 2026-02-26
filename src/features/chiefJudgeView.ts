@@ -553,7 +553,7 @@ export function updateFaultSummaryPanel(): void {
 // Track which containers have delegated handlers to avoid duplicates.
 // Reset when listeners.removeAll() is called (via cleanupChiefJudgeView),
 // so we use a plain Set that we clear explicitly rather than a WeakSet.
-let delegatedContainers = new Set<Element>();
+const delegatedContainers = new Set<Element>();
 
 /**
  * Set up event delegation on the fault summary list container
@@ -578,7 +578,9 @@ function setupSummaryListDelegation(summaryList: HTMLElement): void {
       e.stopPropagation();
       const faultId = editBtn.dataset.faultId;
       if (faultId) {
-        const fault = store.getState().faultEntries.find((f) => f.id === faultId);
+        const fault = store
+          .getState()
+          .faultEntries.find((f) => f.id === faultId);
         if (fault) dispatchOpenFaultEditModal(fault);
       }
       return;
@@ -590,7 +592,9 @@ function setupSummaryListDelegation(summaryList: HTMLElement): void {
       e.stopPropagation();
       const faultId = deleteBtn.dataset.faultId;
       if (faultId) {
-        const fault = store.getState().faultEntries.find((f) => f.id === faultId);
+        const fault = store
+          .getState()
+          .faultEntries.find((f) => f.id === faultId);
         if (fault) {
           if (fault.markedForDeletion) {
             handleRejectFaultDeletion(fault);
@@ -606,7 +610,10 @@ function setupSummaryListDelegation(summaryList: HTMLElement): void {
 /**
  * Set up event delegation on the pending deletions list container
  */
-function setupPendingDeletionsDelegation(list: HTMLElement, getPendingDeletions: () => FaultEntry[]): void {
+function setupPendingDeletionsDelegation(
+  list: HTMLElement,
+  getPendingDeletions: () => FaultEntry[],
+): void {
   if (delegatedContainers.has(list)) return;
   delegatedContainers.add(list);
 
@@ -615,7 +622,9 @@ function setupPendingDeletionsDelegation(list: HTMLElement, getPendingDeletions:
     const pendingDeletions = getPendingDeletions();
 
     // Approve button
-    const approveBtn = target.closest('.pending-deletion-btn.approve') as HTMLElement | null;
+    const approveBtn = target.closest(
+      '.pending-deletion-btn.approve',
+    ) as HTMLElement | null;
     if (approveBtn) {
       e.stopPropagation();
       const faultId = approveBtn.dataset.faultId;
@@ -627,7 +636,9 @@ function setupPendingDeletionsDelegation(list: HTMLElement, getPendingDeletions:
     }
 
     // Reject button
-    const rejectBtn = target.closest('.pending-deletion-btn.reject') as HTMLElement | null;
+    const rejectBtn = target.closest(
+      '.pending-deletion-btn.reject',
+    ) as HTMLElement | null;
     if (rejectBtn) {
       e.stopPropagation();
       const faultId = rejectBtn.dataset.faultId;
@@ -650,7 +661,9 @@ function handleRejectFaultDeletion(fault: FaultEntry): void {
       .getState()
       .faultEntries.find((f) => f.id === fault.id);
     if (restoredFault) {
-      void syncFault(restoredFault).catch(() => { /* handled by queue */ });
+      void syncFault(restoredFault).catch(() => {
+        /* handled by queue */
+      });
     }
 
     const lang = store.getState().currentLang;
@@ -668,7 +681,9 @@ function handleApproveFaultDeletion(fault: FaultEntry): void {
   const approvedFault = store.approveFaultDeletion(fault.id);
 
   if (approvedFault) {
-    void deleteFaultFromCloud(approvedFault).catch(() => { /* handled by queue */ });
+    void deleteFaultFromCloud(approvedFault).catch(() => {
+      /* handled by queue */
+    });
 
     const lang = store.getState().currentLang;
     showToast(t('deletionApproved', lang), 'success');

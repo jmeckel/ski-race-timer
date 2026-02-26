@@ -124,7 +124,9 @@ export function saveVoiceNote(): void {
       .getState()
       .faultEntries.find((f) => f.id === currentFaultId);
     if (updatedFault) {
-      void syncFault(updatedFault).catch(() => { /* handled by queue */ });
+      void syncFault(updatedFault).catch(() => {
+        /* handled by queue */
+      });
     }
 
     const lang = state.currentLang;

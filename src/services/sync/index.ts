@@ -86,10 +86,10 @@ class SyncService {
     queueProcessor.start();
 
     // Push existing local entries/faults to cloud (fire-and-forget with error handling)
-    pushLocalEntries().catch(error => {
+    pushLocalEntries().catch((error) => {
       logger.error('Failed to push local entries during sync init:', error);
     });
-    pushLocalFaults().catch(error => {
+    pushLocalFaults().catch((error) => {
       logger.error('Failed to push local faults during sync init:', error);
     });
 
@@ -466,7 +466,10 @@ export async function syncFault(
   if (state.settings.sync && state.raceId) {
     const success = await syncService.sendFaultToCloud(fault);
     if (!success) {
-      logger.warn('Failed to sync fault to cloud, will retry on next poll:', fault.id);
+      logger.warn(
+        'Failed to sync fault to cloud, will retry on next poll:',
+        fault.id,
+      );
     }
   }
 }

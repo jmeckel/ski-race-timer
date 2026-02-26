@@ -10,7 +10,6 @@ import {
   store,
 } from '../store';
 import type { Entry, FaultEntry, Language, Run } from '../types';
-import { SwipeActions } from './SwipeActions';
 import {
   // Template helpers
   deleteButton,
@@ -34,6 +33,7 @@ import {
   statusBadge,
 } from '../utils';
 import { logger } from '../utils/logger';
+import { SwipeActions } from './SwipeActions';
 
 // Group of items for the same bib+run
 interface DisplayGroup {
@@ -929,7 +929,8 @@ export class VirtualList {
       itemId,
       new SwipeActions({
         element: item,
-        onSwipeRight: () => this.options.onItemClick?.(entry, new MouseEvent('click')),
+        onSwipeRight: () =>
+          this.options.onItemClick?.(entry, new MouseEvent('click')),
         onSwipeLeft: () => this.options.onItemDelete?.(entry),
       }),
     );
@@ -1129,16 +1130,20 @@ export class VirtualList {
         new SwipeActions({
           element: item,
           onSwipeRight: () => {
-            item.dispatchEvent(new CustomEvent('fault-edit-request', {
-              bubbles: true,
-              detail: { fault: faults[0] },
-            }));
+            item.dispatchEvent(
+              new CustomEvent('fault-edit-request', {
+                bubbles: true,
+                detail: { fault: faults[0] },
+              }),
+            );
           },
           onSwipeLeft: () => {
-            item.dispatchEvent(new CustomEvent('fault-delete-request', {
-              bubbles: true,
-              detail: { fault: faults[0] },
-            }));
+            item.dispatchEvent(
+              new CustomEvent('fault-delete-request', {
+                bubbles: true,
+                detail: { fault: faults[0] },
+              }),
+            );
           },
         }),
       );
@@ -1272,8 +1277,14 @@ export class VirtualList {
       itemId,
       new SwipeActions({
         element: item,
-        onSwipeRight: () => { if (!ambientModeService.wasRecentlyExited()) this.options.onItemClick?.(entry, new MouseEvent('click')); },
-        onSwipeLeft: () => { if (!ambientModeService.wasRecentlyExited()) this.options.onItemDelete?.(entry); },
+        onSwipeRight: () => {
+          if (!ambientModeService.wasRecentlyExited())
+            this.options.onItemClick?.(entry, new MouseEvent('click'));
+        },
+        onSwipeLeft: () => {
+          if (!ambientModeService.wasRecentlyExited())
+            this.options.onItemDelete?.(entry);
+        },
       }),
     );
 
@@ -1433,16 +1444,20 @@ export class VirtualList {
       new SwipeActions({
         element: item,
         onSwipeRight: () => {
-          item.dispatchEvent(new CustomEvent('fault-edit-request', {
-            bubbles: true,
-            detail: { fault },
-          }));
+          item.dispatchEvent(
+            new CustomEvent('fault-edit-request', {
+              bubbles: true,
+              detail: { fault },
+            }),
+          );
         },
         onSwipeLeft: () => {
-          item.dispatchEvent(new CustomEvent('fault-delete-request', {
-            bubbles: true,
-            detail: { fault },
-          }));
+          item.dispatchEvent(
+            new CustomEvent('fault-delete-request', {
+              bubbles: true,
+              detail: { fault },
+            }),
+          );
         },
       }),
     );

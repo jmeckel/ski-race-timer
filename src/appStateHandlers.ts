@@ -30,8 +30,8 @@ import {
   updateRunSelection,
   updateTimingPointSelection,
 } from './features/timerView';
-import { ambientModeService } from './services/ambient';
 import { wakeLockService } from './services';
+import { ambientModeService } from './services/ambient';
 import {
   $bibInput,
   $cloudDeviceCount,

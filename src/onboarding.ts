@@ -35,7 +35,7 @@ export class OnboardingController {
   private updateTranslationsCallback: (() => void) | null = null;
   private recentRacesDocumentHandler: ((event: MouseEvent) => void) | null =
     null;
-  private debouncedCheckRace: (ReturnType<typeof debounce>) | null = null;
+  private debouncedCheckRace: ReturnType<typeof debounce> | null = null;
   private listeners = new ListenerManager();
 
   constructor() {

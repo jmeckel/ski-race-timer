@@ -6,7 +6,7 @@
  * chief judge PIN, legacy hash migration, CORS preflight, error paths
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ============================================
 // Mock Dependencies
@@ -67,11 +67,19 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
   getRequestId: vi.fn(() => 'test-req-id'),
 }));
 
+import { generateToken, hashPin, verifyPin } from '../../api/lib/jwt.js';
+import { getRedis, hasRedisError } from '../../api/lib/redis.js';
+import {
+  handlePreflight,
+  sendBadRequest,
+  sendError,
+  sendMethodNotAllowed,
+  sendRateLimitExceeded,
+  sendServiceUnavailable,
+  sendSuccess,
+} from '../../api/lib/response.js';
 // Import after mocks
 import handler from '../../api/v1/auth/token';
-import { getRedis, hasRedisError } from '../../api/lib/redis.js';
-import { generateToken, hashPin, verifyPin } from '../../api/lib/jwt.js';
-import { handlePreflight, sendSuccess, sendError, sendBadRequest, sendMethodNotAllowed, sendServiceUnavailable, sendRateLimitExceeded } from '../../api/lib/response.js';
 
 // ============================================
 // Helpers
@@ -145,17 +153,25 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
 
   describe('Redis Initialization', () => {
     it('should return 503 when Redis init throws', async () => {
-      vi.mocked(getRedis).mockImplementationOnce(() => { throw new Error('No REDIS_URL'); });
+      vi.mocked(getRedis).mockImplementationOnce(() => {
+        throw new Error('No REDIS_URL');
+      });
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Database service unavailable');
+      expect(sendServiceUnavailable).toHaveBeenCalledWith(
+        expect.anything(),
+        'Database service unavailable',
+      );
     });
 
     it('should return 503 when Redis has recent error', async () => {
       vi.mocked(hasRedisError).mockReturnValueOnce(true);
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Database connection issue. Please try again.');
+      expect(sendServiceUnavailable).toHaveBeenCalledWith(
+        expect.anything(),
+        'Database connection issue. Please try again.',
+      );
     });
   });
 
@@ -166,7 +182,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       const mockMulti = {
         incr: vi.fn().mockReturnThis(),
         expire: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue([[null, 6]]),  // 6 > 5 max
+        exec: vi.fn().mockResolvedValue([[null, 6]]), // 6 > 5 max
       };
       mockRedisClient.multi.mockReturnValue(mockMulti);
 
@@ -185,7 +201,10 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
 
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Rate limiting unavailable');
+      expect(sendServiceUnavailable).toHaveBeenCalledWith(
+        expect.anything(),
+        'Rate limiting unavailable',
+      );
     });
   });
 
@@ -195,43 +214,68 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
     it('should return 400 when PIN is missing', async () => {
       const req = { method: 'POST', headers: {}, body: {} } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN is required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN is required',
+      );
     });
 
     it('should return 400 when PIN is null', async () => {
       const req = { method: 'POST', headers: {}, body: { pin: null } } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN is required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN is required',
+      );
     });
 
     it('should return 400 when PIN is a number', async () => {
       const req = { method: 'POST', headers: {}, body: { pin: 1234 } } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN is required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN is required',
+      );
     });
 
     it('should return 400 for PIN shorter than 4 digits', async () => {
       const req = { method: 'POST', headers: {}, body: { pin: '123' } } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN must be exactly 4 digits');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN must be exactly 4 digits',
+      );
     });
 
     it('should return 400 for PIN longer than 4 digits', async () => {
-      const req = { method: 'POST', headers: {}, body: { pin: '12345' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '12345' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN must be exactly 4 digits');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN must be exactly 4 digits',
+      );
     });
 
     it('should return 400 for non-numeric PIN', async () => {
       const req = { method: 'POST', headers: {}, body: { pin: 'abcd' } } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN must be exactly 4 digits');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN must be exactly 4 digits',
+      );
     });
 
     it('should return 400 when body is null', async () => {
       const req = { method: 'POST', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PIN is required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN is required',
+      );
     });
   });
 
@@ -246,34 +290,52 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       await handler(req, mockRes as any);
 
       expect(hashPin).toHaveBeenCalledWith('1234');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:clientPin', 'hashed:1234', 'NX');
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        success: true,
-        isNewPin: true,
-        role: 'timer',
-        message: 'PIN set successfully',
-      }));
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'admin:clientPin',
+        'hashed:1234',
+        'NX',
+      );
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'timer' }),
+      );
+      expect(sendSuccess).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          success: true,
+          isNewPin: true,
+          role: 'timer',
+          message: 'PIN set successfully',
+        }),
+      );
     });
 
     it('should set PIN with gateJudge role when specified', async () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRedisClient.set.mockResolvedValue('OK'); // SET NX succeeds
 
-      const req = { method: 'POST', headers: {}, body: { pin: '1234', role: 'gateJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '1234', role: 'gateJudge' },
+      } as any;
       await handler(req, mockRes as any);
 
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'gateJudge' }));
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        role: 'gateJudge',
-        isNewPin: true,
-      }));
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'gateJudge' }),
+      );
+      expect(sendSuccess).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          role: 'gateJudge',
+          isNewPin: true,
+        }),
+      );
     });
 
     it('should handle concurrent PIN setup race condition', async () => {
       // First GET returns null, but SET NX fails (another request set it first)
       mockRedisClient.get
-        .mockResolvedValueOnce(null)  // initial check
+        .mockResolvedValueOnce(null) // initial check
         .mockResolvedValueOnce('hashed:1234'); // re-read after NX fail
       mockRedisClient.set.mockResolvedValue(null); // SET NX fails
 
@@ -287,7 +349,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
     it('should reject when concurrent PIN differs', async () => {
       // First GET returns null, but SET NX fails and concurrent PIN is different
       mockRedisClient.get
-        .mockResolvedValueOnce(null)  // initial check
+        .mockResolvedValueOnce(null) // initial check
         .mockResolvedValueOnce('hashed:9999'); // different PIN was set concurrently
       mockRedisClient.set.mockResolvedValue(null); // SET NX fails
 
@@ -295,7 +357,11 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       await handler(req, mockRes as any);
 
       // Should reject — PIN doesn't match the one set concurrently
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Invalid PIN', 401);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Invalid PIN',
+        401,
+      );
     });
   });
 
@@ -309,10 +375,13 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       await handler(req, mockRes as any);
 
       expect(verifyPin).toHaveBeenCalledWith('5678', 'hashed:5678');
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        success: true,
-        role: 'timer',
-      }));
+      expect(sendSuccess).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          success: true,
+          role: 'timer',
+        }),
+      );
     });
 
     it('should return 401 for incorrect PIN', async () => {
@@ -321,7 +390,11 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       const req = { method: 'POST', headers: {}, body: { pin: '0000' } } as any;
       await handler(req, mockRes as any);
 
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Invalid PIN', 401);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Invalid PIN',
+        401,
+      );
     });
 
     it('should migrate legacy SHA-256 hash to PBKDF2 on valid PIN', async () => {
@@ -333,7 +406,10 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       await handler(req, mockRes as any);
 
       expect(hashPin).toHaveBeenCalledWith('1234');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:clientPin', 'hashed:1234');
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'admin:clientPin',
+        'hashed:1234',
+      );
     });
 
     it('should NOT migrate hash if already PBKDF2 format', async () => {
@@ -345,7 +421,10 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       await handler(req, mockRes as any);
 
       // Should NOT update the hash since it already has ':'
-      expect(mockRedisClient.set).not.toHaveBeenCalledWith('admin:clientPin', expect.anything());
+      expect(mockRedisClient.set).not.toHaveBeenCalledWith(
+        'admin:clientPin',
+        expect.anything(),
+      );
     });
   });
 
@@ -357,22 +436,36 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       mockRedisClient.set.mockResolvedValue('OK');
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'timer' }),
+      );
     });
 
     it('should default to timer role for invalid role', async () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRedisClient.set.mockResolvedValue('OK');
-      const req = { method: 'POST', headers: {}, body: { pin: '1234', role: 'admin' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '1234', role: 'admin' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'timer' }));
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'timer' }),
+      );
     });
 
     it('should accept gateJudge role', async () => {
       mockRedisClient.get.mockResolvedValue('hashed:1234');
-      const req = { method: 'POST', headers: {}, body: { pin: '1234', role: 'gateJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '1234', role: 'gateJudge' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'gateJudge' }));
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'gateJudge' }),
+      );
     });
   });
 
@@ -382,47 +475,82 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
     it('should set chief judge PIN on first use', async () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRedisClient.set.mockResolvedValue('OK'); // SET NX succeeds
-      const req = { method: 'POST', headers: {}, body: { pin: '9999', role: 'chiefJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '9999', role: 'chiefJudge' },
+      } as any;
       await handler(req, mockRes as any);
 
       expect(hashPin).toHaveBeenCalledWith('9999');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:chiefJudgePin', 'hashed:9999', 'NX');
-      expect(generateToken).toHaveBeenCalledWith(expect.objectContaining({ role: 'chiefJudge' }));
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        success: true,
-        isNewPin: true,
-        role: 'chiefJudge',
-        message: 'Chief Judge PIN set successfully',
-      }));
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'admin:chiefJudgePin',
+        'hashed:9999',
+        'NX',
+      );
+      expect(generateToken).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'chiefJudge' }),
+      );
+      expect(sendSuccess).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          success: true,
+          isNewPin: true,
+          role: 'chiefJudge',
+          message: 'Chief Judge PIN set successfully',
+        }),
+      );
     });
 
     it('should verify chief judge PIN against stored hash', async () => {
       mockRedisClient.get.mockResolvedValue('hashed:9999');
-      const req = { method: 'POST', headers: {}, body: { pin: '9999', role: 'chiefJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '9999', role: 'chiefJudge' },
+      } as any;
       await handler(req, mockRes as any);
 
       expect(verifyPin).toHaveBeenCalledWith('9999', 'hashed:9999');
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        success: true,
-        role: 'chiefJudge',
-      }));
+      expect(sendSuccess).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          success: true,
+          role: 'chiefJudge',
+        }),
+      );
     });
 
     it('should return 401 for incorrect chief judge PIN', async () => {
       mockRedisClient.get.mockResolvedValue('hashed:9999');
-      const req = { method: 'POST', headers: {}, body: { pin: '0000', role: 'chiefJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '0000', role: 'chiefJudge' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Invalid Chief Judge PIN', 401);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Invalid Chief Judge PIN',
+        401,
+      );
     });
 
     it('should migrate legacy chief judge hash to PBKDF2', async () => {
       const legacyHash = 'abcdef1234567890';
       mockRedisClient.get.mockResolvedValue(legacyHash);
       vi.mocked(verifyPin).mockReturnValueOnce(true);
-      const req = { method: 'POST', headers: {}, body: { pin: '9999', role: 'chiefJudge' } } as any;
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '9999', role: 'chiefJudge' },
+      } as any;
       await handler(req, mockRes as any);
       expect(hashPin).toHaveBeenCalledWith('9999');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:chiefJudgePin', 'hashed:9999');
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'admin:chiefJudgePin',
+        'hashed:9999',
+      );
     });
   });
 
@@ -433,7 +561,11 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       mockRedisClient.get.mockRejectedValue(new Error('Unexpected'));
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Internal server error', 500);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Internal server error',
+        500,
+      );
     });
   });
 });

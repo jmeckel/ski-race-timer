@@ -97,7 +97,11 @@ function simulateTouchStart(
   );
 }
 
-function simulateTouchMove(clientX: number, clientY: number, target: HTMLElement = document.body): void {
+function simulateTouchMove(
+  clientX: number,
+  clientY: number,
+  target: HTMLElement = document.body,
+): void {
   const touch = {
     clientX,
     clientY,

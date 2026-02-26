@@ -155,9 +155,12 @@ import {
   updateRunSelection,
   updateTimingPointSelection,
 } from '../../src/features/timerView';
-import { ambientModeService } from '../../src/services/ambient';
 import { wakeLockService } from '../../src/services';
-import { applyCameraService, applyGpsService } from '../../src/utils/viewServices';
+import { ambientModeService } from '../../src/services/ambient';
+import {
+  applyCameraService,
+  applyGpsService,
+} from '../../src/utils/viewServices';
 
 describe('App State Handlers', () => {
   let dispose: () => void;

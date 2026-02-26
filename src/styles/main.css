@@ -492,7 +492,9 @@
       width: 18px;
       height: 18px;
       opacity: 0.5;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
     }
 
     &::after {
@@ -1405,11 +1407,15 @@
 
 /* ===== Clock Base Styles ===== */
 .clock-time {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: clamp(32px, 10vw, 48px);
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-light) 0%,
+    var(--primary) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1426,8 +1432,12 @@
 }
 
 @keyframes digitPop {
-  from { transform: scale(1.02); }
-  to { transform: scale(1); }
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .clock-date-row {
@@ -1515,7 +1525,8 @@ body.ambient-mode .timer-view .timing-controls,
 body.ambient-mode .timer-view .bib-entry-section,
 body.ambient-mode .timer-view .number-pad,
 /* Radial mode elements */
-body.ambient-mode .timer-view .radial-top-row,
+  body.ambient-mode .timer-view
+  .radial-top-row,
 body.ambient-mode .timer-view .radial-controls-row,
 body.ambient-mode .timer-view .radial-bottom-row,
 body.ambient-mode .timer-view .radial-confirmation-overlay,

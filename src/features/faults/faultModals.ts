@@ -123,12 +123,10 @@ export function initFaultRecordingModal(): void {
     const selectFaultType = (faultType: FaultType) => {
       const btn = faultTypeButtons.querySelector(`[data-fault="${faultType}"]`);
       if (btn) {
-        faultTypeButtons
-          .querySelectorAll('.fault-type-btn')
-          .forEach((b) => {
-            b.classList.remove('selected');
-            b.setAttribute('aria-pressed', 'false');
-          });
+        faultTypeButtons.querySelectorAll('.fault-type-btn').forEach((b) => {
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
         btn.classList.add('selected');
         btn.setAttribute('aria-pressed', 'true');
         feedbackTap();

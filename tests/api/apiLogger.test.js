@@ -5,7 +5,7 @@
  * Verifies JSON output format, request ID tracing, and debug suppression.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Import the actual module
 import { apiLogger, getRequestId } from '../../api/lib/apiLogger.ts';

@@ -15,7 +15,10 @@ import { logger } from '../utils/logger';
  * Format timestamp for Race Horology CSV export
  * Converts ISO timestamp to HH:MM:SS,ss format (hundredths of seconds)
  */
-export function formatTimeForRaceHorology(isoTimestamp: string): { time: string; dateRollover: boolean } {
+export function formatTimeForRaceHorology(isoTimestamp: string): {
+  time: string;
+  dateRollover: boolean;
+} {
   const date = new Date(isoTimestamp);
   let h = date.getHours();
   let m = date.getMinutes();
@@ -96,7 +99,10 @@ export function escapeCSVField(field: string): string {
  * Extract date from ISO timestamp as YYYY-MM-DD
  * Useful for multi-day races where entries span different dates
  */
-export function formatDateForExport(isoTimestamp: string, dateRollover: boolean = false): string {
+export function formatDateForExport(
+  isoTimestamp: string,
+  dateRollover: boolean = false,
+): string {
   const date = new Date(isoTimestamp);
   if (dateRollover) {
     // Midnight carry-over from rounding: advance to next day
@@ -189,7 +195,9 @@ export function exportResults(): void {
       const point = getExportPointLabel(entry.point);
       const { time, dateRollover } = formatTimeForRaceHorology(entry.timestamp);
       const device = escapeCSVField(entry.deviceName || entry.deviceId);
-      const datum = escapeCSVField(formatDateForExport(entry.timestamp, dateRollover));
+      const datum = escapeCSVField(
+        formatDateForExport(entry.timestamp, dateRollover),
+      );
 
       // Get faults for this bib/run (only on Finish entries)
       const entryFaults =
@@ -225,7 +233,9 @@ export function exportResults(): void {
     const csvContent = [header, ...rows].join('\n');
 
     // Create and download file — prepend UTF-8 BOM so Windows Excel interprets umlauts correctly
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement('a');

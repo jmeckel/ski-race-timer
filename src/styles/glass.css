@@ -21,7 +21,7 @@
 
   /* Glass border colors — Cyan-tinted for navy base */
   --glass-border-light: rgba(0, 212, 255, 0.06);
-  --glass-border-medium: rgba(0, 212, 255, 0.10);
+  --glass-border-medium: rgba(0, 212, 255, 0.1);
   --glass-border-heavy: rgba(0, 212, 255, 0.15);
 
   /* Highlight/reflection */

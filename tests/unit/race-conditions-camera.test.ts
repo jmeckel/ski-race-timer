@@ -223,7 +223,10 @@ describe('Camera reinitializeCamera retry preservation', () => {
     expect(cameraService.isReady()).toBe(true);
 
     // 2. Simulate page hidden -> camera pauses
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: true,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
 
     // Camera should now be paused (not ready)
@@ -235,7 +238,10 @@ describe('Camera reinitializeCamera retry preservation', () => {
     );
 
     // 4. Simulate page visible -> triggers reinitializeCamera which will fail
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: false,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
 
     // Wait for the async reinitializeCamera to complete
@@ -255,9 +261,15 @@ describe('Camera reinitializeCamera retry preservation', () => {
       Promise.reject(new Error('Camera busy again')),
     );
 
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: true,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: false,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
 
     await vi.waitFor(() => {
@@ -287,14 +299,23 @@ describe('Camera reinitializeCamera retry preservation', () => {
     // 3. Simulate MAX_REINIT_RETRIES (3) visibility cycles, each triggering
     //    a failed reinitializeCamera call
     for (let i = 0; i < 3; i++) {
-      Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: true,
+        configurable: true,
+      });
       document.dispatchEvent(new Event('visibilitychange'));
-      Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: false,
+        configurable: true,
+      });
       document.dispatchEvent(new Event('visibilitychange'));
 
       // Wait for async reinitializeCamera to complete
       await vi.waitFor(() => {
-        expect(mockSetCameraReady).toHaveBeenCalledWith(false, 'Permanent failure');
+        expect(mockSetCameraReady).toHaveBeenCalledWith(
+          false,
+          'Permanent failure',
+        );
       });
       vi.clearAllMocks();
     }
@@ -306,9 +327,15 @@ describe('Camera reinitializeCamera retry preservation', () => {
       Promise.reject(new Error('Should not be called')),
     );
 
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: true,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: false,
+      configurable: true,
+    });
     document.dispatchEvent(new Event('visibilitychange'));
 
     // Give a tick for any async handlers

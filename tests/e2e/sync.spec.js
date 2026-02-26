@@ -25,7 +25,10 @@ test.describe.configure({ mode: 'serial' });
 // ============================================
 
 /** Wait for a sync API response (GET or POST) */
-async function waitForSyncResponse(page, { method = 'GET', timeout = 10000 } = {}) {
+async function waitForSyncResponse(
+  page,
+  { method = 'GET', timeout = 10000 } = {},
+) {
   await page.waitForResponse(
     (resp) =>
       resp.url().includes('/api/v1/sync') &&

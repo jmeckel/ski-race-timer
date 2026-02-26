@@ -3,7 +3,7 @@
  * Tests: getRedis, hasRedisError, getRedisError, constants, reconnection logic
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ioredis before importing the module under test
 const mockOn = vi.fn();
@@ -90,7 +90,9 @@ describe('Redis Utility', () => {
   describe('getRedis', () => {
     it('should throw if REDIS_URL is not configured', () => {
       delete process.env.REDIS_URL;
-      expect(() => getRedis()).toThrow('REDIS_URL environment variable is not configured');
+      expect(() => getRedis()).toThrow(
+        'REDIS_URL environment variable is not configured',
+      );
     });
 
     it('should create Redis client when REDIS_URL is set', () => {
@@ -144,7 +146,9 @@ describe('Redis Utility', () => {
       getRedis();
 
       // Find the error handler and call it
-      const errorCall = mockOn.mock.calls.find((call: any[]) => call[0] === 'error');
+      const errorCall = mockOn.mock.calls.find(
+        (call: any[]) => call[0] === 'error',
+      );
       expect(errorCall).toBeDefined();
 
       const errorHandler = errorCall![1];
@@ -160,13 +164,17 @@ describe('Redis Utility', () => {
       getRedis();
 
       // First trigger an error
-      const errorCall = mockOn.mock.calls.find((call: any[]) => call[0] === 'error');
+      const errorCall = mockOn.mock.calls.find(
+        (call: any[]) => call[0] === 'error',
+      );
       const errorHandler = errorCall![1];
       errorHandler(new Error('Connection refused'));
       expect(hasRedisError()).toBe(true);
 
       // Then trigger connect
-      const connectCall = mockOn.mock.calls.find((call: any[]) => call[0] === 'connect');
+      const connectCall = mockOn.mock.calls.find(
+        (call: any[]) => call[0] === 'connect',
+      );
       const connectHandler = connectCall![1];
       connectHandler();
       expect(hasRedisError()).toBe(false);
@@ -182,7 +190,9 @@ describe('Redis Utility', () => {
       const client1 = getRedis();
 
       // Simulate error
-      const errorCall = mockOn.mock.calls.find((call: any[]) => call[0] === 'error');
+      const errorCall = mockOn.mock.calls.find(
+        (call: any[]) => call[0] === 'error',
+      );
       const errorHandler = errorCall![1];
       errorHandler(new Error('Connection lost'));
 

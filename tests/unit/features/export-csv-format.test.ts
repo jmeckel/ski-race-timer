@@ -15,7 +15,8 @@ describe('CSV Export Format - Race Horology', () => {
   describe('Header format', () => {
     it('should define correct Race Horology column headers (with Datum)', () => {
       // The standard Race Horology header (without fault columns) — matches production export.ts
-      const expectedHeader = 'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Datum';
+      const expectedHeader =
+        'Startnummer;Lauf;Messpunkt;Zeit;Status;Gerät;Datum';
       const columns = expectedHeader.split(';');
 
       expect(columns).toHaveLength(7);
@@ -110,7 +111,9 @@ describe('CSV Export Format - Race Horology', () => {
     it('should handle carry-over across hour boundary', () => {
       const date = new Date();
       date.setHours(23, 59, 59, 999);
-      const { time, dateRollover } = formatTimeForRaceHorology(date.toISOString());
+      const { time, dateRollover } = formatTimeForRaceHorology(
+        date.toISOString(),
+      );
       // Should wrap to 00:00:00,00 and signal date rollover
       expect(time).toBe('00:00:00,00');
       expect(dateRollover).toBe(true);

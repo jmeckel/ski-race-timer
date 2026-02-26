@@ -5,7 +5,7 @@
  * Covers: auth validation, input validation, error handling, PIN change flow.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ============================================
 // Mock Dependencies
@@ -74,10 +74,18 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
   getRequestId: vi.fn(() => 'test-req-id'),
 }));
 
-import handler from '../../api/v1/admin/pin';
+import { hashPin, validateAuth, verifyPin } from '../../api/lib/jwt.js';
 import { getRedis, hasRedisError } from '../../api/lib/redis.js';
-import { validateAuth, hashPin, verifyPin } from '../../api/lib/jwt.js';
-import { sendSuccess, sendError, sendBadRequest, sendMethodNotAllowed, sendServiceUnavailable, sendAuthRequired, sendRateLimitExceeded } from '../../api/lib/response.js';
+import {
+  sendAuthRequired,
+  sendBadRequest,
+  sendError,
+  sendMethodNotAllowed,
+  sendRateLimitExceeded,
+  sendServiceUnavailable,
+  sendSuccess,
+} from '../../api/lib/response.js';
+import handler from '../../api/v1/admin/pin';
 
 // ============================================
 // Tests
@@ -108,17 +116,25 @@ describe('API: /api/v1/admin/pin', () => {
 
   describe('Redis Errors', () => {
     it('should return 503 when Redis init fails', async () => {
-      vi.mocked(getRedis).mockImplementationOnce(() => { throw new Error('No Redis'); });
+      vi.mocked(getRedis).mockImplementationOnce(() => {
+        throw new Error('No Redis');
+      });
       const req = { method: 'GET', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Database service unavailable');
+      expect(sendServiceUnavailable).toHaveBeenCalledWith(
+        expect.anything(),
+        'Database service unavailable',
+      );
     });
 
     it('should return 503 when Redis has recent error', async () => {
       vi.mocked(hasRedisError).mockReturnValueOnce(true);
       const req = { method: 'GET', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendServiceUnavailable).toHaveBeenCalledWith(expect.anything(), 'Database connection issue. Please try again.');
+      expect(sendServiceUnavailable).toHaveBeenCalledWith(
+        expect.anything(),
+        'Database connection issue. Please try again.',
+      );
     });
   });
 
@@ -126,17 +142,33 @@ describe('API: /api/v1/admin/pin', () => {
 
   describe('Authentication', () => {
     it('should reject unauthenticated request', async () => {
-      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: false, error: 'Authorization required.', expired: false });
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: false,
+        error: 'Authorization required.',
+        expired: false,
+      });
       const req = { method: 'GET', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendAuthRequired).toHaveBeenCalledWith(expect.anything(), 'Authorization required.', false);
+      expect(sendAuthRequired).toHaveBeenCalledWith(
+        expect.anything(),
+        'Authorization required.',
+        false,
+      );
     });
 
     it('should pass expired flag when token is expired', async () => {
-      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: false, error: 'Token expired.', expired: true });
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: false,
+        error: 'Token expired.',
+        expired: true,
+      });
       const req = { method: 'GET', headers: {}, body: null } as any;
       await handler(req, mockRes as any);
-      expect(sendAuthRequired).toHaveBeenCalledWith(expect.anything(), 'Token expired.', true);
+      expect(sendAuthRequired).toHaveBeenCalledWith(
+        expect.anything(),
+        'Token expired.',
+        true,
+      );
     });
   });
 
@@ -145,9 +177,16 @@ describe('API: /api/v1/admin/pin', () => {
   describe('GET /api/v1/admin/pin', () => {
     it('should return hasPin=false when no PIN set', async () => {
       mockRedisClient.get.mockResolvedValue(null);
-      const req = { method: 'GET', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), { hasPin: false, hasChiefPin: false });
+      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
+        hasPin: false,
+        hasChiefPin: false,
+      });
     });
 
     it('should return hasPin=true when client PIN is set', async () => {
@@ -155,9 +194,16 @@ describe('API: /api/v1/admin/pin', () => {
         if (key === 'admin:clientPin') return Promise.resolve('some-hash');
         return Promise.resolve(null);
       });
-      const req = { method: 'GET', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), { hasPin: true, hasChiefPin: false });
+      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
+        hasPin: true,
+        hasChiefPin: false,
+      });
     });
 
     it('should return hasChiefPin=true when chief judge PIN is set', async () => {
@@ -165,16 +211,30 @@ describe('API: /api/v1/admin/pin', () => {
         if (key === 'admin:chiefJudgePin') return Promise.resolve('chief-hash');
         return Promise.resolve(null);
       });
-      const req = { method: 'GET', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), { hasPin: false, hasChiefPin: true });
+      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
+        hasPin: false,
+        hasChiefPin: true,
+      });
     });
 
     it('should return both flags true when both PINs set', async () => {
       mockRedisClient.get.mockResolvedValue('some-hash');
-      const req = { method: 'GET', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), { hasPin: true, hasChiefPin: true });
+      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
+        hasPin: true,
+        hasChiefPin: true,
+      });
     });
   });
 
@@ -183,82 +243,175 @@ describe('API: /api/v1/admin/pin', () => {
   describe('POST /api/v1/admin/pin', () => {
     beforeEach(() => {
       // POST requires chiefJudge role
-      vi.mocked(validateAuth).mockResolvedValue({ valid: true, method: 'jwt', payload: { role: 'chiefJudge' } });
+      vi.mocked(validateAuth).mockResolvedValue({
+        valid: true,
+        method: 'jwt',
+        payload: { role: 'chiefJudge' },
+      });
     });
 
     it('should return 403 when user is not chiefJudge', async () => {
-      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt', payload: { role: 'timer' } });
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: true,
+        method: 'jwt',
+        payload: { role: 'timer' },
+      });
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'PIN change requires Chief Judge role', 403);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN change requires Chief Judge role',
+        403,
+      );
     });
 
     it('should return 403 when user has no role', async () => {
-      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt' });
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: true,
+        method: 'jwt',
+      });
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'PIN change requires Chief Judge role', 403);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'PIN change requires Chief Judge role',
+        403,
+      );
     });
 
     it('should return 400 when currentPin is missing', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { newPin: '5678' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'currentPin and newPin are required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'currentPin and newPin are required',
+      );
     });
 
     it('should return 400 when newPin is missing', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'currentPin and newPin are required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'currentPin and newPin are required',
+      );
     });
 
     it('should return 400 when body is null', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'currentPin and newPin are required');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'currentPin and newPin are required',
+      );
     });
 
     it('should return 400 when PINs are not strings', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: 1234, newPin: 5678 } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: 1234, newPin: 5678 },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PINs must be strings');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PINs must be strings',
+      );
     });
 
     it('should return 400 for invalid PIN format', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '123', newPin: '5678' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '123', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PINs must be exactly 4 digits');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PINs must be exactly 4 digits',
+      );
     });
 
     it('should return 400 for non-numeric newPin', async () => {
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: 'abcd' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: 'abcd' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'PINs must be exactly 4 digits');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'PINs must be exactly 4 digits',
+      );
     });
 
     it('should return 400 when no PIN is currently set', async () => {
       mockRedisClient.get.mockResolvedValue(null);
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendBadRequest).toHaveBeenCalledWith(expect.anything(), 'No PIN is set. Use authentication to set initial PIN.');
+      expect(sendBadRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        'No PIN is set. Use authentication to set initial PIN.',
+      );
     });
 
     it('should return 401 when current PIN is incorrect', async () => {
       mockRedisClient.get.mockResolvedValue('hashed:9999');
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Current PIN is incorrect', 401);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Current PIN is incorrect',
+        401,
+      );
     });
 
     it('should change PIN when current PIN is correct', async () => {
       mockRedisClient.get.mockResolvedValue('hashed:1234');
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
 
       expect(verifyPin).toHaveBeenCalledWith('1234', 'hashed:1234');
       expect(hashPin).toHaveBeenCalledWith('5678');
-      expect(mockRedisClient.set).toHaveBeenCalledWith('admin:clientPin', 'hashed:5678');
-      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), { success: true });
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'admin:clientPin',
+        'hashed:5678',
+      );
+      expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
+        success: true,
+      });
     });
   });
 
@@ -266,13 +419,21 @@ describe('API: /api/v1/admin/pin', () => {
 
   describe('Unsupported Methods', () => {
     it('should return 405 for PUT', async () => {
-      const req = { method: 'PUT', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'PUT',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
       expect(sendMethodNotAllowed).toHaveBeenCalled();
     });
 
     it('should return 405 for DELETE', async () => {
-      const req = { method: 'DELETE', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'DELETE',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
       expect(sendMethodNotAllowed).toHaveBeenCalled();
     });
@@ -283,18 +444,40 @@ describe('API: /api/v1/admin/pin', () => {
   describe('Error Handling', () => {
     it('should return 500 on unexpected error in GET', async () => {
       mockRedisClient.get.mockRejectedValue(new Error('Unexpected'));
-      const req = { method: 'GET', headers: { authorization: 'Bearer token' }, body: null } as any;
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer token' },
+        body: null,
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Internal server error', 500);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Internal server error',
+        500,
+      );
     });
 
     it('should return 500 on unexpected error in POST', async () => {
-      vi.mocked(validateAuth).mockResolvedValueOnce({ valid: true, method: 'jwt', payload: { role: 'chiefJudge' } });
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: true,
+        method: 'jwt',
+        payload: { role: 'chiefJudge' },
+      });
       mockRedisClient.get.mockResolvedValue('hashed:1234');
-      vi.mocked(verifyPin).mockImplementationOnce(() => { throw new Error('crypto fail'); });
-      const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { currentPin: '1234', newPin: '5678' } } as any;
+      vi.mocked(verifyPin).mockImplementationOnce(() => {
+        throw new Error('crypto fail');
+      });
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '1234', newPin: '5678' },
+      } as any;
       await handler(req, mockRes as any);
-      expect(sendError).toHaveBeenCalledWith(expect.anything(), 'Internal server error', 500);
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        'Internal server error',
+        500,
+      );
     });
   });
 });

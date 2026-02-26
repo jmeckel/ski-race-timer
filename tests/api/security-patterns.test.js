@@ -12,10 +12,10 @@
  * - Individual endpoints for createHandler usage + endpoint-specific patterns
  */
 
-import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { describe, expect, it } from 'vitest';
 
 // Resolve project root from this test file's location (tests/api/ -> project root)
 const __filename = fileURLToPath(import.meta.url);
@@ -49,7 +49,6 @@ const HANDLER_ENDPOINTS = [
 ];
 
 describe('Security Patterns - Source Code Assertions', () => {
-
   describe('createHandler middleware adoption', () => {
     for (const endpoint of HANDLER_ENDPOINTS) {
       it(`${endpoint} should use createHandler middleware`, () => {
@@ -158,7 +157,8 @@ describe('Security Patterns - Source Code Assertions', () => {
     for (const endpoint of rateLimitedViaHandler) {
       it(`${endpoint} should implement rate limiting via createHandler`, () => {
         const source = readSource(endpoint);
-        const hasRateLimit = source.includes('rateLimit') || source.includes('RateLimit');
+        const hasRateLimit =
+          source.includes('rateLimit') || source.includes('RateLimit');
         expect(hasRateLimit).toBe(true);
       });
     }
@@ -166,14 +166,16 @@ describe('Security Patterns - Source Code Assertions', () => {
     // auth/token.ts handles rate limiting manually (after PIN format validation)
     it('auth/token.ts should implement rate limiting', () => {
       const source = readSource('api/v1/auth/token.ts');
-      const hasRateLimit = source.includes('rateLimit') || source.includes('RateLimit');
+      const hasRateLimit =
+        source.includes('rateLimit') || source.includes('RateLimit');
       expect(hasRateLimit).toBe(true);
     });
 
     // reset-pin.ts has its own local checkRateLimit
     it('reset-pin.ts should implement rate limiting', () => {
       const source = readSource('api/v1/admin/reset-pin.ts');
-      const hasRateLimit = source.includes('rateLimit') || source.includes('RateLimit');
+      const hasRateLimit =
+        source.includes('rateLimit') || source.includes('RateLimit');
       expect(hasRateLimit).toBe(true);
     });
 
@@ -249,7 +251,8 @@ describe('Security Patterns - Source Code Assertions', () => {
       it(`${endpoint} should import apiLogger or use log from context`, () => {
         const source = readSource(endpoint);
         // Either imports apiLogger directly or uses log from handler context
-        const hasLogging = source.includes('apiLogger') || source.includes('log.');
+        const hasLogging =
+          source.includes('apiLogger') || source.includes('log.');
         expect(hasLogging).toBe(true);
       });
     }
@@ -260,10 +263,10 @@ describe('Security Patterns - Source Code Assertions', () => {
         const source = readSource(endpoint);
         // Remove comments and string literals to avoid false positives
         const codeOnly = source
-          .replace(/\/\/.*$/gm, '')     // Remove single-line comments
+          .replace(/\/\/.*$/gm, '') // Remove single-line comments
           .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-          .replace(/'[^']*'/g, '')      // Remove single-quoted strings
-          .replace(/"[^"]*"/g, '');     // Remove double-quoted strings
+          .replace(/'[^']*'/g, '') // Remove single-quoted strings
+          .replace(/"[^"]*"/g, ''); // Remove double-quoted strings
 
         // Should not have bare console.log (apiLogger wraps console internally)
         const consoleLogMatches = codeOnly.match(/console\.log\(/g) || [];
@@ -320,13 +323,17 @@ describe('Security Patterns - Source Code Assertions', () => {
       const source = readSource('api/v1/faults.ts');
       // Should check for chiefJudge role on DELETE with 403 response
       expect(source).toContain("userRole !== 'chiefJudge'");
-      expect(source).toContain("sendError(res, 'Fault deletion requires Chief Judge role', 403)");
+      expect(source).toContain(
+        "sendError(res, 'Fault deletion requires Chief Judge role', 403)",
+      );
     });
 
     it('admin/races.ts DELETE should require chiefJudge role', () => {
       const source = readSource('api/v1/admin/races.ts');
       expect(source).toContain("userRole !== 'chiefJudge'");
-      expect(source).toContain("sendError(res, 'Race deletion requires Chief Judge role', 403)");
+      expect(source).toContain(
+        "sendError(res, 'Race deletion requires Chief Judge role', 403)",
+      );
     });
   });
 
@@ -348,7 +355,9 @@ describe('Security Patterns - Source Code Assertions', () => {
     // reset-pin.ts sets headers directly
     it('reset-pin.ts should set standard headers directly', () => {
       const source = readSource('api/v1/admin/reset-pin.ts');
-      const hasHeaderSetup = source.includes('handlePreflight') || source.includes('setSecurityHeaders');
+      const hasHeaderSetup =
+        source.includes('handlePreflight') ||
+        source.includes('setSecurityHeaders');
       expect(hasHeaderSetup).toBe(true);
     });
   });
@@ -356,7 +365,7 @@ describe('Security Patterns - Source Code Assertions', () => {
   describe('JWT configuration security', () => {
     it('jwt.ts should fail if JWT_SECRET is not set (no fallback)', () => {
       const source = readSource('api/lib/jwt.ts');
-      expect(source).toContain("!process.env.JWT_SECRET");
+      expect(source).toContain('!process.env.JWT_SECRET');
       expect(source).toContain('throw new Error');
     });
 
@@ -367,7 +376,7 @@ describe('Security Patterns - Source Code Assertions', () => {
 
     it('jwt.ts should set token expiry', () => {
       const source = readSource('api/lib/jwt.ts');
-      expect(source).toContain("JWT_EXPIRY");
+      expect(source).toContain('JWT_EXPIRY');
       expect(source).toContain("'24h'");
     });
 

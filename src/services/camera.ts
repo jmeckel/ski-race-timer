@@ -82,7 +82,8 @@ class CameraService {
       }
       // If metadata already loaded, play immediately
       if (this.videoElement.readyState >= 1) {
-        this.videoElement.play()
+        this.videoElement
+          .play()
           .then(() => resolve())
           .catch(reject);
         return;
@@ -283,7 +284,8 @@ class CameraService {
       store.setCameraReady(true);
       this.resetIdleTimeout();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Reinitialize failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Reinitialize failed';
       logger.error('Failed to reinitialize camera:', error);
       if (this.stream) {
         this.stream.getTracks().forEach((track) => track.stop());
@@ -297,7 +299,10 @@ class CameraService {
       if (this.reinitRetryCount >= MAX_REINIT_RETRIES) {
         this.cameraState = 'stopped';
         if (this.visibilityHandler) {
-          document.removeEventListener('visibilitychange', this.visibilityHandler);
+          document.removeEventListener(
+            'visibilitychange',
+            this.visibilityHandler,
+          );
           this.visibilityHandler = null;
         }
       } else {

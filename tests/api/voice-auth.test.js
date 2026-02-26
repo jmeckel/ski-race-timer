@@ -8,7 +8,7 @@
  * Authentication, Redis init, and fail-closed patterns are centralized in handler.ts.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock modules before importing handler
 const mockRedisClient = {
@@ -17,9 +17,12 @@ const mockRedisClient = {
   multi: vi.fn(() => ({
     incr: vi.fn().mockReturnThis(),
     expire: vi.fn().mockReturnThis(),
-    exec: vi.fn().mockResolvedValue([[null, 1], [null, 1]])
+    exec: vi.fn().mockResolvedValue([
+      [null, 1],
+      [null, 1],
+    ]),
   })),
-  on: vi.fn()
+  on: vi.fn(),
 };
 
 let mockRedisThrows = false;
@@ -31,7 +34,7 @@ vi.mock('../../api/lib/redis.js', () => ({
     return mockRedisClient;
   }),
   hasRedisError: vi.fn(() => mockRedisError),
-  CLIENT_PIN_KEY: 'admin:clientPin'
+  CLIENT_PIN_KEY: 'admin:clientPin',
 }));
 
 vi.mock('../../api/lib/jwt.js', () => ({
@@ -48,7 +51,7 @@ vi.mock('../../api/lib/jwt.js', () => ({
     return { valid: false, error: 'Invalid token' };
   }),
   hashPin: vi.fn(),
-  verifyPin: vi.fn()
+  verifyPin: vi.fn(),
 }));
 
 vi.mock('../../api/lib/response.js', () => ({
@@ -76,7 +79,10 @@ vi.mock('../../api/lib/response.js', () => ({
   getClientIP: vi.fn(() => '127.0.0.1'),
   sanitizeString: vi.fn((str, maxLen) => {
     if (!str || typeof str !== 'string') return '';
-    return str.slice(0, maxLen).replace(/[<>&]/g, '').replace(/[\x00-\x1f\x7f]/g, '');
+    return str
+      .slice(0, maxLen)
+      .replace(/[<>&]/g, '')
+      .replace(/[\x00-\x1f\x7f]/g, '');
   }),
 }));
 
@@ -102,10 +108,18 @@ function createMockRes() {
     statusCode: 200,
     headers: {},
     body: null,
-    setHeader: vi.fn((key, value) => { res.headers[key] = value; }),
-    status: vi.fn(function(code) { res.statusCode = code; return res; }),
-    json: vi.fn(function(data) { res.body = data; return res; }),
-    end: vi.fn()
+    setHeader: vi.fn((key, value) => {
+      res.headers[key] = value;
+    }),
+    status: vi.fn((code) => {
+      res.statusCode = code;
+      return res;
+    }),
+    json: vi.fn((data) => {
+      res.body = data;
+      return res;
+    }),
+    end: vi.fn(),
   };
   return res;
 }
@@ -142,7 +156,7 @@ describe('Voice API Authentication', () => {
       const req = {
         method: 'POST',
         headers: { authorization: 'Bearer valid-token' },
-        body: { text: 'test' }
+        body: { text: 'test' },
       };
       const res = createMockRes();
 
@@ -159,7 +173,7 @@ describe('Voice API Authentication', () => {
       const req = {
         method: 'POST',
         headers: { authorization: 'Bearer valid-token' },
-        body: { text: 'test' }
+        body: { text: 'test' },
       };
       const res = createMockRes();
 

@@ -86,7 +86,11 @@ export class RadialDialInteraction {
       this.handleDragMove as EventListener,
       { passive: false },
     );
-    this.listeners.add(this.container, 'touchend', this.handleDragEnd as EventListener);
+    this.listeners.add(
+      this.container,
+      'touchend',
+      this.handleDragEnd as EventListener,
+    );
   }
 
   /** Get current drag state */

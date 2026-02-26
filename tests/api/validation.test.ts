@@ -3,15 +3,15 @@
  * Tests: isValidRaceId, checkRateLimit, constants
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RateLimitConfig } from '../../api/lib/validation';
 import {
-  isValidRaceId,
   checkRateLimit,
-  MAX_RACE_ID_LENGTH,
+  isValidRaceId,
   MAX_DEVICE_NAME_LENGTH,
+  MAX_RACE_ID_LENGTH,
   VALID_FAULT_TYPES,
 } from '../../api/lib/validation';
-import type { RateLimitConfig } from '../../api/lib/validation';
 
 describe('API Validation Utilities', () => {
   // ─── Constants ───
@@ -123,7 +123,12 @@ describe('API Validation Utilities', () => {
 
     it('should allow request when count is within GET limit', async () => {
       const redis = createMockRedis([[null, 5]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBe(95); // 100 - 5
@@ -132,7 +137,12 @@ describe('API Validation Utilities', () => {
 
     it('should allow request when count is within POST limit', async () => {
       const redis = createMockRedis([[null, 3]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'POST', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'POST',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBe(17); // 20 - 3
@@ -141,7 +151,12 @@ describe('API Validation Utilities', () => {
 
     it('should deny request when count exceeds GET limit', async () => {
       const redis = createMockRedis([[null, 101]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(false);
       expect(result.remaining).toBe(0);
@@ -150,7 +165,12 @@ describe('API Validation Utilities', () => {
 
     it('should deny request when count exceeds POST limit', async () => {
       const redis = createMockRedis([[null, 21]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'POST', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'POST',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(false);
       expect(result.remaining).toBe(0);
@@ -159,7 +179,12 @@ describe('API Validation Utilities', () => {
 
     it('should allow request at exactly the limit', async () => {
       const redis = createMockRedis([[null, 100]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBe(0);
@@ -170,7 +195,9 @@ describe('API Validation Utilities', () => {
       await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
 
       expect(redis.multi).toHaveBeenCalled();
-      expect(redis._multi.incr).toHaveBeenCalledWith(expect.stringContaining('ratelimit:test:GET:127.0.0.1:'));
+      expect(redis._multi.incr).toHaveBeenCalledWith(
+        expect.stringContaining('ratelimit:test:GET:127.0.0.1:'),
+      );
       expect(redis._multi.expire).toHaveBeenCalledWith(
         expect.stringContaining('ratelimit:test:GET:127.0.0.1:'),
         70, // window + 10
@@ -187,7 +214,12 @@ describe('API Validation Utilities', () => {
 
     it('should include reset timestamp in response', async () => {
       const redis = createMockRedis([[null, 1]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(typeof result.reset).toBe('number');
       expect(result.reset).toBeGreaterThan(0);
@@ -201,7 +233,12 @@ describe('API Validation Utilities', () => {
       };
       const redis = { multi: vi.fn(() => multi) };
 
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(false);
       expect(result.remaining).toBe(0);
@@ -233,7 +270,12 @@ describe('API Validation Utilities', () => {
       };
       const redis = { multi: vi.fn(() => multi) };
 
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'GET', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
 
       expect(result.allowed).toBe(false);
       expect(result.error).toBe('Rate limiting unavailable');
@@ -243,8 +285,18 @@ describe('API Validation Utilities', () => {
       const redis1 = createMockRedis([[null, 50]]);
       const redis2 = createMockRedis([[null, 50]]);
 
-      const getResult = await checkRateLimit(redis1 as any, '127.0.0.1', 'GET', defaultConfig);
-      const postResult = await checkRateLimit(redis2 as any, '127.0.0.1', 'POST', defaultConfig);
+      const getResult = await checkRateLimit(
+        redis1 as any,
+        '127.0.0.1',
+        'GET',
+        defaultConfig,
+      );
+      const postResult = await checkRateLimit(
+        redis2 as any,
+        '127.0.0.1',
+        'POST',
+        defaultConfig,
+      );
 
       // GET limit 100, count 50 -> allowed
       expect(getResult.allowed).toBe(true);
@@ -257,7 +309,12 @@ describe('API Validation Utilities', () => {
 
     it('should use DELETE as GET limit (non-POST method)', async () => {
       const redis = createMockRedis([[null, 5]]);
-      const result = await checkRateLimit(redis as any, '127.0.0.1', 'DELETE', defaultConfig);
+      const result = await checkRateLimit(
+        redis as any,
+        '127.0.0.1',
+        'DELETE',
+        defaultConfig,
+      );
 
       expect(result.limit).toBe(100); // maxRequests, not maxPosts
       expect(result.allowed).toBe(true);

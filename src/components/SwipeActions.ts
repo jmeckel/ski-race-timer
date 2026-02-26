@@ -31,7 +31,8 @@ export class SwipeActions {
   private pointerId: number | null = null;
   private suppressClickUntil = 0;
   private pendingActionTimeoutId: number | null = null;
-  private usePointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
+  private usePointerEvents =
+    typeof window !== 'undefined' && 'PointerEvent' in window;
   private listeners = new ListenerManager();
 
   constructor(options: SwipeActionsOptions) {
@@ -126,7 +127,8 @@ export class SwipeActions {
       this.wrapper.style.display = es.display;
     }
     if (es.alignItems) this.wrapper.style.alignItems = es.alignItems;
-    if (es.justifyContent) this.wrapper.style.justifyContent = es.justifyContent;
+    if (es.justifyContent)
+      this.wrapper.style.justifyContent = es.justifyContent;
     if (es.gap) this.wrapper.style.gap = es.gap;
     if (es.gridTemplateColumns) {
       this.wrapper.style.gridTemplateColumns = es.gridTemplateColumns;
@@ -244,9 +246,14 @@ export class SwipeActions {
     }
 
     // Prevent synthetic click after swipe gestures from opening modals.
-    this.listeners.add(this.wrapper, 'click', this.onClickCapture as EventListener, {
-      capture: true,
-    });
+    this.listeners.add(
+      this.wrapper,
+      'click',
+      this.onClickCapture as EventListener,
+      {
+        capture: true,
+      },
+    );
   }
 
   /**

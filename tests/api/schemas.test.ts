@@ -4,35 +4,38 @@
  * and the validate() helper function.
  */
 
-import { describe, it, expect } from 'vitest';
 import * as v from 'valibot';
+import { describe, expect, it } from 'vitest';
 import {
-  RaceIdSchema,
-  PinSchema,
+  BibSchema,
+  ChangePinBodySchema,
   DeviceIdSchema,
   DeviceNameSchema,
-  BibSchema,
-  RunSchema,
-  TimingPointSchema,
-  EntryStatusSchema,
-  FaultTypeSchema,
-  RoleSchema,
-  TimestampSchema,
   EntrySchema,
-  SyncPostBodySchema,
-  SyncDeleteBodySchema,
-  GateRangeSchema,
+  EntryStatusSchema,
+  FaultDeleteBodySchema,
   FaultEntrySchema,
   FaultPostBodySchema,
-  FaultDeleteBodySchema,
-  TokenRequestSchema,
-  ChangePinBodySchema,
+  FaultTypeSchema,
+  GateRangeSchema,
+  PinSchema,
+  RaceIdSchema,
   ResetPinBodySchema,
+  RoleSchema,
+  RunSchema,
+  SyncDeleteBodySchema,
+  SyncPostBodySchema,
+  TimestampSchema,
+  TimingPointSchema,
+  TokenRequestSchema,
   validate,
 } from '../../api/lib/schemas';
 
 // Helper: shorthand for safeParse success check
-function isValid<T>(schema: v.GenericSchema<unknown, T>, data: unknown): boolean {
+function isValid<T>(
+  schema: v.GenericSchema<unknown, T>,
+  data: unknown,
+): boolean {
   return v.safeParse(schema, data).success;
 }
 
@@ -261,7 +264,9 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept entry with numeric id', () => {
-      expect(isValid(EntrySchema, { ...validEntry, id: 1704067200000 })).toBe(true);
+      expect(isValid(EntrySchema, { ...validEntry, id: 1704067200000 })).toBe(
+        true,
+      );
     });
 
     it('should accept entry without optional fields', () => {
@@ -286,7 +291,12 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept entry with photo', () => {
-      expect(isValid(EntrySchema, { ...validEntry, photo: 'data:image/jpeg;base64,abc' })).toBe(true);
+      expect(
+        isValid(EntrySchema, {
+          ...validEntry,
+          photo: 'data:image/jpeg;base64,abc',
+        }),
+      ).toBe(true);
     });
 
     it('should reject entry without id', () => {
@@ -309,7 +319,9 @@ describe('Valibot Schemas', () => {
     });
 
     it('should reject entry with invalid status', () => {
-      expect(isValid(EntrySchema, { ...validEntry, status: 'invalid' })).toBe(false);
+      expect(isValid(EntrySchema, { ...validEntry, status: 'invalid' })).toBe(
+        false,
+      );
     });
 
     it('should reject entry with invalid run', () => {
@@ -341,7 +353,9 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept body without optional deviceId/deviceName', () => {
-      expect(isValid(SyncPostBodySchema, { entry: validBody.entry })).toBe(true);
+      expect(isValid(SyncPostBodySchema, { entry: validBody.entry })).toBe(
+        true,
+      );
     });
 
     it('should reject body without entry', () => {
@@ -363,11 +377,13 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept with optional fields', () => {
-      expect(isValid(SyncDeleteBodySchema, {
-        entryId: 'test-1',
-        deviceId: 'dev_abc',
-        deviceName: 'Timer 1',
-      })).toBe(true);
+      expect(
+        isValid(SyncDeleteBodySchema, {
+          entryId: 'test-1',
+          deviceId: 'dev_abc',
+          deviceName: 'Timer 1',
+        }),
+      ).toBe(true);
     });
 
     it('should reject missing entryId', () => {
@@ -463,21 +479,33 @@ describe('Valibot Schemas', () => {
     });
 
     it('should reject fault with gateNumber < 1', () => {
-      expect(isValid(FaultEntrySchema, { ...validFault, gateNumber: 0 })).toBe(false);
-      expect(isValid(FaultEntrySchema, { ...validFault, gateNumber: -1 })).toBe(false);
+      expect(isValid(FaultEntrySchema, { ...validFault, gateNumber: 0 })).toBe(
+        false,
+      );
+      expect(isValid(FaultEntrySchema, { ...validFault, gateNumber: -1 })).toBe(
+        false,
+      );
     });
 
     it('should reject fault with invalid faultType', () => {
-      expect(isValid(FaultEntrySchema, { ...validFault, faultType: 'XX' })).toBe(false);
+      expect(
+        isValid(FaultEntrySchema, { ...validFault, faultType: 'XX' }),
+      ).toBe(false);
     });
 
     it('should reject fault with invalid notesSource', () => {
-      expect(isValid(FaultEntrySchema, { ...validFault, notesSource: 'keyboard' })).toBe(false);
+      expect(
+        isValid(FaultEntrySchema, { ...validFault, notesSource: 'keyboard' }),
+      ).toBe(false);
     });
 
     it('should accept notesSource of voice or manual', () => {
-      expect(isValid(FaultEntrySchema, { ...validFault, notesSource: 'voice' })).toBe(true);
-      expect(isValid(FaultEntrySchema, { ...validFault, notesSource: 'manual' })).toBe(true);
+      expect(
+        isValid(FaultEntrySchema, { ...validFault, notesSource: 'voice' }),
+      ).toBe(true);
+      expect(
+        isValid(FaultEntrySchema, { ...validFault, notesSource: 'manual' }),
+      ).toBe(true);
     });
   });
 
@@ -497,23 +525,40 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept with all optional fields', () => {
-      expect(isValid(FaultPostBodySchema, {
-        fault: validFault,
-        deviceId: 'dev_abc',
-        deviceName: 'Gate Judge 1',
-        gateRange: [1, 30],
-        isReady: true,
-        firstGateColor: 'red',
-      })).toBe(true);
+      expect(
+        isValid(FaultPostBodySchema, {
+          fault: validFault,
+          deviceId: 'dev_abc',
+          deviceName: 'Gate Judge 1',
+          gateRange: [1, 30],
+          isReady: true,
+          firstGateColor: 'red',
+        }),
+      ).toBe(true);
     });
 
     it('should accept firstGateColor red or blue', () => {
-      expect(isValid(FaultPostBodySchema, { fault: validFault, firstGateColor: 'red' })).toBe(true);
-      expect(isValid(FaultPostBodySchema, { fault: validFault, firstGateColor: 'blue' })).toBe(true);
+      expect(
+        isValid(FaultPostBodySchema, {
+          fault: validFault,
+          firstGateColor: 'red',
+        }),
+      ).toBe(true);
+      expect(
+        isValid(FaultPostBodySchema, {
+          fault: validFault,
+          firstGateColor: 'blue',
+        }),
+      ).toBe(true);
     });
 
     it('should reject invalid firstGateColor', () => {
-      expect(isValid(FaultPostBodySchema, { fault: validFault, firstGateColor: 'green' })).toBe(false);
+      expect(
+        isValid(FaultPostBodySchema, {
+          fault: validFault,
+          firstGateColor: 'green',
+        }),
+      ).toBe(false);
     });
 
     it('should reject missing fault', () => {
@@ -531,12 +576,14 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept with optional fields', () => {
-      expect(isValid(FaultDeleteBodySchema, {
-        faultId: 'fault-1',
-        deviceId: 'dev_chief',
-        deviceName: 'Chief Judge',
-        approvedBy: 'Judge A',
-      })).toBe(true);
+      expect(
+        isValid(FaultDeleteBodySchema, {
+          faultId: 'fault-1',
+          deviceId: 'dev_chief',
+          deviceName: 'Chief Judge',
+          approvedBy: 'Judge A',
+        }),
+      ).toBe(true);
     });
 
     it('should reject missing faultId', () => {
@@ -552,9 +599,15 @@ describe('Valibot Schemas', () => {
     });
 
     it('should accept pin with optional role', () => {
-      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'timer' })).toBe(true);
-      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'gateJudge' })).toBe(true);
-      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'chiefJudge' })).toBe(true);
+      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'timer' })).toBe(
+        true,
+      );
+      expect(
+        isValid(TokenRequestSchema, { pin: '1234', role: 'gateJudge' }),
+      ).toBe(true);
+      expect(
+        isValid(TokenRequestSchema, { pin: '1234', role: 'chiefJudge' }),
+      ).toBe(true);
     });
 
     it('should reject invalid pin', () => {
@@ -563,7 +616,9 @@ describe('Valibot Schemas', () => {
     });
 
     it('should reject invalid role', () => {
-      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'admin' })).toBe(false);
+      expect(isValid(TokenRequestSchema, { pin: '1234', role: 'admin' })).toBe(
+        false,
+      );
     });
 
     it('should reject missing pin', () => {
@@ -573,15 +628,21 @@ describe('Valibot Schemas', () => {
 
   describe('ChangePinBodySchema', () => {
     it('should accept valid currentPin and newPin', () => {
-      expect(isValid(ChangePinBodySchema, { currentPin: '1234', newPin: '5678' })).toBe(true);
+      expect(
+        isValid(ChangePinBodySchema, { currentPin: '1234', newPin: '5678' }),
+      ).toBe(true);
     });
 
     it('should reject invalid currentPin', () => {
-      expect(isValid(ChangePinBodySchema, { currentPin: 'abc', newPin: '5678' })).toBe(false);
+      expect(
+        isValid(ChangePinBodySchema, { currentPin: 'abc', newPin: '5678' }),
+      ).toBe(false);
     });
 
     it('should reject invalid newPin', () => {
-      expect(isValid(ChangePinBodySchema, { currentPin: '1234', newPin: 'bad' })).toBe(false);
+      expect(
+        isValid(ChangePinBodySchema, { currentPin: '1234', newPin: 'bad' }),
+      ).toBe(false);
     });
 
     it('should reject missing fields', () => {
@@ -592,7 +653,9 @@ describe('Valibot Schemas', () => {
 
   describe('ResetPinBodySchema', () => {
     it('should accept non-empty serverPin', () => {
-      expect(isValid(ResetPinBodySchema, { serverPin: 'my-secret' })).toBe(true);
+      expect(isValid(ResetPinBodySchema, { serverPin: 'my-secret' })).toBe(
+        true,
+      );
     });
 
     it('should reject empty serverPin', () => {
@@ -625,7 +688,11 @@ describe('Valibot Schemas', () => {
     });
 
     it('should include path in error message for nested schemas', () => {
-      const result = validate(EntrySchema, { id: 'test', point: 'INVALID', timestamp: '2024-01-01' });
+      const result = validate(EntrySchema, {
+        id: 'test',
+        point: 'INVALID',
+        timestamp: '2024-01-01',
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toContain('point');

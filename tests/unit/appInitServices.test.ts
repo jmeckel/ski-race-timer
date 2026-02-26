@@ -92,8 +92,8 @@ vi.mock('../../src/utils/viewServices', () => ({
 import { initVoiceMode } from '../../src/appEventListeners';
 import { initServices } from '../../src/appInitServices';
 import { applySettings } from '../../src/features/settingsView';
-import { ambientModeService } from '../../src/services/ambient';
 import { syncService, wakeLockService } from '../../src/services';
+import { ambientModeService } from '../../src/services/ambient';
 import { hasAuthToken } from '../../src/services/sync';
 import { applyViewServices } from '../../src/utils/viewServices';
 

@@ -336,7 +336,10 @@ export function updateJudgesReadyIndicator(
   indicator.style.display = 'flex';
   countEl.textContent = `${readyJudges}/${totalJudges}`;
   const lang = store.getState().currentLang;
-  indicator.setAttribute('aria-label', `${t('judgesReadyCount', lang)}: ${readyJudges}/${totalJudges}`);
+  indicator.setAttribute(
+    'aria-label',
+    `${t('judgesReadyCount', lang)}: ${readyJudges}/${totalJudges}`,
+  );
 
   // Add highlight when all are ready
   indicator.classList.toggle(

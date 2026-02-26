@@ -5,10 +5,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-  setupPageEnglish,
-  waitForToastToHide,
-} from './helpers.js';
+import { setupPageEnglish, waitForToastToHide } from './helpers.js';
 
 /** Scoped selectors for fault type buttons inside the inline panel */
 const faultBtn = (type) => `#inline-fault-types [data-fault="${type}"]`;
@@ -46,7 +43,10 @@ async function setupGateJudge(page, { gateStart = 1, gateEnd = 10 } = {}) {
 
   await page.goto('/');
   // Gate judge view should be visible after loading
-  await page.waitForSelector('.gate-judge-view', { state: 'visible', timeout: 5000 });
+  await page.waitForSelector('.gate-judge-view', {
+    state: 'visible',
+    timeout: 5000,
+  });
 }
 
 test.describe('Gate Judge - Role Switching', () => {
@@ -54,7 +54,9 @@ test.describe('Gate Judge - Role Switching', () => {
     await setupPageEnglish(page);
   });
 
-  test('should show gate assignment modal when switching to gate judge', async ({ page }) => {
+  test('should show gate assignment modal when switching to gate judge', async ({
+    page,
+  }) => {
     // Navigate to settings
     await page.click('[data-view="settings"]');
 
@@ -70,7 +72,9 @@ test.describe('Gate Judge - Role Switching', () => {
     await expect(page.locator('#gate-end-input')).toBeVisible();
   });
 
-  test('should complete gate judge setup and show gate tab', async ({ page }) => {
+  test('should complete gate judge setup and show gate tab', async ({
+    page,
+  }) => {
     await page.click('[data-view="settings"]');
 
     // Switch to Gate Judge role
@@ -87,7 +91,9 @@ test.describe('Gate Judge - Role Switching', () => {
     await expect(gateTab).toBeVisible();
 
     // Role card should be selected
-    const gateJudgeRole = page.locator('.role-card-setting[data-role="gateJudge"]');
+    const gateJudgeRole = page.locator(
+      '.role-card-setting[data-role="gateJudge"]',
+    );
     await expect(gateJudgeRole).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -190,7 +196,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await setupGateJudge(page, { gateStart: 1, gateEnd: 10 });
   });
 
-  test('should open fault detail panel when selecting a gate', async ({ page }) => {
+  test('should open fault detail panel when selecting a gate', async ({
+    page,
+  }) => {
     const panel = page.locator('#fault-detail-panel');
     await expect(panel).toBeHidden();
 
@@ -202,7 +210,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await expect(gateLabel).toContainText('5');
   });
 
-  test('should toggle gate selection (deselect on second tap)', async ({ page }) => {
+  test('should toggle gate selection (deselect on second tap)', async ({
+    page,
+  }) => {
     await page.click('.gate-grid-btn[data-gate="3"]');
     await expect(page.locator('#fault-detail-panel')).toBeVisible();
 
@@ -210,7 +220,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await expect(page.locator('#fault-detail-panel')).toBeHidden();
   });
 
-  test('should close fault detail panel with close button', async ({ page }) => {
+  test('should close fault detail panel with close button', async ({
+    page,
+  }) => {
     await page.click('.gate-grid-btn[data-gate="5"]');
     await expect(page.locator('#fault-detail-panel')).toBeVisible();
 
@@ -238,7 +250,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await expect(brBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('should keep save button disabled until gate + fault type + bib selected', async ({ page }) => {
+  test('should keep save button disabled until gate + fault type + bib selected', async ({
+    page,
+  }) => {
     const saveBtn = page.locator('#inline-save-fault-btn');
 
     // Initially disabled
@@ -277,7 +291,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await expect(page.locator('#inline-fault-count')).toContainText('1');
   });
 
-  test('should show fault count badge on gate button after recording', async ({ page }) => {
+  test('should show fault count badge on gate button after recording', async ({
+    page,
+  }) => {
     await page.click('.gate-grid-btn[data-gate="5"]');
     await page.click(faultBtn('MG'));
     await page.fill('#inline-bib-input', '42');
@@ -300,7 +316,9 @@ test.describe('Gate Judge - Fault Entry Flow', () => {
     await expect(page.locator('#inline-fault-count')).toContainText('1');
   });
 
-  test('should record multiple faults in quick succession', async ({ page }) => {
+  test('should record multiple faults in quick succession', async ({
+    page,
+  }) => {
     // Helper to dismiss the fault confirmation dialog after save
     const dismissConfirmation = async () => {
       const overlay = page.locator('#fault-confirmation-overlay.show');

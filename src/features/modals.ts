@@ -109,7 +109,10 @@ function releaseFocus(modal: HTMLElement): void {
 
   modal.removeEventListener('keydown', state.keydownHandler);
   if (state.clickOutsideHandler) {
-    modal.removeEventListener('click', state.clickOutsideHandler as EventListener);
+    modal.removeEventListener(
+      'click',
+      state.clickOutsideHandler as EventListener,
+    );
   }
   focusStateMap.delete(modal);
 
@@ -124,7 +127,10 @@ function releaseFocus(modal: HTMLElement): void {
  * Adds closing class, waits for animation, then removes show class
  */
 /** Track closing animation timeouts so they can be cancelled on rapid reopen */
-const closingTimeouts = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+const closingTimeouts = new WeakMap<
+  HTMLElement,
+  ReturnType<typeof setTimeout>
+>();
 
 export function closeModal(modal: HTMLElement | null): void {
   if (!modal || !modal.classList.contains('show')) return;

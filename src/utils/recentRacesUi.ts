@@ -39,51 +39,59 @@ export function attachRecentRaceItemHandlers(
   const { signal } = dropdownAbortController;
 
   // Delegated click handler on stable dropdown container
-  dropdown.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const item = target.closest('.recent-race-item');
-    if (!item) return;
-    const raceId = item.getAttribute('data-race-id');
-    const race = races.find((r) => r.raceId === raceId);
-    if (race) onSelect(race);
-  }, { signal });
+  dropdown.addEventListener(
+    'click',
+    (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.recent-race-item');
+      if (!item) return;
+      const raceId = item.getAttribute('data-race-id');
+      const race = races.find((r) => r.raceId === raceId);
+      if (race) onSelect(race);
+    },
+    { signal },
+  );
 
   // Delegated keyboard handler
-  dropdown.addEventListener('keydown', (e) => {
-    const target = e.target as HTMLElement;
-    const item = target.closest('.recent-race-item') as HTMLElement | null;
-    if (!item) return;
+  dropdown.addEventListener(
+    'keydown',
+    (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.recent-race-item') as HTMLElement | null;
+      if (!item) return;
 
-    const items = Array.from(
-      dropdown.querySelectorAll('.recent-race-item'),
-    ) as HTMLElement[];
-    const index = items.indexOf(item);
+      const items = Array.from(
+        dropdown.querySelectorAll('.recent-race-item'),
+      ) as HTMLElement[];
+      const index = items.indexOf(item);
 
-    switch (e.key) {
-      case 'Enter':
-      case ' ': {
-        e.preventDefault();
-        const raceId = item.getAttribute('data-race-id');
-        const race = races.find((r) => r.raceId === raceId);
-        if (race) onSelect(race);
-        break;
+      switch (e.key) {
+        case 'Enter':
+        case ' ': {
+          e.preventDefault();
+          const raceId = item.getAttribute('data-race-id');
+          const race = races.find((r) => r.raceId === raceId);
+          if (race) onSelect(race);
+          break;
+        }
+        case 'ArrowDown':
+          e.preventDefault();
+          if (index < items.length - 1) {
+            items[index + 1]!.focus();
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (index > 0) {
+            items[index - 1]!.focus();
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          dropdown.style.display = 'none';
+          break;
       }
-      case 'ArrowDown':
-        e.preventDefault();
-        if (index < items.length - 1) {
-          items[index + 1]!.focus();
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        if (index > 0) {
-          items[index - 1]!.focus();
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        dropdown.style.display = 'none';
-        break;
-    }
-  }, { signal });
+    },
+    { signal },
+  );
 }

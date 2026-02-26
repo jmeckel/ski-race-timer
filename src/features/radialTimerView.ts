@@ -534,7 +534,10 @@ async function recordRadialTimestamp(): Promise<void> {
 /**
  * Show confirmation with radial effects
  */
-function showRadialConfirmation(entry: Entry, warning?: 'duplicate' | 'zeroBib'): void {
+function showRadialConfirmation(
+  entry: Entry,
+  warning?: 'duplicate' | 'zeroBib',
+): void {
   const now = new Date(entry.timestamp);
   const h = String(now.getHours()).padStart(2, '0');
   const m = String(now.getMinutes()).padStart(2, '0');
@@ -583,9 +586,10 @@ function showRadialConfirmation(entry: Entry, warning?: 'duplicate' | 'zeroBib')
   if (warningEl && warningText) {
     if (warning) {
       const state2 = store.getState();
-      warningText.textContent = warning === 'duplicate'
-        ? t('duplicateWarning', state2.currentLang)
-        : t('zeroBibWarning', state2.currentLang);
+      warningText.textContent =
+        warning === 'duplicate'
+          ? t('duplicateWarning', state2.currentLang)
+          : t('zeroBibWarning', state2.currentLang);
       warningEl.style.display = 'flex';
     } else {
       warningEl.style.display = 'none';
