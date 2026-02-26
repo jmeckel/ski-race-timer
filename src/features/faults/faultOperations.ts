@@ -302,7 +302,8 @@ export function handleSaveFaultEdit(): void {
     'fault-edit-notes',
   ) as HTMLTextAreaElement;
 
-  const newBib = bibInput?.value.padStart(3, '0') || fault.bib;
+  const rawBib = bibInput?.value || '';
+  const newBib = rawBib ? rawBib.padStart(3, '0') : fault.bib;
   const newGate = parseInt(gateInput?.value || String(fault.gateNumber), 10);
   const newType = (typeSelect?.value || fault.faultType) as FaultType;
   const newNotes = notesTextarea?.value.trim().slice(0, 500) || '';

@@ -68,6 +68,7 @@
 
 .gate-change-btn {
   padding: 10px 16px;
+  min-height: 48px;
   border: 1px solid var(--surface-elevated);
   border-radius: var(--radius);
   background: var(--surface-elevated);
@@ -255,7 +256,12 @@
 }
 
 .fault-detail-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 12px;
+  min-width: 48px;
+  min-height: 48px;
   background: transparent;
   border: none;
   color: var(--text-tertiary);

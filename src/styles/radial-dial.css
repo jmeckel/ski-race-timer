@@ -724,12 +724,12 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   margin-block-start: 12px;
 
   &.start {
-    background: rgba(74, 222, 128, 0.2);
+    background: rgba(255, 140, 66, 0.2);
     color: var(--start-color);
   }
 
   &.finish {
-    background: rgba(251, 146, 60, 0.2);
+    background: rgba(0, 230, 138, 0.2);
     color: var(--finish-color);
   }
 }

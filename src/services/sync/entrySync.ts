@@ -177,9 +177,9 @@ async function fetchCloudEntriesImpl(): Promise<void> {
     }
   }
 
-  // Set syncing status to show activity indicator
-  const previousStatus = state.syncStatus;
-  if (previousStatus === 'connected' || previousStatus === 'connecting') {
+  // Set syncing status to show activity indicator (re-read to avoid stale snapshot)
+  const currentStatus = store.getState().syncStatus;
+  if (currentStatus === 'connected' || currentStatus === 'connecting') {
     store.setSyncStatus('syncing');
   }
 

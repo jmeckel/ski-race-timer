@@ -208,7 +208,8 @@ export function recordFault(faultType: FaultType): void {
     const bibInput = document.getElementById(
       'fault-bib-input',
     ) as HTMLInputElement;
-    bib = bibInput?.value.padStart(3, '0') || '';
+    const rawBib = bibInput?.value || '';
+    bib = rawBib ? rawBib.padStart(3, '0') : '';
   }
 
   if (!bib) {
