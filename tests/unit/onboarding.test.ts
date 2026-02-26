@@ -529,29 +529,25 @@ describe('OnboardingController', () => {
       expect(dots[1]!.classList.contains('completed')).toBe(true);
     });
 
-    it('should update progress label text', () => {
+    it('should update progress label text via i18n', () => {
       const { controller, modal } = createControllerWithModal(container);
       controller.show();
 
       (controller as unknown as PrivateAccess).goToStep(2);
 
       const label = modal.querySelector('#onboarding-progress-label');
-      expect(label!.textContent).toContain('2');
+      // t() mock returns key name; replace has no placeholders to substitute
+      expect(label!.textContent).toContain('onboardingStepOf');
     });
 
-    it('should show German label when lang is de', () => {
-      mockGetState.mockReturnValue({
-        ...mockGetState(),
-        currentLang: 'de',
-      });
-
+    it('should use i18n key for step label', () => {
       const { controller, modal } = createControllerWithModal(container);
       controller.show();
 
       (controller as unknown as PrivateAccess).goToStep(2);
 
       const label = modal.querySelector('#onboarding-progress-label');
-      expect(label!.textContent).toContain('Schritt');
+      expect(label!.textContent).toContain('onboardingStepOf');
     });
   });
 
