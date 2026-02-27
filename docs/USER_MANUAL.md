@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-Synchronized Race Timing for Ski Events**
 
-Version 5.24.7 | Last Updated: February 2026
+Version 5.26.2 | Last Updated: February 2026
 
 ---
 
@@ -64,7 +64,7 @@ Ski Race Timer is a professional timing app for ski races. It works as a Progres
 - **Offline-first** - works without internet, syncs when connected
 - **Photo capture** - optional documentation for each timestamp
 - **Race Horology export** - industry-standard CSV format
-- **Bilingual** - English and German interfaces
+- **Trilingual** - English, German, and French interfaces
 
 ---
 
@@ -409,7 +409,7 @@ This is fully automatic and requires no configuration. The clock and timing func
 
 ### Language
 
-Toggle between **DE** (Deutsch) and **EN** (English). All UI text, labels, and accessibility descriptions update immediately.
+Toggle between **DE** (Deutsch), **FR** (Français), and **EN** (English). All UI text, labels, and accessibility descriptions update immediately.
 
 ### Show Tutorial
 
@@ -650,7 +650,7 @@ Ski Race Timer supports full keyboard and USB numpad navigation for desktop use 
 
 **Report Issues:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.24.7
+**Version:** 5.26.2
 
 ---
 

@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **Chronométrage de courses de ski synchronisé par GPS**
 
-Version 5.24.7 | Dernière mise à jour : Février 2026
+Version 5.26.2 | Dernière mise à jour : Février 2026
 
 ---
 
@@ -64,7 +64,7 @@ Ski Race Timer est une application de chronométrage professionnelle pour les co
 - **Hors ligne d'abord** - fonctionne sans internet, se synchronise dès la connexion rétablie
 - **Capture photo** - documentation optionnelle pour chaque horodatage
 - **Export Race Horology** - format CSV standard de l'industrie
-- **Bilingue** - interfaces en allemand et en anglais
+- **Trilingue** - interfaces en allemand, anglais et français
 
 ---
 
@@ -442,7 +442,7 @@ Lorsqu'elle est activée, une photo est prise à chaque horodatage. Utile pour :
 
 ### Langue
 
-Basculer entre **DE** (Deutsch) et **EN** (English).
+Basculer entre **DE** (Deutsch), **FR** (Français) et **EN** (English).
 
 ### Afficher le tutoriel
 
@@ -683,7 +683,7 @@ Ski Race Timer prend en charge la navigation complète au clavier et au pavé nu
 
 **Signaler un problème :** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version :** 5.24.7
+**Version :** 5.26.2
 
 ---
 

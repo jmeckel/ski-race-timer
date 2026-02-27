@@ -26,7 +26,7 @@ footer-right: "\\thepage"
 
 **GPS-synchronisierte Zeitmessung für Skirennen**
 
-Version 5.24.7 | Stand: Februar 2026
+Version 5.26.2 | Stand: Februar 2026
 
 ---
 
@@ -64,7 +64,7 @@ Ski Race Timer ist eine professionelle Zeitmessungs-App für Skirennen. Sie funk
 - **Offline-First** - funktioniert ohne Internet, synchronisiert bei Verbindung
 - **Fotoaufnahme** - optionale Dokumentation für jeden Zeitstempel
 - **Race Horology Export** - branchenübliches CSV-Format
-- **Zweisprachig** - Deutsche und englische Oberfläche
+- **Dreisprachig** - Deutsche, englische und französische Oberfläche
 
 ---
 
@@ -435,7 +435,7 @@ Wenn aktiviert, wird bei jedem Zeitstempel ein Foto aufgenommen. Nützlich für:
 
 ### Sprache
 
-Umschalten zwischen **DE** (Deutsch) und **EN** (English).
+Umschalten zwischen **DE** (Deutsch), **FR** (Français) und **EN** (English).
 
 ### Tutorial anzeigen
 
@@ -674,7 +674,7 @@ Druckbarer Text im Format einer offiziellen Torrichterkarte:
 
 **Probleme melden:** https://github.com/jmeckel/ski-race-timer/issues
 
-**Version:** 5.24.7
+**Version:** 5.26.2
 
 ---
 
