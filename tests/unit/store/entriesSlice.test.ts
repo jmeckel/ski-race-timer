@@ -984,6 +984,207 @@ describe('Entries Slice', () => {
   });
 
   // =========================================================================
+  // 9b. Undo/redo edge cases
+  // =========================================================================
+  describe('undo/redo edge cases', () => {
+    it('undo UPDATE_ENTRY returns null result when entry was cloud-deleted', () => {
+      const entry = createEntry({ id: 'e1', bib: '001' });
+      const updatedEntry = { ...entry, bib: '002' };
+      const undoStack: Action[] = [
+        {
+          type: 'UPDATE_ENTRY',
+          data: entry,
+          newData: updatedEntry,
+          timestamp: Date.now(),
+        },
+      ];
+
+      // Entry is gone (cloud-deleted) — undo can't find it
+      const result = undo([], undoStack, []);
+
+      expect(result.result).toBeNull();
+      expect(result.entries).toHaveLength(0);
+      expect(result.undoStack).toHaveLength(0);
+      expect(result.redoStack).toHaveLength(1);
+    });
+
+    it('redo UPDATE_ENTRY falls back to oldEntry when newData is undefined', () => {
+      const oldEntry = createEntry({ id: 'e1', bib: '001' });
+      const redoStack: Action[] = [
+        {
+          type: 'UPDATE_ENTRY',
+          data: oldEntry,
+          // newData intentionally omitted (undefined)
+          timestamp: Date.now(),
+        },
+      ];
+
+      const result = redo([oldEntry], [], redoStack);
+
+      // Falls back to oldEntry since newData is undefined
+      expect(result.result).toEqual(oldEntry);
+      expect(result.entries).toHaveLength(1);
+    });
+
+    it('sequential undos past empty stack return null result', () => {
+      const entry = createEntry({ id: 'e1', timestamp: '2024-01-15T10:00:00.000Z' });
+      let state = addEntry([], entry, []);
+
+      // Undo the add
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.entries).toHaveLength(0);
+      expect(state.result).not.toBeNull();
+
+      // Second undo on empty stack
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.result).toBeNull();
+      expect(state.entries).toHaveLength(0);
+      expect(state.undoStack).toHaveLength(0);
+    });
+
+    it('pushUndo at exactly MAX_UNDO_STACK drops oldest on overflow', () => {
+      // Build a stack of exactly 50 items
+      let stack: Action[] = [];
+      for (let i = 0; i < 50; i++) {
+        stack = pushUndo(stack, {
+          type: 'ADD_ENTRY',
+          data: createEntry({ id: `e${i}` }),
+          timestamp: i,
+        });
+      }
+      expect(stack).toHaveLength(50);
+      expect(stack[0].timestamp).toBe(0);
+
+      // Push 51st — should drop the oldest (timestamp=0)
+      stack = pushUndo(stack, {
+        type: 'ADD_ENTRY',
+        data: createEntry({ id: 'e50' }),
+        timestamp: 50,
+      });
+      expect(stack).toHaveLength(50);
+      expect(stack[0].timestamp).toBe(1); // oldest is now 1, not 0
+      expect(stack[49].timestamp).toBe(50);
+    });
+
+    it('deleteMultiple with empty IDs array returns null', () => {
+      const entries = [createEntry({ id: 'e1' })];
+      const result = deleteMultiple(entries, [], []);
+      expect(result).toBeNull();
+    });
+
+    it('deleteMultiple with partially matching IDs only deletes matches', () => {
+      const e1 = createEntry({ id: 'e1', bib: '001' });
+      const e2 = createEntry({ id: 'e2', bib: '002' });
+      const result = deleteMultiple([e1, e2], ['e1', 'nonexistent'], []);
+
+      expect(result).not.toBeNull();
+      expect(result!.entries).toHaveLength(1);
+      expect(result!.entries[0].id).toBe('e2');
+      // Only 1 entry in the undo data (e1), not 2
+      const undoData = result!.undoStack[0].data as Entry[];
+      expect(undoData).toHaveLength(1);
+      expect(undoData[0].id).toBe('e1');
+    });
+
+    it('interleaved add/delete/undo produces correct final state', () => {
+      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
+      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
+      const e3 = createEntry({ id: 'e3', timestamp: '2024-01-15T10:00:00.000Z' });
+
+      // Add e1, e2
+      let state = addEntry([], e1, []);
+      state = addEntry(state.entries, e2, state.undoStack);
+
+      // Delete e1
+      const delResult = deleteEntry(state.entries, 'e1', state.undoStack);
+      expect(delResult).not.toBeNull();
+      state = { ...state, ...delResult! };
+      expect(state.entries).toHaveLength(1);
+      expect(state.entries[0].id).toBe('e2');
+
+      // Add e3
+      state = addEntry(state.entries, e3, state.undoStack);
+      expect(state.entries).toHaveLength(2);
+
+      // Undo e3 add
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.entries).toHaveLength(1);
+      expect(state.entries[0].id).toBe('e2');
+
+      // Undo e1 delete (restores e1)
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.entries).toHaveLength(2);
+      // Sorted by timestamp: e1 (08:00) before e2 (09:00)
+      expect(state.entries[0].id).toBe('e1');
+      expect(state.entries[1].id).toBe('e2');
+    });
+
+    it('undo clearAll then redo clearAll roundtrips correctly', () => {
+      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
+      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
+
+      const clearResult = clearAll([e1, e2], []);
+      expect(clearResult).not.toBeNull();
+      let state = clearResult!;
+      expect(state.entries).toHaveLength(0);
+
+      // Undo clearAll — restores both entries
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.entries).toHaveLength(2);
+      expect(state.entries[0].id).toBe('e1');
+      expect(state.entries[1].id).toBe('e2');
+
+      // Redo clearAll — clears again
+      state = redo(state.entries, state.undoStack, state.redoStack);
+      expect(state.entries).toHaveLength(0);
+      expect(state.undoStack).toHaveLength(1);
+    });
+
+    it('new action after undo invalidates entire redo stack', () => {
+      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
+      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
+      const e3 = createEntry({ id: 'e3', timestamp: '2024-01-15T10:00:00.000Z' });
+
+      // Add e1, e2, e3
+      let state = addEntry([], e1, []);
+      state = addEntry(state.entries, e2, state.undoStack);
+      state = addEntry(state.entries, e3, state.undoStack);
+      expect(state.undoStack).toHaveLength(3);
+
+      // Undo twice (removes e3 and e2)
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      state = undo(state.entries, state.undoStack, state.redoStack);
+      expect(state.redoStack).toHaveLength(2);
+      expect(state.entries).toHaveLength(1);
+
+      // New action: add e2 back — should clear ENTIRE redo stack
+      state = addEntry(state.entries, e2, state.undoStack);
+      expect(state.redoStack).toHaveLength(0);
+      // Cannot redo e3 anymore
+      const afterRedo = redo(state.entries, state.undoStack, state.redoStack);
+      expect(afterRedo.result).toBeNull();
+    });
+
+    it('undo/redo preserves entry sort order across all action types', () => {
+      const early = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
+      const mid = createEntry({ id: 'e2', timestamp: '2024-01-15T10:00:00.000Z' });
+      const late = createEntry({ id: 'e3', timestamp: '2024-01-15T12:00:00.000Z' });
+
+      // Delete middle entry
+      const delResult = deleteEntry([early, mid, late], 'e2', []);
+      expect(delResult!.entries.map((e) => e.id)).toEqual(['e1', 'e3']);
+
+      // Undo delete — mid should go back to middle position
+      const undone = undo(
+        delResult!.entries,
+        delResult!.undoStack,
+        delResult!.redoStack,
+      );
+      expect(undone.entries.map((e) => e.id)).toEqual(['e1', 'e2', 'e3']);
+    });
+  });
+
+  // =========================================================================
   // 10. Sync queue
   // =========================================================================
   describe('addToSyncQueue', () => {
