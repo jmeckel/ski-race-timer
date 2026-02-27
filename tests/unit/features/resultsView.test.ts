@@ -93,7 +93,7 @@ vi.mock('../../../src/features/export', () => ({
   exportResults: vi.fn(),
 }));
 
-vi.mock('../../../src/features/faults', () => ({
+vi.mock('../../../src/features/faults/faultOperations', () => ({
   openFaultEditModal: vi.fn(),
   openMarkDeletionModal: vi.fn(),
 }));

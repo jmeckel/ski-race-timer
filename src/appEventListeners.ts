@@ -8,12 +8,14 @@ import { updateVoiceIndicator } from './appUiUpdates';
 import { destroyToast, showToast } from './components';
 import { resolvePinVerification } from './features/chiefJudgeView';
 import {
-  openFaultEditModal,
-  openMarkDeletionModal,
   updateInlineBibSelector,
   updateInlineFaultsList,
   updateInlineGateSelector,
-} from './features/faults';
+} from './features/faults/faultInlineEntry';
+import {
+  openFaultEditModal,
+  openMarkDeletionModal,
+} from './features/faults/faultOperations';
 import { handleGateJudgeVoiceIntent } from './features/gateJudgeView';
 import {
   cleanupPinVerification,

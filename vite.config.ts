@@ -37,7 +37,8 @@ export default defineConfig({
             id.includes('src/components/Clock') ||
             id.includes('src/components/SwipeActions') ||
             id.includes('src/components/index') ||
-            id.includes('src/features/modals')
+            id.includes('src/features/modals') ||
+            id.includes('src/features/faults/')
           ) {
             return 'shared';
           }
@@ -68,12 +69,11 @@ export default defineConfig({
             return 'settings';
           }
 
-          // Gate Judge view: gate judge UI, inline fault entry, fault modals
+          // Gate Judge view: gate judge UI and voice notes
+          // Note: faults/ moved to shared — used by app orchestrators and multiple views
           if (
             id.includes('src/features/gateJudgeView') ||
             id.includes('src/features/gateJudge.ts') ||
-            id.includes('src/features/faults/faultInlineEntry') ||
-            id.includes('src/features/faults/faultModals') ||
             id.includes('src/features/voiceNoteUI')
           ) {
             return 'gate-judge';

@@ -15,7 +15,7 @@ vi.mock('../../src/appUiUpdates', () => ({
   updateViewVisibility: vi.fn(),
 }));
 
-vi.mock('../../src/features/faults', () => ({
+vi.mock('../../src/features/faults/faultInlineEntry', () => ({
   updateActiveBibsList: vi.fn(),
 }));
 

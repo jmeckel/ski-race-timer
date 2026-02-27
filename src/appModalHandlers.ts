@@ -1,6 +1,7 @@
 import { clearToasts, showToast, type ToastAction } from './components';
 import { deleteEntriesWithCleanup } from './features/entryDeletion';
-import { initFaultEditModal, updateInlineFaultsList } from './features/faults';
+import { updateInlineFaultsList } from './features/faults/faultInlineEntry';
+import { initFaultEditModal } from './features/faults/faultOperations';
 import {
   closeAllModalsAnimated,
   closeModal,

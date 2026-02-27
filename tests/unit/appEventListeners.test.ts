@@ -26,12 +26,15 @@ vi.mock('../../src/features/chiefJudgeView', () => ({
   resolvePinVerification: vi.fn(),
 }));
 
-vi.mock('../../src/features/faults', () => ({
-  openFaultEditModal: vi.fn(),
-  openMarkDeletionModal: vi.fn(),
+vi.mock('../../src/features/faults/faultInlineEntry', () => ({
   updateInlineBibSelector: vi.fn(),
   updateInlineFaultsList: vi.fn(),
   updateInlineGateSelector: vi.fn(),
+}));
+
+vi.mock('../../src/features/faults/faultOperations', () => ({
+  openFaultEditModal: vi.fn(),
+  openMarkDeletionModal: vi.fn(),
 }));
 
 vi.mock('../../src/features/gateJudgeView', () => ({

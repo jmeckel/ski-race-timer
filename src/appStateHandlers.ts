@@ -5,7 +5,7 @@ import {
   updateUndoButton,
   updateViewVisibility,
 } from './appUiUpdates';
-import { updateActiveBibsList } from './features/faults';
+import { updateActiveBibsList } from './features/faults/faultInlineEntry';
 import {
   updateGateJudgeRunSelection,
   updateGateJudgeTabVisibility,

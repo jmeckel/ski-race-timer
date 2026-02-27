@@ -15,7 +15,7 @@ import {
   initInlineFaultEntry,
   refreshInlineFaultUI,
   updateActiveBibsList,
-} from './faults';
+} from './faults/faultInlineEntry';
 
 // Lazy-load faultModals — only needed when gate judge opens the recording modal
 let _faultModalsModule: typeof import('./faults/faultModals') | null = null;

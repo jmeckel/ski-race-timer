@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all dependencies
-vi.mock('../../src/features/faults', () => ({
+vi.mock('../../src/features/faults/faultInlineEntry', () => ({
   refreshInlineFaultUI: vi.fn(),
   updateActiveBibsList: vi.fn(),
 }));

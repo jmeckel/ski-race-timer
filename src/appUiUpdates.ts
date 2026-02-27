@@ -1,4 +1,4 @@
-import { refreshInlineFaultUI, updateActiveBibsList } from './features/faults';
+import { refreshInlineFaultUI, updateActiveBibsList } from './features/faults/faultInlineEntry';
 import {
   updateGateJudgeRunSelection,
   updateGateRangeDisplay,

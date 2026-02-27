@@ -16,9 +16,12 @@ vi.mock('../../src/features/entryDeletion', () => ({
   deleteEntriesWithCleanup: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('../../src/features/faults', () => ({
-  initFaultEditModal: vi.fn(),
+vi.mock('../../src/features/faults/faultInlineEntry', () => ({
   updateInlineFaultsList: vi.fn(),
+}));
+
+vi.mock('../../src/features/faults/faultOperations', () => ({
+  initFaultEditModal: vi.fn(),
 }));
 
 vi.mock('../../src/features/modals', () => ({

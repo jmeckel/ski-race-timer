@@ -11,7 +11,7 @@ import type { Entry, FaultEntry } from '../types';
 import { getElement } from '../utils';
 import { ListenerManager } from '../utils/listenerManager';
 import { exportResults } from './export';
-import { openFaultEditModal, openMarkDeletionModal } from './faults';
+import { openFaultEditModal, openMarkDeletionModal } from './faults/faultOperations';
 import { openPhotoViewer } from './photoViewer';
 
 // Module state

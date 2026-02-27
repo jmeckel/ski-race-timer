@@ -86,7 +86,7 @@ vi.mock('../../../src/utils/logger', () => ({
   },
 }));
 
-vi.mock('../../../src/features/faults', () => ({
+vi.mock('../../../src/features/faults/faultInlineEntry', () => ({
   initInlineFaultEntry: vi.fn(),
   refreshInlineFaultUI: vi.fn(),
   updateActiveBibsList: vi.fn(),
