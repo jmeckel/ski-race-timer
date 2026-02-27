@@ -1664,6 +1664,13 @@ body.ambient-mode #main {
   pointer-events: none;
 }
 
+/* When any modal is open, suppress toast pointer events so toasts
+   (z-index: 10000) cannot block modal buttons (z-index: 1000).
+   Critical in landscape where toasts overlap modal footer buttons. */
+body:has(.modal-overlay.show) #toast-container .toast {
+  pointer-events: none;
+}
+
 #toast-container .toast {
   display: flex;
   align-items: center;

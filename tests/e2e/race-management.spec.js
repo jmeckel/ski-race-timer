@@ -210,16 +210,11 @@ test.describe('Race Management - PIN Verification Modal', () => {
     const pinModal = page.locator('#admin-pin-modal');
     await expect(pinModal).toHaveClass(/show/, { timeout: 5000 });
 
-    // Wait for any toast to disappear (ambient mode notification can intercept clicks)
-    await page.waitForTimeout(1000);
-
-    // Use keyboard to dismiss — more reliable than click in landscape viewports
+    // Click cancel button
     const cancelBtn = page.locator('#admin-pin-modal [data-action="cancel"]');
-    await cancelBtn.focus();
-    await page.keyboard.press('Enter');
+    await cancelBtn.click();
 
-    // Wait a moment for modal close animation
-    await page.waitForTimeout(500);
+    // Wait for modal close animation
     await expect(pinModal).not.toHaveClass(/show/, { timeout: 5000 });
   });
 
