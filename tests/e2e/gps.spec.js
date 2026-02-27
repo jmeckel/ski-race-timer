@@ -7,6 +7,7 @@
 import { expect, test } from '@playwright/test';
 import {
   clickToggle,
+  dismissToasts,
   enterBib,
   isToggleOn,
   navigateTo,
@@ -248,14 +249,10 @@ test.describe('GPS Timestamp Recording', () => {
     // Record entry
     await navigateTo(page, 'timer');
     // Remove any GPS warning toasts that overlay the dial and record button
-    await page.evaluate(() =>
-      document.querySelectorAll('.toast').forEach((t) => t.remove()),
-    );
+    await dismissToasts(page);
     await enterBib(page, 1);
     // Remove toasts again in case new ones appeared during bib entry
-    await page.evaluate(() =>
-      document.querySelectorAll('.toast').forEach((t) => t.remove()),
-    );
+    await dismissToasts(page);
     // Use force click — GPS warning toasts can reappear and intercept pointer events
     await page.click('#radial-time-btn', { force: true });
     await waitForConfirmationToHide(page);

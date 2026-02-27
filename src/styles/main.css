@@ -460,6 +460,13 @@
       padding: 0;
       overflow: hidden;
     }
+
+    .settings-view.active {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 var(--space-xl);
+      align-content: start;
+    }
   }
 
   /* ===== Tab Bar ===== */
@@ -1034,17 +1041,15 @@
     border-radius: var(--radius);
   }
 
-  /* Settings View - 2-column grid in landscape */
+  /* Settings View - wider padding in landscape */
   .settings-view {
     padding: var(--space-sm) var(--space-xl);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 var(--space-xl);
-    align-content: start;
   }
 
-  #admin-section,
-  .settings-version-section {
+  /* Admin and version sections span full width in the 2-column grid
+     (display: grid set in @layer components to beat !important flex) */
+  .settings-view .settings-section,
+  .settings-view .settings-version-section {
     grid-column: 1 / -1;
   }
 

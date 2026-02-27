@@ -7,32 +7,12 @@
 import * as fs from 'node:fs';
 import { expect, test } from '@playwright/test';
 import {
+  addTestEntries,
+  dismissToasts,
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
 } from './helpers.js';
-
-// Helper to dismiss toast overlays that can intercept pointer events on buttons
-async function dismissToasts(page) {
-  await page.evaluate(() =>
-    document.querySelectorAll('.toast').forEach((t) => t.remove()),
-  );
-}
-
-// Helper to add test entries via keyboard
-async function addTestEntries(page, count = 3) {
-  for (let i = 1; i <= count; i++) {
-    await page.keyboard.press('Delete');
-    const bib = String(i).padStart(3, '0');
-    for (const digit of bib) {
-      await page.keyboard.press(digit);
-    }
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-    // Small buffer after confirmation to ensure app is ready
-    await page.waitForTimeout(100);
-  }
-}
 
 test.describe('Export - Race Horology CSV', () => {
   // Export tests need more time due to multiple entry recording in beforeEach
@@ -48,18 +28,7 @@ test.describe('Export - Race Horology CSV', () => {
     await navigateTo(page, 'results');
   });
 
-  test('should export Race Horology CSV file', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    // Filename format is: {raceId}_{date}.csv (e.g., race_2026-01-20.csv)
-    expect(download.suggestedFilename()).toMatch(/\.csv$/);
-  });
-
-  test('should include correct filename with date', async ({ page }) => {
+  test('should export CSV with correct filename format', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
 
     await dismissToasts(page);
@@ -68,11 +37,14 @@ test.describe('Export - Race Horology CSV', () => {
     const download = await downloadPromise;
     const filename = download.suggestedFilename();
 
-    // Filename format: {raceId}_{YYYY-MM-DD}.csv
+    // Filename: {raceId}_{YYYY-MM-DD}.csv
+    expect(filename).toMatch(/\.csv$/);
     expect(filename).toMatch(/.*_\d{4}-\d{2}-\d{2}\.csv$/);
   });
 
-  test('should export CSV with correct content', async ({ page }) => {
+  test('should export Race Horology CSV with correct content', async ({
+    page,
+  }) => {
     const downloadPromise = page.waitForEvent('download');
 
     await dismissToasts(page);
@@ -84,83 +56,17 @@ test.describe('Export - Race Horology CSV', () => {
     if (downloadPath) {
       const content = fs.readFileSync(downloadPath, 'utf-8');
 
-      // Should have content
-      expect(content.length).toBeGreaterThan(0);
-
-      // Should have line breaks (multiple entries)
+      // Should have multiple lines (header + entries)
       expect(content.split('\n').length).toBeGreaterThan(1);
-    }
-  });
-
-  test('should export entries with bib numbers', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download');
-
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
 
       // Should contain our test bib numbers
       expect(content).toContain('001');
       expect(content).toContain('002');
-    }
-  });
 
-  test('should export timestamps in correct format', async ({ page }) => {
-    const downloadPromise = page.waitForEvent('download');
-
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Should contain time format (HH:MM:SS or similar)
-      expect(content).toMatch(/\d{2}:\d{2}:\d{2}/);
-    }
-  });
-
-  test('should export timestamps in Race Horology format (HH:MM:SS,ss)', async ({
-    page,
-  }) => {
-    const downloadPromise = page.waitForEvent('download');
-
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Should contain time format HH:MM:SS,ss (comma decimal separator, European format)
+      // Timestamps in Race Horology format: HH:MM:SS,ss (comma decimal, European)
       expect(content).toMatch(/\d{2}:\d{2}:\d{2},\d{2}/);
-    }
-  });
 
-  test('should export timing point as FT for Finish entries', async ({
-    page,
-  }) => {
-    const downloadPromise = page.waitForEvent('download');
-
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Default entries use Finish point, should export as FT
+      // Default entries use Finish point, exported as FT
       expect(content).toContain('FT');
     }
   });
@@ -340,7 +246,7 @@ test.describe('Export - Multiple Timing Points', () => {
     await setupPage(page);
   });
 
-  test('should export entries with different timing points', async ({
+  test('should export both ST and FT timing points in Race Horology format', async ({
     page,
   }) => {
     // Add Start entry
@@ -369,92 +275,8 @@ test.describe('Export - Multiple Timing Points', () => {
     if (downloadPath) {
       const content = fs.readFileSync(downloadPath, 'utf-8');
 
-      // Should have both timing points represented
-      expect(content.length).toBeGreaterThan(0);
+      // Both timing points: ST (Start) and FT (Finish) in Race Horology format
       expect(content.split('\n').length).toBeGreaterThanOrEqual(2);
-    }
-  });
-
-  test('should export Start timing point as ST (Race Horology format)', async ({
-    page,
-  }) => {
-    // Add Start entry
-    await page.click('.radial-point-btn[data-point="S"]');
-    await page.keyboard.press('5');
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-
-    // Export
-    await navigateTo(page, 'results');
-    const downloadPromise = page.waitForEvent('download');
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Start timing point should be exported as ST
-      expect(content).toContain('ST');
-    }
-  });
-
-  test('should export Finish timing point as FT (Race Horology format)', async ({
-    page,
-  }) => {
-    // Add Finish entry
-    await page.click('.radial-point-btn[data-point="F"]');
-    await page.keyboard.press('7');
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-
-    // Export
-    await navigateTo(page, 'results');
-    const downloadPromise = page.waitForEvent('download');
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Finish timing point should be exported as FT
-      expect(content).toContain('FT');
-    }
-  });
-
-  test('should export both ST and FT in same file', async ({ page }) => {
-    // Add Start entry
-    await page.click('.radial-point-btn[data-point="S"]');
-    await page.keyboard.press('1');
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-
-    // Add Finish entry
-    await dismissToasts(page);
-    await page.keyboard.press('Delete');
-    await page.click('.radial-point-btn[data-point="F"]');
-    await page.keyboard.press('1');
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-
-    // Export
-    await navigateTo(page, 'results');
-    const downloadPromise = page.waitForEvent('download');
-    await dismissToasts(page);
-    await page.click('#quick-export-btn');
-
-    const download = await downloadPromise;
-    const downloadPath = await download.path();
-
-    if (downloadPath) {
-      const content = fs.readFileSync(downloadPath, 'utf-8');
-
-      // Both timing points should be represented with Race Horology format
       expect(content).toContain('ST');
       expect(content).toContain('FT');
     }

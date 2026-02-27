@@ -5,6 +5,7 @@
 
 import { expect, test } from '@playwright/test';
 import {
+  dismissToasts,
   enterBib,
   navigateTo,
   setupPage,
@@ -122,8 +123,7 @@ test.describe('Results View', () => {
       await expect(page.locator('.modal-overlay.show')).toBeVisible();
 
       await page.click('.modal-btn:not(.primary):not(.danger)');
-      await page.waitForTimeout(200);
-      await expect(page.locator('.modal-overlay.show')).not.toBeVisible();
+      await page.waitForSelector('.modal-overlay.show', { state: 'hidden', timeout: 3000 });
     });
   });
 
@@ -160,10 +160,7 @@ test.describe('Results View - Export', () => {
 
   test('should export results as CSV', async ({ page }) => {
     const downloadPromise = page.waitForEvent('download');
-    // Dismiss toast overlays that can intercept pointer events
-    await page.evaluate(() =>
-      document.querySelectorAll('.toast').forEach((t) => t.remove()),
-    );
+    await dismissToasts(page);
     await page.click('#quick-export-btn');
 
     const download = await downloadPromise;

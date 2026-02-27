@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissToasts } from './helpers.js';
 
 test.describe('Onboarding Flow', () => {
   // Multi-step flows need more time in CI (Gate Judge flow takes ~27s on WebKit)
@@ -158,10 +159,7 @@ test.describe('Onboarding Flow', () => {
     await expect(readyCard).toBeVisible();
     await expect(readyCard.locator('h2')).toContainText(/Ready|Bereit/);
 
-    // Dismiss toasts that may overlay the finish button
-    await page.evaluate(() =>
-      document.querySelectorAll('.toast').forEach((t) => t.remove()),
-    );
+    await dismissToasts(page);
 
     // Finish
     await page.locator('[data-step="6"] [data-action="finish"]').click();
@@ -200,10 +198,7 @@ test.describe('Onboarding Flow', () => {
     const readyCard = page.locator('[data-step="6"]');
     await expect(readyCard).toBeVisible();
 
-    // Dismiss toasts that may overlay the finish button
-    await page.evaluate(() =>
-      document.querySelectorAll('.toast').forEach((t) => t.remove()),
-    );
+    await dismissToasts(page);
 
     // Finish
     await page.locator('[data-step="6"] [data-action="finish"]').click();

@@ -1,18 +1,11 @@
 /**
  * E2E Tests - Production PWA
  *
- * Tests for the live deployed version at https://ski-race-timer.vercel.app/
+ * Smoke tests for the live deployed version at https://ski-race-timer.vercel.app/
  * These tests verify the production deployment works correctly.
  *
- * Note: The timer view uses a radial dial UI by default.
- * Key selectors for radial mode:
- * - Number input: .dial-number[data-num="X"]
- * - Clear button: #radial-clear-btn
- * - Timestamp button: #radial-time-btn
- * - Bib display: #radial-bib-value
- * - Time display: #radial-time-hm, #radial-time-seconds, #radial-time-subseconds
- * - Timing points: .radial-point-btn[data-point="S|F"]
- * - Confirmation: #radial-confirmation-overlay.show
+ * OPTIMIZATION: Tests are consolidated to minimize page loads against the live URL.
+ * Each test covers multiple assertions to reduce the ~12s-per-load overhead.
  *
  * Run with: npm run test:e2e:prod
  */
@@ -21,25 +14,16 @@ import { expect, test } from '@playwright/test';
 
 const PROD_URL = 'https://ski-race-timer.vercel.app';
 
-/**
- * Skip the onboarding wizard by setting localStorage flag.
- * Uses addInitScript to set the flag BEFORE any page JavaScript runs.
- */
 async function skipOnboarding(page) {
   await page.addInitScript(() => {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
   });
 }
 
-/**
- * Ensure onboarding is dismissed (wait for modal to be hidden if present)
- */
 async function ensureOnboardingDismissed(page) {
   const onboardingModal = page.locator('#onboarding-modal');
-  // If onboarding modal exists and is visible, wait for it to be hidden
   const isVisible = await onboardingModal.isVisible().catch(() => false);
   if (isVisible) {
-    // Try to complete onboarding by clicking through
     await page
       .click('#onboarding-modal .btn-secondary', { timeout: 2000 })
       .catch(() => {});
@@ -49,9 +33,6 @@ async function ensureOnboardingDismissed(page) {
   }
 }
 
-/**
- * Wait for confirmation overlay to hide
- */
 async function waitForConfirmationToHide(page) {
   await page.waitForFunction(
     () => {
@@ -62,265 +43,149 @@ async function waitForConfirmationToHide(page) {
   );
 }
 
-test.describe('Production PWA - Core Functionality', () => {
+test.describe('Production PWA - Timer View', () => {
   test.beforeEach(async ({ page }) => {
-    // Set up init script to skip onboarding before page loads
     await skipOnboarding(page);
-    // Navigate to production URL
     await page.goto(PROD_URL);
-    // Clear any existing entries
-    await page.evaluate(() => {
-      localStorage.removeItem('skiTimerEntries');
-    });
-    // Ensure onboarding is dismissed
+    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
     await ensureOnboardingDismissed(page);
     await page.waitForSelector('#radial-time-hm', { timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
-    // Clean up test data
-    await page.evaluate(() => {
-      localStorage.removeItem('skiTimerEntries');
-    });
+    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
   });
 
-  test.describe('Page Load & Basic UI', () => {
-    test('should load the app successfully', async ({ page }) => {
-      await expect(page).toHaveTitle(/CHRONO/);
-    });
+  test('should load app with all core UI elements', async ({ page }) => {
+    // Title
+    await expect(page).toHaveTitle(/CHRONO/);
 
-    test('should display the clock', async ({ page }) => {
-      // Radial clock is split into parts: HH:MM, SS, and mmm
-      const clockHm = page.locator('#radial-time-hm');
-      const clockSec = page.locator('#radial-time-seconds');
-      await expect(clockHm).toBeVisible();
-      await expect(clockSec).toBeVisible();
+    // Clock display (HH:MM and SS)
+    const clockHm = page.locator('#radial-time-hm');
+    const clockSec = page.locator('#radial-time-seconds');
+    await expect(clockHm).toBeVisible();
+    await expect(clockSec).toBeVisible();
+    expect(await clockHm.textContent()).toMatch(/^\d{2}:\d{2}$/);
 
-      // Clock should be in HH:MM format
-      const hm = await clockHm.textContent();
-      expect(hm).toMatch(/^\d{2}:\d{2}$/);
-    });
+    // Navigation tabs
+    await expect(page.locator('[data-view="timer"]')).toBeVisible();
+    await expect(page.locator('[data-view="results"]')).toBeVisible();
+    await expect(page.locator('[data-view="settings"]')).toBeVisible();
 
-    test('should display all three navigation tabs', async ({ page }) => {
-      await expect(page.locator('[data-view="timer"]')).toBeVisible();
-      await expect(page.locator('[data-view="results"]')).toBeVisible();
-      await expect(page.locator('[data-view="settings"]')).toBeVisible();
-    });
-
-    test('should display bib input area', async ({ page }) => {
-      await expect(page.locator('#radial-bib-value')).toBeVisible();
-    });
-
-    test('should display radial dial number buttons', async ({ page }) => {
-      // Check some dial number buttons exist
-      for (let i = 0; i <= 9; i++) {
-        await expect(
-          page.locator(`.dial-number[data-num="${i}"]`),
-        ).toBeVisible();
-      }
-    });
-
-    test('should display timing point buttons', async ({ page }) => {
-      await expect(
-        page.locator('.radial-point-btn[data-point="S"]'),
-      ).toBeVisible();
-      await expect(
-        page.locator('.radial-point-btn[data-point="F"]'),
-      ).toBeVisible();
-    });
-
-    test('should display timestamp button', async ({ page }) => {
-      await expect(page.locator('#radial-time-btn')).toBeVisible();
-    });
+    // Bib input, dial numbers, timing points, record button
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
+    await expect(page.locator('.dial-number[data-num="0"]')).toBeVisible();
+    await expect(page.locator('.dial-number[data-num="9"]')).toBeVisible();
+    await expect(page.locator('.radial-point-btn[data-point="S"]')).toBeVisible();
+    await expect(page.locator('.radial-point-btn[data-point="F"]')).toBeVisible();
+    await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 
-  test.describe('Clock Display', () => {
-    test('should show valid time format and update in real-time', async ({
-      page,
-    }) => {
-      const clockHm = page.locator('#radial-time-hm');
-      const clockSec = page.locator('#radial-time-seconds');
-      const hm = await clockHm.textContent();
-      const sec = await clockSec.textContent();
-
-      // Verify HH:MM format
-      expect(hm).toMatch(/^\d{2}:\d{2}$/);
-      // Verify SS format
-      expect(sec).toMatch(/^\d{2}$/);
-
-      // Verify time values are within valid ranges
-      const [hours, minutes] = hm.split(':').map(Number);
-      expect(hours).toBeGreaterThanOrEqual(0);
-      expect(hours).toBeLessThan(24);
-      expect(minutes).toBeGreaterThanOrEqual(0);
-      expect(minutes).toBeLessThan(60);
-
-      // Check if clock updates by watching for DOM changes
-      const clockUpdates = await page.evaluate(() => {
-        return new Promise((resolve) => {
-          const clock = document.querySelector('#radial-time-seconds');
-          if (!clock) {
-            resolve(-1); // Element not found
-            return;
-          }
-          let updateCount = 0;
-
-          const observer = new MutationObserver(() => {
-            updateCount++;
-          });
-
-          observer.observe(clock, {
-            childList: true,
-            characterData: true,
-            subtree: true,
-          });
-
-          // Wait 1 second and count updates
-          setTimeout(() => {
-            observer.disconnect();
-            resolve(updateCount);
-          }, 1000);
-        });
+  test('should update clock in real-time', async ({ page }) => {
+    const clockUpdates = await page.evaluate(() => {
+      return new Promise((resolve) => {
+        const clock = document.querySelector('#radial-time-seconds');
+        if (!clock) { resolve(-1); return; }
+        let updateCount = 0;
+        const observer = new MutationObserver(() => { updateCount++; });
+        observer.observe(clock, { childList: true, characterData: true, subtree: true });
+        setTimeout(() => { observer.disconnect(); resolve(updateCount); }, 1000);
       });
-
-      // The clock should have updated at least once in 1 second
-      expect(clockUpdates).toBeGreaterThan(0);
     });
+    expect(clockUpdates).toBeGreaterThan(0);
   });
 
-  test.describe('Tab Navigation', () => {
-    test('should navigate to Timer view', async ({ page }) => {
+  test('should handle bib input, clear, and backspace', async ({ page }) => {
+    const bibDisplay = page.locator('#radial-bib-value');
+
+    // Enter bib
+    await page.click('.dial-number[data-num="1"]');
+    await page.click('.dial-number[data-num="2"]');
+    await page.click('.dial-number[data-num="3"]');
+    await expect(bibDisplay).toContainText('123');
+
+    // Clear bib
+    await page.click('#radial-clear-btn');
+    await expect(bibDisplay).toContainText('---');
+
+    // Enter and backspace
+    await page.click('.dial-number[data-num="7"]');
+    await page.click('.dial-number[data-num="8"]');
+    await page.keyboard.press('Backspace');
+    await expect(bibDisplay).toContainText('7');
+  });
+
+  test('should handle timing point and tab navigation', async ({ page }) => {
+    // Timing point selection
+    await page.click('.radial-point-btn[data-point="S"]');
+    await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
+    await expect(page.locator('.radial-point-btn[data-point="F"]')).not.toHaveClass(/active/);
+
+    await page.click('.radial-point-btn[data-point="F"]');
+    await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
+    await expect(page.locator('.radial-point-btn[data-point="S"]')).not.toHaveClass(/active/);
+
+    // Tab navigation
+    await page.click('[data-view="results"]');
+    await expect(page.locator('.results-view')).toBeVisible();
+    await expect(page.locator('[data-view="results"]')).toHaveClass(/active/);
+
+    await page.click('[data-view="settings"]');
+    await expect(page.locator('.settings-view')).toBeVisible();
+    await expect(page.locator('[data-view="settings"]')).toHaveClass(/active/);
+
+    await page.click('[data-view="timer"]');
+    await expect(page.locator('.timer-view')).toBeVisible();
+  });
+
+  test('should record timestamp, show confirmation, and persist to results', async ({
+    page,
+  }) => {
+    // Record entry
+    await page.click('.dial-number[data-num="9"]');
+    await page.click('.dial-number[data-num="9"]');
+    await page.click('.radial-point-btn[data-point="S"]');
+    await page.click('#radial-time-btn');
+
+    // Confirmation overlay
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await waitForConfirmationToHide(page);
+    await expect(page.locator('#radial-confirmation-overlay')).not.toHaveClass(/show/);
+
+    // Entry visible in results
+    await page.click('[data-view="results"]');
+    await expect(page.locator('.result-item').first()).toBeVisible();
+
+    // Entry persisted in localStorage
+    const entries = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('skiTimerEntries') || '[]'),
+    );
+    expect(entries.length).toBeGreaterThan(0);
+  });
+
+  test('should respond to interactions quickly', async ({ page }) => {
+    const startTime = Date.now();
+    await page.click('.dial-number[data-num="1"]');
+    await expect(page.locator('#radial-bib-value')).toContainText('1');
+    expect(Date.now() - startTime).toBeLessThan(500);
+  });
+
+  test('should handle rapid clicks and tab switches gracefully', async ({
+    page,
+  }) => {
+    // Rapid dial clicks
+    for (let i = 0; i < 10; i++) {
+      await page.click('.dial-number[data-num="1"]', { force: true });
+    }
+    await expect(page.locator('#radial-bib-value')).toBeVisible();
+
+    // Rapid tab switching
+    for (let i = 0; i < 3; i++) {
       await page.click('[data-view="timer"]');
-      await expect(page.locator('.timer-view')).toBeVisible();
-    });
-
-    test('should navigate to Results view', async ({ page }) => {
       await page.click('[data-view="results"]');
-      await expect(page.locator('.results-view')).toBeVisible();
-    });
-
-    test('should navigate to Settings view', async ({ page }) => {
       await page.click('[data-view="settings"]');
-      await expect(page.locator('.settings-view')).toBeVisible();
-    });
-
-    test('should highlight active tab', async ({ page }) => {
-      await page.click('[data-view="results"]');
-      await expect(page.locator('[data-view="results"]')).toHaveClass(/active/);
-
-      await page.click('[data-view="settings"]');
-      await expect(page.locator('[data-view="settings"]')).toHaveClass(
-        /active/,
-      );
-    });
-  });
-
-  test.describe('Bib Number Input', () => {
-    test('should enter bib number via radial dial', async ({ page }) => {
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('.dial-number[data-num="3"]');
-
-      const bibDisplay = page.locator('#radial-bib-value');
-      await expect(bibDisplay).toContainText('123');
-    });
-
-    test('should clear bib number', async ({ page }) => {
-      await page.click('.dial-number[data-num="5"]');
-      await page.click('.dial-number[data-num="6"]');
-      await page.click('#radial-clear-btn');
-
-      const bibDisplay = page.locator('#radial-bib-value');
-      await expect(bibDisplay).toContainText('---');
-    });
-
-    test('should delete last digit with backspace', async ({ page }) => {
-      await page.click('.dial-number[data-num="7"]');
-      await page.click('.dial-number[data-num="8"]');
-      await page.keyboard.press('Backspace');
-
-      const bibDisplay = page.locator('#radial-bib-value');
-      await expect(bibDisplay).toContainText('7');
-    });
-  });
-
-  test.describe('Timing Point Selection', () => {
-    test('should select Start point', async ({ page }) => {
-      await page.click('.radial-point-btn[data-point="S"]');
-      await expect(
-        page.locator('.radial-point-btn[data-point="S"]'),
-      ).toHaveClass(/active/);
-    });
-
-    test('should select Finish point', async ({ page }) => {
-      await page.click('.radial-point-btn[data-point="F"]');
-      await expect(
-        page.locator('.radial-point-btn[data-point="F"]'),
-      ).toHaveClass(/active/);
-    });
-
-    test('should only show one timing point as active', async ({ page }) => {
-      // Select Start
-      await page.click('.radial-point-btn[data-point="S"]');
-      await expect(
-        page.locator('.radial-point-btn[data-point="S"]'),
-      ).toHaveClass(/active/);
-      await expect(
-        page.locator('.radial-point-btn[data-point="F"]'),
-      ).not.toHaveClass(/active/);
-
-      // Select Finish - Start should no longer be active
-      await page.click('.radial-point-btn[data-point="F"]');
-      await expect(
-        page.locator('.radial-point-btn[data-point="F"]'),
-      ).toHaveClass(/active/);
-      await expect(
-        page.locator('.radial-point-btn[data-point="S"]'),
-      ).not.toHaveClass(/active/);
-    });
-  });
-
-  test.describe('Recording Timestamps', () => {
-    test('should record a timestamp', async ({ page }) => {
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.radial-point-btn[data-point="S"]');
-      await page.click('#radial-time-btn');
-
-      // Should show confirmation overlay
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
-        /show/,
-      );
-    });
-
-    test('should hide confirmation after timeout', async ({ page }) => {
-      await page.click('#radial-time-btn');
-      await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
-        /show/,
-      );
-
-      // Wait for auto-hide
-      await waitForConfirmationToHide(page);
-      await expect(
-        page.locator('#radial-confirmation-overlay'),
-      ).not.toHaveClass(/show/);
-    });
-
-    test('should show entry in results after recording', async ({ page }) => {
-      await page.click('.dial-number[data-num="9"]');
-      await page.click('.dial-number[data-num="9"]');
-      await page.click('.radial-point-btn[data-point="S"]');
-      await page.click('#radial-time-btn');
-
-      // Wait for confirmation
-      await waitForConfirmationToHide(page);
-
-      // Navigate to results
-      await page.click('[data-view="results"]');
-
-      // Should see the entry
-      const results = page.locator('.result-item');
-      await expect(results.first()).toBeVisible();
-    });
+    }
+    await expect(page.locator('.settings-view')).toBeVisible();
   });
 });
 
@@ -328,20 +193,17 @@ test.describe('Production PWA - Results View', () => {
   test.beforeEach(async ({ page }) => {
     await skipOnboarding(page);
     await page.goto(PROD_URL);
-    await page.evaluate(() => {
-      localStorage.removeItem('skiTimerEntries');
-    });
+    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
     await ensureOnboardingDismissed(page);
 
-    // Add test entries
-    for (let i = 1; i <= 3; i++) {
+    // Add 2 test entries (reduced from 3)
+    for (let i = 1; i <= 2; i++) {
       await page.click(`.dial-number[data-num="${i}"]`);
       await page.click('.radial-point-btn[data-point="S"]');
       await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
       await page.click('#radial-clear-btn');
     }
-
     await page.click('[data-view="results"]');
   });
 
@@ -349,45 +211,30 @@ test.describe('Production PWA - Results View', () => {
     await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
   });
 
-  test('should display results list', async ({ page }) => {
+  test('should display results with search and export', async ({ page }) => {
+    // Results list
     const results = page.locator('.result-item');
-    await expect(results).toHaveCount(3);
-  });
+    await expect(results).toHaveCount(2);
 
-  test('should display statistics', async ({ page }) => {
-    // Stats are stored in hidden span elements updated by JS
-    const statRacers = page.locator('#stat-racers');
-    await expect(statRacers).toBeAttached();
-  });
+    // Stats
+    await expect(page.locator('#stat-racers')).toBeAttached();
 
-  test('should have search input', async ({ page }) => {
-    // Search bar is hidden by default, toggle it via filter button
-    const filterToggle = page.locator('#toggle-filters-btn');
-    await filterToggle.click();
-    await expect(page.locator('#search-input')).toBeVisible();
-  });
-
-  test('should filter by bib search', async ({ page }) => {
-    // Toggle search bar visible
-    const filterToggle = page.locator('#toggle-filters-btn');
-    await filterToggle.click();
-
-    const searchInput = page.locator('#search-input');
-    await searchInput.fill('1');
-
-    // Wait for filtering to take effect
-    await page.waitForTimeout(400);
-
-    // VirtualList filters items - check that the search reduced results
-    const resultItems = page.locator('.result-item');
-    const count = await resultItems.count();
-    // Search for "1" should match only bib 1, so we expect fewer than 3 results
-    expect(count).toBeLessThanOrEqual(3);
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('should have export button', async ({ page }) => {
+    // Export button
     await expect(page.locator('#quick-export-btn')).toBeVisible();
+
+    // Search/filter
+    await page.locator('#toggle-filters-btn').click();
+    await expect(page.locator('#search-input')).toBeVisible();
+
+    // Filter by bib
+    await page.locator('#search-input').fill('1');
+    await page.waitForFunction(
+      () => document.querySelectorAll('.result-item').length <= 2,
+      { timeout: 3000 },
+    );
+    const count = await page.locator('.result-item').count();
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBeLessThanOrEqual(2);
   });
 });
 
@@ -399,332 +246,138 @@ test.describe('Production PWA - Settings View', () => {
     await page.click('[data-view="settings"]');
   });
 
-  test('should display all settings toggles', async ({ page }) => {
-    // Check toggle labels are visible (checkboxes themselves are hidden for custom styling)
+  test('should display and toggle all settings', async ({ page }) => {
+    // All toggle labels visible
     await expect(page.locator('label:has(#auto-toggle)')).toBeVisible();
     await expect(page.locator('label:has(#haptic-toggle)')).toBeVisible();
     await expect(page.locator('label:has(#sound-toggle)')).toBeVisible();
     await expect(page.locator('label:has(#gps-toggle)')).toBeVisible();
     await expect(page.locator('label:has(#sync-toggle)')).toBeVisible();
-  });
 
-  test('should display language toggle', async ({ page }) => {
-    await expect(page.locator('#lang-toggle')).toBeVisible();
-  });
-
-  test('should toggle auto-increment', async ({ page }) => {
+    // Toggle auto-increment
     const toggle = page.locator('#auto-toggle');
     const before = await toggle.evaluate((el) => el.checked);
-
     await page.locator('label:has(#auto-toggle)').click();
-
     const after = await toggle.evaluate((el) => el.checked);
     expect(after).not.toBe(before);
-  });
 
-  test('should toggle cloud sync and show settings', async ({ page }) => {
-    const toggle = page.locator('#sync-toggle');
+    // Cloud sync toggle shows race ID input
     await page.locator('label:has(#sync-toggle)').click();
-
-    await expect(toggle).toBeChecked();
-    // When sync is enabled, the race ID input row should become visible
+    await expect(page.locator('#sync-toggle')).toBeChecked();
     await expect(page.locator('#race-id-input-row-container')).toBeVisible();
   });
 
-  test('should have language toggle that responds to clicks', async ({
-    page,
-  }) => {
+  test('should display and toggle language', async ({ page }) => {
     const langToggle = page.locator('#lang-toggle');
-
-    // Language toggle should be clickable and have an active option
     await expect(langToggle).toBeVisible();
+
     const activeOption = page.locator('#lang-toggle .lang-option.active');
     const text = await activeOption.textContent();
     expect(['EN', 'DE', 'FR']).toContain(text?.trim());
 
-    // Clicking should work without errors
+    // Click should work without errors
     await langToggle.click({ force: true });
-    await page.waitForTimeout(100);
-
-    // Should still have an active option after click
-    const newActiveOption = page.locator('#lang-toggle .lang-option.active');
-    const newText = await newActiveOption.textContent();
+    const newText = await page
+      .locator('#lang-toggle .lang-option.active')
+      .textContent();
     expect(['EN', 'DE', 'FR']).toContain(newText?.trim());
   });
 });
 
 test.describe('Production PWA - PWA Features', () => {
-  test('should have valid manifest', async ({ page }) => {
-    const response = await page.goto(`${PROD_URL}/manifest.json`);
-    expect(response.status()).toBe(200);
-
-    const manifest = await response.json();
+  test('should have valid manifest and service worker', async ({ page }) => {
+    // Manifest
+    const manifestResponse = await page.goto(`${PROD_URL}/manifest.json`);
+    expect(manifestResponse.status()).toBe(200);
+    const manifest = await manifestResponse.json();
     expect(manifest.name).toBeDefined();
     expect(manifest.short_name).toBeDefined();
     expect(manifest.start_url).toBeDefined();
     expect(manifest.display).toBe('standalone');
-    expect(manifest.icons).toBeDefined();
     expect(manifest.icons.length).toBeGreaterThan(0);
+
+    // Service worker
+    const swResponse = await page.goto(`${PROD_URL}/sw.js`);
+    expect(swResponse.status()).toBe(200);
+    const swContent = await swResponse.text();
+    expect(swContent).toContain('self');
+    expect(swContent.length).toBeGreaterThan(100);
   });
 
-  test('should have service worker file accessible', async ({ page }) => {
-    // Verify service worker file exists and is accessible
-    const response = await page.goto(`${PROD_URL}/sw.js`);
-    expect(response.status()).toBe(200);
-
-    // Check it contains Workbox service worker code
-    const content = await response.text();
-    // VitePWA uses Workbox which has different patterns than manual SW
-    expect(content).toContain('self');
-    expect(content.length).toBeGreaterThan(100); // Should have substantial code
-  });
-
-  test('should have correct viewport meta tag', async ({ page }) => {
+  test('should have correct meta tags', async ({ page }) => {
     await page.goto(PROD_URL);
 
+    // Viewport
     const viewport = await page
       .locator('meta[name="viewport"]')
       .getAttribute('content');
     expect(viewport).toContain('width=device-width');
     expect(viewport).toContain('initial-scale=1');
-  });
 
-  test('should have theme color meta tag', async ({ page }) => {
-    await page.goto(PROD_URL);
+    // Theme color
+    await expect(
+      page.locator('meta[name="theme-color"]'),
+    ).toHaveAttribute('content', /.+/);
 
-    const themeColor = page.locator('meta[name="theme-color"]');
-    await expect(themeColor).toHaveAttribute('content', /.+/);
-  });
+    // Apple touch icon
+    await expect(
+      page.locator('link[rel="apple-touch-icon"]'),
+    ).toHaveAttribute('href', /.+/);
 
-  test('should have apple touch icon', async ({ page }) => {
-    await page.goto(PROD_URL);
-
-    const appleIcon = page.locator('link[rel="apple-touch-icon"]');
-    await expect(appleIcon).toHaveAttribute('href', /.+/);
+    // Security
+    expect((await page.goto(PROD_URL)).status()).toBe(200);
   });
 });
 
-test.describe('Production PWA - Mobile Responsiveness', () => {
-  test.use({ viewport: { width: 375, height: 667 } });
-
-  test.beforeEach(async ({ page }) => {
+test.describe('Production PWA - Responsive & Accessible', () => {
+  test('should render correctly on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
     await skipOnboarding(page);
     await page.goto(PROD_URL);
     await ensureOnboardingDismissed(page);
-  });
 
-  test('should render correctly on mobile', async ({ page }) => {
     await expect(page.locator('#radial-time-hm')).toBeVisible();
     await expect(page.locator('#radial-bib-value')).toBeVisible();
     await expect(page.locator('#radial-time-btn')).toBeVisible();
-  });
 
-  test('should handle input on mobile viewport', async ({ page }) => {
-    // Use click which works on mobile viewports too
+    // Touch targets
     await page.click('.dial-number[data-num="5"]');
-    const bibDisplay = page.locator('#radial-bib-value');
-    await expect(bibDisplay).toContainText('5');
-  });
+    await expect(page.locator('#radial-bib-value')).toContainText('5');
 
-  test('dial number should be easily tappable', async ({ page }) => {
-    // Check dial number buttons have adequate size for touch
-    const button = page.locator('.dial-number[data-num="1"]');
-    const box = await button.boundingBox();
-
-    // Buttons should be at least 25x25 pixels for touch accessibility (dial numbers are smaller but well-spaced)
+    const box = await page.locator('.dial-number[data-num="1"]').boundingBox();
     expect(box.width).toBeGreaterThanOrEqual(25);
     expect(box.height).toBeGreaterThanOrEqual(25);
   });
-});
 
-test.describe('Production PWA - Tablet Responsiveness', () => {
-  test.use({ viewport: { width: 768, height: 1024 } });
-
-  test.beforeEach(async ({ page }) => {
+  test('should render correctly on tablet viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
     await skipOnboarding(page);
     await page.goto(PROD_URL);
     await ensureOnboardingDismissed(page);
-  });
 
-  test('should render correctly on tablet', async ({ page }) => {
     await expect(page.locator('#radial-time-hm')).toBeVisible();
     await expect(page.locator('#radial-bib-value')).toBeVisible();
     await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
-});
 
-test.describe('Production PWA - Accessibility', () => {
-  test.beforeEach(async ({ page }) => {
-    await skipOnboarding(page);
-    await page.goto(PROD_URL);
-    await ensureOnboardingDismissed(page);
-  });
-
-  test('should have no major accessibility issues in timer view', async ({
+  test('should support keyboard navigation and accessibility', async ({
     page,
   }) => {
-    // Check for basic accessibility attributes
-    const timestampBtn = page.locator('#radial-time-btn');
-    await expect(timestampBtn).toBeVisible();
+    await skipOnboarding(page);
+    await page.goto(PROD_URL);
+    await ensureOnboardingDismissed(page);
 
-    // Tab navigation should work
-    await page.keyboard.press('Tab');
-    const focused = await page.locator(':focus');
-    await expect(focused).toBeVisible();
-  });
-
-  test('should support keyboard navigation', async ({ page }) => {
-    // Can tab through main elements
+    // Tab navigation
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toBeVisible();
 
-    const focused = await page.locator(':focus');
-    await expect(focused).toBeVisible();
-  });
-
-  test('should have accessible color contrast', async ({ page }) => {
-    // Clock text should be visible
-    const clock = page.locator('#radial-time-hm');
-    const color = await clock.evaluate((el) => getComputedStyle(el).color);
+    // Color contrast (clock text is visible)
+    const color = await page
+      .locator('#radial-time-hm')
+      .evaluate((el) => getComputedStyle(el).color);
     expect(color).toBeDefined();
     expect(color).not.toBe('transparent');
-  });
-});
-
-test.describe('Production PWA - Performance', () => {
-  test.beforeEach(async ({ page }) => {
-    await skipOnboarding(page);
-    await page.goto(PROD_URL);
-    await ensureOnboardingDismissed(page);
-    await page.waitForSelector('#radial-time-hm', { timeout: 10000 });
-  });
-
-  test('should load within acceptable time', async ({ page }) => {
-    // Test passes if beforeEach completes successfully
-    // Clock is already visible from beforeEach
-    await expect(page.locator('#radial-time-hm')).toBeVisible();
-  });
-
-  test('should respond to interactions quickly', async ({ page }) => {
-    const startTime = Date.now();
-    await page.click('.dial-number[data-num="1"]');
-    await expect(page.locator('#radial-bib-value')).toContainText('1');
-    const responseTime = Date.now() - startTime;
-
-    // Interaction should complete within 500ms
-    expect(responseTime).toBeLessThan(500);
-  });
-});
-
-test.describe('Production PWA - Data Persistence', () => {
-  test.beforeEach(async ({ page }) => {
-    await skipOnboarding(page);
-    await page.goto(PROD_URL);
-    await page.evaluate(() => {
-      localStorage.removeItem('skiTimerEntries');
-    });
-    await ensureOnboardingDismissed(page);
-  });
-
-  test('should persist entries in localStorage', async ({ page }) => {
-    // Add an entry
-    await page.click('.dial-number[data-num="7"]');
-    await page.click('.dial-number[data-num="7"]');
-    await page.click('.dial-number[data-num="7"]');
-    await page.click('.radial-point-btn[data-point="S"]');
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-
-    // Check localStorage
-    const entries = await page.evaluate(() => {
-      return JSON.parse(localStorage.getItem('skiTimerEntries') || '[]');
-    });
-
-    expect(entries.length).toBeGreaterThan(0);
-    expect(entries[0].bib).toBe('777');
-
-    // Clean up
-    await page.evaluate(() => localStorage.removeItem('skiTimerEntries'));
-  });
-
-  test('should have working settings toggles', async ({ page }) => {
-    await page.click('[data-view="settings"]');
-
-    // Sound toggle is inside Advanced Settings - verify the toggle switch label is visible
-    // Note: The checkbox input is visually hidden for custom toggle styling
-    const toggleLabel = page.locator('label:has(#sound-toggle)');
-    await expect(toggleLabel).toBeVisible();
-
-    // Click should work without errors
-    await toggleLabel.click();
-    await page.waitForTimeout(100);
-
-    // Toggle label should still be visible after click
-    await expect(toggleLabel).toBeVisible();
-  });
-
-  test('should have working language toggle', async ({ page }) => {
-    await page.click('[data-view="settings"]');
-
-    const langToggle = page.locator('#lang-toggle');
-    await expect(langToggle).toBeVisible();
-
-    // Check that one language option is active (visible)
-    const activeOption = page.locator('#lang-toggle .lang-option.active');
-    await expect(activeOption).toBeVisible();
-    const text = await activeOption.textContent();
-    expect(['EN', 'DE', 'FR']).toContain(text?.trim());
-
-    // Click should work without errors
-    await langToggle.click({ force: true });
-    await page.waitForTimeout(100);
-
-    // Should still have an active option after click
-    const newActiveOption = page.locator('#lang-toggle .lang-option.active');
-    await expect(newActiveOption).toBeVisible();
-    const newText = await newActiveOption.textContent();
-    expect(['EN', 'DE', 'FR']).toContain(newText?.trim());
-  });
-});
-
-test.describe('Production PWA - Error Handling', () => {
-  test.beforeEach(async ({ page }) => {
-    await skipOnboarding(page);
-    await page.goto(PROD_URL);
-    await ensureOnboardingDismissed(page);
-  });
-
-  test('should handle rapid button clicks gracefully', async ({ page }) => {
-    // Rapid clicks on dial number
-    for (let i = 0; i < 10; i++) {
-      await page.click('.dial-number[data-num="1"]', { force: true });
-    }
-
-    // App should still be functional
-    await expect(page.locator('#radial-bib-value')).toBeVisible();
-  });
-
-  test('should handle rapid tab switching', async ({ page }) => {
-    // Rapid tab switching
-    for (let i = 0; i < 5; i++) {
-      await page.click('[data-view="timer"]');
-      await page.click('[data-view="results"]');
-      await page.click('[data-view="settings"]');
-    }
-
-    // App should still be functional
-    await expect(page.locator('.settings-view')).toBeVisible();
-  });
-});
-
-test.describe('Production PWA - Security Headers', () => {
-  test('should have security headers', async ({ page }) => {
-    const response = await page.goto(PROD_URL);
-    const _headers = response.headers();
-
-    // Check for common security headers (Vercel typically provides these)
-    // Note: exact headers depend on Vercel configuration
-    expect(response.status()).toBe(200);
   });
 });

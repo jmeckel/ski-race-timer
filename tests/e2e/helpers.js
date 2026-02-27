@@ -14,16 +14,13 @@
  */
 
 /**
- * Setup page with onboarding bypassed and clean state
- * Call this in beforeEach to ensure consistent test state
- * Note: Normal mode (simple=false) is now the default with radial dial UI
+ * Setup page with onboarding bypassed and clean state.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} lang - Language code: 'de' (default), 'en', or 'fr'
  */
-export async function setupPage(page) {
-  // Set localStorage to bypass onboarding before navigating
-  await page.addInitScript(() => {
+export async function setupPage(page, lang = 'de') {
+  await page.addInitScript((lang) => {
     localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-    // Set default settings for consistent test state
-    // Keys must match the store's DEFAULT_SETTINGS: auto, haptic, sound, sync, gps, simple, photoCapture, syncPhotos
     localStorage.setItem(
       'skiTimerSettings',
       JSON.stringify({
@@ -33,70 +30,25 @@ export async function setupPage(page) {
         sync: false,
         syncPhotos: false,
         gps: false,
-        simple: false, // Normal mode is default
+        simple: false,
         photoCapture: false,
       }),
     );
-    localStorage.setItem('skiTimerLang', 'de');
-  });
+    localStorage.setItem('skiTimerLang', lang);
+  }, lang);
 
   await page.goto('/');
-  // Wait for app to be ready (radial dial is rendered)
   await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 }
 
-/**
- * Setup page with English language
- */
+/** @deprecated Use setupPage(page, 'en') instead */
 export async function setupPageEnglish(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-    // Keys must match the store's DEFAULT_SETTINGS
-    localStorage.setItem(
-      'skiTimerSettings',
-      JSON.stringify({
-        auto: true,
-        haptic: true,
-        sound: false,
-        sync: false,
-        syncPhotos: false,
-        gps: false,
-        simple: false, // Normal mode is default
-        photoCapture: false,
-      }),
-    );
-    localStorage.setItem('skiTimerLang', 'en');
-  });
-
-  await page.goto('/');
-  await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
+  return setupPage(page, 'en');
 }
 
-/**
- * Setup page with French language
- */
+/** @deprecated Use setupPage(page, 'fr') instead */
 export async function setupPageFrench(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('skiTimerHasCompletedOnboarding', 'true');
-    // Keys must match the store's DEFAULT_SETTINGS
-    localStorage.setItem(
-      'skiTimerSettings',
-      JSON.stringify({
-        auto: true,
-        haptic: true,
-        sound: false,
-        sync: false,
-        syncPhotos: false,
-        gps: false,
-        simple: false, // Normal mode is default
-        photoCapture: false,
-      }),
-    );
-    localStorage.setItem('skiTimerLang', 'fr');
-  });
-
-  await page.goto('/');
-  await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
+  return setupPage(page, 'fr');
 }
 
 /**
@@ -250,5 +202,31 @@ export async function enterBib(page, bib) {
   // Enter bib digits via keyboard (0-9 keys bypass radial dial coordinate issues)
   for (const digit of bib.toString().padStart(3, '0')) {
     await page.keyboard.press(digit);
+  }
+}
+
+/**
+ * Dismiss all visible toast notifications by removing them from the DOM.
+ * Useful when toasts intercept pointer events on underlying buttons.
+ */
+export async function dismissToasts(page) {
+  await page.evaluate(() =>
+    document.querySelectorAll('.toast').forEach((t) => t.remove()),
+  );
+}
+
+/**
+ * Add multiple test entries via keyboard input.
+ * Each entry uses a zero-padded bib number (001, 002, ...).
+ */
+export async function addTestEntries(page, count = 3) {
+  for (let i = 1; i <= count; i++) {
+    await page.keyboard.press('Delete');
+    const bib = String(i).padStart(3, '0');
+    for (const digit of bib) {
+      await page.keyboard.press(digit);
+    }
+    await page.click('#radial-time-btn');
+    await waitForConfirmationToHide(page);
   }
 }

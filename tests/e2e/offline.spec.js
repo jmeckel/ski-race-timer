@@ -6,24 +6,12 @@
 
 import { expect, test } from '@playwright/test';
 import {
+  addTestEntries,
   clickToggle,
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
 } from './helpers.js';
-
-// Helper to add test entries via keyboard
-async function addTestEntries(page, count = 3) {
-  for (let i = 1; i <= count; i++) {
-    await page.keyboard.press('Delete');
-    const bib = String(i).padStart(3, '0');
-    for (const digit of bib) {
-      await page.keyboard.press(digit);
-    }
-    await page.click('#radial-time-btn');
-    await waitForConfirmationToHide(page);
-  }
-}
 
 test.describe('Data Persistence', () => {
   // Tests with multiple entries need more time in CI
