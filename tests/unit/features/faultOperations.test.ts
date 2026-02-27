@@ -47,22 +47,30 @@ vi.mock('../../../src/utils', () => ({
   escapeHtml: vi.fn((s: string) => s),
   getFaultTypeLabel: vi.fn((type: string) => type),
   getLocale: vi.fn((lang: string) => {
-    const map: Record<string, string> = {
-      en: 'en-US',
-      de: 'de-DE',
-      fr: 'fr-FR',
-    };
+    const map: Record<string, string> = { en: 'en-US', de: 'de-DE' };
     return map[lang] || 'en-US';
   }),
   makeNumericInput: vi.fn(),
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    removeAll: vi.fn(),
-    count: 0,
-  })),
+  ListenerManager: vi.fn().mockImplementation(() => {
+    const tracked: { el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }[] = [];
+    return {
+      add: vi.fn(
+        (el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
+          el.addEventListener(event, handler);
+          tracked.push({ el, event, handler });
+        },
+      ),
+      removeAll: vi.fn(() => {
+        for (const { el, event, handler } of tracked) {
+          el.removeEventListener(event, handler);
+        }
+        tracked.length = 0;
+      }),
+    };
+  }),
 }));
 
 vi.mock('../../../src/utils/modalContext', () => ({
@@ -117,6 +125,60 @@ describe('Fault Operations Feature Module', () => {
     ...overrides,
   });
 
+  function setupFullEditModalDOM() {
+    const modal = document.createElement('div');
+    modal.id = 'fault-edit-modal';
+    container.appendChild(modal);
+
+    const bibInput = document.createElement('input');
+    bibInput.id = 'fault-edit-bib-input';
+    container.appendChild(bibInput);
+
+    const gateInput = document.createElement('input');
+    gateInput.id = 'fault-edit-gate-input';
+    container.appendChild(gateInput);
+
+    const typeSelect = document.createElement('select');
+    typeSelect.id = 'fault-edit-type-select';
+    for (const ft of ['MG', 'STR', 'BR']) {
+      const option = document.createElement('option');
+      option.value = ft;
+      option.textContent = ft;
+      typeSelect.appendChild(option);
+    }
+    container.appendChild(typeSelect);
+
+    const gateRangeSpan = document.createElement('span');
+    gateRangeSpan.id = 'fault-edit-gate-range';
+    container.appendChild(gateRangeSpan);
+
+    const versionSelect = document.createElement('select');
+    versionSelect.id = 'fault-version-select';
+    container.appendChild(versionSelect);
+
+    const notesTextarea = document.createElement('textarea');
+    notesTextarea.id = 'fault-edit-notes';
+    container.appendChild(notesTextarea);
+
+    const notesCharCount = document.createElement('span');
+    notesCharCount.id = 'fault-edit-notes-char-count';
+    container.appendChild(notesCharCount);
+
+    const runSelector = document.createElement('div');
+    runSelector.id = 'fault-edit-run-selector';
+    const run1Btn = document.createElement('button');
+    run1Btn.classList.add('edit-run-btn');
+    run1Btn.setAttribute('data-run', '1');
+    const run2Btn = document.createElement('button');
+    run2Btn.classList.add('edit-run-btn');
+    run2Btn.setAttribute('data-run', '2');
+    runSelector.appendChild(run1Btn);
+    runSelector.appendChild(run2Btn);
+    container.appendChild(runSelector);
+
+    return { modal, bibInput, gateInput, typeSelect, notesTextarea, versionSelect, runSelector };
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     container = document.createElement('div');
@@ -127,6 +189,9 @@ describe('Fault Operations Feature Module', () => {
     container.remove();
   });
 
+  // -------------------------------------------------------------------------
+  // createAndSyncFault
+  // -------------------------------------------------------------------------
   describe('createAndSyncFault', () => {
     it('should add fault entry to store', () => {
       vi.mocked(store.getState).mockReturnValue({
@@ -212,8 +277,134 @@ describe('Fault Operations Feature Module', () => {
       const addedFault = vi.mocked(store.addFaultEntry).mock.calls[0][0];
       expect(addedFault.gateRange).toEqual([1, 1]);
     });
+
+    it('should create MG fault with correct type', () => {
+      const fault = createMockFault({ faultType: 'MG' });
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        selectedRun: 1,
+        deviceId: 'device-1',
+        deviceName: 'Timer 1',
+        gateAssignment: [1, 10],
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      createAndSyncFault('042', 5, 'MG');
+
+      const added = vi.mocked(store.addFaultEntry).mock.calls[0]![0];
+      expect(added.faultType).toBe('MG');
+    });
+
+    it('should create STR fault with correct type', () => {
+      const fault = createMockFault({ id: 'fault-str', faultType: 'STR' });
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        selectedRun: 1,
+        deviceId: 'device-1',
+        deviceName: 'Timer 1',
+        gateAssignment: [1, 10],
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      createAndSyncFault('042', 3, 'STR');
+
+      const added = vi.mocked(store.addFaultEntry).mock.calls[0]![0];
+      expect(added.faultType).toBe('STR');
+      expect(added.gateNumber).toBe(3);
+    });
+
+    it('should create BR fault with correct type', () => {
+      const fault = createMockFault({ id: 'fault-br', faultType: 'BR' });
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        selectedRun: 1,
+        deviceId: 'device-1',
+        deviceName: 'Timer 1',
+        gateAssignment: [1, 10],
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      createAndSyncFault('042', 8, 'BR');
+
+      const added = vi.mocked(store.addFaultEntry).mock.calls[0]![0];
+      expect(added.faultType).toBe('BR');
+      expect(added.gateNumber).toBe(8);
+    });
+
+    it('should sync fault to cloud when found in store after add', () => {
+      // Capture the fault id from addFaultEntry to return it in second getState
+      let capturedFaultId: string | null = null;
+      vi.mocked(store.addFaultEntry).mockImplementation((fault: unknown) => {
+        capturedFaultId = (fault as { id: string }).id;
+      });
+
+      let callCount = 0;
+      vi.mocked(store.getState).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            currentLang: 'en',
+            selectedRun: 1,
+            deviceId: 'device-1',
+            deviceName: 'Timer 1',
+            gateAssignment: [1, 10],
+            faultEntries: [],
+          } as unknown as ReturnType<typeof store.getState>;
+        }
+        // Second call: return faultEntries with the captured id
+        return {
+          currentLang: 'en',
+          selectedRun: 1,
+          deviceId: 'device-1',
+          deviceName: 'Timer 1',
+          gateAssignment: [1, 10],
+          faultEntries: [
+            createMockFault({ id: capturedFaultId || 'fault-1' }),
+          ],
+        } as unknown as ReturnType<typeof store.getState>;
+      });
+
+      createAndSyncFault('042', 5, 'MG');
+
+      expect(syncFault).toHaveBeenCalled();
+    });
+
+    it('should not sync if fault is not found in store after add', () => {
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        selectedRun: 1,
+        deviceId: 'device-1',
+        deviceName: 'Timer 1',
+        gateAssignment: [1, 10],
+        faultEntries: [],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      createAndSyncFault('042', 5, 'MG');
+
+      // syncFault should not be called because fault not found in store
+      expect(syncFault).not.toHaveBeenCalled();
+    });
+
+    it('should create fault with gate number 0 (valid edge case)', () => {
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        selectedRun: 1,
+        deviceId: 'device-1',
+        deviceName: 'Timer 1',
+        gateAssignment: [0, 5],
+        faultEntries: [],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      createAndSyncFault('001', 0, 'MG');
+
+      const added = vi.mocked(store.addFaultEntry).mock.calls[0]![0];
+      expect(added.gateNumber).toBe(0);
+    });
   });
 
+  // -------------------------------------------------------------------------
+  // showFaultConfirmation
+  // -------------------------------------------------------------------------
   describe('showFaultConfirmation', () => {
     it('should show confirmation overlay', () => {
       const overlay = document.createElement('div');
@@ -283,66 +474,169 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault();
       expect(() => showFaultConfirmation(fault)).not.toThrow();
     });
+
+    it('should set aria-hidden to false on overlay', () => {
+      const overlay = document.createElement('div');
+      overlay.id = 'fault-confirmation-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      container.appendChild(overlay);
+
+      const fault = createMockFault();
+      showFaultConfirmation(fault);
+
+      expect(overlay.getAttribute('aria-hidden')).toBe('false');
+    });
+
+    it('should focus the done button for keyboard accessibility', () => {
+      const overlay = document.createElement('div');
+      overlay.id = 'fault-confirmation-overlay';
+      container.appendChild(overlay);
+
+      const doneBtn = document.createElement('button');
+      doneBtn.id = 'fault-confirmation-done-btn';
+      overlay.appendChild(doneBtn);
+
+      const focusSpy = vi.spyOn(doneBtn, 'focus');
+      const fault = createMockFault();
+      showFaultConfirmation(fault);
+
+      expect(focusSpy).toHaveBeenCalled();
+    });
+
+    it('should display fault type label correctly', () => {
+      const overlay = document.createElement('div');
+      overlay.id = 'fault-confirmation-overlay';
+      container.appendChild(overlay);
+
+      const typeEl = document.createElement('span');
+      typeEl.classList.add('fault-confirmation-type');
+      overlay.appendChild(typeEl);
+
+      const fault = createMockFault({ faultType: 'BR' });
+      showFaultConfirmation(fault);
+
+      expect(typeEl.textContent).toBe('BR');
+    });
   });
 
-  describe('openFaultEditModal', () => {
-    let modal: HTMLDivElement;
+  // -------------------------------------------------------------------------
+  // initFaultEditModal
+  // -------------------------------------------------------------------------
+  describe('initFaultEditModal', () => {
+    it('should not throw when no elements exist', () => {
+      expect(() => initFaultEditModal()).not.toThrow();
+    });
 
-    function setupEditModalDOM() {
-      modal = document.createElement('div');
-      modal.id = 'fault-edit-modal';
-      container.appendChild(modal);
+    it('should set up event listeners on existing elements', () => {
+      const saveFaultEditBtn = document.createElement('button');
+      saveFaultEditBtn.id = 'save-fault-edit-btn';
+      container.appendChild(saveFaultEditBtn);
 
-      const bibInput = document.createElement('input');
-      bibInput.id = 'fault-edit-bib-input';
-      container.appendChild(bibInput);
+      const restoreVersionBtn = document.createElement('button');
+      restoreVersionBtn.id = 'restore-version-btn';
+      container.appendChild(restoreVersionBtn);
 
-      const gateInput = document.createElement('input');
-      gateInput.id = 'fault-edit-gate-input';
-      container.appendChild(gateInput);
+      const faultEditBibInput = document.createElement('input');
+      faultEditBibInput.id = 'fault-edit-bib-input';
+      container.appendChild(faultEditBibInput);
 
-      // Type select with options for each fault type
-      const typeSelect = document.createElement('select');
-      typeSelect.id = 'fault-edit-type-select';
-      for (const ft of ['MG', 'STR', 'BR']) {
-        const option = document.createElement('option');
-        option.value = ft;
-        option.textContent = ft;
-        typeSelect.appendChild(option);
-      }
-      container.appendChild(typeSelect);
+      const confirmMarkDeletionBtn = document.createElement('button');
+      confirmMarkDeletionBtn.id = 'confirm-mark-deletion-btn';
+      container.appendChild(confirmMarkDeletionBtn);
 
-      const gateRangeSpan = document.createElement('span');
-      gateRangeSpan.id = 'fault-edit-gate-range';
-      container.appendChild(gateRangeSpan);
+      expect(() => initFaultEditModal()).not.toThrow();
+    });
 
-      const versionSelect = document.createElement('select');
-      versionSelect.id = 'fault-version-select';
-      container.appendChild(versionSelect);
-
+    it('should set up notes textarea character counter', () => {
       const notesTextarea = document.createElement('textarea');
       notesTextarea.id = 'fault-edit-notes';
       container.appendChild(notesTextarea);
 
-      const notesCharCount = document.createElement('span');
-      notesCharCount.id = 'fault-edit-notes-char-count';
-      container.appendChild(notesCharCount);
+      const charCount = document.createElement('span');
+      charCount.id = 'fault-edit-notes-char-count';
+      container.appendChild(charCount);
 
+      initFaultEditModal();
+
+      // Simulate typing in the textarea
+      notesTextarea.value = 'A'.repeat(460);
+      notesTextarea.dispatchEvent(new Event('input'));
+
+      expect(charCount.textContent).toBe('460/500');
+      expect(charCount.classList.contains('near-limit')).toBe(true);
+    });
+
+    it('should mark near-limit when notes exceed 450 chars', () => {
+      const notesTextarea = document.createElement('textarea');
+      notesTextarea.id = 'fault-edit-notes';
+      container.appendChild(notesTextarea);
+
+      const charCount = document.createElement('span');
+      charCount.id = 'fault-edit-notes-char-count';
+      container.appendChild(charCount);
+
+      initFaultEditModal();
+
+      notesTextarea.value = 'A'.repeat(450);
+      notesTextarea.dispatchEvent(new Event('input'));
+      // 450 is NOT > 450, so near-limit should be false
+      expect(charCount.classList.contains('near-limit')).toBe(false);
+
+      notesTextarea.value = 'A'.repeat(451);
+      notesTextarea.dispatchEvent(new Event('input'));
+      expect(charCount.classList.contains('near-limit')).toBe(true);
+    });
+
+    it('should set up run selector click handler', () => {
       const runSelector = document.createElement('div');
       runSelector.id = 'fault-edit-run-selector';
       const run1Btn = document.createElement('button');
       run1Btn.classList.add('edit-run-btn');
       run1Btn.setAttribute('data-run', '1');
+      run1Btn.classList.add('active');
+      run1Btn.setAttribute('aria-checked', 'true');
       const run2Btn = document.createElement('button');
       run2Btn.classList.add('edit-run-btn');
       run2Btn.setAttribute('data-run', '2');
+      run2Btn.setAttribute('aria-checked', 'false');
       runSelector.appendChild(run1Btn);
       runSelector.appendChild(run2Btn);
       container.appendChild(runSelector);
-    }
 
+      initFaultEditModal();
+
+      // Click run 2
+      run2Btn.click();
+
+      expect(run2Btn.classList.contains('active')).toBe(true);
+      expect(run2Btn.getAttribute('aria-checked')).toBe('true');
+      expect(run1Btn.classList.contains('active')).toBe(false);
+      expect(run1Btn.getAttribute('aria-checked')).toBe('false');
+    });
+
+    it('should dispatch mic click event when mic button clicked', () => {
+      const micBtn = document.createElement('button');
+      micBtn.id = 'fault-edit-mic-btn';
+      container.appendChild(micBtn);
+
+      initFaultEditModal();
+
+      const eventSpy = vi.fn();
+      window.addEventListener('fault-edit-mic-click', eventSpy);
+
+      micBtn.click();
+
+      expect(eventSpy).toHaveBeenCalled();
+      window.removeEventListener('fault-edit-mic-click', eventSpy);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // openFaultEditModal
+  // -------------------------------------------------------------------------
+  describe('openFaultEditModal', () => {
     it('should open modal for valid fault', () => {
-      setupEditModalDOM();
+      const { modal } = setupFullEditModalDOM();
       const fault = createMockFault();
       openFaultEditModal(fault);
 
@@ -350,7 +644,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should populate bib input', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ bib: '042' });
       openFaultEditModal(fault);
 
@@ -361,7 +655,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should populate gate input', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ gateNumber: 7 });
       openFaultEditModal(fault);
 
@@ -372,7 +666,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should populate type select', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ faultType: 'STR' });
       openFaultEditModal(fault);
 
@@ -383,7 +677,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should populate notes textarea', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ notes: 'Some notes' });
       openFaultEditModal(fault);
 
@@ -394,7 +688,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should show gate range info', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ gateRange: [4, 12] });
       openFaultEditModal(fault);
 
@@ -404,7 +698,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should highlight active run button', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ run: 2 });
       openFaultEditModal(fault);
 
@@ -414,7 +708,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should populate version history dropdown', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const versionHistory: FaultVersion[] = [
         {
           version: 1,
@@ -440,7 +734,7 @@ describe('Fault Operations Feature Module', () => {
     });
 
     it('should not allow editing faults marked for deletion', () => {
-      setupEditModalDOM();
+      setupFullEditModalDOM();
       const fault = createMockFault({ markedForDeletion: true });
       openFaultEditModal(fault);
 
@@ -456,58 +750,152 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault();
       expect(() => openFaultEditModal(fault)).not.toThrow();
     });
+
+    it('should filter out current version from history dropdown', () => {
+      setupFullEditModalDOM();
+
+      const versionHistory: FaultVersion[] = [
+        {
+          version: 1,
+          timestamp: '2024-01-15T11:00:00.000Z',
+          editedBy: 'Timer 1',
+          editedByDeviceId: 'device-1',
+          changeType: 'create',
+          data: createMockFault() as unknown as FaultVersion['data'],
+        },
+        {
+          version: 2,
+          timestamp: '2024-01-15T12:00:00.000Z',
+          editedBy: 'Timer 2',
+          editedByDeviceId: 'device-2',
+          changeType: 'edit',
+          data: createMockFault() as unknown as FaultVersion['data'],
+        },
+        {
+          version: 3,
+          timestamp: '2024-01-15T13:00:00.000Z',
+          editedBy: 'Timer 1',
+          editedByDeviceId: 'device-1',
+          changeType: 'restore',
+          data: createMockFault() as unknown as FaultVersion['data'],
+        },
+      ];
+
+      const fault = createMockFault({ currentVersion: 3, versionHistory });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+
+      const versionSelect = document.getElementById(
+        'fault-version-select',
+      ) as HTMLSelectElement;
+      // Current version (3) + version 2 + version 1 = 3 options
+      expect(versionSelect.options.length).toBe(3);
+      // First option should be current version
+      expect(versionSelect.options[0]!.value).toBe('3');
+    });
+
+    it('should show "restored" label for restore changeType', () => {
+      setupFullEditModalDOM();
+
+      const versionHistory: FaultVersion[] = [
+        {
+          version: 1,
+          timestamp: '2024-01-15T11:00:00.000Z',
+          editedBy: 'Timer 1',
+          editedByDeviceId: 'device-1',
+          changeType: 'restore',
+          data: createMockFault() as unknown as FaultVersion['data'],
+        },
+      ];
+
+      const fault = createMockFault({ currentVersion: 2, versionHistory });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+
+      const versionSelect = document.getElementById(
+        'fault-version-select',
+      ) as HTMLSelectElement;
+      // v1 option should contain "restored" label
+      const v1Option = Array.from(versionSelect.options).find(
+        (o) => o.value === '1',
+      );
+      expect(v1Option?.textContent).toContain('restored');
+    });
+
+    it('should handle fault with no version history (empty array)', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault({ currentVersion: 1, versionHistory: [] });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+
+      const versionSelect = document.getElementById(
+        'fault-version-select',
+      ) as HTMLSelectElement;
+      // Only current version option
+      expect(versionSelect.options.length).toBe(1);
+    });
+
+    it('should handle fault with undefined currentVersion (defaults to 1)', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault({
+        currentVersion: undefined as unknown as number,
+        versionHistory: [],
+      });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+
+      const versionSelect = document.getElementById(
+        'fault-version-select',
+      ) as HTMLSelectElement;
+      // Should default to "v1"
+      expect(versionSelect.options[0]!.textContent).toContain('v1');
+    });
+
+    it('should populate empty notes field with empty string', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault({ notes: undefined });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+
+      const notesTextarea = document.getElementById(
+        'fault-edit-notes',
+      ) as HTMLTextAreaElement;
+      expect(notesTextarea.value).toBe('');
+    });
   });
 
+  // -------------------------------------------------------------------------
+  // handleSaveFaultEdit
+  // -------------------------------------------------------------------------
   describe('handleSaveFaultEdit', () => {
-    function setupSaveDOM() {
-      const modal = document.createElement('div');
-      modal.id = 'fault-edit-modal';
-      container.appendChild(modal);
-
-      const bibInput = document.createElement('input');
-      bibInput.id = 'fault-edit-bib-input';
-      container.appendChild(bibInput);
-
-      const gateInput = document.createElement('input');
-      gateInput.id = 'fault-edit-gate-input';
-      container.appendChild(gateInput);
-
-      const typeSelect = document.createElement('select');
-      typeSelect.id = 'fault-edit-type-select';
-      for (const ft of ['MG', 'STR', 'BR']) {
-        const option = document.createElement('option');
-        option.value = ft;
-        option.textContent = ft;
-        typeSelect.appendChild(option);
-      }
-      container.appendChild(typeSelect);
-
-      const notesTextarea = document.createElement('textarea');
-      notesTextarea.id = 'fault-edit-notes';
-      container.appendChild(notesTextarea);
-
-      const runSelector = document.createElement('div');
-      runSelector.id = 'fault-edit-run-selector';
-      container.appendChild(runSelector);
-
-      const versionSelect = document.createElement('select');
-      versionSelect.id = 'fault-version-select';
-      container.appendChild(versionSelect);
-
-      const notesCharCount = document.createElement('span');
-      notesCharCount.id = 'fault-edit-notes-char-count';
-      container.appendChild(notesCharCount);
-
-      const gateRangeSpan = document.createElement('span');
-      gateRangeSpan.id = 'fault-edit-gate-range';
-      container.appendChild(gateRangeSpan);
-
-      return { bibInput, gateInput, typeSelect, notesTextarea };
-    }
-
     it('should save changes and close modal', () => {
       const fault = createMockFault();
-      const { bibInput, gateInput, typeSelect, notesTextarea } = setupSaveDOM();
+      setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -533,7 +921,7 @@ describe('Fault Operations Feature Module', () => {
 
     it('should show warning for out-of-range gate', () => {
       const fault = createMockFault({ gateRange: [1, 5] });
-      const { gateInput } = setupSaveDOM();
+      const { gateInput } = setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -561,7 +949,7 @@ describe('Fault Operations Feature Module', () => {
     it('should sync updated fault after successful save', () => {
       const fault = createMockFault();
       const updatedFault = { ...fault, bib: '099' };
-      setupSaveDOM();
+      setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -582,58 +970,203 @@ describe('Fault Operations Feature Module', () => {
       expect(syncFault).toHaveBeenCalled();
       expect(feedbackSuccess).toHaveBeenCalled();
     });
+
+    it('should do nothing if editingFaultId is null', () => {
+      // Don't open any modal first
+      handleSaveFaultEdit();
+      expect(store.updateFaultEntryWithHistory).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing if fault not found in store', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      // Return empty faultEntries so fault is not found
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      handleSaveFaultEdit();
+      expect(store.updateFaultEntryWithHistory).not.toHaveBeenCalled();
+    });
+
+    it('should pad bib to 3 digits', () => {
+      const { bibInput } = setupFullEditModalDOM();
+      const fault = createMockFault({ bib: '042' });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      bibInput.value = '5';
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(true);
+
+      handleSaveFaultEdit();
+
+      const updateCall =
+        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      expect(updateCall[1].bib).toBe('005');
+    });
+
+    it('should truncate notes to 500 chars', () => {
+      const { notesTextarea } = setupFullEditModalDOM();
+      const fault = createMockFault();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      notesTextarea.value = 'A'.repeat(600);
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(true);
+
+      handleSaveFaultEdit();
+
+      const updateCall =
+        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      expect(updateCall[1].notes!.length).toBe(500);
+    });
+
+    it('should include change description when fields change', () => {
+      const { bibInput, gateInput, typeSelect } = setupFullEditModalDOM();
+      const fault = createMockFault({ bib: '042', gateNumber: 5, faultType: 'MG' });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      bibInput.value = '099';
+      gateInput.value = '7';
+      typeSelect.value = 'STR';
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(true);
+
+      handleSaveFaultEdit();
+
+      const updateCall =
+        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      const changeDesc = updateCall[2] as string;
+      expect(changeDesc).toContain('bib:');
+      expect(changeDesc).toContain('gate:');
+      expect(changeDesc).toContain('type:');
+    });
+
+    it('should not include change description when no fields change', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(true);
+
+      handleSaveFaultEdit();
+
+      const updateCall =
+        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      // changeDescription should be undefined when nothing changed
+      expect(updateCall[2]).toBeUndefined();
+    });
+
+    it('should not sync when updateFaultEntryWithHistory returns false', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(false);
+
+      handleSaveFaultEdit();
+
+      expect(syncFault).not.toHaveBeenCalled();
+      expect(feedbackSuccess).not.toHaveBeenCalled();
+    });
+
+    it('should clear editingFaultId after save', () => {
+      setupFullEditModalDOM();
+      const fault = createMockFault();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.updateFaultEntryWithHistory).mockReturnValue(true);
+
+      handleSaveFaultEdit();
+
+      // Calling save again should do nothing (editingFaultId is null)
+      vi.clearAllMocks();
+      handleSaveFaultEdit();
+      expect(store.updateFaultEntryWithHistory).not.toHaveBeenCalled();
+    });
   });
 
+  // -------------------------------------------------------------------------
+  // handleRestoreFaultVersion
+  // -------------------------------------------------------------------------
   describe('handleRestoreFaultVersion', () => {
-    function setupRestoreDOM() {
-      const modal = document.createElement('div');
-      modal.id = 'fault-edit-modal';
-      container.appendChild(modal);
-
-      const bibInput = document.createElement('input');
-      bibInput.id = 'fault-edit-bib-input';
-      container.appendChild(bibInput);
-
-      const gateInput = document.createElement('input');
-      gateInput.id = 'fault-edit-gate-input';
-      container.appendChild(gateInput);
-
-      const typeSelect = document.createElement('select');
-      typeSelect.id = 'fault-edit-type-select';
-      for (const ft of ['MG', 'STR', 'BR']) {
-        const option = document.createElement('option');
-        option.value = ft;
-        option.textContent = ft;
-        typeSelect.appendChild(option);
-      }
-      container.appendChild(typeSelect);
-
-      const versionSelect = document.createElement('select');
-      versionSelect.id = 'fault-version-select';
-      container.appendChild(versionSelect);
-
-      const notesTextarea = document.createElement('textarea');
-      notesTextarea.id = 'fault-edit-notes';
-      container.appendChild(notesTextarea);
-
-      const notesCharCount = document.createElement('span');
-      notesCharCount.id = 'fault-edit-notes-char-count';
-      container.appendChild(notesCharCount);
-
-      const runSelector = document.createElement('div');
-      runSelector.id = 'fault-edit-run-selector';
-      container.appendChild(runSelector);
-
-      const gateRangeSpan = document.createElement('span');
-      gateRangeSpan.id = 'fault-edit-gate-range';
-      container.appendChild(gateRangeSpan);
-
-      return { versionSelect };
-    }
-
     it('should restore selected version', () => {
       const fault = createMockFault({ currentVersion: 2 });
-      const { versionSelect } = setupRestoreDOM();
+      const { versionSelect } = setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -643,8 +1176,7 @@ describe('Fault Operations Feature Module', () => {
       // Open modal to set editingFaultId
       openFaultEditModal(fault);
 
-      // After openFaultEditModal, version select is populated.
-      // Manually set it to version 1 (different from current version 2)
+      // Manually set version select to version 1 (different from current version 2)
       versionSelect.innerHTML = '';
       const opt = document.createElement('option');
       opt.value = '1';
@@ -658,7 +1190,7 @@ describe('Fault Operations Feature Module', () => {
 
     it('should not restore to current version', () => {
       const fault = createMockFault({ currentVersion: 2 });
-      const { versionSelect } = setupRestoreDOM();
+      const { versionSelect } = setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -681,8 +1213,7 @@ describe('Fault Operations Feature Module', () => {
 
     it('should show toast and feedback on successful restore', () => {
       const fault = createMockFault({ currentVersion: 2 });
-      const _restoredFault = { ...fault, currentVersion: 1 };
-      const { versionSelect } = setupRestoreDOM();
+      const { versionSelect } = setupFullEditModalDOM();
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -709,8 +1240,104 @@ describe('Fault Operations Feature Module', () => {
       expect(showToast).toHaveBeenCalledWith('versionRestored', 'success');
       expect(feedbackSuccess).toHaveBeenCalled();
     });
+
+    it('should do nothing when editingFaultId is null', () => {
+      handleRestoreFaultVersion();
+      expect(store.restoreFaultVersion).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing when version select value is 0', () => {
+      const { versionSelect } = setupFullEditModalDOM();
+      const fault = createMockFault({ currentVersion: 2 });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      versionSelect.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '0';
+      versionSelect.appendChild(opt);
+      versionSelect.value = '0';
+
+      handleRestoreFaultVersion();
+      expect(store.restoreFaultVersion).not.toHaveBeenCalled();
+    });
+
+    it('should not restore when restoreFaultVersion returns false', () => {
+      const { versionSelect } = setupFullEditModalDOM();
+      const fault = createMockFault({ currentVersion: 2 });
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      versionSelect.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '1';
+      versionSelect.appendChild(opt);
+      versionSelect.value = '1';
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+      vi.mocked(store.restoreFaultVersion).mockReturnValue(false);
+
+      handleRestoreFaultVersion();
+
+      expect(showToast).not.toHaveBeenCalled();
+      expect(feedbackSuccess).not.toHaveBeenCalled();
+      expect(closeModal).not.toHaveBeenCalled();
+    });
+
+    it('should sync restored fault to cloud on success', () => {
+      const { versionSelect } = setupFullEditModalDOM();
+      const fault = createMockFault({ currentVersion: 2 });
+      const restoredFault = { ...fault, currentVersion: 1 };
+
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openFaultEditModal(fault);
+      vi.clearAllMocks();
+
+      versionSelect.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '1';
+      versionSelect.appendChild(opt);
+      versionSelect.value = '1';
+
+      vi.mocked(store.restoreFaultVersion).mockReturnValue(true);
+      vi.mocked(store.getState)
+        .mockReturnValueOnce({
+          currentLang: 'en',
+          faultEntries: [fault],
+        } as unknown as ReturnType<typeof store.getState>)
+        .mockReturnValueOnce({
+          currentLang: 'en',
+          faultEntries: [restoredFault],
+        } as unknown as ReturnType<typeof store.getState>);
+
+      handleRestoreFaultVersion();
+
+      expect(syncFault).toHaveBeenCalledWith(restoredFault);
+    });
   });
 
+  // -------------------------------------------------------------------------
+  // openMarkDeletionModal
+  // -------------------------------------------------------------------------
   describe('openMarkDeletionModal', () => {
     it('should open mark deletion modal', () => {
       const modal = document.createElement('div');
@@ -751,8 +1378,41 @@ describe('Fault Operations Feature Module', () => {
       const fault = createMockFault();
       expect(() => openMarkDeletionModal(fault)).not.toThrow();
     });
+
+    it('should render bib padded to 3 digits', () => {
+      const modal = document.createElement('div');
+      modal.id = 'mark-deletion-modal';
+      container.appendChild(modal);
+
+      const detailsEl = document.createElement('div');
+      detailsEl.id = 'mark-deletion-details';
+      container.appendChild(detailsEl);
+
+      const fault = createMockFault({ bib: '7' });
+      openMarkDeletionModal(fault);
+
+      expect(detailsEl.innerHTML).toContain('007');
+    });
+
+    it('should render run 2 label for run 2 faults', () => {
+      const modal = document.createElement('div');
+      modal.id = 'mark-deletion-modal';
+      container.appendChild(modal);
+
+      const detailsEl = document.createElement('div');
+      detailsEl.id = 'mark-deletion-details';
+      container.appendChild(detailsEl);
+
+      const fault = createMockFault({ run: 2 });
+      openMarkDeletionModal(fault);
+
+      expect(detailsEl.innerHTML).toContain('run2');
+    });
   });
 
+  // -------------------------------------------------------------------------
+  // handleConfirmMarkDeletion
+  // -------------------------------------------------------------------------
   describe('handleConfirmMarkDeletion', () => {
     it('should mark fault for deletion and close modal', () => {
       const fault = createMockFault();
@@ -823,31 +1483,83 @@ describe('Fault Operations Feature Module', () => {
 
       expect(syncFault).toHaveBeenCalled();
     });
-  });
 
-  describe('initFaultEditModal', () => {
-    it('should not throw when no elements exist', () => {
-      expect(() => initFaultEditModal()).not.toThrow();
+    it('should do nothing when editingFaultId is null', () => {
+      // First, ensure editingFaultId is null by clearing any state from prior tests.
+      // handleSaveFaultEdit with no editingFaultId is a no-op, but
+      // handleConfirmMarkDeletion resets editingFaultId to null after execution.
+      // We need a clean slate: open a deletion modal then confirm to clear it.
+      const tempModal = document.createElement('div');
+      tempModal.id = 'mark-deletion-modal';
+      container.appendChild(tempModal);
+      const tempDetails = document.createElement('div');
+      tempDetails.id = 'mark-deletion-details';
+      container.appendChild(tempDetails);
+
+      const tempFault = createMockFault({ id: 'temp-cleanup' });
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [tempFault],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openMarkDeletionModal(tempFault);
+      handleConfirmMarkDeletion(); // This sets editingFaultId to null
+      vi.clearAllMocks();
+
+      // Now the actual test: editingFaultId is null
+      handleConfirmMarkDeletion();
+      expect(store.markFaultForDeletion).not.toHaveBeenCalled();
     });
 
-    it('should set up event listeners on existing elements', () => {
-      const saveFaultEditBtn = document.createElement('button');
-      saveFaultEditBtn.id = 'save-fault-edit-btn';
-      container.appendChild(saveFaultEditBtn);
+    it('should not show toast when markFaultForDeletion returns false', () => {
+      const modal = document.createElement('div');
+      modal.id = 'mark-deletion-modal';
+      container.appendChild(modal);
 
-      const restoreVersionBtn = document.createElement('button');
-      restoreVersionBtn.id = 'restore-version-btn';
-      container.appendChild(restoreVersionBtn);
+      const detailsEl = document.createElement('div');
+      detailsEl.id = 'mark-deletion-details';
+      container.appendChild(detailsEl);
 
-      const faultEditBibInput = document.createElement('input');
-      faultEditBibInput.id = 'fault-edit-bib-input';
-      container.appendChild(faultEditBibInput);
+      const fault = createMockFault();
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [fault],
+      } as unknown as ReturnType<typeof store.getState>);
 
-      const confirmMarkDeletionBtn = document.createElement('button');
-      confirmMarkDeletionBtn.id = 'confirm-mark-deletion-btn';
-      container.appendChild(confirmMarkDeletionBtn);
+      openMarkDeletionModal(fault);
+      vi.clearAllMocks();
 
-      expect(() => initFaultEditModal()).not.toThrow();
+      vi.mocked(store.markFaultForDeletion).mockReturnValue(false);
+
+      handleConfirmMarkDeletion();
+
+      expect(showToast).not.toHaveBeenCalled();
+      expect(feedbackTap).not.toHaveBeenCalled();
+      expect(syncFault).not.toHaveBeenCalled();
+    });
+
+    it('should clear editingFaultId after confirm', () => {
+      const modal = document.createElement('div');
+      modal.id = 'mark-deletion-modal';
+      container.appendChild(modal);
+
+      const detailsEl = document.createElement('div');
+      detailsEl.id = 'mark-deletion-details';
+      container.appendChild(detailsEl);
+
+      const fault = createMockFault();
+      vi.mocked(store.getState).mockReturnValue({
+        currentLang: 'en',
+        faultEntries: [{ ...fault, markedForDeletion: true }],
+      } as unknown as ReturnType<typeof store.getState>);
+
+      openMarkDeletionModal(fault);
+      handleConfirmMarkDeletion();
+
+      // Second call should do nothing
+      vi.clearAllMocks();
+      handleConfirmMarkDeletion();
+      expect(store.markFaultForDeletion).not.toHaveBeenCalled();
     });
   });
 });

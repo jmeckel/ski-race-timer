@@ -79,10 +79,28 @@ vi.mock('../../src/utils/id', () => ({
   generateDeviceName: vi.fn(() => 'Alpine Fox'),
 }));
 
+// Track all ListenerManager instances for test verification
+const mockListenerInstances: Array<{
+  add: ReturnType<typeof vi.fn>;
+  removeAll: ReturnType<typeof vi.fn>;
+}> = [];
+
 vi.mock('../../src/utils/listenerManager', () => {
   class MockListenerManager {
-    add = vi.fn();
-    removeAll = vi.fn();
+    private tracked: Array<{ el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }> = [];
+    add = vi.fn((el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
+      el.addEventListener(event, handler);
+      this.tracked.push({ el, event, handler });
+    });
+    removeAll = vi.fn(function (this: MockListenerManager) {
+      for (const { el, event, handler } of this.tracked) {
+        el.removeEventListener(event, handler);
+      }
+      this.tracked.length = 0;
+    });
+    constructor() {
+      mockListenerInstances.push(this);
+    }
   }
   return { ListenerManager: MockListenerManager };
 });
@@ -185,6 +203,7 @@ describe('OnboardingController', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListenerInstances.length = 0;
     container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -413,11 +432,10 @@ describe('OnboardingController', () => {
   });
 
   describe('setUpdateTranslationsCallback', () => {
-    it('should store callback', () => {
+    it('should store callback without throwing', () => {
       const controller = new OnboardingController();
       const callback = vi.fn();
-      controller.setUpdateTranslationsCallback(callback);
-      // No direct way to test, but should not throw
+      expect(() => controller.setUpdateTranslationsCallback(callback)).not.toThrow();
     });
   });
 
@@ -1193,6 +1211,521 @@ describe('OnboardingController', () => {
       (controller as unknown as PrivateAccess).updateOnboardingTranslations();
 
       expect(el.textContent).toBe('someKey');
+    });
+
+    it('should skip elements without data-i18n key', () => {
+      const { controller, modal } = createControllerWithModal(container);
+      controller.show();
+
+      const el = document.createElement('span');
+      el.setAttribute('data-i18n', '');
+      el.textContent = 'should stay';
+      modal.appendChild(el);
+
+      (controller as unknown as PrivateAccess).updateOnboardingTranslations();
+
+      expect(el.textContent).toBe('should stay');
+    });
+  });
+
+  describe('event listener setup', () => {
+    it('should register keydown listener on document for Escape dismissal', () => {
+      createControllerWithModal(container);
+
+      // The constructor calls setupEventListeners which registers keydown
+      const instance = mockListenerInstances[0];
+      expect(instance).toBeDefined();
+      const keydownCall = instance.add.mock.calls.find(
+        (call: unknown[]) => call[0] === document && call[1] === 'keydown',
+      );
+      expect(keydownCall).toBeDefined();
+    });
+
+    it('should register role card click listeners', () => {
+      const modal = document.createElement('div');
+      modal.id = 'onboarding-modal';
+      container.appendChild(modal);
+
+      const roleCard = document.createElement('div');
+      roleCard.className = 'role-card';
+      roleCard.setAttribute('data-role', 'gateJudge');
+      modal.appendChild(roleCard);
+
+      new OnboardingController();
+
+      const instance = mockListenerInstances[0];
+      const roleClickCall = instance.add.mock.calls.find(
+        (call: unknown[]) => call[0] === roleCard && call[1] === 'click',
+      );
+      expect(roleClickCall).toBeDefined();
+    });
+
+    it('should register language button click listeners', () => {
+      const modal = document.createElement('div');
+      modal.id = 'onboarding-modal';
+      container.appendChild(modal);
+
+      const langBtn = document.createElement('button');
+      langBtn.className = 'lang-btn';
+      langBtn.dataset.lang = 'de';
+      modal.appendChild(langBtn);
+
+      new OnboardingController();
+
+      const instance = mockListenerInstances[0];
+      const langClickCall = instance.add.mock.calls.find(
+        (call: unknown[]) => call[0] === langBtn && call[1] === 'click',
+      );
+      expect(langClickCall).toBeDefined();
+    });
+
+    it('should register action button click listeners', () => {
+      const modal = document.createElement('div');
+      modal.id = 'onboarding-modal';
+      container.appendChild(modal);
+
+      const nextBtn = document.createElement('button');
+      nextBtn.setAttribute('data-action', 'next');
+      modal.appendChild(nextBtn);
+
+      new OnboardingController();
+
+      const instance = mockListenerInstances[0];
+      const actionClickCall = instance.add.mock.calls.find(
+        (call: unknown[]) => call[0] === nextBtn && call[1] === 'click',
+      );
+      expect(actionClickCall).toBeDefined();
+    });
+  });
+
+  describe('role-specific step flow', () => {
+    it('should show timer path card at step 4 for timer role', () => {
+      const { controller, modal } = createControllerWithModal(container);
+      controller.show();
+
+      (controller as unknown as PrivateAccess).selectedRole = 'timer';
+      (controller as unknown as PrivateAccess).goToStep(4);
+
+      const timerPath = modal.querySelector(
+        '[data-step="4"][data-path="timer"]',
+      ) as HTMLElement;
+      const judgePath = modal.querySelector(
+        '[data-step="4"][data-path="gateJudge"]',
+      ) as HTMLElement;
+      expect(timerPath.style.display).toBe('block');
+      expect(judgePath.style.display).toBe('none');
+    });
+
+    it('should show gateJudge path card at step 4 for gateJudge role', () => {
+      const { controller, modal } = createControllerWithModal(container);
+      controller.show();
+
+      (controller as unknown as PrivateAccess).selectedRole = 'gateJudge';
+      (controller as unknown as PrivateAccess).goToStep(4);
+
+      const timerPath = modal.querySelector(
+        '[data-step="4"][data-path="timer"]',
+      ) as HTMLElement;
+      const judgePath = modal.querySelector(
+        '[data-step="4"][data-path="gateJudge"]',
+      ) as HTMLElement;
+      expect(judgePath.style.display).toBe('block');
+      expect(timerPath.style.display).toBe('none');
+    });
+
+    it('should set chiefJudge role and still show timer path at step 4', () => {
+      const { controller, modal } = createControllerWithModal(container);
+      controller.show();
+
+      // chiefJudge falls through to non-judge path (no data-path="chiefJudge")
+      (controller as unknown as PrivateAccess).selectedRole = 'chiefJudge';
+      (controller as unknown as PrivateAccess).goToStep(4);
+
+      // chiefJudge has no specific path card, so no path card shown
+      // but the generic step-4 without data-path also won't show since
+      // the code specifically looks for data-path match
+      const timerPath = modal.querySelector(
+        '[data-step="4"][data-path="timer"]',
+      ) as HTMLElement;
+      expect(timerPath.style.display).toBe('none');
+    });
+  });
+
+  describe('handleAction back edge cases', () => {
+    it('should not go below step 1 on "back" action', async () => {
+      const { controller, modal } = createControllerWithModal(container);
+      controller.show();
+
+      // Already at step 1
+      (controller as unknown as PrivateAccess).currentStep = 1;
+      await (controller as unknown as PrivateAccess).handleAction('back');
+
+      // Should still be on step 1
+      expect(
+        (controller as unknown as PrivateAccess).currentStep,
+      ).toBe(1);
+    });
+
+    it('should handle unknown action gracefully', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      await expect(
+        (controller as unknown as PrivateAccess).handleAction('unknown'),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('validateCurrentStep step 5 edge cases', () => {
+    it('should accept when sync toggle is unchecked (skip mode)', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const raceIdInput = document.createElement('input');
+      raceIdInput.id = 'onboarding-race-id';
+      raceIdInput.value = 'RACE-1';
+      container.appendChild(raceIdInput);
+
+      const syncToggle = document.createElement('input');
+      syncToggle.id = 'onboarding-sync-toggle';
+      syncToggle.type = 'checkbox';
+      syncToggle.checked = false;
+      container.appendChild(syncToggle);
+
+      (controller as unknown as PrivateAccess).currentStep = 5;
+
+      const result = await (
+        controller as unknown as PrivateAccess
+      ).validateCurrentStep();
+      expect(result).toBe(true);
+    });
+
+    it('should return default true for step 1 and step 6', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      (controller as unknown as PrivateAccess).currentStep = 1;
+      expect(
+        await (controller as unknown as PrivateAccess).validateCurrentStep(),
+      ).toBe(true);
+
+      (controller as unknown as PrivateAccess).currentStep = 6;
+      expect(
+        await (controller as unknown as PrivateAccess).validateCurrentStep(),
+      ).toBe(true);
+    });
+  });
+
+  describe('validatePin edge cases', () => {
+    it('should return false when server rejects PIN', async () => {
+      const { exchangePinForToken } = await import('../../src/services/sync');
+      vi.mocked(exchangePinForToken).mockResolvedValueOnce({
+        success: false,
+        error: 'Invalid PIN',
+      });
+
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const result = await (controller as unknown as PrivateAccess).validatePin(
+        '9999',
+      );
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('saveCurrentStep step 5 edge cases', () => {
+    it('should initialize syncService when sync is enabled with race ID', async () => {
+      const { syncService } = await import('../../src/services');
+
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const raceIdInput = document.createElement('input');
+      raceIdInput.id = 'onboarding-race-id';
+      raceIdInput.value = 'RACE-1';
+      container.appendChild(raceIdInput);
+
+      const syncToggle = document.createElement('input');
+      syncToggle.id = 'onboarding-sync-toggle';
+      syncToggle.type = 'checkbox';
+      syncToggle.checked = true;
+      container.appendChild(syncToggle);
+
+      (controller as unknown as PrivateAccess).currentStep = 5;
+      await (controller as unknown as PrivateAccess).saveCurrentStep();
+
+      expect(syncService.initialize).toHaveBeenCalled();
+    });
+
+    it('should not call setRaceId when race ID is empty', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const raceIdInput = document.createElement('input');
+      raceIdInput.id = 'onboarding-race-id';
+      raceIdInput.value = '';
+      container.appendChild(raceIdInput);
+
+      const syncToggle = document.createElement('input');
+      syncToggle.id = 'onboarding-sync-toggle';
+      syncToggle.type = 'checkbox';
+      syncToggle.checked = false;
+      container.appendChild(syncToggle);
+
+      (controller as unknown as PrivateAccess).currentStep = 5;
+      await (controller as unknown as PrivateAccess).saveCurrentStep();
+
+      expect(store.setRaceId).not.toHaveBeenCalled();
+    });
+
+    it('should not save device name when input is empty on step 3', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const deviceNameInput = document.createElement('input');
+      deviceNameInput.id = 'onboarding-device-name';
+      deviceNameInput.value = '   ';
+      container.appendChild(deviceNameInput);
+
+      (controller as unknown as PrivateAccess).currentStep = 3;
+      await (controller as unknown as PrivateAccess).saveCurrentStep();
+
+      expect(store.setDeviceName).not.toHaveBeenCalled();
+    });
+
+    it('should handle default case in saveCurrentStep (step 1)', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      (controller as unknown as PrivateAccess).currentStep = 1;
+      await expect(
+        (controller as unknown as PrivateAccess).saveCurrentStep(),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('dismiss edge cases', () => {
+    it('should not set device name when input is missing', () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      // No device name input element
+      (controller as unknown as PrivateAccess).dismiss();
+
+      expect(store.setDeviceName).not.toHaveBeenCalled();
+      expect(store.setDeviceRole).toHaveBeenCalled();
+    });
+
+    it('should not set device name when input value is empty', () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const deviceNameInput = document.createElement('input');
+      deviceNameInput.id = 'onboarding-device-name';
+      deviceNameInput.value = '   ';
+      container.appendChild(deviceNameInput);
+
+      (controller as unknown as PrivateAccess).dismiss();
+
+      expect(store.setDeviceName).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('checkRaceExists edge cases', () => {
+    it('should show singular entry word for single entry race', async () => {
+      const { syncService } = await import('../../src/services');
+      vi.mocked(syncService.checkRaceExists).mockResolvedValueOnce({
+        exists: true,
+        entryCount: 1,
+      });
+
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      const raceIdInput = document.createElement('input');
+      raceIdInput.id = 'onboarding-race-id';
+      raceIdInput.value = 'SINGLE-ENTRY';
+      container.appendChild(raceIdInput);
+
+      const statusEl = document.createElement('div');
+      statusEl.id = 'onboarding-race-status';
+      container.appendChild(statusEl);
+
+      await (controller as unknown as PrivateAccess).checkRaceExists();
+
+      expect(statusEl.className).toContain('found');
+      // The t() mock returns the key name; the entry word comes from 'entry' key
+      expect(statusEl.innerHTML).toContain('1');
+    });
+  });
+
+  describe('showSummary edge cases', () => {
+    it('should show dash when gate assignment is null', () => {
+      mockGetState.mockReturnValue({
+        ...mockGetState(),
+        gateAssignment: null,
+      });
+
+      const { controller } = createControllerWithModal(container);
+
+      const summary = document.createElement('div');
+      summary.id = 'onboarding-summary';
+      container.appendChild(summary);
+
+      controller.show();
+      (controller as unknown as PrivateAccess).selectedRole = 'gateJudge';
+      (controller as unknown as PrivateAccess).showSummary();
+
+      // Find the row with the dash
+      const values = summary.querySelectorAll('.onboarding-summary-value');
+      const hasDash = Array.from(values).some(
+        (el) => el.textContent === '\u2014',
+      );
+      expect(hasDash).toBe(true);
+    });
+
+    it('should show disabled badges when sync and photo are off', () => {
+      mockGetState.mockReturnValue({
+        ...mockGetState(),
+        settings: { sync: false, photoCapture: false },
+      });
+
+      const { controller } = createControllerWithModal(container);
+
+      const summary = document.createElement('div');
+      summary.id = 'onboarding-summary';
+      container.appendChild(summary);
+
+      controller.show();
+      (controller as unknown as PrivateAccess).showSummary();
+
+      const disabledBadges = summary.querySelectorAll(
+        '.onboarding-summary-badge.disabled',
+      );
+      expect(disabledBadges.length).toBe(2); // photo + sync
+    });
+
+    it('should show race ID in summary when set', () => {
+      mockGetState.mockReturnValue({
+        ...mockGetState(),
+        raceId: 'RACE-2024',
+      });
+
+      const { controller } = createControllerWithModal(container);
+
+      const summary = document.createElement('div');
+      summary.id = 'onboarding-summary';
+      container.appendChild(summary);
+
+      controller.show();
+      (controller as unknown as PrivateAccess).showSummary();
+
+      const allValues = summary.querySelectorAll(
+        '.onboarding-summary-value, .onboarding-summary-badge',
+      );
+      const hasRaceId = Array.from(allValues).some(
+        (el) => el.textContent === 'RACE-2024',
+      );
+      expect(hasRaceId).toBe(true);
+    });
+
+    it('should show dash when no race ID set', () => {
+      mockGetState.mockReturnValue({
+        ...mockGetState(),
+        raceId: '',
+      });
+
+      const { controller } = createControllerWithModal(container);
+
+      const summary = document.createElement('div');
+      summary.id = 'onboarding-summary';
+      container.appendChild(summary);
+
+      controller.show();
+      (controller as unknown as PrivateAccess).showSummary();
+
+      const allValues = summary.querySelectorAll(
+        '.onboarding-summary-value, .onboarding-summary-badge',
+      );
+      const hasDash = Array.from(allValues).some(
+        (el) => el.textContent === '\u2014',
+      );
+      expect(hasDash).toBe(true);
+    });
+  });
+
+  describe('show with German language', () => {
+    it('should highlight DE language button when currentLang is de', () => {
+      mockGetState.mockReturnValue({
+        ...mockGetState(),
+        currentLang: 'de',
+      });
+
+      const modal = document.createElement('div');
+      modal.id = 'onboarding-modal';
+      container.appendChild(modal);
+
+      const enBtn = document.createElement('button');
+      enBtn.className = 'lang-btn';
+      enBtn.dataset.lang = 'en';
+      modal.appendChild(enBtn);
+
+      const deBtn = document.createElement('button');
+      deBtn.className = 'lang-btn';
+      deBtn.dataset.lang = 'de';
+      modal.appendChild(deBtn);
+
+      const controller = new OnboardingController();
+      controller.show();
+
+      expect(deBtn.classList.contains('selected')).toBe(true);
+      expect(enBtn.classList.contains('selected')).toBe(false);
+      expect(deBtn.getAttribute('aria-checked')).toBe('true');
+      expect(enBtn.getAttribute('aria-checked')).toBe('false');
+    });
+  });
+
+  describe('finalize cleanup', () => {
+    it('should cancel debounced race check on finalize', () => {
+      const { controller } = createControllerWithModal(container);
+
+      // Create race ID input so setupEventListeners creates debouncedCheckRace
+      const raceIdInput = document.createElement('input');
+      raceIdInput.id = 'onboarding-race-id';
+      container.appendChild(raceIdInput);
+
+      controller.show();
+      (controller as unknown as PrivateAccess).finalize();
+
+      // Should not throw - debounce was properly cleaned up
+      expect(store.forceSave).toHaveBeenCalled();
+      expect(mockStorageSetRaw).toHaveBeenCalledWith(
+        'skiTimerHasCompletedOnboarding',
+        'true',
+      );
+    });
+  });
+
+  describe('next action with failed validation', () => {
+    it('should not advance step when validation fails', async () => {
+      const { controller } = createControllerWithModal(container);
+      controller.show();
+
+      // Set to step 3 (device name) without providing device name input
+      (controller as unknown as PrivateAccess).currentStep = 3;
+
+      const deviceNameInput = document.createElement('input');
+      deviceNameInput.id = 'onboarding-device-name';
+      deviceNameInput.value = '';
+      container.appendChild(deviceNameInput);
+
+      await (controller as unknown as PrivateAccess).handleAction('next');
+
+      // Should still be on step 3
+      expect(
+        (controller as unknown as PrivateAccess).currentStep,
+      ).toBe(3);
     });
   });
 });

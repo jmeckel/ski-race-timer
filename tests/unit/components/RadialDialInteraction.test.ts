@@ -1,7 +1,8 @@
 /**
  * Unit Tests for RadialDialInteraction Component
  * Tests: constructor, event binding, drag start/move/end, exclusion zones,
- * synthetic mouse suppression, number tap detection, momentum, destroy
+ * synthetic mouse suppression, number tap detection, momentum, destroy,
+ * touch events, multi-touch, preventDefault, drag state machine, edge cases
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,9 +11,13 @@ import {
   type RadialDialInteractionCallbacks,
 } from '../../../src/components/RadialDialInteraction';
 
-// Mock ListenerManager so events still get registered on real DOM elements
+// Mock ListenerManager — tracks add/removeAll calls while also registering real DOM listeners
 vi.mock('../../../src/utils/listenerManager', () => {
   class MockListenerManager {
+    private tracked: Array<
+      [EventTarget, string, EventListener, boolean | AddEventListenerOptions | undefined]
+    > = [];
+
     add = vi.fn(
       (
         target: EventTarget,
@@ -21,9 +26,16 @@ vi.mock('../../../src/utils/listenerManager', () => {
         options?: boolean | AddEventListenerOptions,
       ) => {
         target.addEventListener(event, handler, options);
+        this.tracked.push([target, event, handler, options]);
       },
     );
-    removeAll = vi.fn();
+
+    removeAll = vi.fn(() => {
+      for (const [target, event, handler, options] of this.tracked) {
+        target.removeEventListener(event, handler, options);
+      }
+      this.tracked = [];
+    });
   }
   return { ListenerManager: MockListenerManager };
 });
@@ -117,6 +129,25 @@ function simulateTouchEnd(target: HTMLElement = document.body): void {
   target.dispatchEvent(new TouchEvent('touchend', { bubbles: true }));
 }
 
+/**
+ * Helper: calculate the (x, y) position for a number on the dial.
+ * Numbers are arranged at indices 0-9 mapping to digits 1,2,...,9,0.
+ * Each number is at angle = (index * 36 - 90) degrees from center.
+ * Uses a radius of 170px from the center of a 460px container.
+ */
+function numberPosition(
+  digitIndex: number,
+  radius = 170,
+  center = 230,
+): { x: number; y: number } {
+  const angleDeg = (digitIndex * 36 - 90 + 360) % 360;
+  const angleRad = (angleDeg * Math.PI) / 180;
+  return {
+    x: center + radius * Math.cos(angleRad),
+    y: center + radius * Math.sin(angleRad),
+  };
+}
+
 describe('RadialDialInteraction', () => {
   let container: HTMLElement;
   let callbacks: RadialDialInteractionCallbacks;
@@ -132,185 +163,391 @@ describe('RadialDialInteraction', () => {
     interaction?.destroy();
     container.remove();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   // -------------------------------------------------------
-  // 1. Constructor
+  // 1. Constructor & Setup
   // -------------------------------------------------------
-  describe('constructor', () => {
-    it('should store container and callbacks', () => {
+  describe('constructor & setup', () => {
+    it('should create instance with container and callbacks', () => {
       interaction = new RadialDialInteraction(container, callbacks);
 
-      // Verify the instance was created without errors
       const state = interaction.getDragState();
       expect(state.isDragging).toBe(false);
       expect(state.hasDraggedSignificantly).toBe(false);
     });
-  });
 
-  // -------------------------------------------------------
-  // 2. bindEvents
-  // -------------------------------------------------------
-  describe('bindEvents', () => {
-    it('should register mouse and touch events so drag can start', () => {
+    it('should attach mouse and touch listeners via bindEvents', () => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
 
-      // Container center is (230, 230). Ring area is 0.27*460=124.2 to 0.5*460=230.
-      // Click at (350, 230) -> dist from center = 120, which is < 124.2, so it's in the center zone.
-      // Click at a point in the ring: e.g., (380, 230) -> dist = 150
+      // Verify listeners are active by triggering a valid ring click
       simulateMouseDown(container, 380, 230);
-
       expect(callbacks.onDragStart).toHaveBeenCalled();
     });
 
     it('should not respond to events before bindEvents is called', () => {
       interaction = new RadialDialInteraction(container, callbacks);
-      // Do NOT call bindEvents
 
       simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).not.toHaveBeenCalled();
+    });
 
+    it('should remove all listeners via destroy', () => {
+      interaction = new RadialDialInteraction(container, callbacks);
+      interaction.bindEvents();
+
+      interaction.destroy();
+
+      // After destroy with real removal, events should not trigger callbacks
+      simulateMouseDown(container, 380, 230);
       expect(callbacks.onDragStart).not.toHaveBeenCalled();
     });
   });
 
   // -------------------------------------------------------
-  // 3. handleDragStart - exclusion zones
+  // 2. Touch Events
   // -------------------------------------------------------
-  describe('handleDragStart - exclusion zones', () => {
+  describe('touch events', () => {
     beforeEach(() => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
     });
 
-    it('should reject clicks in the center exclusion zone (dist < 0.27 * width)', () => {
-      // Center is (230, 230), threshold is 0.27 * 460 = 124.2
-      // Click at (230, 230) -> dist = 0, well inside center
+    it('should start drag on touchstart in ring area', () => {
+      simulateTouchStart(container, 380, 230);
+
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+      expect(interaction.getDragState().isDragging).toBe(true);
+    });
+
+    it('should reject touchstart in center exclusion zone', () => {
+      // Center is (230, 230), exclusion zone < 0.27 * 460 = 124.2
+      simulateTouchStart(container, 230, 230);
+
+      expect(callbacks.onDragStart).not.toHaveBeenCalled();
+      expect(interaction.getDragState().isDragging).toBe(false);
+    });
+
+    it('should handle touchmove updating drag with angle delta', () => {
+      simulateTouchStart(container, 380, 230);
+      // Move > 10px to exceed threshold
+      simulateTouchMove(380, 260, container);
+
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+      expect(interaction.getDragState().hasDraggedSignificantly).toBe(true);
+    });
+
+    it('should fire onNumberTap on touchend with minimal movement', () => {
+      // Tap at number 1 position (index 0, angle 270 degrees -> top of dial)
+      const pos = numberPosition(0);
+      simulateTouchStart(container, pos.x, pos.y);
+      simulateTouchEnd(container);
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(1);
+      expect(callbacks.onDragEndAsTap).toHaveBeenCalled();
+    });
+
+    it('should fire onDragEndWithMomentum on touchend after significant drag', () => {
+      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(2.0);
+
+      simulateTouchStart(container, 380, 230);
+      simulateTouchMove(380, 260, container);
+      simulateTouchEnd(container);
+
+      expect(callbacks.onDragStart).toHaveBeenCalled();
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+      expect(callbacks.onDragEndWithMomentum).toHaveBeenCalled();
+    });
+
+    it('should set lastTouchTime to suppress subsequent synthetic mouse events', () => {
+      simulateTouchStart(container, 380, 230);
+      simulateTouchEnd(container);
+
+      // Immediate mouse event should be suppressed
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1); // only touch
+    });
+  });
+
+  // -------------------------------------------------------
+  // 3. Mouse Events
+  // -------------------------------------------------------
+  describe('mouse events', () => {
+    beforeEach(() => {
+      interaction = new RadialDialInteraction(container, callbacks);
+      interaction.bindEvents();
+    });
+
+    it('should initiate drag on mousedown in ring area', () => {
+      simulateMouseDown(container, 380, 230);
+
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+      expect(interaction.getDragState().isDragging).toBe(true);
+    });
+
+    it('should call onDragMove during mousemove after significant movement', () => {
+      simulateMouseDown(container, 380, 230);
+      simulateMouseMove(395, 230); // > 10px horizontal
+
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+    });
+
+    it('should end drag on mouseup', () => {
+      simulateMouseDown(container, 380, 230);
+      simulateMouseUp();
+
+      expect(interaction.getDragState().isDragging).toBe(false);
+    });
+
+    it('should suppress mouse events within 500ms after touch (synthetic event guard)', () => {
+      vi.useFakeTimers();
+
+      simulateTouchStart(container, 380, 230);
+      simulateTouchEnd(container);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      // Synthetic mouse arrives within 500ms
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      // After 500ms, mouse events accepted again
+      vi.advanceTimersByTime(501);
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not suppress mouse events that arrive at exactly 500ms', () => {
+      vi.useFakeTimers();
+
+      simulateTouchStart(container, 380, 230);
+      simulateTouchEnd(container);
+
+      // At exactly 500ms: Date.now() - lastTouchTime = 500, which is NOT < 500
+      vi.advanceTimersByTime(500);
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // -------------------------------------------------------
+  // 4. Number Tap Detection
+  // -------------------------------------------------------
+  describe('number tap detection', () => {
+    beforeEach(() => {
+      interaction = new RadialDialInteraction(container, callbacks);
+      interaction.bindEvents();
+    });
+
+    it('should detect number 1 at top of dial (index 0, angle 270)', () => {
+      const pos = numberPosition(0);
+      simulateMouseDown(container, pos.x, pos.y);
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(1);
+    });
+
+    it('should detect number 5 at the right-bottom of dial (index 4, angle 54)', () => {
+      const pos = numberPosition(4);
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(5);
+    });
+
+    it('should detect number 6 (index 5, angle 90 - bottom)', () => {
+      const pos = numberPosition(5);
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(6);
+    });
+
+    it('should detect number 0 at left-bottom of dial (index 9, angle 234)', () => {
+      const pos = numberPosition(9);
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(0);
+    });
+
+    it('should detect number 3 at its correct angle position (index 2)', () => {
+      const pos = numberPosition(2);
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(3);
+    });
+
+    it('should detect number 8 (index 7, angle 162)', () => {
+      const pos = numberPosition(7);
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(8);
+    });
+
+    it('should adjust tap angle for current dial rotation', () => {
+      // Rotate dial by 36 degrees. Number 1 (normally at 270) requires tap at 270+36 = 306 physical.
+      (callbacks.getRotation as ReturnType<typeof vi.fn>).mockReturnValue(36);
+
+      // Physical angle 306: cos(306) = 0.5878, sin(306) = -0.8090
+      const angleRad = (306 * Math.PI) / 180;
+      const x = 230 + 170 * Math.cos(angleRad);
+      const y = 230 + 170 * Math.sin(angleRad);
+      simulateMouseDown(container, Math.round(x), Math.round(y));
+      simulateMouseUp();
+
+      // adjusted angle = 306 - 36 = 270, which matches number 1
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(1);
+    });
+
+    it('should detect a number near midpoint between two numbers (20deg tolerance)', () => {
+      // The 20-degree tolerance covers the full 36-degree spacing between numbers.
+      // Midpoint between num1@270 and num2@306 is 288. Closest is num2 at diff=18.
+      // Physical (283, 68) is near angle 288 from center.
+      simulateMouseDown(container, 283, 68);
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(2);
+    });
+
+    it('should use numbers positioned at radius = containerSize * 0.38', () => {
+      // The tap detection works within the ring (0.27w to 0.5w from center).
+      // Numbers are rendered at 0.38w radius. A tap at exactly that radius should work.
+      // radius = 0.38 * 460 = 174.8, tap at number 6 position (angle 90, bottom)
+      const radius = 0.38 * 460;
+      const x = 230 + radius * Math.cos(Math.PI / 2);
+      const y = 230 + radius * Math.sin(Math.PI / 2);
+      simulateMouseDown(container, Math.round(x), Math.round(y));
+      simulateMouseUp();
+
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(6);
+    });
+  });
+
+  // -------------------------------------------------------
+  // 5. Center Exclusion Zone
+  // -------------------------------------------------------
+  describe('center exclusion zone', () => {
+    beforeEach(() => {
+      interaction = new RadialDialInteraction(container, callbacks);
+      interaction.bindEvents();
+    });
+
+    it('should reject mouse click at dead center (dist = 0)', () => {
       simulateMouseDown(container, 230, 230);
       expect(callbacks.onDragStart).not.toHaveBeenCalled();
     });
 
-    it('should reject clicks at the edge of the center zone', () => {
-      // Click at (340, 230) -> dist from center = 110, still < 124.2
+    it('should reject mouse click at edge of center zone (dist < 0.27 * 460 = 124.2)', () => {
+      // Click at (340, 230) -> dist from center = 110
       simulateMouseDown(container, 340, 230);
       expect(callbacks.onDragStart).not.toHaveBeenCalled();
     });
 
-    it('should reject clicks outside the dial (dist > 0.5 * width)', () => {
-      // Threshold is 0.5 * 460 = 230. Click at (0, 230) -> dist from center = 230
-      // Exactly on boundary is > 0.5 * width? 230 > 230 is false, so try further out.
-      // Click at (0, 0) -> dist = sqrt(230^2 + 230^2) = ~325, well outside
+    it('should reject touch at dead center', () => {
+      simulateTouchStart(container, 230, 230);
+      expect(callbacks.onDragStart).not.toHaveBeenCalled();
+    });
+
+    it('should reject events outside the dial (dist > 0.5 * width)', () => {
+      // Click at (0, 0) -> dist = sqrt(230^2 + 230^2) = ~325
       simulateMouseDown(container, 0, 0);
       expect(callbacks.onDragStart).not.toHaveBeenCalled();
     });
 
-    it('should accept clicks in the valid ring area', () => {
-      // Click at (380, 230) -> dist from center = 150, between 124.2 and 230
-      simulateMouseDown(container, 380, 230);
+    it('should accept click just outside center zone (dist > 124.2)', () => {
+      // Click at (356, 230) -> dist from center = 126 > 124.2
+      simulateMouseDown(container, 356, 230);
       expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
-
-      const state = interaction.getDragState();
-      expect(state.isDragging).toBe(true);
     });
 
-    it('should accept clicks just inside the outer boundary', () => {
-      // dist needs to be <= 230. Center is (230,230).
-      // Click at (459, 230) -> dist = 229, just inside
+    it('should accept click just inside outer boundary', () => {
+      // Click at (459, 230) -> dist = 229 < 230
       simulateMouseDown(container, 459, 230);
       expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
     });
   });
 
   // -------------------------------------------------------
-  // 4. handleDragStart - synthetic mouse suppression
+  // 6. Drag State Machine
   // -------------------------------------------------------
-  describe('handleDragStart - synthetic mouse suppression', () => {
+  describe('drag state machine', () => {
     beforeEach(() => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
     });
 
-    it('should ignore mouse events within 500ms after a touch event', () => {
-      // Touch in the ring area
-      simulateTouchStart(container, 380, 230);
-      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+    it('should be in initial state (not dragging) before any interaction', () => {
+      const state = interaction.getDragState();
+      expect(state.isDragging).toBe(false);
+      expect(state.hasDraggedSignificantly).toBe(false);
+    });
 
-      // Complete the touch
-      simulateTouchEnd(container);
-
-      // Synthetic mouse follows immediately
+    it('should transition to isDragging after drag start', () => {
       simulateMouseDown(container, 380, 230);
-      // Should be suppressed
-      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+      const state = interaction.getDragState();
+      expect(state.isDragging).toBe(true);
+      expect(state.hasDraggedSignificantly).toBe(false);
     });
 
-    it('should accept mouse events after 500ms since last touch', async () => {
-      vi.useFakeTimers();
-
-      simulateTouchStart(container, 380, 230);
-      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
-      simulateTouchEnd(container);
-
-      // Advance past the 500ms suppression window
-      vi.advanceTimersByTime(501);
-
+    it('should transition to hasDraggedSignificantly after > 10px movement', () => {
       simulateMouseDown(container, 380, 230);
-      expect(callbacks.onDragStart).toHaveBeenCalledTimes(2);
+      simulateMouseMove(380, 260); // 30px vertical move
 
-      vi.useRealTimers();
-    });
-  });
-
-  // -------------------------------------------------------
-  // 5. handleDragMove - only processes when isDragging
-  // -------------------------------------------------------
-  describe('handleDragMove', () => {
-    beforeEach(() => {
-      interaction = new RadialDialInteraction(container, callbacks);
-      interaction.bindEvents();
+      const state = interaction.getDragState();
+      expect(state.isDragging).toBe(true);
+      expect(state.hasDraggedSignificantly).toBe(true);
     });
 
-    it('should not process move events when not dragging', () => {
-      simulateMouseMove(400, 300);
-      expect(callbacks.onDragMove).not.toHaveBeenCalled();
-    });
-
-    it('should not call onDragMove until movement exceeds 10px threshold', () => {
-      // Start drag in ring
+    it('should not transition to hasDraggedSignificantly with < 10px movement', () => {
       simulateMouseDown(container, 380, 230);
-      expect(callbacks.onDragStart).toHaveBeenCalled();
+      simulateMouseMove(385, 233); // ~6px move
 
-      // Move less than 10px
-      simulateMouseMove(385, 233);
-      expect(callbacks.onDragMove).not.toHaveBeenCalled();
-      expect(interaction.getDragState().hasDraggedSignificantly).toBe(false);
+      const state = interaction.getDragState();
+      expect(state.isDragging).toBe(true);
+      expect(state.hasDraggedSignificantly).toBe(false);
     });
 
-    it('should call onDragMove once movement exceeds 10px', () => {
+    it('should reset to initial state after drag end', () => {
       simulateMouseDown(container, 380, 230);
+      simulateMouseMove(380, 260);
+      simulateMouseUp();
 
-      // Move more than 10px
-      simulateMouseMove(395, 230);
-      expect(callbacks.onDragMove).toHaveBeenCalled();
+      const state = interaction.getDragState();
+      expect(state.isDragging).toBe(false);
+    });
+
+    it('should reset hasDraggedSignificantly between separate drags', () => {
+      // First drag with significant movement
+      simulateMouseDown(container, 380, 230);
+      simulateMouseMove(380, 260);
       expect(interaction.getDragState().hasDraggedSignificantly).toBe(true);
+      simulateMouseUp();
+
+      // Second drag without significant movement
+      simulateMouseDown(container, 380, 230);
+      expect(interaction.getDragState().hasDraggedSignificantly).toBe(false);
+      simulateMouseUp();
+
+      expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
     });
   });
 
   // -------------------------------------------------------
-  // 6. handleDragMove - angle delta and wrap-around
+  // 7. handleDragMove - angle calculation and wrap-around
   // -------------------------------------------------------
-  describe('handleDragMove - angle calculation and wrap-around', () => {
+  describe('handleDragMove - angle calculation', () => {
     beforeEach(() => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
     });
 
-    it('should pass angle delta to onDragMove callback', () => {
-      // Start drag at right side of ring (angle ~0 degrees)
+    it('should pass deltaAngle and deltaTime to onDragMove callback', () => {
       simulateMouseDown(container, 400, 230);
-
-      // Move slightly clockwise (downward from right) - enough to exceed 10px
-      simulateMouseMove(400, 250);
+      simulateMouseMove(400, 250); // > 10px to exceed threshold
 
       expect(callbacks.onDragMove).toHaveBeenCalled();
       const [deltaAngle, deltaTime] = (
@@ -322,36 +559,82 @@ describe('RadialDialInteraction', () => {
     });
 
     it('should handle wrap-around when angle crosses 180/-180 boundary', () => {
-      // Start near the left side (angle ~180) by clicking left of center
-      // Center is (230, 230). Click at (100, 231) -> angle ~ 179.66 degrees
-      // dist from center = 130, within ring (124.2 to 230)
+      // Start near the left side (angle ~180)
+      // Center is (230, 230). Click at (100, 231) -> dist = 130, in ring
       simulateMouseDown(container, 100, 231);
 
-      // Move to the other side of the 180 boundary
-      // Click at (100, 229) -> angle ~ -179.66 degrees
-      // Distance moved > 10px? Need bigger jump. Go to (100, 210) -> dist = 21px
+      // Move across the boundary: (100, 210) -> dist from start = 21px > 10px
       simulateMouseMove(100, 210);
 
       expect(callbacks.onDragMove).toHaveBeenCalled();
       const [deltaAngle] = (callbacks.onDragMove as ReturnType<typeof vi.fn>)
         .mock.calls[0];
-      // The delta should be a small negative angle (moving counterclockwise),
-      // not a large jump of ~360 degrees
+      // Should be a small angle, not a ~360 degree jump
       expect(Math.abs(deltaAngle)).toBeLessThan(180);
+    });
+
+    it('should calculate ~90 degree delta moving from right to bottom', () => {
+      // Start at right (angle 0): (400, 230) -> dist = 170
+      simulateMouseDown(container, 400, 230);
+      // Move to bottom (angle 90): (230, 400)
+      simulateMouseMove(230, 400);
+
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+      const [deltaAngle] = (callbacks.onDragMove as ReturnType<typeof vi.fn>)
+        .mock.calls[0];
+      expect(deltaAngle).toBeCloseTo(90, 0);
+    });
+
+    it('should calculate ~-90 degree delta moving from bottom to right', () => {
+      simulateMouseDown(container, 230, 400);
+      simulateMouseMove(400, 230);
+
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+      const [deltaAngle] = (callbacks.onDragMove as ReturnType<typeof vi.fn>)
+        .mock.calls[0];
+      expect(deltaAngle).toBeCloseTo(-90, 0);
+    });
+
+    it('should call preventDefault on the move event when movement is significant', () => {
+      simulateMouseDown(container, 380, 230);
+
+      // Create a mousemove event we can spy on
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 395,
+        clientY: 230,
+        bubbles: true,
+      });
+      const preventSpy = vi.spyOn(moveEvent, 'preventDefault');
+      window.dispatchEvent(moveEvent);
+
+      expect(preventSpy).toHaveBeenCalled();
+    });
+
+    it('should not call preventDefault when movement is below threshold', () => {
+      simulateMouseDown(container, 380, 230);
+
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 383,
+        clientY: 231,
+        bubbles: true,
+      });
+      const preventSpy = vi.spyOn(moveEvent, 'preventDefault');
+      window.dispatchEvent(moveEvent);
+
+      expect(preventSpy).not.toHaveBeenCalled();
     });
   });
 
   // -------------------------------------------------------
-  // 7. handleDragEnd - tap (not dragged significantly)
+  // 8. handleDragEnd - tap vs momentum vs common
   // -------------------------------------------------------
-  describe('handleDragEnd - tap behavior', () => {
+  describe('handleDragEnd', () => {
     beforeEach(() => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
     });
 
     it('should call onDragEndAsTap when drag was not significant', () => {
-      // Start drag in ring but do not move
       simulateMouseDown(container, 380, 230);
       simulateMouseUp();
 
@@ -360,42 +643,10 @@ describe('RadialDialInteraction', () => {
       expect(callbacks.onDragEndCommon).not.toHaveBeenCalled();
     });
 
-    it('should call detectNumberTap when tap detected', () => {
-      // Tap at the position of number 5 (angle = 90 degrees, i.e., bottom of dial)
-      // Number 5 is at index 4: angle = (4*36 - 90 + 360) % 360 = (144 - 90 + 360) % 360 = 54 degrees
-      // Actually: numbers[4] = 5 at angle (4*36-90+360)%360 = 54 deg
-      // 54 degrees from center means: x = 230 + 170*cos(54*pi/180), y = 230 + 170*sin(54*pi/180)
-      // cos(54) = 0.5878, sin(54) = 0.8090
-      // x = 230 + 170*0.5878 = 329.9, y = 230 + 170*0.8090 = 367.5
-      // dist from center = 170, within ring
-      simulateMouseDown(container, 330, 368);
-      simulateMouseUp();
-
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(5);
-      expect(callbacks.onDragEndAsTap).toHaveBeenCalled();
-    });
-
-    it('should not call onDragEndAsTap when not dragging', () => {
-      // mouseup without mousedown
-      simulateMouseUp();
-      expect(callbacks.onDragEndAsTap).not.toHaveBeenCalled();
-    });
-  });
-
-  // -------------------------------------------------------
-  // 8. handleDragEnd - momentum (significant drag, velocity > 0.5)
-  // -------------------------------------------------------
-  describe('handleDragEnd - momentum', () => {
-    beforeEach(() => {
-      interaction = new RadialDialInteraction(container, callbacks);
-      interaction.bindEvents();
-    });
-
     it('should call onDragEndWithMomentum when velocity > 0.5', () => {
       (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(1.5);
 
       simulateMouseDown(container, 380, 230);
-      // Move significantly (>10px)
       simulateMouseMove(380, 260);
       simulateMouseUp();
 
@@ -416,143 +667,51 @@ describe('RadialDialInteraction', () => {
       expect(callbacks.onDragEndAsTap).not.toHaveBeenCalled();
     });
 
-    it('should use onDragEndWithMomentum for negative velocity exceeding threshold', () => {
-      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(-0.8);
+    it('should use momentum for negative velocity exceeding threshold', () => {
+      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(
+        -0.8,
+      );
 
       simulateMouseDown(container, 380, 230);
       simulateMouseMove(380, 260);
       simulateMouseUp();
 
-      // Math.abs(-0.8) > 0.5, so momentum applies
+      // Math.abs(-0.8) > 0.5
       expect(callbacks.onDragEndWithMomentum).toHaveBeenCalledTimes(1);
     });
-  });
 
-  // -------------------------------------------------------
-  // 9. detectNumberTap - angle-based detection
-  // -------------------------------------------------------
-  describe('detectNumberTap', () => {
-    beforeEach(() => {
-      interaction = new RadialDialInteraction(container, callbacks);
-      interaction.bindEvents();
-    });
+    it('should call onDragEndCommon at exactly velocity = 0.5', () => {
+      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(0.5);
 
-    it('should detect number 1 (angle 306 degrees / -54 degrees)', () => {
-      // Number 1 is at index 0: angle = (0*36 - 90 + 360) % 360 = 270 degrees
-      // Wait: index 0 -> num 1, angle = (0*36-90+360)%360 = 270
-      // 270 degrees: x = cos(270*pi/180) = 0, y = sin(270*pi/180) = -1
-      // Position: (230 + 170*0, 230 + 170*(-1)) = (230, 60)
-      // dist from center = 170, in ring
-      simulateMouseDown(container, 230, 60);
+      simulateMouseDown(container, 380, 230);
+      simulateMouseMove(380, 260);
       simulateMouseUp();
 
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(1);
+      // 0.5 > 0.5 is false, so onDragEndCommon
+      expect(callbacks.onDragEndCommon).toHaveBeenCalledTimes(1);
+      expect(callbacks.onDragEndWithMomentum).not.toHaveBeenCalled();
     });
 
-    it('should detect number 0 (angle 270 degrees, bottom position)', () => {
-      // Number 0 is at index 9: angle = (9*36 - 90 + 360) % 360 = (324 - 90 + 360) % 360 = 234 % 360 = 234
-      // Wait, that's wrong. Let me recalculate:
-      // (9*36 - 90 + 360) % 360 = (324 - 90 + 360) % 360 = 594 % 360 = 234
-      // 234 degrees: cos(234) = -0.5878, sin(234) = -0.8090
-      // Position: (230 + 170*(-0.5878), 230 + 170*(-0.8090)) = (130, 93)
-      // dist = 170
-      simulateMouseDown(container, 130, 93);
+    it('should not fire any end callback when not dragging', () => {
       simulateMouseUp();
 
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(0);
+      expect(callbacks.onDragEndAsTap).not.toHaveBeenCalled();
+      expect(callbacks.onDragEndCommon).not.toHaveBeenCalled();
+      expect(callbacks.onDragEndWithMomentum).not.toHaveBeenCalled();
     });
 
-    it('should detect number 3 at its correct angle position', () => {
-      // Number 3 at index 2: angle = (2*36 - 90 + 360) % 360 = (72 - 90 + 360) % 360 = 342
-      // 342 degrees: cos(342) = 0.9511, sin(342) = -0.3090
-      // Position: (230 + 170*0.9511, 230 + 170*(-0.3090)) = (392, 177)
-      // dist = 170
-      simulateMouseDown(container, 392, 177);
+    it('should call detectNumberTap on tap and then onDragEndAsTap', () => {
+      const pos = numberPosition(4); // number 5
+      simulateMouseDown(container, Math.round(pos.x), Math.round(pos.y));
       simulateMouseUp();
 
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(3);
-    });
-
-    it('should not detect a number when tap angle exceeds 20 deg tolerance', () => {
-      // With 10 numbers at 36-degree spacing and 20-degree tolerance,
-      // most ring positions will match a number. To create a gap we rotate
-      // the dial so that the physical tap angle falls outside all number zones.
-      // If we rotate by 18 degrees, number positions shift by +18 in physical space.
-      // A tap at physical angle 288 -> adjusted = 288 - 18 = 270, matches num 1.
-      // Instead, pick a physical angle that lands exactly between two adjusted positions.
-      // With rotation=18: adjusted angles for num1=270+18=288 phys, num2=306+18=324 phys.
-      // Midpoint in physical space: 306. adjusted = 306-18 = 288.
-      // diff to num1@270 = 18, diff to num2@306 = 18, both < 20 -> still matches.
-      //
-      // The 20-degree tolerance covers up to 40 degrees of the 36-degree spacing,
-      // so there is no true gap. This test instead verifies that a number IS detected
-      // for a tap near the midpoint between two numbers, confirming the tolerance works.
-      // The midpoint between num1@270 and num2@306 is 288.
-      // At (283, 68): angle=288.13, diff to num2@306=17.87 < diff to num1@270=18.13
-      // So number 2 is the closest match.
-      simulateMouseDown(container, 283, 68);
-      simulateMouseUp();
-
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(2);
-    });
-
-    it('should adjust tap angle for current dial rotation', () => {
-      // Rotate the dial by 36 degrees. Number 1 (normally at 270) should now
-      // need a tap at angle 270+36 = 306 (physical) to match.
-      (callbacks.getRotation as ReturnType<typeof vi.fn>).mockReturnValue(36);
-
-      // Tap at physical angle 306: cos(306) = 0.5878, sin(306) = -0.8090
-      // Position: (230 + 170*0.5878, 230 + 170*(-0.8090)) = (330, 93)
-      simulateMouseDown(container, 330, 93);
-      simulateMouseUp();
-
-      // adjusted angle = 306 - 36 = 270, which matches number 1
-      expect(callbacks.onNumberTap).toHaveBeenCalledWith(1);
+      expect(callbacks.onNumberTap).toHaveBeenCalledWith(5);
+      expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
     });
   });
 
   // -------------------------------------------------------
-  // 10. getDragState
-  // -------------------------------------------------------
-  describe('getDragState', () => {
-    beforeEach(() => {
-      interaction = new RadialDialInteraction(container, callbacks);
-      interaction.bindEvents();
-    });
-
-    it('should return isDragging false initially', () => {
-      const state = interaction.getDragState();
-      expect(state.isDragging).toBe(false);
-      expect(state.hasDraggedSignificantly).toBe(false);
-    });
-
-    it('should return isDragging true after drag starts', () => {
-      simulateMouseDown(container, 380, 230);
-      const state = interaction.getDragState();
-      expect(state.isDragging).toBe(true);
-      expect(state.hasDraggedSignificantly).toBe(false);
-    });
-
-    it('should return hasDraggedSignificantly true after significant move', () => {
-      simulateMouseDown(container, 380, 230);
-      simulateMouseMove(380, 260); // 30px move
-
-      const state = interaction.getDragState();
-      expect(state.isDragging).toBe(true);
-      expect(state.hasDraggedSignificantly).toBe(true);
-    });
-
-    it('should return isDragging false after drag ends', () => {
-      simulateMouseDown(container, 380, 230);
-      simulateMouseUp();
-
-      const state = interaction.getDragState();
-      expect(state.isDragging).toBe(false);
-    });
-  });
-
-  // -------------------------------------------------------
-  // 11. destroy
+  // 9. Destroy
   // -------------------------------------------------------
   describe('destroy', () => {
     it('should be safe to call destroy twice (double-destroy guard)', () => {
@@ -560,111 +719,44 @@ describe('RadialDialInteraction', () => {
       interaction.bindEvents();
 
       interaction.destroy();
-      // Second call should not throw
       expect(() => interaction.destroy()).not.toThrow();
     });
 
-    it('should clean up via ListenerManager.removeAll', () => {
+    it('should stop responding to events after destroy', () => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
 
-      // Access the internal listeners mock to verify removeAll is called
-      // Since we mock ListenerManager, the instance's removeAll is tracked
       interaction.destroy();
 
-      // After destroy, new events should not trigger callbacks because
-      // the removeAll mock was called (even though our mock adds real listeners,
-      // the removeAll mock does NOT actually remove them due to being a vi.fn()).
-      // The key verification is that destroy() was callable without error.
-      // The real ListenerManager would remove all listeners.
-    });
-  });
+      // Events after destroy should be ignored
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).not.toHaveBeenCalled();
 
-  // -------------------------------------------------------
-  // 12. Touch events
-  // -------------------------------------------------------
-  describe('touch event handling', () => {
-    beforeEach(() => {
+      simulateTouchStart(container, 380, 230);
+      expect(callbacks.onDragStart).not.toHaveBeenCalled();
+    });
+
+    it('should stop responding to mousemove/mouseup on window after destroy', () => {
       interaction = new RadialDialInteraction(container, callbacks);
       interaction.bindEvents();
-    });
 
-    it('should start drag on touchstart in ring area', () => {
-      simulateTouchStart(container, 380, 230);
+      // Start a drag, then destroy mid-drag
+      simulateMouseDown(container, 380, 230);
       expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
-      expect(interaction.getDragState().isDragging).toBe(true);
-    });
 
-    it('should handle touch drag move', () => {
-      simulateTouchStart(container, 380, 230);
-      simulateTouchMove(380, 260, container);
+      interaction.destroy();
 
-      expect(callbacks.onDragMove).toHaveBeenCalled();
-    });
+      // These should not trigger callbacks
+      simulateMouseMove(380, 260);
+      expect(callbacks.onDragMove).not.toHaveBeenCalled();
 
-    it('should handle touch drag end as tap', () => {
-      simulateTouchStart(container, 380, 230);
-      simulateTouchEnd(container);
-
-      expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle full touch drag cycle with momentum', () => {
-      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(2.0);
-
-      simulateTouchStart(container, 380, 230);
-      simulateTouchMove(380, 260, container);
-      simulateTouchEnd(container);
-
-      expect(callbacks.onDragStart).toHaveBeenCalled();
-      expect(callbacks.onDragMove).toHaveBeenCalled();
-      expect(callbacks.onDragEndWithMomentum).toHaveBeenCalled();
+      simulateMouseUp();
+      expect(callbacks.onDragEndAsTap).not.toHaveBeenCalled();
     });
   });
 
   // -------------------------------------------------------
-  // 13. getAngle (tested indirectly through drag behavior)
-  // -------------------------------------------------------
-  describe('getAngle - indirect verification', () => {
-    beforeEach(() => {
-      interaction = new RadialDialInteraction(container, callbacks);
-      interaction.bindEvents();
-    });
-
-    it('should calculate correct angle for point to the right of center', () => {
-      // Point directly right of center (230, 230): (460, 230) -> angle should be 0 degrees
-      // dist from center = 230, which is equal to 0.5*460 = 230, so it would be rejected (> 0.5).
-      // Use (400, 230) -> dist = 170, in ring
-      simulateMouseDown(container, 400, 230);
-
-      // Move to directly below center: (230, 400) -> angle = 90 degrees
-      // dist from (400,230) = sqrt(170^2 + 170^2) = 240 > 10px threshold
-      simulateMouseMove(230, 400);
-
-      expect(callbacks.onDragMove).toHaveBeenCalled();
-      const [deltaAngle] = (callbacks.onDragMove as ReturnType<typeof vi.fn>)
-        .mock.calls[0];
-      // Moving from right (0 deg) to bottom (90 deg) should give ~90 degree delta
-      expect(deltaAngle).toBeCloseTo(90, 0);
-    });
-
-    it('should calculate correct angle for point above center', () => {
-      // Start at bottom (angle ~90): (230, 400) -> dist = 170
-      // But (230, 400) is at angle 90 from center
-      // Move to right (angle ~0): (400, 230) -> dist = 170
-      simulateMouseDown(container, 230, 400);
-      simulateMouseMove(400, 230);
-
-      expect(callbacks.onDragMove).toHaveBeenCalled();
-      const [deltaAngle] = (callbacks.onDragMove as ReturnType<typeof vi.fn>)
-        .mock.calls[0];
-      // Moving from bottom (90 deg) to right (0 deg) = -90 degree delta
-      expect(deltaAngle).toBeCloseTo(-90, 0);
-    });
-  });
-
-  // -------------------------------------------------------
-  // 14. Edge cases
+  // 10. Edge Cases
   // -------------------------------------------------------
   describe('edge cases', () => {
     beforeEach(() => {
@@ -672,28 +764,18 @@ describe('RadialDialInteraction', () => {
       interaction.bindEvents();
     });
 
-    it('should reset isDragging to false on drag end', () => {
-      simulateMouseDown(container, 380, 230);
-      expect(interaction.getDragState().isDragging).toBe(true);
-
-      simulateMouseUp();
-      expect(interaction.getDragState().isDragging).toBe(false);
-    });
-
     it('should handle multiple sequential drags correctly', () => {
-      // First drag
+      // First drag (tap)
       simulateMouseDown(container, 380, 230);
       simulateMouseUp();
       expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
 
-      // Second drag
+      // Second drag (significant movement)
       simulateMouseDown(container, 380, 230);
       simulateMouseMove(380, 260);
       simulateMouseUp();
 
-      // First was a tap, second was a drag
       expect(callbacks.onDragEndAsTap).toHaveBeenCalledTimes(1);
-      // Second ended as drag (velocity check)
       expect(
         (callbacks.onDragEndCommon as ReturnType<typeof vi.fn>).mock.calls
           .length +
@@ -702,11 +784,115 @@ describe('RadialDialInteraction', () => {
       ).toBe(1);
     });
 
-    it('should ignore drag end when not currently dragging', () => {
-      simulateMouseUp();
-      expect(callbacks.onDragEndAsTap).not.toHaveBeenCalled();
-      expect(callbacks.onDragEndCommon).not.toHaveBeenCalled();
-      expect(callbacks.onDragEndWithMomentum).not.toHaveBeenCalled();
+    it('should handle rapid touch-then-mouse sequence (synthetic event suppression)', () => {
+      vi.useFakeTimers();
+
+      // Quick touch
+      simulateTouchStart(container, 380, 230);
+      simulateTouchEnd(container);
+
+      // Synthetic mouse at 100ms - suppressed
+      vi.advanceTimersByTime(100);
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      // Second synthetic at 400ms - still suppressed
+      vi.advanceTimersByTime(300);
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      // After 500ms total - accepted
+      vi.advanceTimersByTime(101);
+      simulateMouseDown(container, 380, 230);
+      expect(callbacks.onDragStart).toHaveBeenCalledTimes(2);
+    });
+
+    it('should ignore mousemove when not dragging', () => {
+      simulateMouseMove(400, 300);
+      expect(callbacks.onDragMove).not.toHaveBeenCalled();
+    });
+
+    it('should handle container with non-square dimensions', () => {
+      container.remove();
+      const rectContainer = createMockContainer(400, 300);
+      document.body.appendChild(rectContainer);
+
+      const rectCallbacks = createMockCallbacks();
+      const rectInteraction = new RadialDialInteraction(
+        rectContainer,
+        rectCallbacks,
+      );
+      rectInteraction.bindEvents();
+
+      // Center is (200, 150). Ring area: 0.27*400=108 to 0.5*400=200
+      // Click at (330, 150) -> dist = 130, within ring
+      simulateMouseDown(rectContainer, 330, 150);
+      expect(rectCallbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      rectInteraction.destroy();
+      rectContainer.remove();
+    });
+
+    it('should handle container positioned with offset (non-zero left/top)', () => {
+      container.remove();
+      const offsetContainer = document.createElement('div');
+      vi.spyOn(offsetContainer, 'getBoundingClientRect').mockReturnValue({
+        left: 100,
+        top: 50,
+        right: 560,
+        bottom: 510,
+        width: 460,
+        height: 460,
+        x: 100,
+        y: 50,
+        toJSON: () => {},
+      });
+      document.body.appendChild(offsetContainer);
+
+      const offsetCallbacks = createMockCallbacks();
+      const offsetInteraction = new RadialDialInteraction(
+        offsetContainer,
+        offsetCallbacks,
+      );
+      offsetInteraction.bindEvents();
+
+      // Center is (100+230, 50+230) = (330, 280)
+      // Ring area: dist from center between 124.2 and 230
+      // Click at (480, 280) -> dist from center = 150, within ring
+      simulateMouseDown(offsetContainer, 480, 280);
+      expect(offsetCallbacks.onDragStart).toHaveBeenCalledTimes(1);
+
+      offsetInteraction.destroy();
+      offsetContainer.remove();
+    });
+
+    it('should not move to drag state with exactly 10px movement', () => {
+      simulateMouseDown(container, 380, 230);
+      // Move exactly 10px horizontally
+      simulateMouseMove(390, 230);
+
+      // 10px is exactly the threshold: moveDistance > 10 is false for 10
+      expect(interaction.getDragState().hasDraggedSignificantly).toBe(false);
+      expect(callbacks.onDragMove).not.toHaveBeenCalled();
+    });
+
+    it('should transition to significant drag at just over 10px', () => {
+      simulateMouseDown(container, 380, 230);
+      // Move 11px
+      simulateMouseMove(391, 230);
+
+      expect(interaction.getDragState().hasDraggedSignificantly).toBe(true);
+      expect(callbacks.onDragMove).toHaveBeenCalled();
+    });
+
+    it('should handle getDragState returning a snapshot, not a live reference', () => {
+      const stateBefore = interaction.getDragState();
+      simulateMouseDown(container, 380, 230);
+      const stateAfter = interaction.getDragState();
+
+      // stateBefore should not have been mutated
+      expect(stateBefore.isDragging).toBe(false);
+      expect(stateAfter.isDragging).toBe(true);
     });
   });
 });
