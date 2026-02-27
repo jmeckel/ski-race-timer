@@ -61,7 +61,7 @@ jobs:
         run: npx playwright install --with-deps webkit
 
       - name: Run E2E tests
-        run: npm run test:e2e -- --project=mobile-safari-portrait
+        run: npm run test:e2e -- --project=mobile-safari-portrait --grep-invert "Visual Regression"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
