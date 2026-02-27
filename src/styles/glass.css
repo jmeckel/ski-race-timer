@@ -36,6 +36,8 @@
   --glass-highlight-y: calc(30% + var(--motion-tilt-y) * 20%);
 }
 
+@layer components {
+
 /* ===== Glass Surface Levels ===== */
 /* Level 1: Heavy blur + strong glow (primary actions) */
 .glass-surface-1 {
@@ -231,3 +233,5 @@
     transition: none;
   }
 }
+
+} /* end @layer components */

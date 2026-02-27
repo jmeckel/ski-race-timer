@@ -1,5 +1,6 @@
 /* ===== Breathing Animation System ===== */
 /* Slow, organic pulse animations for liquid glass UI */
+@layer components {
 
 /* ===== Keyframes ===== */
 
@@ -592,3 +593,5 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
+
+} /* end @layer components */

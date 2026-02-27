@@ -12,12 +12,14 @@ import { escapeAttr, escapeHtml, getElement, iconCheck } from '../utils';
 import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
 import {
-  initFaultRecordingModal,
   initInlineFaultEntry,
-  recordFaultFromVoice,
   refreshInlineFaultUI,
   updateActiveBibsList,
 } from './faults';
+import {
+  initFaultRecordingModal,
+  recordFaultFromVoice,
+} from './faults/faultModals';
 import { closeModal, openModal } from './modals';
 import { initVoiceNoteUI } from './voiceNoteUI';
 

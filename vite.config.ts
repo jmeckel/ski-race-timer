@@ -26,6 +26,22 @@ export default defineConfig({
             return 'vendor-signals';
           }
 
+          // Shared infrastructure: store, services, utils, i18n, components, modals
+          // Prevents Vite from inlining shared code into view chunks
+          if (
+            id.includes('src/store/') ||
+            id.includes('src/services/') ||
+            id.includes('src/utils/') ||
+            id.includes('src/i18n/') ||
+            id.includes('src/components/Toast') ||
+            id.includes('src/components/Clock') ||
+            id.includes('src/components/SwipeActions') ||
+            id.includes('src/components/index') ||
+            id.includes('src/features/modals')
+          ) {
+            return 'shared';
+          }
+
           // Timer view: radial dial components and timer view
           if (
             id.includes('src/features/radialTimerView') ||
@@ -37,7 +53,6 @@ export default defineConfig({
           }
 
           // Results view: results list and virtual list
-          // Note: export.ts is excluded — shared with chief-judge view
           if (
             id.includes('src/features/resultsView') ||
             id.includes('src/components/VirtualList')
@@ -64,8 +79,12 @@ export default defineConfig({
             return 'gate-judge';
           }
 
+          // Export module: shared between chief-judge and results views
+          if (id.includes('src/features/export')) {
+            return 'export';
+          }
+
           // Chief Judge view: chief judge panel
-          // Note: faultOperations is excluded — shared with results view via barrel
           if (id.includes('src/features/chiefJudgeView')) {
             return 'chief-judge';
           }

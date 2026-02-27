@@ -84,8 +84,10 @@ test.describe('Race Management - Admin PIN', () => {
     await page.locator('#confirm-pin-input').fill('1234');
     await page.click('#save-pin-btn');
 
-    // Wait and verify PIN was stored
-    await page.waitForTimeout(500);
+    // Verify PIN was stored
+    await page.waitForFunction(
+      () => localStorage.getItem('skiTimerAdminPin') !== null,
+    );
     const storedPin = await page.evaluate(() =>
       localStorage.getItem('skiTimerAdminPin'),
     );
@@ -120,7 +122,9 @@ test.describe('Race Management - Admin PIN', () => {
     await expect(modal).not.toHaveClass(/show/, { timeout: 5000 });
 
     // Wait for auth token to be stored (PIN save triggers authentication)
-    await page.waitForTimeout(500);
+    await page.waitForFunction(
+      () => localStorage.getItem('skiTimerAuthToken') !== null,
+    );
 
     // Verify auth token exists (PIN was set successfully)
     const authToken = await page.evaluate(() =>
@@ -154,12 +158,8 @@ test.describe('Race Management - Admin PIN', () => {
     await page.locator('#confirm-pin-input').fill('5678');
     await page.click('#save-pin-btn');
 
-    // Error should be visible (wait a bit for validation)
-    await page.waitForTimeout(300);
-    const mismatchVisible = await page
-      .locator('#pin-mismatch-error')
-      .isVisible();
-    expect(mismatchVisible).toBeTruthy();
+    // Error should be visible
+    await expect(page.locator('#pin-mismatch-error')).toBeVisible();
   });
 });
 
@@ -235,8 +235,7 @@ test.describe('Race Management - PIN Verification Modal', () => {
     // Use Enter key to submit (more reliable than clicking in landscape)
     await pinVerifyInput.press('Enter');
 
-    // Error should be visible (wait for validation)
-    await page.waitForTimeout(500);
+    // Error should be visible
     const errorEl = page.locator('#admin-pin-error');
     await expect(errorEl).toBeVisible({ timeout: 5000 });
   });
@@ -389,9 +388,6 @@ test.describe('Race Management - Translations', () => {
     const langToggle = page.locator('#lang-toggle');
     const enOption = langToggle.locator('[data-lang="en"]');
     await enOption.click();
-
-    // Wait for translations to apply
-    await page.waitForTimeout(200);
 
     // Check admin section labels (use .first() since there may be multiple elements)
     const adminPinTitle = page.locator('[data-i18n="adminPin"]').first();

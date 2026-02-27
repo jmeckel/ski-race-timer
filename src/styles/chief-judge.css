@@ -1,4 +1,5 @@
 /* ===== Chief Judge View ===== */
+@layer components {
 
 /* Chief Judge Toggle Row */
 .chief-judge-toggle-row {
@@ -683,3 +684,5 @@
 .chief-export-btn.whatsapp:active {
   background: #1fa855;
 }
+
+} /* end @layer components */

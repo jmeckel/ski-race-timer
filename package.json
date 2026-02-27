@@ -1,6 +1,6 @@
 {
   "name": "chrono-race-timer",
-  "version": "5.26.2",
+  "version": "5.26.4",
   "description": "Precision race timing, GPS-synchronized",
   "private": true,
   "type": "module",

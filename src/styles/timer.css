@@ -1,4 +1,5 @@
 /* ===== Timer View ===== */
+@layer components {
 .timer-view {
   padding: 12px;
   gap: 6px;
@@ -465,3 +466,5 @@
 .timestamp-btn.flash {
   animation: recordFlash 0.4s ease-out;
 }
+
+} /* end @layer components */

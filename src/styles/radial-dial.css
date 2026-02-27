@@ -32,6 +32,8 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 /* Portrait: Tab bar is globally at top via order: -1 in main.css.
    No additional radial-mode reordering needed in portrait. */
 
+@layer components {
+
 /* Override base timer-view styles when in radial mode AND active */
 /* NOTE: display is set in main.css @layer components to ensure correct
    cascade priority over .view.active's !important declaration */
@@ -817,13 +819,13 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
   }
 
   /* Dial sized to viewport height minus header + tab bar chrome
-     96px ≈ 39px header + 49px tab-bar + 8px breathing room */
+     96px ≈ 39px header + 49px tab-bar + 8px breathing room.
+     aspect-ratio: 1 ensures the container stays square even if
+     the grid column constrains width below --dial-size. */
   .dial-container {
     --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 55vw);
     width: var(--dial-size);
-    height: var(--dial-size);
     max-width: none;
-    aspect-ratio: auto;
   }
 
   /* Tick marks use container query units from dial-container */
@@ -1045,3 +1047,5 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     font-size: 14px;
   }
 }
+
+} /* end @layer components */

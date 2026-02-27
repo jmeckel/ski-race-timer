@@ -126,9 +126,6 @@ test.describe('Voice Note - Modal Cleanup', () => {
     // Close via cancel button
     await page.click('#voice-note-cancel-btn');
 
-    // Wait for close animation
-    await page.waitForTimeout(200);
-
     // Modal should be closed
     await expect(modal).not.toHaveClass(/show/);
   });
@@ -150,8 +147,6 @@ test.describe('Voice Note - Modal Cleanup', () => {
 
     // Press Escape
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-
     await expect(modal).not.toHaveClass(/show/);
   });
 });

@@ -1,4 +1,5 @@
 /* ===== Settings View ===== */
+@layer components {
 .settings-view {
   overflow-y: auto;
   padding: 16px;
@@ -665,3 +666,5 @@
 .role-card-setting.active .role-card-icon {
   color: var(--primary);
 }
+
+} /* end @layer components */

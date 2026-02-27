@@ -61,12 +61,11 @@ test.describe('GPS Settings', () => {
     const isOn = await isToggleOn(page, '#gps-toggle');
     if (isOn) {
       await clickToggle(page, '#gps-toggle');
-      await page.waitForTimeout(100);
+      await expect(gpsToggle).not.toBeChecked();
     }
 
     // Toggle on
     await clickToggle(page, '#gps-toggle');
-    await page.waitForTimeout(500); // Wait for GPS to initialize
 
     await expect(gpsToggle).toBeChecked();
     await context.close();
@@ -149,7 +148,7 @@ test.describe('GPS Status Display', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
     await enableGPS(page);
-    await page.waitForTimeout(500); // Wait for GPS to initialize
+    await expect(page.locator('#gps-toggle')).toBeChecked();
 
     // Go to timer to see the GPS indicator in the status bar
     await navigateTo(page, 'timer');
@@ -167,7 +166,7 @@ test.describe('GPS Status Display', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
     await enableGPS(page);
-    await page.waitForTimeout(500);
+    await expect(page.locator('#gps-toggle')).toBeChecked();
 
     // Disable GPS
     await clickToggle(page, '#gps-toggle');
@@ -220,9 +219,7 @@ test.describe('GPS with Geolocation Permission', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
     await enableGPS(page);
-
-    // Wait for GPS to initialize
-    await page.waitForTimeout(500);
+    await expect(page.locator('#gps-toggle')).toBeChecked();
 
     // Go to timer to see GPS indicator
     await navigateTo(page, 'timer');
@@ -242,9 +239,7 @@ test.describe('GPS Timestamp Recording', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
     await enableGPS(page);
-
-    // Wait for GPS to initialize
-    await page.waitForTimeout(500);
+    await expect(page.locator('#gps-toggle')).toBeChecked();
 
     // Record entry
     await navigateTo(page, 'timer');
@@ -300,8 +295,6 @@ test.describe('GPS Accuracy Levels', () => {
     await navigateTo(page, 'settings');
     await enableGPS(page);
 
-    await page.waitForTimeout(500);
-
     // GPS toggle should be checked
     const gpsToggle = page.locator('#gps-toggle');
     await expect(gpsToggle).toBeChecked();
@@ -324,8 +317,6 @@ test.describe('GPS Accuracy Levels', () => {
     await setupPage(page);
     await navigateTo(page, 'settings');
     await enableGPS(page);
-
-    await page.waitForTimeout(500);
 
     // GPS toggle should be checked
     const gpsToggle = page.locator('#gps-toggle');

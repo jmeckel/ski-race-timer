@@ -1,4 +1,5 @@
 /* ===== Onboarding Modal (Full-screen Setup Wizard) ===== */
+@layer components {
 .modal-overlay.onboarding-fullscreen {
   background: var(--background);
   padding: 0;
@@ -495,3 +496,5 @@
   color: var(--text-tertiary);
   padding-block-end: 12px;
 }
+
+} /* end @layer components */

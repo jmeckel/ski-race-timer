@@ -77,11 +77,14 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 vi.mock('../../../src/features/faults', () => ({
-  initFaultRecordingModal: vi.fn(),
   initInlineFaultEntry: vi.fn(),
-  recordFaultFromVoice: vi.fn(),
   refreshInlineFaultUI: vi.fn(),
   updateActiveBibsList: vi.fn(),
+}));
+
+vi.mock('../../../src/features/faults/faultModals', () => ({
+  initFaultRecordingModal: vi.fn(),
+  recordFaultFromVoice: vi.fn(),
 }));
 
 vi.mock('../../../src/features/modals', () => ({
@@ -95,12 +98,14 @@ vi.mock('../../../src/features/voiceNoteUI', () => ({
 
 import { showToast } from '../../../src/components';
 import {
-  initFaultRecordingModal,
   initInlineFaultEntry,
-  recordFaultFromVoice,
   refreshInlineFaultUI,
   updateActiveBibsList,
 } from '../../../src/features/faults';
+import {
+  initFaultRecordingModal,
+  recordFaultFromVoice,
+} from '../../../src/features/faults/faultModals';
 import {
   cleanupGateJudgeView,
   handleGateJudgeVoiceIntent,

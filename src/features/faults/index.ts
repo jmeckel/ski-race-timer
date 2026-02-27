@@ -18,13 +18,6 @@ export {
   updateInlineSaveButtonState,
 } from './faultInlineEntry';
 
-// Modal-based fault recording
-export {
-  initFaultRecordingModal,
-  openFaultRecordingModal,
-  recordFault,
-  recordFaultFromVoice,
-} from './faultModals';
 // Core CRUD operations, editing, version history, deletion
 export {
   createAndSyncFault,
