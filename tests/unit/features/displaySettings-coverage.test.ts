@@ -13,7 +13,7 @@ vi.mock('../../../src/i18n/translations', () => ({
   t: vi.fn((key: string) => key),
 }));
 
-vi.mock('../../../src/services', () => ({
+vi.mock('../../../src/services/voice', () => ({
   voiceModeService: {
     isSupported: vi.fn(() => true),
     isActive: vi.fn(() => false),
@@ -68,7 +68,7 @@ import {
   updateDisplaySettingsInputs,
   updateLangToggle,
 } from '../../../src/features/settings/displaySettings';
-import { voiceModeService } from '../../../src/services';
+import { voiceModeService } from '../../../src/services/voice';
 import { store } from '../../../src/store';
 
 describe('Display Settings — handler coverage', () => {
@@ -167,9 +167,14 @@ describe('Display Settings — handler coverage', () => {
   });
 
   describe('voice mode toggle', () => {
-    it('should enable voice mode on check', () => {
+    // Voice mode toggle init is async (lazy-loads voice service)
+    // Need to flush promise queue after initDisplaySettings
+    const flushAsync = () => new Promise((r) => setTimeout(r, 0));
+
+    it('should enable voice mode on check', async () => {
       setupDOM();
       initDisplaySettings(vi.fn());
+      await flushAsync();
 
       const toggle = document.getElementById(
         'voice-mode-toggle',
@@ -180,9 +185,10 @@ describe('Display Settings — handler coverage', () => {
       expect(vi.mocked(voiceModeService.enable)).toHaveBeenCalled();
     });
 
-    it('should disable voice mode on uncheck', () => {
+    it('should disable voice mode on uncheck', async () => {
       setupDOM();
       initDisplaySettings(vi.fn());
+      await flushAsync();
 
       const toggle = document.getElementById(
         'voice-mode-toggle',
@@ -193,9 +199,10 @@ describe('Display Settings — handler coverage', () => {
       expect(vi.mocked(voiceModeService.disable)).toHaveBeenCalled();
     });
 
-    it('should revert toggle and show toast when offline', () => {
+    it('should revert toggle and show toast when offline', async () => {
       setupDOM();
       initDisplaySettings(vi.fn());
+      await flushAsync();
 
       // Simulate offline
       Object.defineProperty(navigator, 'onLine', {
@@ -219,10 +226,11 @@ describe('Display Settings — handler coverage', () => {
       });
     });
 
-    it('should revert toggle when enable fails', () => {
+    it('should revert toggle when enable fails', async () => {
       setupDOM();
       vi.mocked(voiceModeService.enable).mockReturnValue(false);
       initDisplaySettings(vi.fn());
+      await flushAsync();
 
       const toggle = document.getElementById(
         'voice-mode-toggle',
@@ -234,10 +242,11 @@ describe('Display Settings — handler coverage', () => {
       expect(showToast).toHaveBeenCalledWith('voiceError', 'error');
     });
 
-    it('should hide voice mode row when not supported', () => {
+    it('should hide voice mode row when not supported', async () => {
       setupDOM();
       vi.mocked(voiceModeService.isSupported).mockReturnValue(false);
       initDisplaySettings(vi.fn());
+      await flushAsync();
 
       const row = document.getElementById('voice-mode-row')!;
       expect(row.style.display).toBe('none');

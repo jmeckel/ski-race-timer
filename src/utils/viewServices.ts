@@ -1,4 +1,4 @@
-import { cameraService, gpsService } from '../services';
+import { gpsService } from '../services';
 import type { AppState } from '../types';
 import { logger } from './logger';
 
@@ -19,15 +19,21 @@ export function applyGpsService(state: Readonly<AppState>): void {
 
 /**
  * Apply camera service behavior based on current view and settings.
+ * Lazy-loads camera module — only needed when photo capture is enabled.
  */
-export function applyCameraService(state: Readonly<AppState>): void {
+export async function applyCameraService(
+  state: Readonly<AppState>,
+): Promise<void> {
   const isTimerView = state.currentView === 'timer';
 
   if (isTimerView && state.settings.photoCapture) {
+    const { cameraService } = await import('../services/camera');
     void cameraService.initialize().catch((error) => {
       logger.error('[Camera] Failed to initialize from view service:', error);
     });
-  } else {
+  } else if (state.settings.photoCapture) {
+    // Only stop if photo capture was enabled (camera may have been loaded)
+    const { cameraService } = await import('../services/camera');
     cameraService.stop();
   }
 }
@@ -37,5 +43,5 @@ export function applyCameraService(state: Readonly<AppState>): void {
  */
 export function applyViewServices(state: Readonly<AppState>): void {
   applyGpsService(state);
-  applyCameraService(state);
+  void applyCameraService(state);
 }

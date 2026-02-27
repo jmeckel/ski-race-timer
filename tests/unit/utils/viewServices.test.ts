@@ -11,13 +11,17 @@ vi.mock('../../../src/services', () => ({
     stop: vi.fn(),
     pause: vi.fn(),
   },
+}));
+
+vi.mock('../../../src/services/camera', () => ({
   cameraService: {
     initialize: vi.fn(() => Promise.resolve(true)),
     stop: vi.fn(),
   },
 }));
 
-import { cameraService, gpsService } from '../../../src/services';
+import { gpsService } from '../../../src/services';
+import { cameraService } from '../../../src/services/camera';
 import { applyViewServices } from '../../../src/utils/viewServices';
 
 const baseSettings = {
@@ -67,12 +71,15 @@ function createState(overrides: Partial<AppState>): AppState {
   };
 }
 
+// applyCameraService is async (lazy-loads camera module)
+const flushAsync = () => new Promise((r) => setTimeout(r, 0));
+
 describe('applyViewServices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('starts GPS and camera in timer view when enabled', () => {
+  it('starts GPS and camera in timer view when enabled', async () => {
     const state = createState({
       currentView: 'timer',
       settings: {
@@ -83,6 +90,7 @@ describe('applyViewServices', () => {
     });
 
     applyViewServices(state);
+    await flushAsync();
 
     expect(gpsService.start).toHaveBeenCalled();
     expect(cameraService.initialize).toHaveBeenCalled();
@@ -90,7 +98,7 @@ describe('applyViewServices', () => {
     expect(cameraService.stop).not.toHaveBeenCalled();
   });
 
-  it('stops GPS and camera outside timer view', () => {
+  it('stops GPS and camera outside timer view', async () => {
     const state = createState({
       currentView: 'results',
       settings: {
@@ -101,6 +109,7 @@ describe('applyViewServices', () => {
     });
 
     applyViewServices(state);
+    await flushAsync();
 
     expect(gpsService.pause).toHaveBeenCalled();
     expect(gpsService.stop).not.toHaveBeenCalled();
@@ -109,7 +118,7 @@ describe('applyViewServices', () => {
     expect(cameraService.initialize).not.toHaveBeenCalled();
   });
 
-  it('stops GPS and camera when settings are disabled', () => {
+  it('stops GPS and camera when settings are disabled', async () => {
     const state = createState({
       currentView: 'timer',
       settings: {
@@ -120,11 +129,11 @@ describe('applyViewServices', () => {
     });
 
     applyViewServices(state);
+    await flushAsync();
 
     expect(gpsService.stop).toHaveBeenCalled();
-    expect(cameraService.stop).toHaveBeenCalled();
+    // Camera not loaded when photoCapture is false
     expect(gpsService.start).not.toHaveBeenCalled();
-    expect(cameraService.initialize).not.toHaveBeenCalled();
     expect(gpsService.pause).not.toHaveBeenCalled();
   });
 });

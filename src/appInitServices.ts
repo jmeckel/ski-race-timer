@@ -14,7 +14,6 @@ import {
   wakeLockService,
 } from './services';
 import { ambientModeService } from './services/ambient';
-import { cameraService } from './services/camera';
 import { hasAuthToken } from './services/sync';
 import { $settingsPhotoCapture, effect, store } from './store';
 import { ListenerManager } from './utils/listenerManager';
@@ -102,8 +101,10 @@ export function initServices(): void {
   photoEffectDisposer = effect(() => {
     const currentPhotoCapture = $settingsPhotoCapture.value;
     if (prevPhotoCapture && !currentPhotoCapture) {
-      // Defer: cameraService.stop() writes to store synchronously
-      queueMicrotask(() => cameraService.stop());
+      // Lazy-load camera service — only needed when disabling photo capture
+      void import('./services/camera').then(({ cameraService }) => {
+        cameraService.stop();
+      });
     }
     prevPhotoCapture = currentPhotoCapture;
   });

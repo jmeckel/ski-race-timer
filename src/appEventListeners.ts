@@ -38,12 +38,10 @@ import {
 import { destroyClock, handleTimerVoiceIntent } from './features/timerView';
 import { t } from './i18n/translations';
 import {
-  cameraService,
   cleanupFeedback,
   feedbackWarning,
   gpsService,
   syncService,
-  voiceModeService,
   wakeLockService,
 } from './services';
 import { ambientModeService } from './services/ambient';
@@ -56,6 +54,10 @@ import { logger } from './utils/logger';
 
 // Custom event listener references (stored for cleanup in handleBeforeUnload)
 const customEventListeners = new ListenerManager();
+
+// Lazy-loaded voice service reference (cached after first load for sync cleanup)
+let _voiceModeService: typeof import('./services/voice').voiceModeService | null =
+  null;
 
 /**
  * Register a custom event listener and store its reference for cleanup
@@ -174,7 +176,11 @@ export function initCustomEventListeners(): void {
  * Initialize voice mode service
  * Uses server-side proxy at /api/v1/voice for LLM processing
  */
-export function initVoiceMode(): void {
+export async function initVoiceMode(): Promise<void> {
+  // Lazy-load voice service — only needed for gate judge role
+  const { voiceModeService } = await import('./services/voice');
+  _voiceModeService = voiceModeService;
+
   // Check if voice mode is supported
   if (!voiceModeService.isSupported()) {
     logger.debug('[VoiceMode] Not supported in this browser');
@@ -324,8 +330,7 @@ export function handleBeforeUnload(): void {
   // Cleanup photo-capture signal effect
   disposePhotoEffect();
 
-  // Cleanup camera service
-  cameraService.stop();
+  // Camera service cleanup not needed — browser releases MediaStream on page unload
 
   // Cleanup GPS service - stop watching position to prevent memory leaks
   gpsService.stop();
@@ -336,8 +341,8 @@ export function handleBeforeUnload(): void {
   // Cleanup ambient mode service
   ambientModeService.cleanup();
 
-  // Cleanup voice mode service
-  voiceModeService.cleanup();
+  // Cleanup voice mode service (only if it was loaded)
+  _voiceModeService?.cleanup();
 
   // Cleanup toast singleton and its event listener
   destroyToast();

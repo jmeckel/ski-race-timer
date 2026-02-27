@@ -6,7 +6,6 @@
 
 import { showToast } from '../../components';
 import { t } from '../../i18n/translations';
-import { voiceModeService } from '../../services';
 import { store } from '../../store';
 import type { Language } from '../../types';
 import { getElement } from '../../utils';
@@ -101,13 +100,16 @@ export function initDisplaySettings(applySettings: () => void): void {
 }
 
 /**
- * Initialize voice mode toggle
+ * Initialize voice mode toggle (lazy-loads voice service — gate-judge only)
  */
-function initVoiceModeToggle(): void {
+async function initVoiceModeToggle(): Promise<void> {
   const voiceModeToggle = getElement<HTMLInputElement>('voice-mode-toggle');
   const voiceModeRow = getElement('voice-mode-row');
 
   if (!voiceModeToggle || !voiceModeRow) return;
+
+  // Lazy-load voice service — only needed for gate judge role
+  const { voiceModeService } = await import('../../services/voice');
 
   // Hide voice mode if not supported
   if (!voiceModeService.isSupported()) {

@@ -8,7 +8,6 @@ import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
 import {
-  captureTimingPhoto,
   feedbackSuccess,
   feedbackTap,
   feedbackWarning,
@@ -16,6 +15,7 @@ import {
   photoStorage,
   syncEntry,
 } from '../services';
+import { captureTimingPhoto } from '../services/camera';
 import { ambientModeService } from '../services/ambient';
 import {
   $cloudDeviceCount,

@@ -1,8 +1,9 @@
 {
   "name": "chrono-race-timer",
-  "version": "5.28.0",
+  "version": "5.28.1",
   "description": "Precision race timing, GPS-synchronized",
   "private": true,
+  "sideEffects": false,
   "type": "module",
   "scripts": {
     "dev": "vite",

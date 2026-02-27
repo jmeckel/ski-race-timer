@@ -167,8 +167,8 @@ describe('App Init Services Module', () => {
       // Transition from true -> false should trigger stop
       mockSettingsSignal.value = { photoCapture: false };
 
-      // queueMicrotask is used internally, flush via await
-      await new Promise((r) => queueMicrotask(r));
+      // Dynamic import + .then(): flush async queue with fake timers
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(mockCameraStop).toHaveBeenCalled();
     });
@@ -194,7 +194,7 @@ describe('App Init Services Module', () => {
       // Now toggle: only the latest effect should be active
       mockSettingsSignal.value = { photoCapture: true };
       mockSettingsSignal.value = { photoCapture: false };
-      await new Promise((r) => queueMicrotask(r));
+      await vi.advanceTimersByTimeAsync(0);
 
       // Should only be called once (from the second effect, not both)
       expect(mockCameraStop).toHaveBeenCalledTimes(1);

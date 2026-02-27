@@ -83,11 +83,14 @@ vi.mock('../../src/services/ambient', () => ({
 }));
 
 vi.mock('../../src/services', () => ({
-  cameraService: { stop: vi.fn() },
   cleanupFeedback: vi.fn(),
   feedbackWarning: vi.fn(),
   gpsService: { stop: vi.fn() },
   syncService: { cleanup: vi.fn() },
+  wakeLockService: { disable: vi.fn() },
+}));
+
+vi.mock('../../src/services/voice', () => ({
   voiceModeService: {
     isSupported: vi.fn(() => false),
     initialize: vi.fn(() => true),
@@ -95,7 +98,6 @@ vi.mock('../../src/services', () => ({
     onAction: vi.fn(),
     cleanup: vi.fn(),
   },
-  wakeLockService: { disable: vi.fn() },
 }));
 
 const mockGetState = vi.fn();
@@ -135,14 +137,13 @@ import {
 import { showToast } from '../../src/components';
 import { cleanupPinVerification } from '../../src/features/race';
 import {
-  cameraService,
   feedbackWarning,
   gpsService,
   syncService,
-  voiceModeService,
   wakeLockService,
 } from '../../src/services';
 import { ambientModeService } from '../../src/services/ambient';
+import { voiceModeService } from '../../src/services/voice';
 
 describe('App Event Listeners Module', () => {
   beforeEach(() => {
@@ -233,11 +234,14 @@ describe('App Event Listeners Module', () => {
   });
 
   describe('handleBeforeUnload', () => {
-    it('should cleanup all services', () => {
+    it('should cleanup all services', async () => {
+      // Load voice service first so cleanup can find it
+      await initVoiceMode();
+      vi.clearAllMocks();
+
       handleBeforeUnload();
 
       expect(syncService.cleanup).toHaveBeenCalled();
-      expect(cameraService.stop).toHaveBeenCalled();
       expect(gpsService.stop).toHaveBeenCalled();
       expect(wakeLockService.disable).toHaveBeenCalled();
       expect(ambientModeService.cleanup).toHaveBeenCalled();
@@ -247,29 +251,29 @@ describe('App Event Listeners Module', () => {
   });
 
   describe('initVoiceMode', () => {
-    it('should skip when not supported', () => {
+    it('should skip when not supported', async () => {
       vi.mocked(voiceModeService.isSupported).mockReturnValue(false);
 
-      initVoiceMode();
+      await initVoiceMode();
 
       expect(voiceModeService.initialize).not.toHaveBeenCalled();
     });
 
-    it('should initialize when supported', () => {
+    it('should initialize when supported', async () => {
       vi.mocked(voiceModeService.isSupported).mockReturnValue(true);
 
-      initVoiceMode();
+      await initVoiceMode();
 
       expect(voiceModeService.initialize).toHaveBeenCalled();
       expect(voiceModeService.onStatusChange).toHaveBeenCalled();
       expect(voiceModeService.onAction).toHaveBeenCalled();
     });
 
-    it('should warn when initialization fails', () => {
+    it('should warn when initialization fails', async () => {
       vi.mocked(voiceModeService.isSupported).mockReturnValue(true);
       vi.mocked(voiceModeService.initialize).mockReturnValue(false);
 
-      initVoiceMode();
+      await initVoiceMode();
 
       expect(voiceModeService.onStatusChange).not.toHaveBeenCalled();
     });

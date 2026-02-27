@@ -26,6 +26,22 @@ export default defineConfig({
             return 'vendor-signals';
           }
 
+          // Voice services: gate-judge only (voice commands, voice notes, LLM, speech)
+          // Must be checked BEFORE the shared rule to exclude from shared chunk
+          if (
+            id.includes('src/services/voice') ||
+            id.includes('src/services/voiceNote') ||
+            id.includes('src/services/llmProvider') ||
+            id.includes('src/services/speechSynthesis')
+          ) {
+            return 'gate-judge';
+          }
+
+          // Camera service: timer views only, lazy-loaded elsewhere
+          if (id.includes('src/services/camera')) {
+            return 'timer';
+          }
+
           // Shared infrastructure: store, services, utils, i18n, components, modals
           // Prevents Vite from inlining shared code into view chunks
           if (
