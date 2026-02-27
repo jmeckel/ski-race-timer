@@ -1,1028 +1,1027 @@
 /* ===== Gate Judge View ===== */
 @layer components {
-.gate-judge-view {
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  gap: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 100%;
-}
-
-/* Gate Judge Header */
-.gate-judge-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  flex-shrink: 0;
-}
-
-.gate-assignment-display {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  row-gap: 6px;
-}
-
-.gate-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.gate-range {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.gate-color-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: var(--radius);
-  background: var(--surface-elevated);
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-}
-
-.gate-color-indicator .gate-color-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.gate-color-indicator.red .gate-color-dot {
-  background: var(--error);
-}
-
-.gate-color-indicator.blue .gate-color-dot {
-  background: var(--primary);
-}
-
-.gate-change-btn {
-  padding: 10px 16px;
-  min-height: 48px;
-  border: 1px solid var(--surface-elevated);
-  border-radius: var(--radius);
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.gate-change-btn:active {
-  background: var(--primary);
-  color: white;
-  transform: scale(0.95);
-}
-
-/* Other Judges Coverage */
-.other-judges-coverage {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--surface-elevated);
-  border-radius: var(--radius);
-  margin-block-start: 8px;
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-
-.coverage-label {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.coverage-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-
-.coverage-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  border-radius: var(--radius);
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
-
-.coverage-badge .device-name {
-  color: var(--text-secondary);
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.coverage-badge .gate-range {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.7rem;
-  color: var(--primary);
-}
-
-.coverage-badge.ready {
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid var(--success);
-}
-
-.coverage-badge .ready-check {
-  color: var(--success);
-  font-weight: 700;
-}
-
-.gate-judge-run-selector {
-  flex-shrink: 0;
-}
-
-/* Gate-First Quick Entry Layout */
-.gate-first-layout {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  gap: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Gate Grid Section */
-.gate-grid-section {
-  flex-shrink: 0;
-}
-
-.gate-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-.gate-grid-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--btn-height-lg);
-  background: var(--surface-elevated);
-  border: 3px solid transparent;
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  position: relative;
-}
-
-.gate-grid-btn:active {
-  transform: scale(0.93);
-}
-
-.gate-grid-btn.red {
-  color: var(--error);
-  border-color: rgba(239, 68, 68, 0.25);
-}
-
-.gate-grid-btn.red.selected {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: var(--error);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
-}
-
-.gate-grid-btn.blue {
-  color: var(--primary);
-  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
-}
-
-.gate-grid-btn.blue.selected {
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
-  border-color: var(--primary);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 30%, transparent);
-}
-
-/* Fault count badge on gate button */
-.gate-grid-btn .gate-fault-count {
-  position: absolute;
-  top: -6px;
-  inset-inline-end: -6px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: var(--warning);
-  color: var(--background);
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-/* Fault Detail Panel (expands after gate selection) */
-.fault-detail-panel {
-  flex-shrink: 0;
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 12px;
-  border: 1px solid var(--surface-elevated);
-}
-
-.fault-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-block-end: 10px;
-}
-
-.fault-detail-gate-label {
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.fault-detail-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  min-width: 48px;
-  min-height: 48px;
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius);
-  transition: color 0.15s ease;
-}
-
-.fault-detail-close:active {
-  color: var(--text-primary);
-}
-
-/* Bib row within detail panel */
-.fault-detail-bib-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-block-start: 10px;
-}
-
-/* Faults List Section */
-.gate-judge-faults-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 80px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.gate-judge-faults-section .section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--surface-elevated);
-  flex-shrink: 0;
-}
-
-.gate-judge-faults-section .section-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.fault-count-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  background: var(--warning);
-  color: var(--background);
-  font-size: 0.7rem;
-  font-weight: 700;
-  border-radius: var(--radius-sm);
-}
-
-.fault-count-badge:empty,
-.fault-count-badge[data-count="0"] {
-  display: none;
-}
-
-.gate-judge-faults-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.gate-judge-faults-list .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px;
-  color: var(--text-tertiary);
-  font-size: 0.875rem;
-}
-
-.gate-judge-faults-list .empty-state svg {
-  opacity: 0.4;
-}
-
-/* Individual fault item in the inline list */
-.gate-judge-fault-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--surface-elevated);
-  border-radius: var(--radius);
-  margin-block-end: 6px;
-}
-
-.gate-judge-fault-item:last-child {
-  margin-block-end: 0;
-}
-
-.gate-judge-fault-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.gate-judge-fault-bib {
-  font-family: var(--font-mono);
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  min-width: 40px;
-}
-
-.gate-judge-fault-details {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.gate-judge-fault-gate {
-  font-family: var(--font-mono);
-  font-weight: 600;
-}
-
-.gate-judge-fault-gate.red {
-  color: var(--error);
-}
-
-.gate-judge-fault-gate.blue {
-  color: var(--primary);
-}
-
-.gate-judge-fault-type {
-  padding: 2px 6px;
-  background: var(--warning);
-  color: var(--background);
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.gate-judge-fault-delete {
-  padding: 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius);
-  transition: all 0.15s ease;
-}
-
-.gate-judge-fault-delete:hover,
-.gate-judge-fault-delete:active {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--error);
-}
-
-/* Inline entry label (used in fault detail panel) */
-.inline-entry-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Inline Bib Selector */
-.inline-bib-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.inline-bib-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--btn-height-md);
-  height: var(--btn-height-md);
-  padding: 0 10px;
-  background: var(--surface-elevated);
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.inline-bib-btn:active {
-  transform: scale(0.95);
-}
-
-.inline-bib-btn.selected {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 15%, transparent);
-  color: var(--primary);
-}
-
-.inline-bib-input {
-  width: 7ch;
-  height: var(--btn-height-lg);
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: var(--radius);
-}
-
-/* Auto-fill flash animation for bib input */
-@keyframes bibAutoFill {
-  0% {
-    background-color: color-mix(in srgb, var(--primary) 30%, transparent);
-  }
-  100% {
-    background-color: transparent;
-  }
-}
-
-.inline-bib-input.bib-auto-filled {
-  animation: bibAutoFill 0.6s ease-out;
-}
-
-/* Inline Fault Type Buttons */
-.inline-fault-types {
-  display: flex;
-  gap: 6px;
-}
-
-.inline-fault-type-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  padding: 8px 6px;
-  background: var(--surface-elevated);
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.inline-fault-type-btn:active {
-  transform: scale(0.97);
-}
-
-.inline-fault-type-btn.selected {
-  border-color: var(--warning);
-  background: rgba(251, 191, 36, 0.15);
-}
-
-.inline-fault-type-btn .fault-type-short {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--warning);
-}
-
-.inline-fault-type-btn .fault-type-long {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.2;
-}
-
-/* Gate Judge Footer - Action buttons row */
-.gate-judge-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex-shrink: 0;
-  padding-block-start: 8px;
-  padding-block-end: max(0px, env(safe-area-inset-bottom));
-}
-
-/* Save Fault Button */
-.inline-save-fault-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  width: 100%;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
-  border: none;
-  border-radius: var(--radius);
-  color: white;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
-}
-
-.inline-save-fault-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
-}
-
-.inline-save-fault-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.gate-judge-footer .ready-toggle-btn {
-  width: 100%;
-  justify-content: center;
-  color: var(--text-primary);
-}
-
-/* Active Bibs Section */
-.active-bibs-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.active-bibs-section .section-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-block-end: 8px;
-  padding: 0 4px;
-}
-
-.active-bibs-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px;
-}
-
-/* Active Bib Card */
-.active-bib-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.active-bib-card:active {
-  transform: scale(0.98);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.active-bib-card.selected {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 15%, transparent);
-}
-
-.active-bib-card.has-fault {
-  border-color: var(--warning);
-  background: rgba(251, 191, 36, 0.1);
-}
-
-.bib-card-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bib-card-number {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  min-width: 60px;
-}
-
-.bib-card-time {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.bib-card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.bib-action-btn {
-  padding: 10px 16px;
-  min-height: 48px;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.bib-action-btn:active {
-  transform: scale(0.95);
-}
-
-.bib-action-btn.fault {
-  background: var(--error);
-  color: white;
-}
-
-.bib-action-btn.ok {
-  background: var(--success);
-  color: var(--background);
-}
-
-.bib-fault-indicator {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--warning);
-  color: var(--background);
-  border-radius: var(--radius);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* Gate Judge Action Buttons Container */
-.gate-judge-actions {
-  display: flex;
-  gap: 12px;
-  flex-shrink: 0;
-  margin-block-start: auto;
-  padding-block-start: 12px;
-}
-
-/* Ready Toggle Button */
-.ready-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 20px;
-  border: 2px solid var(--surface-elevated);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.ready-toggle-btn:active {
-  transform: scale(0.97);
-}
-
-.ready-toggle-btn.ready {
-  border-color: var(--success);
-  background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
-  color: white;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
-}
-
-.ready-toggle-btn .ready-icon {
-  transition: transform 0.2s ease;
-}
-
-.ready-toggle-btn.ready .ready-icon {
-  transform: scale(1.1);
-}
-
-/* Record Fault Button */
-.record-fault-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex: 1;
-  padding: 20px 24px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
-  background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
-  flex-shrink: 0;
-}
-
-.record-fault-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-}
-
-.record-fault-btn svg {
-  flex-shrink: 0;
-}
-
-/* Gate Assignment Modal */
-.gate-range-inputs {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  justify-content: center;
-}
-
-.gate-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.gate-input-group label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.gate-input {
-  width: 80px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.gate-range-separator {
-  font-size: 1.5rem;
-  color: var(--text-tertiary);
-  padding-block-end: 8px;
-}
-
-/* Gate Color Selector */
-.gate-color-selector {
-  display: flex;
-  gap: 12px;
-}
-
-.gate-color-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  min-height: var(--btn-height-md);
-  border: 2px solid var(--surface-elevated);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.gate-color-btn:hover {
-  border-color: var(--text-tertiary);
-}
-
-.gate-color-btn.active {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-}
-
-.gate-color-btn.red.active {
-  border-color: var(--error);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.gate-color-btn.blue.active {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-}
-
-.gate-color-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-}
-
-/* Notes Icon in Fault Lists */
-.gate-judge-fault-note-icon,
-.fault-note-icon {
-  font-size: 0.85rem;
-  margin-inline-start: 4px;
-  opacity: 0.8;
-}
-
-/* Empty state in active bibs */
-.active-bibs-list .empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  gap: 8px;
-}
-
-/* FLT status badge */
-.status-badge.flt {
-  background: var(--warning);
-  color: var(--background);
-}
-
-/* ===== Gate Judge Landscape Mode ===== */
-@media (orientation: landscape) {
-  /* Two-column layout: gates + detail on left, faults on right */
-  .gate-first-layout {
-    flex-direction: row;
-    gap: 8px;
-    flex-wrap: nowrap;
-    overflow-x: hidden;
-  }
-
-  .gate-grid-section {
-    flex: 0 0 auto;
-    width: 35%;
-    min-width: 160px;
-  }
-
-  .fault-detail-panel {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .gate-judge-faults-section {
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
-  }
-
-  .gate-judge-footer {
-    flex-direction: row;
-    gap: 6px;
-  }
-
-  .gate-judge-footer .ready-toggle-btn {
-    width: auto;
-    flex: 1;
-  }
-}
-
-/* Landscape with short height (phones) — tighter spacing */
-@media (orientation: landscape) and (max-height: 500px) {
   .gate-judge-view {
-    padding: 4px 8px;
-    gap: 4px;
-    overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
   }
 
+  /* Gate Judge Header */
   .gate-judge-header {
-    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    flex-shrink: 0;
+  }
+
+  .gate-assignment-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .gate-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
   }
 
   .gate-range {
-    font-size: 1rem;
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .gate-color-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    background: var(--surface-elevated);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .gate-color-indicator .gate-color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+  }
+
+  .gate-color-indicator.red .gate-color-dot {
+    background: var(--error);
+  }
+
+  .gate-color-indicator.blue .gate-color-dot {
+    background: var(--primary);
+  }
+
+  .gate-change-btn {
+    padding: 10px 16px;
+    min-height: 48px;
+    border: 1px solid var(--surface-elevated);
+    border-radius: var(--radius);
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .gate-change-btn:active {
+    background: var(--primary);
+    color: white;
+    transform: scale(0.95);
+  }
+
+  /* Other Judges Coverage */
+  .other-judges-coverage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius);
+    margin-block-start: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+
+  .coverage-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .coverage-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .coverage-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    border-radius: var(--radius);
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .coverage-badge .device-name {
+    color: var(--text-secondary);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .coverage-badge .gate-range {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: var(--primary);
+  }
+
+  .coverage-badge.ready {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid var(--success);
+  }
+
+  .coverage-badge .ready-check {
+    color: var(--success);
+    font-weight: 700;
+  }
+
+  .gate-judge-run-selector {
+    flex-shrink: 0;
+  }
+
+  /* Gate-First Quick Entry Layout */
+  .gate-first-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Gate Grid Section */
+  .gate-grid-section {
+    flex-shrink: 0;
   }
 
   .gate-grid {
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
   }
 
   .gate-grid-btn {
-    height: var(--btn-height-md);
-    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--btn-height-lg);
+    background: var(--surface-elevated);
+    border: 3px solid transparent;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
   }
 
+  .gate-grid-btn:active {
+    transform: scale(0.93);
+  }
+
+  .gate-grid-btn.red {
+    color: var(--error);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .gate-grid-btn.red.selected {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--error);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .gate-grid-btn.blue {
+    color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+
+  .gate-grid-btn.blue.selected {
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
+    border-color: var(--primary);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+
+  /* Fault count badge on gate button */
+  .gate-grid-btn .gate-fault-count {
+    position: absolute;
+    top: -6px;
+    inset-inline-end: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: var(--warning);
+    color: var(--background);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Fault Detail Panel (expands after gate selection) */
   .fault-detail-panel {
-    padding: 6px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px;
+    border: 1px solid var(--surface-elevated);
+  }
+
+  .fault-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: 10px;
+  }
+
+  .fault-detail-gate-label {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .fault-detail-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    min-width: 48px;
+    min-height: 48px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: color 0.15s ease;
+  }
+
+  .fault-detail-close:active {
+    color: var(--text-primary);
+  }
+
+  /* Bib row within detail panel */
+  .fault-detail-bib-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-block-start: 10px;
+  }
+
+  /* Faults List Section */
+  .gate-judge-faults-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
   }
 
   .gate-judge-faults-section .section-header {
-    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--surface-elevated);
+    flex-shrink: 0;
   }
 
   .gate-judge-faults-section .section-title {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .gate-judge-faults-list .empty-state {
-    padding: 8px;
-    font-size: 0.7rem;
-    gap: 4px;
-  }
-
-  .gate-judge-faults-list .empty-state .empty-icon {
-    font-size: 1.5rem;
-  }
-
-  .inline-entry-label {
-    font-size: 0.6rem;
-    margin-block-end: 1px;
-  }
-
-  .inline-bib-selector {
-    gap: 4px;
-  }
-
-  .inline-bib-btn {
-    min-width: 40px;
-    height: var(--btn-height-sm);
-    font-size: 0.8rem;
+  .fault-count-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
     padding: 0 6px;
+    background: var(--warning);
+    color: var(--background);
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
   }
 
-  .inline-bib-input {
-    width: 55px;
-    height: var(--btn-height-sm);
-    font-size: 0.85rem;
-  }
-
-  .inline-bib-manual-row {
-    margin-block-start: 2px;
-  }
-
-  .inline-fault-types {
-    gap: 4px;
-  }
-
-  .inline-fault-type-btn {
-    padding: 4px 6px;
-    flex-direction: row;
-    gap: 4px;
-  }
-
-  .inline-fault-type-btn .fault-type-short {
-    font-size: 0.85rem;
-  }
-
-  .inline-fault-type-btn .fault-type-long {
+  .fault-count-badge:empty,
+  .fault-count-badge[data-count="0"] {
     display: none;
   }
 
+  .gate-judge-faults-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .gate-judge-faults-list .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  .gate-judge-faults-list .empty-state svg {
+    opacity: 0.4;
+  }
+
+  /* Individual fault item in the inline list */
+  .gate-judge-fault-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius);
+    margin-block-end: 6px;
+  }
+
+  .gate-judge-fault-item:last-child {
+    margin-block-end: 0;
+  }
+
+  .gate-judge-fault-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .gate-judge-fault-bib {
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 40px;
+  }
+
+  .gate-judge-fault-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .gate-judge-fault-gate {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  .gate-judge-fault-gate.red {
+    color: var(--error);
+  }
+
+  .gate-judge-fault-gate.blue {
+    color: var(--primary);
+  }
+
+  .gate-judge-fault-type {
+    padding: 2px 6px;
+    background: var(--warning);
+    color: var(--background);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .gate-judge-fault-delete {
+    padding: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+  }
+
+  .gate-judge-fault-delete:hover,
+  .gate-judge-fault-delete:active {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+  }
+
+  /* Inline entry label (used in fault detail panel) */
+  .inline-entry-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Inline Bib Selector */
+  .inline-bib-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .inline-bib-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--btn-height-md);
+    height: var(--btn-height-md);
+    padding: 0 10px;
+    background: var(--surface-elevated);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .inline-bib-btn:active {
+    transform: scale(0.95);
+  }
+
+  .inline-bib-btn.selected {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+    color: var(--primary);
+  }
+
+  .inline-bib-input {
+    width: 7ch;
+    height: var(--btn-height-lg);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+  }
+
+  /* Auto-fill flash animation for bib input */
+  @keyframes bibAutoFill {
+    0% {
+      background-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .inline-bib-input.bib-auto-filled {
+    animation: bibAutoFill 0.6s ease-out;
+  }
+
+  /* Inline Fault Type Buttons */
+  .inline-fault-types {
+    display: flex;
+    gap: 6px;
+  }
+
+  .inline-fault-type-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 8px 6px;
+    background: var(--surface-elevated);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .inline-fault-type-btn:active {
+    transform: scale(0.97);
+  }
+
+  .inline-fault-type-btn.selected {
+    border-color: var(--warning);
+    background: rgba(251, 191, 36, 0.15);
+  }
+
+  .inline-fault-type-btn .fault-type-short {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--warning);
+  }
+
+  .inline-fault-type-btn .fault-type-long {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Gate Judge Footer - Action buttons row */
   .gate-judge-footer {
-    padding-block-start: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    padding-block-start: 8px;
+    padding-block-end: max(0px, env(safe-area-inset-bottom));
   }
 
+  /* Save Fault Button */
   .inline-save-fault-btn {
-    padding: 8px 14px;
-    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
   }
-}
 
+  .inline-save-fault-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+  }
+
+  .inline-save-fault-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .gate-judge-footer .ready-toggle-btn {
+    width: 100%;
+    justify-content: center;
+    color: var(--text-primary);
+  }
+
+  /* Active Bibs Section */
+  .active-bibs-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .active-bibs-section .section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-block-end: 8px;
+    padding: 0 4px;
+  }
+
+  .active-bibs-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px;
+  }
+
+  /* Active Bib Card */
+  .active-bib-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .active-bib-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .active-bib-card.selected {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+  }
+
+  .active-bib-card.has-fault {
+    border-color: var(--warning);
+    background: rgba(251, 191, 36, 0.1);
+  }
+
+  .bib-card-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bib-card-number {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 60px;
+  }
+
+  .bib-card-time {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .bib-card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .bib-action-btn {
+    padding: 10px 16px;
+    min-height: 48px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .bib-action-btn:active {
+    transform: scale(0.95);
+  }
+
+  .bib-action-btn.fault {
+    background: var(--error);
+    color: white;
+  }
+
+  .bib-action-btn.ok {
+    background: var(--success);
+    color: var(--background);
+  }
+
+  .bib-fault-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--warning);
+    color: var(--background);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* Gate Judge Action Buttons Container */
+  .gate-judge-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+    margin-block-start: auto;
+    padding-block-start: 12px;
+  }
+
+  /* Ready Toggle Button */
+  .ready-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 20px;
+    border: 2px solid var(--surface-elevated);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .ready-toggle-btn:active {
+    transform: scale(0.97);
+  }
+
+  .ready-toggle-btn.ready {
+    border-color: var(--success);
+    background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+  }
+
+  .ready-toggle-btn .ready-icon {
+    transition: transform 0.2s ease;
+  }
+
+  .ready-toggle-btn.ready .ready-icon {
+    transform: scale(1.1);
+  }
+
+  /* Record Fault Button */
+  .record-fault-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex: 1;
+    padding: 20px 24px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    flex-shrink: 0;
+  }
+
+  .record-fault-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+
+  .record-fault-btn svg {
+    flex-shrink: 0;
+  }
+
+  /* Gate Assignment Modal */
+  .gate-range-inputs {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .gate-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .gate-input-group label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .gate-input {
+    width: 80px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .gate-range-separator {
+    font-size: 1.5rem;
+    color: var(--text-tertiary);
+    padding-block-end: 8px;
+  }
+
+  /* Gate Color Selector */
+  .gate-color-selector {
+    display: flex;
+    gap: 12px;
+  }
+
+  .gate-color-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    min-height: var(--btn-height-md);
+    border: 2px solid var(--surface-elevated);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .gate-color-btn:hover {
+    border-color: var(--text-tertiary);
+  }
+
+  .gate-color-btn.active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+
+  .gate-color-btn.red.active {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .gate-color-btn.blue.active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+
+  .gate-color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  /* Notes Icon in Fault Lists */
+  .gate-judge-fault-note-icon,
+  .fault-note-icon {
+    font-size: 0.85rem;
+    margin-inline-start: 4px;
+    opacity: 0.8;
+  }
+
+  /* Empty state in active bibs */
+  .active-bibs-list .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    gap: 8px;
+  }
+
+  /* FLT status badge */
+  .status-badge.flt {
+    background: var(--warning);
+    color: var(--background);
+  }
+
+  /* ===== Gate Judge Landscape Mode ===== */
+  @media (orientation: landscape) {
+    /* Two-column layout: gates + detail on left, faults on right */
+    .gate-first-layout {
+      flex-direction: row;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: hidden;
+    }
+
+    .gate-grid-section {
+      flex: 0 0 auto;
+      width: 35%;
+      min-width: 160px;
+    }
+
+    .fault-detail-panel {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gate-judge-faults-section {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .gate-judge-footer {
+      flex-direction: row;
+      gap: 6px;
+    }
+
+    .gate-judge-footer .ready-toggle-btn {
+      width: auto;
+      flex: 1;
+    }
+  }
+
+  /* Landscape with short height (phones) — tighter spacing */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .gate-judge-view {
+      padding: 4px 8px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .gate-judge-header {
+      padding: 4px 8px;
+    }
+
+    .gate-range {
+      font-size: 1rem;
+    }
+
+    .gate-grid {
+      gap: 4px;
+    }
+
+    .gate-grid-btn {
+      height: var(--btn-height-md);
+      font-size: 0.9rem;
+    }
+
+    .fault-detail-panel {
+      padding: 6px;
+    }
+
+    .gate-judge-faults-section .section-header {
+      padding: 4px 8px;
+    }
+
+    .gate-judge-faults-section .section-title {
+      font-size: 0.6rem;
+    }
+
+    .gate-judge-faults-list .empty-state {
+      padding: 8px;
+      font-size: 0.7rem;
+      gap: 4px;
+    }
+
+    .gate-judge-faults-list .empty-state .empty-icon {
+      font-size: 1.5rem;
+    }
+
+    .inline-entry-label {
+      font-size: 0.6rem;
+      margin-block-end: 1px;
+    }
+
+    .inline-bib-selector {
+      gap: 4px;
+    }
+
+    .inline-bib-btn {
+      min-width: 40px;
+      height: var(--btn-height-sm);
+      font-size: 0.8rem;
+      padding: 0 6px;
+    }
+
+    .inline-bib-input {
+      width: 55px;
+      height: var(--btn-height-sm);
+      font-size: 0.85rem;
+    }
+
+    .inline-bib-manual-row {
+      margin-block-start: 2px;
+    }
+
+    .inline-fault-types {
+      gap: 4px;
+    }
+
+    .inline-fault-type-btn {
+      padding: 4px 6px;
+      flex-direction: row;
+      gap: 4px;
+    }
+
+    .inline-fault-type-btn .fault-type-short {
+      font-size: 0.85rem;
+    }
+
+    .inline-fault-type-btn .fault-type-long {
+      display: none;
+    }
+
+    .gate-judge-footer {
+      padding-block-start: 4px;
+    }
+
+    .inline-save-fault-btn {
+      padding: 8px 14px;
+      font-size: 0.8rem;
+    }
+  }
 } /* end @layer components */

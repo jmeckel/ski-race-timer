@@ -95,6 +95,44 @@ export function initSettingsView(): void {
       store.updateSettings({ photoCapture: photoToggle.checked });
     });
   }
+
+  // Install app button
+  const installBtn = document.getElementById('install-app-btn');
+  if (installBtn) {
+    listeners.add(installBtn, 'click', async () => {
+      const {
+        isInstallAvailable,
+        isIOSSafari,
+        triggerInstall,
+        showIOSInstallInstructions,
+      } = await import('../services/installPrompt');
+      if (isInstallAvailable()) {
+        await triggerInstall();
+      } else if (isIOSSafari()) {
+        showIOSInstallInstructions();
+      }
+    });
+  }
+
+  // Show/hide install button based on availability
+  const updateInstallVisibility = async () => {
+    const installSection = document.getElementById('install-section');
+    if (!installSection) return;
+    const { isInstallAvailable, isIOSSafari, isStandalone } = await import(
+      '../services/installPrompt'
+    );
+    if (isStandalone()) {
+      installSection.style.display = 'none';
+    } else if (isInstallAvailable() || isIOSSafari()) {
+      installSection.style.display = '';
+    } else {
+      installSection.style.display = 'none';
+    }
+  };
+
+  listeners.add(window, 'install-prompt-available', updateInstallVisibility);
+  // Check on init
+  updateInstallVisibility();
 }
 
 /**

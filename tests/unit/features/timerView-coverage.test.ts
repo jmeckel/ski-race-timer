@@ -100,11 +100,8 @@ vi.mock('../../../src/utils/timestampRecorder', () => ({
   isDuplicateEntry: (...a: unknown[]) => mockIsDuplicateEntry(...a),
 }));
 
-import {
-  feedbackSuccess,
-  feedbackWarning,
-} from '../../../src/services';
 import { recordTimestamp } from '../../../src/features/timerView';
+import { feedbackSuccess, feedbackWarning } from '../../../src/services';
 
 describe('Timer View — extended coverage', () => {
   let container: HTMLDivElement;

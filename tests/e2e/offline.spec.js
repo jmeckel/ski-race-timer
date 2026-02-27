@@ -11,6 +11,7 @@ import {
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
+  waitForStorageSave,
 } from './helpers.js';
 
 test.describe('Data Persistence', () => {
@@ -78,8 +79,8 @@ test.describe('LocalStorage Operations', () => {
     // Toggle sync (visible in simple mode)
     await clickToggle(page, '#sync-toggle');
 
-    // Wait for save (app debounces saves)
-    await page.waitForTimeout(500);
+    // Wait for debounced save (100ms debounce)
+    await waitForStorageSave(page, 'skiTimerSettings');
 
     // Check localStorage
     const settings = await page.evaluate(() => {
@@ -170,15 +171,12 @@ test.describe('Offline Functionality', () => {
 
     // Navigate through views - check view containers are visible
     await navigateTo(page, 'results');
-    await page.waitForTimeout(200);
     await expect(page.locator('.results-view')).toBeVisible({ timeout: 5000 });
 
     await navigateTo(page, 'settings');
-    await page.waitForTimeout(200);
     await expect(page.locator('.settings-view')).toBeVisible({ timeout: 5000 });
 
     await navigateTo(page, 'timer');
-    await page.waitForTimeout(200);
     await expect(page.locator('.timer-view')).toBeVisible({ timeout: 5000 });
 
     await context.setOffline(false);
@@ -215,8 +213,8 @@ test.describe('Service Worker', () => {
   });
 
   test('should register service worker', async ({ page }) => {
-    // Wait for potential service worker registration
-    await page.waitForTimeout(1000);
+    // Wait for app to fully initialize
+    await page.waitForLoadState('networkidle');
 
     const result = await page.evaluate(async () => {
       // Check if Service Worker API is supported
@@ -245,7 +243,7 @@ test.describe('Service Worker', () => {
   });
 
   test('should cache essential resources', async ({ page }) => {
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     const result = await page.evaluate(async () => {
       // Check if Cache API is supported
@@ -308,7 +306,8 @@ test.describe('Edge Cases', () => {
       page.click('[data-view="results"]'),
     ]);
 
-    await page.waitForTimeout(1000);
+    // Wait for app to settle after concurrent operations
+    await page.waitForLoadState('networkidle');
 
     // App should still be functional
     await navigateTo(page, 'timer');

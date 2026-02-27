@@ -3,9 +3,9 @@
  * Handles the radial dial timer interface with iPod-style spin input
  */
 
+import { showToast } from '../components';
 import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
-import { showToast } from '../components';
 import { t } from '../i18n/translations';
 import {
   captureTimingPhoto,

@@ -14,6 +14,7 @@ import {
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
+  waitForStorageSave,
 } from './helpers.js';
 
 test.describe('CSP - No Inline Scripts', () => {
@@ -38,8 +39,8 @@ test.describe('CSP - No Inline Scripts', () => {
       errors.push(error.message);
     });
 
-    // Setup already navigated to /, wait for render
-    await page.waitForTimeout(1000);
+    // Wait for app to fully load and settle
+    await page.waitForLoadState('networkidle');
 
     // Filter out known non-critical errors (e.g., service worker in dev mode)
     const criticalErrors = errors.filter(
@@ -121,8 +122,8 @@ test.describe('Default PIN Removal', () => {
     await page.goto('/');
     await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
-    // Wait for any async initialization
-    await page.waitForTimeout(1000);
+    // Wait for app to fully initialize
+    await page.waitForLoadState('networkidle');
 
     // No auth token should have been created automatically
     const authToken = await page.evaluate(() =>
@@ -154,7 +155,7 @@ test.describe('Default PIN Removal', () => {
 
     await page.goto('/');
     await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
 
     // No PIN should be auto-set
     const adminPin = await page.evaluate(() =>
@@ -213,7 +214,7 @@ test.describe('Auth Token Security', () => {
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
-    await page.waitForTimeout(300);
+    await waitForStorageSave(page, 'skiTimerEntries');
 
     // Check that entries don't contain any hash-like data
     const entries = await page.evaluate(() => {

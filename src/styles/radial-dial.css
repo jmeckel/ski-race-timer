@@ -33,1019 +33,1017 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
    No additional radial-mode reordering needed in portrait. */
 
 @layer components {
-
-/* Override base timer-view styles when in radial mode AND active */
-/* NOTE: display is set in main.css @layer components to ensure correct
+  /* Override base timer-view styles when in radial mode AND active */
+  /* NOTE: display is set in main.css @layer components to ensure correct
    cascade priority over .view.active's !important declaration */
-.timer-view.radial-mode.active {
-  grid-template-rows: auto auto auto auto;
-  grid-template-columns: 1fr;
-  align-content: center;
-  padding: 0;
-  padding-top: var(--space-md);
-  gap: var(--space-xs);
-  overflow: hidden;
-}
-
-/* Ensure radial mode is hidden when not active */
-.timer-view.radial-mode:not(.active) {
-  display: none !important;
-}
-
-/* Hide classic timer elements when in radial mode */
-.timer-view.radial-mode .clock-container,
-.timer-view.radial-mode .timing-controls,
-.timer-view.radial-mode .bib-entry-section,
-.timer-view.radial-mode .number-pad,
-.timer-view.radial-mode .timestamp-btn,
-.timer-view.radial-mode .last-entry-display {
-  display: none !important;
-}
-
-/* Hide ambient mode pulsing bar in radial mode */
-.timer-view.radial-mode::after {
-  display: none !important;
-}
-
-/* Top Row - Bib Card */
-.radial-top-row {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  z-index: 20;
-  gap: var(--space-sm);
-}
-
-/* Bib stays centered; invisible spacer on left balances the clear button */
-.radial-top-row > .radial-bib-corner {
-  flex: none;
-  margin-inline-start: calc(56px + var(--space-sm));
-}
-
-.radial-top-row > .radial-clear-corner {
-  display: flex;
-  align-items: center;
-  flex: none;
-}
-
-/* Bib Corner - Centered card */
-.radial-bib-corner {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 24px;
-  background: rgba(17, 29, 48, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
-}
-
-.radial-bib-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-tertiary);
-  font-family: var(--font-display);
-  font-weight: 500;
-}
-
-.radial-bib-value {
-  font-family: var(--font-mono);
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--text-primary);
-  min-width: 60px;
-
-  &.active {
-    color: var(--primary);
-  }
-}
-
-/* Top Right: Clear Button Corner */
-.radial-clear-corner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-}
-
-.radial-clear-btn {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  min-height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--radial-clear-color-dark) 0%,
-    var(--radial-clear-color) 100%
-  );
-  border: 2px solid var(--radial-clear-border);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px
-    color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
-
-  &:active {
-    background: linear-gradient(
-      135deg,
-      var(--radial-clear-color) 0%,
-      var(--radial-clear-color-dark) 100%
-    );
-    transform: scale(0.95);
-  }
-}
-
-/* Top Right: Status Corner - Hidden, using header status instead */
-.radial-status-corner {
-  display: none;
-}
-
-.radial-status-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.radial-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-
-  &.warning {
-    background: var(--warning);
-    box-shadow: 0 0 8px var(--warning);
-    animation: pulse 2s infinite;
+  .timer-view.radial-mode.active {
+    grid-template-rows: auto auto auto auto;
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: 0;
+    padding-top: var(--space-md);
+    gap: var(--space-xs);
+    overflow: hidden;
   }
 
-  &.error {
-    background: var(--error);
-    box-shadow: 0 0 8px var(--error);
+  /* Ensure radial mode is hidden when not active */
+  .timer-view.radial-mode:not(.active) {
+    display: none !important;
   }
 
-  &.inactive {
-    background: var(--text-tertiary);
-    box-shadow: none;
-  }
-}
-
-/* Center Area - Dial */
-.radial-center-area {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: visible; /* Must be visible for touch targets to work */
-  min-height: 0;
-  padding: var(--space-2xl) 0;
-  margin: 0;
-  background: radial-gradient(
-    ellipse 300px 200px at 50% 30%,
-    color-mix(in srgb, var(--primary) 3%, transparent) 0%,
-    transparent 70%
-  );
-}
-
-/* Dial Container - Constrained to parent width and available height.
-   Width drives the size; aspect-ratio: 1 derives height.
-   On short screens, the media query caps width to fit vertically. */
-.dial-container {
-  position: relative;
-  width: min(100vw, 430px);
-  aspect-ratio: 1;
-  container-type: inline-size;
-}
-
-/* Dial Ring */
-.dial-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    transparent 46%,
-    rgba(17, 29, 48, 0.4) 48%,
-    rgba(24, 40, 68, 0.5) 51%,
-    rgba(24, 40, 68, 0.5) 96%,
-    transparent 98%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.2),
-    0 0 10px rgba(0, 0, 0, 0.1);
-
-  &.flash {
-    animation: dialFlash 0.3s ease-out;
-  }
-}
-
-@keyframes dialFlash {
-  0% {
-    box-shadow:
-      inset 0 0 30px rgba(0, 0, 0, 0.3),
-      0 0 20px rgba(0, 0, 0, 0.2),
-      0 0 60px var(--primary);
-  }
-  100% {
-    box-shadow:
-      inset 0 0 30px rgba(0, 0, 0, 0.3),
-      0 0 20px rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* Dial Ticks */
-.dial-ticks {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-}
-
-.dial-tick {
-  position: absolute;
-  width: 1px;
-  height: 12px;
-  background: var(--text-tertiary);
-  left: 50%;
-  top: 8px;
-  /* Fallback for browsers without cqi support (Safari <16.4) */
-  transform-origin: 0 130px;
-  transform-origin: 0 calc(50cqi - 8px);
-  opacity: 0.3;
-
-  &.major {
-    height: 10px;
-    width: 2px;
-    background: var(--text-secondary);
-    opacity: 0.5;
-  }
-}
-
-/* Rotating Numbers */
-.dial-numbers {
-  position: absolute;
-  inset: 0;
-  transition: transform 0.05s linear;
-
-  &.momentum {
-    transition: none;
-  }
-}
-
-.dial-number {
-  position: absolute;
-  width: min(64px, 15cqi);
-  height: min(64px, 15cqi);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: min(28px, 6.5cqi);
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  user-select: none;
-  z-index: 10;
-  pointer-events: auto;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  border-radius: 50%;
-  box-shadow: none;
-  transition: all 0.15s ease;
-
-  & span {
-    transition: transform 0.05s linear;
+  /* Hide classic timer elements when in radial mode */
+  .timer-view.radial-mode .clock-container,
+  .timer-view.radial-mode .timing-controls,
+  .timer-view.radial-mode .bib-entry-section,
+  .timer-view.radial-mode .number-pad,
+  .timer-view.radial-mode .timestamp-btn,
+  .timer-view.radial-mode .last-entry-display {
+    display: none !important;
   }
 
-  &:active,
-  &.pressed {
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
-    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 25%, transparent);
+  /* Hide ambient mode pulsing bar in radial mode */
+  .timer-view.radial-mode::after {
+    display: none !important;
   }
 
-  /* Keyboard focus indicator - visible ring for accessibility */
-  &:focus-visible {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 60%, transparent);
-  }
-
-  &.flash {
-    color: var(--primary);
-    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-    text-shadow: 0 0 16px var(--primary);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 30%, transparent);
-  }
-}
-
-/* Gesture Area */
-.dial-gesture-area {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  cursor: grab;
-  z-index: 5;
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
-/* Center Cutout */
-.dial-center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 52%;
-  height: 52%;
-  border-radius: 50%;
-  background: var(--background);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 0;
-  z-index: 15;
-  pointer-events: none;
-}
-
-/* Time Display in Center */
-.radial-time-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  pointer-events: none;
-
-  &.flash {
-    animation: timeFlash 0.3s ease-out;
-  }
-
-  &.frozen .radial-time-seconds {
-    color: var(--primary);
-    text-shadow: 0 0 30px var(--primary);
-  }
-}
-
-@keyframes timeFlash {
-  0% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.radial-time-hm {
-  font-family: var(--font-mono);
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--text-secondary);
-  letter-spacing: 0.05em;
-}
-
-.radial-time-seconds {
-  font-family: var(--font-mono);
-  font-size: 96px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.radial-time-subseconds {
-  font-family: var(--font-mono);
-  font-size: 48px;
-  font-weight: 500;
-  color: var(--primary);
-  letter-spacing: 0.02em;
-  opacity: 0.7;
-}
-
-/* ===== Controls Row (below dial) ===== */
-.radial-controls-row {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-3xl) var(--space-sm);
-}
-
-/* Timing Point Selector — segmented control */
-.radial-timing-point {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  gap: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.radial-point-btn {
-  flex: 1;
-  width: auto;
-  height: auto;
-  min-width: auto;
-  min-height: 48px;
-  border: none;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  padding: var(--space-xs) var(--space-md);
-  cursor: pointer;
-  transition: all 0.2s;
-
-  /* Start = orange */
-  &[data-point="S"].active {
-    background: rgba(255, 140, 66, 0.12);
-    color: var(--start-color);
-    border-bottom-color: var(--start-color);
-  }
-
-  /* Finish = green */
-  &[data-point="F"].active {
-    background: rgba(0, 230, 138, 0.12);
-    color: var(--finish-color);
-    border-bottom-color: var(--finish-color);
-  }
-
-  & + .radial-point-btn {
-    border-inline-start: 1px solid rgba(255, 255, 255, 0.06);
-  }
-}
-
-/* Run Selector — segmented control */
-.radial-run-selector {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  gap: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.radial-run-btn {
-  flex: 1;
-  width: auto;
-  height: auto;
-  min-width: auto;
-  min-height: 48px;
-  border: none;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  padding: var(--space-xs) var(--space-md);
-  cursor: pointer;
-  transition: all 0.2s;
-
-  /* Run 1 = cyan */
-  &[data-run="1"].active {
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-  }
-
-  /* Run 2 = gold */
-  &[data-run="2"].active {
-    background: rgba(255, 215, 0, 0.12);
-    color: var(--secondary);
-    border-bottom-color: var(--secondary);
-  }
-
-  & + .radial-run-btn {
-    border-inline-start: 1px solid rgba(255, 255, 255, 0.06);
-  }
-}
-
-/* Bottom Row - Record Button */
-.radial-bottom-row {
-  grid-column: 1 / -1;
-  display: flex;
-  padding: var(--space-xs) var(--space-3xl);
-  padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom));
-}
-
-/* Stats Corner - hidden in portrait, shown in landscape */
-.radial-stats-corner {
-  display: none;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 16px;
-}
-
-.radial-stats-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-tertiary);
-}
-
-.radial-stats-last {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.radial-stats-bib {
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.radial-stats-point {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-
-  &.start {
-    background: color-mix(in srgb, var(--start-color) 20%, transparent);
-    color: var(--start-color);
-  }
-
-  &.finish {
-    background: color-mix(in srgb, var(--finish-color) 20%, transparent);
-    color: var(--finish-color);
-  }
-}
-
-.radial-stats-time {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.radial-stats-count {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-/* Time Button Corner */
-.radial-time-btn-corner {
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  flex: 1;
-}
-
-.radial-time-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #33ddff 0%, #00c8f0 100%);
-  color: #0a1628;
-  border: none;
-  border-radius: var(--radius);
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.15s;
-  min-height: 72px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 4px 20px color-mix(in srgb, var(--primary) 25%, transparent);
-
-  &:active {
-    background: linear-gradient(135deg, #00b8e6 0%, #009acc 100%);
-    transform: scale(0.98);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 2px 10px color-mix(in srgb, var(--primary) 15%, transparent);
-  }
-
-  &.flash {
-    animation: btnFlash 0.3s ease-out;
-  }
-}
-
-@keyframes btnFlash {
-  0% {
-    background: linear-gradient(135deg, #ffffff 0%, #80eaff 100%);
-    box-shadow: 0 0 40px color-mix(in srgb, var(--primary) 60%, transparent);
-  }
-  100% {
-    background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      0 4px 20px color-mix(in srgb, var(--primary) 25%, transparent);
-  }
-}
-
-.radial-time-btn-icon {
-  width: 24px;
-  height: 24px;
-  stroke: currentColor;
-}
-
-/* Confirmation Overlay */
-.radial-confirmation-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-  z-index: 100;
-
-  &.show {
-    opacity: 1;
-  }
-}
-
-.radial-confirmation-check {
-  font-size: 48px;
-  color: var(--success);
-  margin-block-end: 16px;
-}
-
-.radial-confirmation-bib {
-  font-family: var(--font-mono);
-  font-size: 48px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.radial-confirmation-time {
-  font-family: var(--font-mono);
-  font-size: 24px;
-  color: var(--text-secondary);
-  margin-block-start: 8px;
-}
-
-.radial-confirmation-point {
-  font-size: 14px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 4px;
-  margin-block-start: 12px;
-
-  &.start {
-    background: rgba(255, 140, 66, 0.2);
-    color: var(--start-color);
-  }
-
-  &.finish {
-    background: rgba(0, 230, 138, 0.2);
-    color: var(--finish-color);
-  }
-}
-
-.radial-confirmation-warning {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-block-start: 8px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  background: rgba(255, 215, 0, 0.2);
-  color: var(--warning);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* Responsive adjustments */
-@media (max-width: 500px) {
-  .radial-time-seconds {
-    font-size: 64px;
-  }
-
-  .radial-time-subseconds {
-    font-size: 32px;
-  }
-}
-
-@media (max-height: 700px) and (orientation: portrait) {
-  /* Cap dial size so it doesn't overflow on short portrait screens.
-     Non-dial chrome: header(39) + tabBar(49) + topRow(72) + controlsRow(52) + bottomRow(76) ≈ 288px
-     Use 300px deduction for breathing room */
-  .dial-container {
-    width: min(100vw, 430px, calc(100dvh - 300px), calc(100vh - 300px));
-  }
-
-  .radial-time-seconds {
-    font-size: 56px;
-  }
-
-  .radial-time-subseconds {
-    font-size: 28px;
-  }
-
-  .radial-time-hm {
-    font-size: 20px;
-  }
-}
-
-/* Pulse animation for status dots */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* ===== Landscape Mode ===== */
-/* Timer-view is now an internal grid (set in main.css @layer components):
-   grid-template-columns: auto 1fr
-   grid-template-rows: auto auto 1fr
-   All children placed within this 3-row grid. */
-@media (orientation: landscape) {
-  /* Confirmation overlay: remove from grid flow, overlay the whole app */
-  .radial-confirmation-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-  }
-
-  /* Dial takes full left column, spanning all rows */
-  .radial-center-area {
-    grid-column: 1;
-    grid-row: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    padding: 4px;
-    padding-left: max(4px, env(safe-area-inset-left));
-    background: var(--background);
-  }
-
-  /* Dial sized to viewport height minus header + tab bar chrome
-     96px ≈ 39px header + 49px tab-bar + 8px breathing room.
-     aspect-ratio: 1 ensures the container stays square even if
-     the grid column constrains width below --dial-size. */
-  .dial-container {
-    --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 55vw);
-    width: var(--dial-size);
-    max-width: none;
-  }
-
-  /* Tick marks use container query units from dial-container */
-  .dial-tick {
-    transform-origin: 0 130px;
-    transform-origin: 0 calc(50cqi - 8px);
-  }
-
-  /* Top row (bib + clear) in right column, row 1 */
+  /* Top Row - Bib Card */
   .radial-top-row {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1 / -1;
     display: flex;
-    flex-direction: row;
+    justify-content: center;
     align-items: center;
-    padding: 8px 0;
-    padding-right: max(16px, env(safe-area-inset-right));
-    gap: 12px;
+    padding: var(--space-sm) var(--space-md);
     z-index: 20;
+    gap: var(--space-sm);
   }
 
-  /* Show clear button in landscape */
+  /* Bib stays centered; invisible spacer on left balances the clear button */
+  .radial-top-row > .radial-bib-corner {
+    flex: none;
+    margin-inline-start: calc(56px + var(--space-sm));
+  }
+
   .radial-top-row > .radial-clear-corner {
     display: flex;
+    align-items: center;
+    flex: none;
   }
 
-  /* Bib section - larger display */
+  /* Bib Corner - Centered card */
   .radial-bib-corner {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    flex: 1;
+    padding: 8px 24px;
+    background: rgba(17, 29, 48, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
   }
 
   .radial-bib-label {
-    font-size: 12px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    font-family: var(--font-display);
+    font-weight: 500;
   }
 
   .radial-bib-value {
-    font-size: 48px;
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 60px;
+
+    &.active {
+      color: var(--primary);
+    }
   }
 
-  /* Clear button inline with bib */
+  /* Top Right: Clear Button Corner */
   .radial-clear-corner {
-    padding-block-start: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
   }
 
   .radial-clear-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    font-size: 16px;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(
+      135deg,
+      var(--radial-clear-color-dark) 0%,
+      var(--radial-clear-color) 100%
+    );
+    border: 2px solid var(--radial-clear-border);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 2px 8px
+      color-mix(in srgb, var(--radial-clear-color-dark) 40%, transparent);
+
+    &:active {
+      background: linear-gradient(
+        135deg,
+        var(--radial-clear-color) 0%,
+        var(--radial-clear-color-dark) 100%
+      );
+      transform: scale(0.95);
+    }
   }
 
-  /* Controls row in right column, row 2 */
-  .radial-controls-row {
-    grid-column: 2;
-    grid-row: 2;
-    justify-content: flex-start;
-    padding: 8px 0;
-    padding-right: max(16px, env(safe-area-inset-right));
+  /* Top Right: Status Corner - Hidden, using header status instead */
+  .radial-status-corner {
+    display: none;
   }
 
-  /* Bottom row: flex column containing stats + time button, row 3 */
-  .radial-bottom-row {
-    grid-column: 2;
-    grid-row: 3;
-    display: flex !important;
-    flex-direction: column;
-    padding: 0;
-    padding-right: max(16px, env(safe-area-inset-right));
+  .radial-status-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
   }
 
-  /* Stats - compact single row, visible in landscape */
-  .radial-stats-corner {
+  .radial-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+
+    &.warning {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+      animation: pulse 2s infinite;
+    }
+
+    &.error {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    &.inactive {
+      background: var(--text-tertiary);
+      box-shadow: none;
+    }
+  }
+
+  /* Center Area - Dial */
+  .radial-center-area {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: visible; /* Must be visible for touch targets to work */
+    min-height: 0;
+    padding: var(--space-2xl) 0;
+    margin: 0;
+    background: radial-gradient(
+      ellipse 300px 200px at 50% 30%,
+      color-mix(in srgb, var(--primary) 3%, transparent) 0%,
+      transparent 70%
+    );
+  }
+
+  /* Dial Container - Constrained to parent width and available height.
+   Width drives the size; aspect-ratio: 1 derives height.
+   On short screens, the media query caps width to fit vertically. */
+  .dial-container {
+    position: relative;
+    width: min(100vw, 430px);
+    aspect-ratio: 1;
+    container-type: inline-size;
+  }
+
+  /* Dial Ring */
+  .dial-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      transparent 46%,
+      rgba(17, 29, 48, 0.4) 48%,
+      rgba(24, 40, 68, 0.5) 51%,
+      rgba(24, 40, 68, 0.5) 96%,
+      transparent 98%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      inset 0 0 20px rgba(0, 0, 0, 0.2),
+      0 0 10px rgba(0, 0, 0, 0.1);
+
+    &.flash {
+      animation: dialFlash 0.3s ease-out;
+    }
+  }
+
+  @keyframes dialFlash {
+    0% {
+      box-shadow:
+        inset 0 0 30px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(0, 0, 0, 0.2),
+        0 0 60px var(--primary);
+    }
+    100% {
+      box-shadow:
+        inset 0 0 30px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* Dial Ticks */
+  .dial-ticks {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+  }
+
+  .dial-tick {
+    position: absolute;
+    width: 1px;
+    height: 12px;
+    background: var(--text-tertiary);
+    left: 50%;
+    top: 8px;
+    /* Fallback for browsers without cqi support (Safari <16.4) */
+    transform-origin: 0 130px;
+    transform-origin: 0 calc(50cqi - 8px);
+    opacity: 0.3;
+
+    &.major {
+      height: 10px;
+      width: 2px;
+      background: var(--text-secondary);
+      opacity: 0.5;
+    }
+  }
+
+  /* Rotating Numbers */
+  .dial-numbers {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.05s linear;
+
+    &.momentum {
+      transition: none;
+    }
+  }
+
+  .dial-number {
+    position: absolute;
+    width: min(64px, 15cqi);
+    height: min(64px, 15cqi);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: min(28px, 6.5cqi);
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+    pointer-events: auto;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 50%;
+    box-shadow: none;
+    transition: all 0.15s ease;
+
+    & span {
+      transition: transform 0.05s linear;
+    }
+
+    &:active,
+    &.pressed {
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 25%, transparent);
+    }
+
+    /* Keyboard focus indicator - visible ring for accessibility */
+    &:focus-visible {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 60%, transparent);
+    }
+
+    &.flash {
+      color: var(--primary);
+      border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+      text-shadow: 0 0 16px var(--primary);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 30%, transparent);
+    }
+  }
+
+  /* Gesture Area */
+  .dial-gesture-area {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    cursor: grab;
+    z-index: 5;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  /* Center Cutout */
+  .dial-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 52%;
+    height: 52%;
+    border-radius: 50%;
+    background: var(--background);
+    border: 1px solid rgba(255, 255, 255, 0.04);
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    background: transparent;
-    margin: 0;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    z-index: 15;
+    pointer-events: none;
+  }
+
+  /* Time Display in Center */
+  .radial-time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    pointer-events: none;
+
+    &.flash {
+      animation: timeFlash 0.3s ease-out;
+    }
+
+    &.frozen .radial-time-seconds {
+      color: var(--primary);
+      text-shadow: 0 0 30px var(--primary);
+    }
+  }
+
+  @keyframes timeFlash {
+    0% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .radial-time-hm {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
+
+  .radial-time-seconds {
+    font-family: var(--font-mono);
+    font-size: 96px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .radial-time-subseconds {
+    font-family: var(--font-mono);
+    font-size: 48px;
+    font-weight: 500;
+    color: var(--primary);
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+  }
+
+  /* ===== Controls Row (below dial) ===== */
+  .radial-controls-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-3xl) var(--space-sm);
+  }
+
+  /* Timing Point Selector — segmented control */
+  .radial-timing-point {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .radial-point-btn {
+    flex: 1;
+    width: auto;
+    height: auto;
+    min-width: auto;
+    min-height: 48px;
+    border: none;
     border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    padding: var(--space-xs) var(--space-md);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    /* Start = orange */
+    &[data-point="S"].active {
+      background: rgba(255, 140, 66, 0.12);
+      color: var(--start-color);
+      border-bottom-color: var(--start-color);
+    }
+
+    /* Finish = green */
+    &[data-point="F"].active {
+      background: rgba(0, 230, 138, 0.12);
+      color: var(--finish-color);
+      border-bottom-color: var(--finish-color);
+    }
+
+    & + .radial-point-btn {
+      border-inline-start: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* Run Selector — segmented control */
+  .radial-run-selector {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .radial-run-btn {
+    flex: 1;
+    width: auto;
+    height: auto;
+    min-width: auto;
+    min-height: 48px;
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    padding: var(--space-xs) var(--space-md);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    /* Run 1 = cyan */
+    &[data-run="1"].active {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Run 2 = gold */
+    &[data-run="2"].active {
+      background: rgba(255, 215, 0, 0.12);
+      color: var(--secondary);
+      border-bottom-color: var(--secondary);
+    }
+
+    & + .radial-run-btn {
+      border-inline-start: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* Bottom Row - Record Button */
+  .radial-bottom-row {
+    grid-column: 1 / -1;
+    display: flex;
+    padding: var(--space-xs) var(--space-3xl);
+    padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom));
+  }
+
+  /* Stats Corner - hidden in portrait, shown in landscape */
+  .radial-stats-corner {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 16px;
   }
 
   .radial-stats-label {
-    font-size: 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
   }
 
   .radial-stats-last {
+    display: flex;
+    align-items: center;
     gap: 8px;
   }
 
   .radial-stats-bib {
-    font-size: 18px;
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .radial-stats-point {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+
+    &.start {
+      background: color-mix(in srgb, var(--start-color) 20%, transparent);
+      color: var(--start-color);
+    }
+
+    &.finish {
+      background: color-mix(in srgb, var(--finish-color) 20%, transparent);
+      color: var(--finish-color);
+    }
   }
 
   .radial-stats-time {
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-secondary);
   }
 
   .radial-stats-count {
-    font-size: 11px;
-    margin-inline-start: auto;
+    font-size: 12px;
+    color: var(--text-tertiary);
   }
 
-  /* Time button grows to fill remaining space */
+  /* Time Button Corner */
   .radial-time-btn-corner {
     display: flex;
+    align-items: stretch;
+    justify-content: stretch;
     flex: 1;
-    padding: 8px 0;
   }
 
   .radial-time-btn {
     flex: 1;
-    padding-inline: 16px;
-    min-height: 64px;
-    font-size: 14px;
-  }
-
-  /* Dial center elements */
-  .dial-center {
-    width: 50%;
-    height: 50%;
-  }
-
-  .radial-time-seconds {
-    font-size: 44px;
-  }
-
-  .radial-time-subseconds {
-    font-size: 22px;
-  }
-
-  .radial-time-hm {
-    font-size: 15px;
-  }
-
-  .radial-point-btn,
-  .radial-run-btn {
-    font-size: 0.7rem;
-    padding: 5px 12px;
-  }
-
-  .radial-timing-point {
-    gap: 4px;
-  }
-
-  .radial-run-selector {
-    gap: 4px;
-  }
-
-  .dial-number {
-    width: 48px;
-    height: 48px;
-    font-size: 22px;
-  }
-}
-
-/* Landscape with short height (e.g., phones) */
-@media (orientation: landscape) and (max-height: 450px) {
-  .dial-container {
-    --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 50vw);
-  }
-
-  .radial-top-row {
-    padding: 4px 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
+    background: linear-gradient(135deg, #33ddff 0%, #00c8f0 100%);
+    color: #0a1628;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 72px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 4px 20px color-mix(in srgb, var(--primary) 25%, transparent);
+
+    &:active {
+      background: linear-gradient(135deg, #00b8e6 0%, #009acc 100%);
+      transform: scale(0.98);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 2px 10px color-mix(in srgb, var(--primary) 15%, transparent);
+    }
+
+    &.flash {
+      animation: btnFlash 0.3s ease-out;
+    }
   }
 
-  .radial-bib-value {
-    font-size: 36px;
+  @keyframes btnFlash {
+    0% {
+      background: linear-gradient(135deg, #ffffff 0%, #80eaff 100%);
+      box-shadow: 0 0 40px color-mix(in srgb, var(--primary) 60%, transparent);
+    }
+    100% {
+      background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 4px 20px color-mix(in srgb, var(--primary) 25%, transparent);
+    }
   }
 
-  .radial-time-seconds {
-    font-size: 32px;
+  .radial-time-btn-icon {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
   }
 
-  .radial-time-subseconds {
-    font-size: 16px;
+  /* Confirmation Overlay */
+  .radial-confirmation-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 100;
+
+    &.show {
+      opacity: 1;
+    }
   }
 
-  .radial-time-hm {
-    font-size: 12px;
+  .radial-confirmation-check {
+    font-size: 48px;
+    color: var(--success);
+    margin-block-end: 16px;
   }
 
-  .dial-number {
-    width: 40px;
-    height: 40px;
-    font-size: 17px;
+  .radial-confirmation-bib {
+    font-family: var(--font-mono);
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--text-primary);
   }
 
-  .radial-point-btn,
-  .radial-run-btn {
-    font-size: 0.6rem;
-    padding: 4px 8px;
+  .radial-confirmation-time {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    color: var(--text-secondary);
+    margin-block-start: 8px;
   }
 
-  .radial-time-btn {
-    min-height: 52px;
-    font-size: 12px;
-  }
-
-  .radial-stats-corner {
-    padding: 4px 10px;
-  }
-
-  .radial-time-btn-corner {
-    padding: 6px 10px;
-  }
-
-  .radial-clear-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+  .radial-confirmation-point {
     font-size: 14px;
-  }
-}
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-block-start: 12px;
 
+    &.start {
+      background: rgba(255, 140, 66, 0.2);
+      color: var(--start-color);
+    }
+
+    &.finish {
+      background: rgba(0, 230, 138, 0.2);
+      color: var(--finish-color);
+    }
+  }
+
+  .radial-confirmation-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-block-start: 8px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--warning);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 500px) {
+    .radial-time-seconds {
+      font-size: 64px;
+    }
+
+    .radial-time-subseconds {
+      font-size: 32px;
+    }
+  }
+
+  @media (max-height: 700px) and (orientation: portrait) {
+    /* Cap dial size so it doesn't overflow on short portrait screens.
+     Non-dial chrome: header(39) + tabBar(49) + topRow(72) + controlsRow(52) + bottomRow(76) ≈ 288px
+     Use 300px deduction for breathing room */
+    .dial-container {
+      width: min(100vw, 430px, calc(100dvh - 300px), calc(100vh - 300px));
+    }
+
+    .radial-time-seconds {
+      font-size: 56px;
+    }
+
+    .radial-time-subseconds {
+      font-size: 28px;
+    }
+
+    .radial-time-hm {
+      font-size: 20px;
+    }
+  }
+
+  /* Pulse animation for status dots */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* ===== Landscape Mode ===== */
+  /* Timer-view is now an internal grid (set in main.css @layer components):
+   grid-template-columns: auto 1fr
+   grid-template-rows: auto auto 1fr
+   All children placed within this 3-row grid. */
+  @media (orientation: landscape) {
+    /* Confirmation overlay: remove from grid flow, overlay the whole app */
+    .radial-confirmation-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+    }
+
+    /* Dial takes full left column, spanning all rows */
+    .radial-center-area {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 4px;
+      padding-left: max(4px, env(safe-area-inset-left));
+      background: var(--background);
+    }
+
+    /* Dial sized to viewport height minus header + tab bar chrome
+     96px ≈ 39px header + 49px tab-bar + 8px breathing room.
+     aspect-ratio: 1 ensures the container stays square even if
+     the grid column constrains width below --dial-size. */
+    .dial-container {
+      --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 55vw);
+      width: var(--dial-size);
+      max-width: none;
+    }
+
+    /* Tick marks use container query units from dial-container */
+    .dial-tick {
+      transform-origin: 0 130px;
+      transform-origin: 0 calc(50cqi - 8px);
+    }
+
+    /* Top row (bib + clear) in right column, row 1 */
+    .radial-top-row {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 8px 0;
+      padding-right: max(16px, env(safe-area-inset-right));
+      gap: 12px;
+      z-index: 20;
+    }
+
+    /* Show clear button in landscape */
+    .radial-top-row > .radial-clear-corner {
+      display: flex;
+    }
+
+    /* Bib section - larger display */
+    .radial-bib-corner {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .radial-bib-label {
+      font-size: 12px;
+    }
+
+    .radial-bib-value {
+      font-size: 48px;
+    }
+
+    /* Clear button inline with bib */
+    .radial-clear-corner {
+      padding-block-start: 0;
+    }
+
+    .radial-clear-btn {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      font-size: 16px;
+    }
+
+    /* Controls row in right column, row 2 */
+    .radial-controls-row {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-start;
+      padding: 8px 0;
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    /* Bottom row: flex column containing stats + time button, row 3 */
+    .radial-bottom-row {
+      grid-column: 2;
+      grid-row: 3;
+      display: flex !important;
+      flex-direction: column;
+      padding: 0;
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    /* Stats - compact single row, visible in landscape */
+    .radial-stats-corner {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      background: transparent;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .radial-stats-label {
+      font-size: 10px;
+    }
+
+    .radial-stats-last {
+      gap: 8px;
+    }
+
+    .radial-stats-bib {
+      font-size: 18px;
+    }
+
+    .radial-stats-time {
+      font-size: 13px;
+    }
+
+    .radial-stats-count {
+      font-size: 11px;
+      margin-inline-start: auto;
+    }
+
+    /* Time button grows to fill remaining space */
+    .radial-time-btn-corner {
+      display: flex;
+      flex: 1;
+      padding: 8px 0;
+    }
+
+    .radial-time-btn {
+      flex: 1;
+      padding-inline: 16px;
+      min-height: 64px;
+      font-size: 14px;
+    }
+
+    /* Dial center elements */
+    .dial-center {
+      width: 50%;
+      height: 50%;
+    }
+
+    .radial-time-seconds {
+      font-size: 44px;
+    }
+
+    .radial-time-subseconds {
+      font-size: 22px;
+    }
+
+    .radial-time-hm {
+      font-size: 15px;
+    }
+
+    .radial-point-btn,
+    .radial-run-btn {
+      font-size: 0.7rem;
+      padding: 5px 12px;
+    }
+
+    .radial-timing-point {
+      gap: 4px;
+    }
+
+    .radial-run-selector {
+      gap: 4px;
+    }
+
+    .dial-number {
+      width: 48px;
+      height: 48px;
+      font-size: 22px;
+    }
+  }
+
+  /* Landscape with short height (e.g., phones) */
+  @media (orientation: landscape) and (max-height: 450px) {
+    .dial-container {
+      --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 50vw);
+    }
+
+    .radial-top-row {
+      padding: 4px 10px;
+      gap: 8px;
+    }
+
+    .radial-bib-value {
+      font-size: 36px;
+    }
+
+    .radial-time-seconds {
+      font-size: 32px;
+    }
+
+    .radial-time-subseconds {
+      font-size: 16px;
+    }
+
+    .radial-time-hm {
+      font-size: 12px;
+    }
+
+    .dial-number {
+      width: 40px;
+      height: 40px;
+      font-size: 17px;
+    }
+
+    .radial-point-btn,
+    .radial-run-btn {
+      font-size: 0.6rem;
+      padding: 4px 8px;
+    }
+
+    .radial-time-btn {
+      min-height: 52px;
+      font-size: 12px;
+    }
+
+    .radial-stats-corner {
+      padding: 4px 10px;
+    }
+
+    .radial-time-btn-corner {
+      padding: 6px 10px;
+    }
+
+    .radial-clear-btn {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      font-size: 14px;
+    }
+  }
 } /* end @layer components */

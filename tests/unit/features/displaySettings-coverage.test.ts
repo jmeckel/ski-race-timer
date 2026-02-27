@@ -46,12 +46,10 @@ vi.mock('../../../src/utils/listenerManager', () => {
         handler: EventListener;
       }> = [];
       return {
-        add: vi.fn(
-          (el: EventTarget, event: string, handler: EventListener) => {
-            el.addEventListener(event, handler);
-            tracked.push({ el, event, handler });
-          },
-        ),
+        add: vi.fn((el: EventTarget, event: string, handler: EventListener) => {
+          el.addEventListener(event, handler);
+          tracked.push({ el, event, handler });
+        }),
         removeAll: vi.fn(() => {
           tracked.forEach(({ el, event, handler }) =>
             el.removeEventListener(event, handler),
@@ -288,7 +286,9 @@ describe('Display Settings — handler coverage', () => {
       setupDOM();
       initDisplaySettings(vi.fn());
 
-      const firstOpt = document.querySelectorAll('.lang-option')[0] as HTMLElement;
+      const firstOpt = document.querySelectorAll(
+        '.lang-option',
+      )[0] as HTMLElement;
 
       firstOpt.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }),

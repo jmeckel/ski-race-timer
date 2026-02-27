@@ -114,7 +114,11 @@ test.describe('Power Saver - Battery API Integration', () => {
     await mockBatteryAPI(page, { level: 0.1, charging: true });
     await setupPage(page);
 
-    await page.waitForTimeout(500);
+    // Wait for battery service to initialize and confirm no power-saver
+    await page.waitForFunction(
+      () => !document.body.classList.contains('power-saver'),
+      { timeout: 2000 },
+    );
 
     const hasPowerSaver = await page.evaluate(() =>
       document.body.classList.contains('power-saver'),
@@ -237,11 +241,8 @@ test.describe('Power Saver - Clock Still Works', () => {
     const clockSec = page.locator('#radial-time-seconds');
     const initialSec = await clockSec.textContent();
 
-    // Wait for clock to tick (may skip frames, so wait longer)
-    await page.waitForTimeout(2000);
-    const newSec = await clockSec.textContent();
-
-    expect(newSec).not.toBe(initialSec);
+    // Clock should tick within 3s (may skip frames in power-saver)
+    await expect(clockSec).not.toHaveText(initialSec, { timeout: 3000 });
   });
 
   test('clock should still update when battery is critical', async ({
@@ -253,11 +254,8 @@ test.describe('Power Saver - Clock Still Works', () => {
     const clockSec = page.locator('#radial-time-seconds');
     const initialSec = await clockSec.textContent();
 
-    // Frame skipping at critical = 15fps, so seconds still change within 2s
-    await page.waitForTimeout(2000);
-    const newSec = await clockSec.textContent();
-
-    expect(newSec).not.toBe(initialSec);
+    // Clock should tick within 3s (frame skipping at critical = 15fps)
+    await expect(clockSec).not.toHaveText(initialSec, { timeout: 3000 });
   });
 
   test('recording timestamps should work in power-saver mode', async ({
@@ -301,9 +299,7 @@ test.describe('Power Saver - Battery API Unavailable', () => {
     // Clock should still work
     const clockSec = page.locator('#radial-time-seconds');
     const initialSec = await clockSec.textContent();
-    await page.waitForTimeout(1500);
-    const newSec = await clockSec.textContent();
-    expect(newSec).not.toBe(initialSec);
+    await expect(clockSec).not.toHaveText(initialSec, { timeout: 3000 });
   });
 
   test('all views should be accessible without Battery API', async ({

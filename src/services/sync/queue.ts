@@ -55,10 +55,7 @@ class QueueProcessor {
       clearInterval(this.queueInterval);
     }
 
-    this.queueInterval = setInterval(
-      () => this.processQueue(),
-      intervalMs,
-    );
+    this.queueInterval = setInterval(() => this.processQueue(), intervalMs);
   }
 
   /**

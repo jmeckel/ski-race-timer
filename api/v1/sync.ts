@@ -269,7 +269,11 @@ async function handleGet(
         photoTotalSize += entry.photo.length;
       }
     }
-    return sendSuccess(res, { photoCount, photoTotalSize, total: allEntries.length });
+    return sendSuccess(res, {
+      photoCount,
+      photoTotalSize,
+      total: allEntries.length,
+    });
   }
 
   // Update device heartbeat if deviceId provided (from query params)

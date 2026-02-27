@@ -476,9 +476,10 @@ test.describe('Gate Judge Faults - Keyboard Shortcuts', () => {
 
     // Press 5 to select gate 5
     await page.keyboard.press('5');
-    await expect(
-      page.locator('.gate-grid-btn[data-gate="5"]'),
-    ).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('.gate-grid-btn[data-gate="5"]')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
 
     // Fault detail panel should show gate 5
     await expect(page.locator('#fault-detail-gate-label')).toContainText('5');

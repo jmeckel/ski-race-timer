@@ -55,10 +55,18 @@ vi.mock('../../../src/utils', () => ({
 
 vi.mock('../../../src/utils/listenerManager', () => ({
   ListenerManager: vi.fn().mockImplementation(() => {
-    const tracked: { el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }[] = [];
+    const tracked: {
+      el: EventTarget;
+      event: string;
+      handler: EventListenerOrEventListenerObject;
+    }[] = [];
     return {
       add: vi.fn(
-        (el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
+        (
+          el: EventTarget,
+          event: string,
+          handler: EventListenerOrEventListenerObject,
+        ) => {
           el.addEventListener(event, handler);
           tracked.push({ el, event, handler });
         },
@@ -176,7 +184,15 @@ describe('Fault Operations Feature Module', () => {
     runSelector.appendChild(run2Btn);
     container.appendChild(runSelector);
 
-    return { modal, bibInput, gateInput, typeSelect, notesTextarea, versionSelect, runSelector };
+    return {
+      modal,
+      bibInput,
+      gateInput,
+      typeSelect,
+      notesTextarea,
+      versionSelect,
+      runSelector,
+    };
   }
 
   beforeEach(() => {
@@ -358,9 +374,7 @@ describe('Fault Operations Feature Module', () => {
           deviceId: 'device-1',
           deviceName: 'Timer 1',
           gateAssignment: [1, 10],
-          faultEntries: [
-            createMockFault({ id: capturedFaultId || 'fault-1' }),
-          ],
+          faultEntries: [createMockFault({ id: capturedFaultId || 'fault-1' })],
         } as unknown as ReturnType<typeof store.getState>;
       });
 
@@ -1020,8 +1034,8 @@ describe('Fault Operations Feature Module', () => {
 
       handleSaveFaultEdit();
 
-      const updateCall =
-        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      const updateCall = vi.mocked(store.updateFaultEntryWithHistory).mock
+        .calls[0]!;
       expect(updateCall[1].bib).toBe('005');
     });
 
@@ -1046,14 +1060,18 @@ describe('Fault Operations Feature Module', () => {
 
       handleSaveFaultEdit();
 
-      const updateCall =
-        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      const updateCall = vi.mocked(store.updateFaultEntryWithHistory).mock
+        .calls[0]!;
       expect(updateCall[1].notes!.length).toBe(500);
     });
 
     it('should include change description when fields change', () => {
       const { bibInput, gateInput, typeSelect } = setupFullEditModalDOM();
-      const fault = createMockFault({ bib: '042', gateNumber: 5, faultType: 'MG' });
+      const fault = createMockFault({
+        bib: '042',
+        gateNumber: 5,
+        faultType: 'MG',
+      });
 
       vi.mocked(store.getState).mockReturnValue({
         currentLang: 'en',
@@ -1075,8 +1093,8 @@ describe('Fault Operations Feature Module', () => {
 
       handleSaveFaultEdit();
 
-      const updateCall =
-        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      const updateCall = vi.mocked(store.updateFaultEntryWithHistory).mock
+        .calls[0]!;
       const changeDesc = updateCall[2] as string;
       expect(changeDesc).toContain('bib:');
       expect(changeDesc).toContain('gate:');
@@ -1103,8 +1121,8 @@ describe('Fault Operations Feature Module', () => {
 
       handleSaveFaultEdit();
 
-      const updateCall =
-        vi.mocked(store.updateFaultEntryWithHistory).mock.calls[0]!;
+      const updateCall = vi.mocked(store.updateFaultEntryWithHistory).mock
+        .calls[0]!;
       // changeDescription should be undefined when nothing changed
       expect(updateCall[2]).toBeUndefined();
     });

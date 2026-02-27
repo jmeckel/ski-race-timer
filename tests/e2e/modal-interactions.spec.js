@@ -12,6 +12,7 @@ import {
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
+  waitForFocusInside,
 } from './helpers.js';
 
 // ---------------------------------------------------------------------------
@@ -24,9 +25,9 @@ import {
 async function openShortcutsModal(page) {
   await navigateTo(page, 'settings');
   await page.click('#show-shortcuts-btn');
-  await expect(
-    page.locator('#keyboard-shortcuts-modal'),
-  ).toHaveClass(/show/, { timeout: 3000 });
+  await expect(page.locator('#keyboard-shortcuts-modal')).toHaveClass(/show/, {
+    timeout: 3000,
+  });
 }
 
 /**
@@ -60,9 +61,9 @@ async function openEditModal(page) {
 async function openChangePinModal(page) {
   await navigateTo(page, 'settings');
   await page.click('#change-pin-btn');
-  await expect(
-    page.locator('#change-pin-modal'),
-  ).toHaveClass(/show/, { timeout: 3000 });
+  await expect(page.locator('#change-pin-modal')).toHaveClass(/show/, {
+    timeout: 3000,
+  });
 }
 
 /**
@@ -71,9 +72,9 @@ async function openChangePinModal(page) {
 async function openAdminPinModal(page) {
   await navigateTo(page, 'settings');
   await page.click('#manage-races-btn');
-  await expect(
-    page.locator('#admin-pin-modal'),
-  ).toHaveClass(/show/, { timeout: 3000 });
+  await expect(page.locator('#admin-pin-modal')).toHaveClass(/show/, {
+    timeout: 3000,
+  });
 }
 
 /**
@@ -109,37 +110,39 @@ test.describe('Modal Interactions', () => {
       await pressEscapeOnModal(page, 'keyboard-shortcuts-modal');
 
       // After close animation (150ms) the .show class is removed
-      await expect(
-        page.locator('#keyboard-shortcuts-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#keyboard-shortcuts-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
 
     test('edit modal closes on Escape', async ({ page }) => {
       await openEditModal(page);
       await pressEscapeOnModal(page, 'edit-modal');
 
-      await expect(page.locator('#edit-modal')).not.toHaveClass(
-        /\bshow\b/,
-        { timeout: 3000 },
-      );
+      await expect(page.locator('#edit-modal')).not.toHaveClass(/\bshow\b/, {
+        timeout: 3000,
+      });
     });
 
     test('change PIN modal closes on Escape', async ({ page }) => {
       await openChangePinModal(page);
       await pressEscapeOnModal(page, 'change-pin-modal');
 
-      await expect(
-        page.locator('#change-pin-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#change-pin-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
 
     test('admin PIN modal closes on Escape', async ({ page }) => {
       await openAdminPinModal(page);
       await pressEscapeOnModal(page, 'admin-pin-modal');
 
-      await expect(
-        page.locator('#admin-pin-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#admin-pin-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -148,9 +151,7 @@ test.describe('Modal Interactions', () => {
       await setupPage(page, 'en');
     });
 
-    test('shortcuts modal closes when clicking overlay', async ({
-      page,
-    }) => {
+    test('shortcuts modal closes when clicking overlay', async ({ page }) => {
       await openShortcutsModal(page);
 
       // Click the overlay itself (not the modal-content child)
@@ -175,9 +176,7 @@ test.describe('Modal Interactions', () => {
       });
     });
 
-    test('change PIN modal closes when clicking overlay', async ({
-      page,
-    }) => {
+    test('change PIN modal closes when clicking overlay', async ({ page }) => {
       await openChangePinModal(page);
 
       const modal = page.locator('#change-pin-modal');
@@ -188,9 +187,7 @@ test.describe('Modal Interactions', () => {
       });
     });
 
-    test('admin PIN modal closes when clicking overlay', async ({
-      page,
-    }) => {
+    test('admin PIN modal closes when clicking overlay', async ({ page }) => {
       await openAdminPinModal(page);
 
       const modal = page.locator('#admin-pin-modal');
@@ -201,21 +198,17 @@ test.describe('Modal Interactions', () => {
       });
     });
 
-    test('clicking modal content does NOT close modal', async ({
-      page,
-    }) => {
+    test('clicking modal content does NOT close modal', async ({ page }) => {
       await openShortcutsModal(page);
 
       // Click inside the modal-content area
-      const content = page.locator(
-        '#keyboard-shortcuts-modal .modal-content',
-      );
+      const content = page.locator('#keyboard-shortcuts-modal .modal-content');
       await content.click();
 
       // Modal should remain open
-      await expect(
-        page.locator('#keyboard-shortcuts-modal'),
-      ).toHaveClass(/show/);
+      await expect(page.locator('#keyboard-shortcuts-modal')).toHaveClass(
+        /show/,
+      );
     });
   });
 
@@ -246,9 +239,7 @@ test.describe('Modal Interactions', () => {
       // We check via evaluate since the class exists only for 150ms
       const hadClosingClass = await page.evaluate(() => {
         return new Promise((resolve) => {
-          const modal = document.getElementById(
-            'keyboard-shortcuts-modal',
-          );
+          const modal = document.getElementById('keyboard-shortcuts-modal');
           const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
               if (
@@ -291,9 +282,6 @@ test.describe('Modal Interactions', () => {
 
       await pressEscapeOnModal(page, 'keyboard-shortcuts-modal');
 
-      // Wait for the close animation to fully complete (150ms + buffer)
-      await page.waitForTimeout(300);
-
       await expect(modal).not.toHaveClass(/\bshow\b/);
       await expect(modal).not.toHaveClass(/\bclosing\b/);
     });
@@ -304,28 +292,22 @@ test.describe('Modal Interactions', () => {
       await setupPage(page, 'en');
     });
 
-    test('shortcuts modal focuses first element on open', async ({
-      page,
-    }) => {
+    test('shortcuts modal focuses first element on open', async ({ page }) => {
       await openShortcutsModal(page);
 
-      // Wait a tick for the deferred focusFirstElement
-      await page.waitForTimeout(100);
+      // Wait for deferred focusFirstElement
+      await waitForFocusInside(page, '#keyboard-shortcuts-modal');
 
       // The first focusable element inside the shortcuts modal should be
       // either the close button (#shortcuts-close-btn) or the done button
-      const focusedId = await page.evaluate(
-        () => document.activeElement?.id,
-      );
+      const focusedId = await page.evaluate(() => document.activeElement?.id);
       const focusedTag = await page.evaluate(
         () => document.activeElement?.tagName,
       );
 
       // Focus should be inside the modal
       const isInsideModal = await page.evaluate(() => {
-        const modal = document.getElementById(
-          'keyboard-shortcuts-modal',
-        );
+        const modal = document.getElementById('keyboard-shortcuts-modal');
         return modal?.contains(document.activeElement) ?? false;
       });
       expect(isInsideModal).toBe(true);
@@ -344,16 +326,14 @@ test.describe('Modal Interactions', () => {
       );
 
       await openShortcutsModal(page);
-      await page.waitForTimeout(100);
+      await waitForFocusInside(page, '#keyboard-shortcuts-modal');
 
       // The shortcuts modal has two focusable buttons: close btn and done btn
       // Tab through several times and verify focus stays inside the modal
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
         const isInside = await page.evaluate(() => {
-          const modal = document.getElementById(
-            'keyboard-shortcuts-modal',
-          );
+          const modal = document.getElementById('keyboard-shortcuts-modal');
           return modal?.contains(document.activeElement) ?? false;
         });
         expect(isInside).toBe(true);
@@ -362,15 +342,13 @@ test.describe('Modal Interactions', () => {
 
     test('Shift+Tab wraps to last element in modal', async ({ page }) => {
       await openShortcutsModal(page);
-      await page.waitForTimeout(100);
+      await waitForFocusInside(page, '#keyboard-shortcuts-modal');
 
       // Press Shift+Tab from the first element — should wrap to last
       await page.keyboard.press('Shift+Tab');
 
       const isInsideModal = await page.evaluate(() => {
-        const modal = document.getElementById(
-          'keyboard-shortcuts-modal',
-        );
+        const modal = document.getElementById('keyboard-shortcuts-modal');
         return modal?.contains(document.activeElement) ?? false;
       });
       expect(isInsideModal).toBe(true);
@@ -380,7 +358,7 @@ test.describe('Modal Interactions', () => {
       page,
     }) => {
       await openEditModal(page);
-      await page.waitForTimeout(100);
+      await waitForFocusInside(page, '#edit-modal');
 
       // Tab through all focusable elements
       const focusedElements = [];
@@ -419,18 +397,24 @@ test.describe('Modal Interactions', () => {
       // Focus the shortcuts button explicitly
       await page.locator('#show-shortcuts-btn').focus();
       await page.click('#show-shortcuts-btn');
-      await expect(
-        page.locator('#keyboard-shortcuts-modal'),
-      ).toHaveClass(/show/);
+      await expect(page.locator('#keyboard-shortcuts-modal')).toHaveClass(
+        /show/,
+      );
 
       // Close via Escape
       await pressEscapeOnModal(page, 'keyboard-shortcuts-modal');
-      await page.waitForTimeout(300);
-
-      // Focus should return to the trigger button
-      const focusedId = await page.evaluate(
-        () => document.activeElement?.id,
+      await expect(page.locator('#keyboard-shortcuts-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
       );
+
+      // Wait for focus to return after close animation completes
+      await page.waitForFunction(
+        () => document.activeElement?.id === 'show-shortcuts-btn',
+        { timeout: 3000 },
+      );
+
+      const focusedId = await page.evaluate(() => document.activeElement?.id);
       expect(focusedId).toBe('show-shortcuts-btn');
     });
   });
@@ -448,12 +432,10 @@ test.describe('Modal Interactions', () => {
       // Press ? again while modal is open — should not open a second instance
       // (The keydown handler checks if a modal is already open or ignores when focus is in modal)
       await page.keyboard.press('?');
-      await page.waitForTimeout(100);
 
       // There should be at most one modal with .show
       const openModals = await page.evaluate(
-        () =>
-          document.querySelectorAll('.modal-overlay.show').length,
+        () => document.querySelectorAll('.modal-overlay.show').length,
       );
       expect(openModals).toBeLessThanOrEqual(1);
     });
@@ -466,25 +448,25 @@ test.describe('Modal Interactions', () => {
 
       // Close it
       await pressEscapeOnModal(page, 'keyboard-shortcuts-modal');
-      await page.waitForTimeout(300);
+      await expect(page.locator('#keyboard-shortcuts-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
 
       // Open change PIN modal
       await openChangePinModal(page);
 
       // Verify only one modal is open
       const openModals = await page.evaluate(
-        () =>
-          document.querySelectorAll('.modal-overlay.show').length,
+        () => document.querySelectorAll('.modal-overlay.show').length,
       );
       expect(openModals).toBe(1);
 
       // Verify it is the correct one
-      await expect(page.locator('#change-pin-modal')).toHaveClass(
-        /show/,
+      await expect(page.locator('#change-pin-modal')).toHaveClass(/show/);
+      await expect(page.locator('#keyboard-shortcuts-modal')).not.toHaveClass(
+        /\bshow\b/,
       );
-      await expect(
-        page.locator('#keyboard-shortcuts-modal'),
-      ).not.toHaveClass(/\bshow\b/);
     });
   });
 
@@ -499,9 +481,7 @@ test.describe('Modal Interactions', () => {
       await openShortcutsModal(page);
 
       // The shortcuts modal has a .shortcuts-body with overflow-y: auto
-      const body = page.locator(
-        '#keyboard-shortcuts-modal .shortcuts-body',
-      );
+      const body = page.locator('#keyboard-shortcuts-modal .shortcuts-body');
       await expect(body).toBeVisible();
 
       // Check that the body element supports scrolling (scrollHeight >= clientHeight)
@@ -512,9 +492,7 @@ test.describe('Modal Interactions', () => {
         if (!el) return false;
         // Either the content already overflows, or the overflow-y property allows scrolling
         const style = getComputedStyle(el);
-        return (
-          style.overflowY === 'auto' || style.overflowY === 'scroll'
-        );
+        return style.overflowY === 'auto' || style.overflowY === 'scroll';
       });
       expect(isScrollable).toBe(true);
     });
@@ -525,9 +503,7 @@ test.describe('Modal Interactions', () => {
       await openChangePinModal(page);
 
       const overflowY = await page.evaluate(() => {
-        const body = document.querySelector(
-          '#change-pin-modal .modal-body',
-        );
+        const body = document.querySelector('#change-pin-modal .modal-body');
         if (!body) return 'none';
         return getComputedStyle(body).overflowY;
       });
@@ -549,7 +525,8 @@ test.describe('Modal Interactions', () => {
       // Try to scroll the page body
       const scrollBefore = await page.evaluate(() => window.scrollY);
       await page.mouse.wheel(0, 200);
-      await page.waitForTimeout(100);
+      // Wait a frame for any scroll to take effect
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
       const scrollAfter = await page.evaluate(() => window.scrollY);
 
       // Page scroll should not change (the modal overlay covers the viewport)
@@ -586,9 +563,7 @@ test.describe('Modal Interactions', () => {
       await expect(title).toBeVisible();
     });
 
-    test('admin PIN modal has correct aria-labelledby', async ({
-      page,
-    }) => {
+    test('admin PIN modal has correct aria-labelledby', async ({ page }) => {
       await openAdminPinModal(page);
 
       const modal = page.locator('#admin-pin-modal');
@@ -611,50 +586,46 @@ test.describe('Modal Interactions', () => {
         '#edit-modal .modal-btn.secondary[data-action="cancel"]',
       );
 
-      await expect(page.locator('#edit-modal')).not.toHaveClass(
-        /\bshow\b/,
-        { timeout: 3000 },
-      );
+      await expect(page.locator('#edit-modal')).not.toHaveClass(/\bshow\b/, {
+        timeout: 3000,
+      });
     });
 
-    test('change PIN modal Cancel button closes modal', async ({
-      page,
-    }) => {
+    test('change PIN modal Cancel button closes modal', async ({ page }) => {
       await openChangePinModal(page);
 
       await page.click(
         '#change-pin-modal .modal-btn.secondary[data-action="cancel"]',
       );
 
-      await expect(
-        page.locator('#change-pin-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#change-pin-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
 
-    test('admin PIN modal Cancel button closes modal', async ({
-      page,
-    }) => {
+    test('admin PIN modal Cancel button closes modal', async ({ page }) => {
       await openAdminPinModal(page);
 
       await page.click(
         '#admin-pin-modal .modal-btn.secondary[data-action="cancel"]',
       );
 
-      await expect(
-        page.locator('#admin-pin-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#admin-pin-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
 
-    test('shortcuts modal Done button closes modal', async ({
-      page,
-    }) => {
+    test('shortcuts modal Done button closes modal', async ({ page }) => {
       await openShortcutsModal(page);
 
       await page.click('#shortcuts-done-btn');
 
-      await expect(
-        page.locator('#keyboard-shortcuts-modal'),
-      ).not.toHaveClass(/\bshow\b/, { timeout: 3000 });
+      await expect(page.locator('#keyboard-shortcuts-modal')).not.toHaveClass(
+        /\bshow\b/,
+        { timeout: 3000 },
+      );
     });
   });
 });

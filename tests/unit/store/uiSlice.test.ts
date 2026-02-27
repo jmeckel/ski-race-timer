@@ -12,9 +12,9 @@ import {
   setBibInput,
   setLanguage,
   setRecording,
-  setSelectMode,
   setSelectedPoint,
   setSelectedRun,
+  setSelectMode,
   setView,
   toggleEntrySelection,
 } from '../../../src/store/slices/uiSlice';

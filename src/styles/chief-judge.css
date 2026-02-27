@@ -1,688 +1,686 @@
 /* ===== Chief Judge View ===== */
 @layer components {
-
-/* Chief Judge Toggle Row */
-.chief-judge-toggle-row {
-  padding: 8px 0 4px 0;
-  margin-block-end: 4px;
-  border-bottom: 1px solid var(--surface-elevated);
-  display: none; /* Hidden by default, shown when sync is enabled with faults */
-}
-
-.chief-judge-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 2px solid var(--surface-elevated);
-  border-radius: 9999px;
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  justify-content: center;
-}
-
-.chief-judge-toggle-btn:active {
-  transform: scale(0.98);
-}
-
-.chief-judge-toggle-btn.active {
-  border-color: var(--primary);
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--primary-dark) 100%
-  );
-  color: white;
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent);
-}
-
-.chief-judge-toggle-btn svg {
-  flex-shrink: 0;
-}
-
-/* Chief Judge Panel (shown when toggle is active) */
-.chief-judge-panel {
-  display: none;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  padding: 0 16px 12px;
-}
-
-.chief-judge-panel.active {
-  display: flex;
-}
-
-/* Hide normal results when chief panel is active */
-.results-view.chief-mode .results-list,
-.results-view.chief-mode .search-filter-bar,
-.results-view.chief-mode .results-info-bar {
-  display: none;
-}
-
-.results-view.chief-mode .chief-judge-panel {
-  display: flex;
-}
-
-/* Fault Summary Header */
-.fault-summary-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-}
-
-.fault-summary-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.fault-summary-count {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--warning);
-  background: rgba(234, 179, 8, 0.15);
-  padding: 4px 10px;
-  border-radius: 9999px;
-}
-
-/* Fault Summary List */
-.fault-summary-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* Fault Summary Card (per racer) */
-.fault-summary-card {
-  background: var(--surface);
-  border: 1px solid var(--surface-elevated);
-  border-radius: var(--radius);
-  margin-block-end: 8px;
-  overflow: hidden;
-}
-
-.fault-summary-card.finalized {
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.05);
-}
-
-.fault-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--surface-elevated);
-}
-
-.fault-card-bib {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.fault-card-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fault-card-penalty {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--warning);
-}
-
-.fault-card-result {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.fault-card-result.flt {
-  background: var(--warning);
-  color: var(--background);
-}
-
-.fault-card-result.dsq {
-  background: var(--error);
-  color: white;
-}
-
-.fault-card-body {
-  padding: 12px 14px;
-}
-
-.fault-entry-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px dashed var(--surface-elevated);
-}
-
-.fault-entry-row:last-child {
-  border-bottom: none;
-}
-
-.fault-gate-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fault-gate-num {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.fault-type-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--error);
-}
-
-.fault-judge-name {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-}
-
-/* Fault row actions (edit/delete buttons) */
-.fault-row-actions {
-  display: flex;
-  gap: 4px;
-  margin-inline-start: auto;
-}
-
-.fault-row-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  min-width: 48px;
-  min-height: 48px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.fault-row-btn:hover {
-  background: var(--surface-elevated);
-  color: var(--text-primary);
-}
-
-.fault-row-btn.edit-fault-btn:hover {
-  color: var(--primary);
-}
-
-.fault-row-btn.delete-fault-btn:hover {
-  color: var(--error);
-}
-
-.fault-row-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-/* Fault entry row - marked for deletion */
-.fault-entry-row.marked-for-deletion {
-  opacity: 0.6;
-}
-
-.fault-gate-num.strikethrough {
-  text-decoration: line-through;
-}
-
-.fault-type-badge.marked {
-  background: rgba(239, 68, 68, 0.3);
-}
-
-.deletion-pending-badge {
-  font-size: 0.75rem;
-  color: var(--error);
-  font-weight: 600;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+  /* Chief Judge Toggle Row */
+  .chief-judge-toggle-row {
+    padding: 8px 0 4px 0;
+    margin-block-end: 4px;
+    border-bottom: 1px solid var(--surface-elevated);
+    display: none; /* Hidden by default, shown when sync is enabled with faults */
   }
-  50% {
+
+  .chief-judge-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px solid var(--surface-elevated);
+    border-radius: 9999px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .chief-judge-toggle-btn:active {
+    transform: scale(0.98);
+  }
+
+  .chief-judge-toggle-btn.active {
+    border-color: var(--primary);
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    );
+    color: white;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+
+  .chief-judge-toggle-btn svg {
+    flex-shrink: 0;
+  }
+
+  /* Chief Judge Panel (shown when toggle is active) */
+  .chief-judge-panel {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    padding: 0 16px 12px;
+  }
+
+  .chief-judge-panel.active {
+    display: flex;
+  }
+
+  /* Hide normal results when chief panel is active */
+  .results-view.chief-mode .results-list,
+  .results-view.chief-mode .search-filter-bar,
+  .results-view.chief-mode .results-info-bar {
+    display: none;
+  }
+
+  .results-view.chief-mode .chief-judge-panel {
+    display: flex;
+  }
+
+  /* Fault Summary Header */
+  .fault-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+  }
+
+  .fault-summary-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .fault-summary-count {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--warning);
+    background: rgba(234, 179, 8, 0.15);
+    padding: 4px 10px;
+    border-radius: 9999px;
+  }
+
+  /* Fault Summary List */
+  .fault-summary-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Fault Summary Card (per racer) */
+  .fault-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-elevated);
+    border-radius: var(--radius);
+    margin-block-end: 8px;
+    overflow: hidden;
+  }
+
+  .fault-summary-card.finalized {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.05);
+  }
+
+  .fault-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--surface-elevated);
+  }
+
+  .fault-card-bib {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .fault-card-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fault-card-penalty {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--warning);
+  }
+
+  .fault-card-result {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .fault-card-result.flt {
+    background: var(--warning);
+    color: var(--background);
+  }
+
+  .fault-card-result.dsq {
+    background: var(--error);
+    color: white;
+  }
+
+  .fault-card-body {
+    padding: 12px 14px;
+  }
+
+  .fault-entry-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--surface-elevated);
+  }
+
+  .fault-entry-row:last-child {
+    border-bottom: none;
+  }
+
+  .fault-gate-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fault-gate-num {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .fault-type-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error);
+  }
+
+  .fault-judge-name {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+  }
+
+  /* Fault row actions (edit/delete buttons) */
+  .fault-row-actions {
+    display: flex;
+    gap: 4px;
+    margin-inline-start: auto;
+  }
+
+  .fault-row-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    min-width: 48px;
+    min-height: 48px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .fault-row-btn:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+
+  .fault-row-btn.edit-fault-btn:hover {
+    color: var(--primary);
+  }
+
+  .fault-row-btn.delete-fault-btn:hover {
+    color: var(--error);
+  }
+
+  .fault-row-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Fault entry row - marked for deletion */
+  .fault-entry-row.marked-for-deletion {
+    opacity: 0.6;
+  }
+
+  .fault-gate-num.strikethrough {
+    text-decoration: line-through;
+  }
+
+  .fault-type-badge.marked {
+    background: rgba(239, 68, 68, 0.3);
+  }
+
+  .deletion-pending-badge {
+    font-size: 0.75rem;
+    color: var(--error);
+    font-weight: 600;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Pending Deletions Section */
+  .pending-deletions-section {
+    margin-block-end: 16px;
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .pending-deletions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: rgba(239, 68, 68, 0.1);
+    border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .pending-deletions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--error);
+    font-size: 0.875rem;
+  }
+
+  .pending-deletions-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: var(--error);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .pending-deletions-list {
+    padding: 8px;
+  }
+
+  .pending-deletion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    margin-block-end: 8px;
+  }
+
+  .pending-deletion-item:last-child {
+    margin-block-end: 0;
+  }
+
+  .pending-deletion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pending-deletion-fault {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .pending-deletion-meta {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+  }
+
+  .pending-deletion-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .pending-deletion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--btn-height-md);
+    height: var(--btn-height-md);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .pending-deletion-btn.approve {
+    background: var(--success);
+    color: white;
+  }
+
+  .pending-deletion-btn.approve:active {
+    transform: scale(0.95);
+  }
+
+  .pending-deletion-btn.reject {
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+  }
+
+  .pending-deletion-btn.reject:hover {
+    background: var(--error);
+    color: white;
+  }
+
+  .pending-deletion-btn.reject:active {
+    transform: scale(0.95);
+  }
+
+  .fault-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--surface-elevated);
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .finalize-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--success);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .finalize-btn:active {
+    transform: scale(0.98);
+  }
+
+  .finalize-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .finalized-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  /* Empty state for chief judge panel */
+  .chief-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    gap: 12px;
+    padding: 40px 20px;
+  }
+
+  .chief-empty-state svg {
     opacity: 0.5;
   }
-}
 
-/* Pending Deletions Section */
-.pending-deletions-section {
-  margin-block-end: 16px;
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
+  .chief-empty-state span {
+    font-size: 0.875rem;
+  }
 
-.pending-deletions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  background: rgba(239, 68, 68, 0.1);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
-}
+  /* Penalty Configuration Row */
+  .penalty-config-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--surface-elevated);
+    margin-block-end: 8px;
+  }
 
-.pending-deletions-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: var(--error);
-  font-size: 0.875rem;
-}
+  .penalty-mode-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-elevated);
+    border-radius: 8px;
+    padding: 2px;
+  }
 
-.pending-deletions-count {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 8px;
-  border-radius: 12px;
-  background: var(--error);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+  .penalty-mode-btn {
+    padding: 12px 16px;
+    min-height: var(--btn-height-md);
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
 
-.pending-deletions-list {
-  padding: 8px;
-}
+  .penalty-mode-btn.active {
+    background: var(--primary);
+    color: white;
+  }
 
-.pending-deletion-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  margin-block-end: 8px;
-}
+  .penalty-mode-btn:not(.active):hover {
+    color: var(--text-primary);
+  }
 
-.pending-deletion-item:last-child {
-  margin-block-end: 0;
-}
+  .penalty-seconds-selector {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
 
-.pending-deletion-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+  .penalty-adj-btn {
+    width: var(--btn-height-md);
+    height: var(--btn-height-md);
+    border: 1px solid var(--surface-elevated);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.pending-deletion-fault {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
+  .penalty-adj-btn:active {
+    transform: scale(0.95);
+    background: var(--surface-elevated);
+  }
 
-.pending-deletion-meta {
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-}
+  .penalty-seconds-value {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--warning);
+    min-width: 32px;
+    text-align: center;
+  }
 
-.pending-deletion-actions {
-  display: flex;
-  gap: 8px;
-}
+  .penalty-seconds-unit {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-inline-end: 4px;
+  }
 
-.pending-deletion-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--btn-height-md);
-  height: var(--btn-height-md);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
+  /* Hide penalty seconds when in DSQ mode */
+  .penalty-config-row.dsq-mode .penalty-seconds-selector {
+    opacity: 0.3;
+    pointer-events: none;
+  }
 
-.pending-deletion-btn.approve {
-  background: var(--success);
-  color: white;
-}
+  /* ===== Judges Overview in Chief Panel ===== */
 
-.pending-deletion-btn.approve:active {
-  transform: scale(0.95);
-}
+  .judges-overview {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-block-end: 12px;
+  }
 
-.pending-deletion-btn.reject {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
+  .judges-overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-block-end: 10px;
+  }
 
-.pending-deletion-btn.reject:hover {
-  background: var(--error);
-  color: white;
-}
+  .judges-overview-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 
-.pending-deletion-btn.reject:active {
-  transform: scale(0.95);
-}
+  .judges-overview-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--success);
+    background: rgba(34, 197, 94, 0.15);
+    padding: 2px 8px;
+    border-radius: 9999px;
+  }
 
-.fault-card-actions {
-  display: flex;
-  gap: 8px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--surface-elevated);
-  background: rgba(0, 0, 0, 0.2);
-}
+  .judges-overview-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
-.finalize-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--success);
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
+  .judges-overview-empty {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-style: italic;
+  }
 
-.finalize-btn:active {
-  transform: scale(0.98);
-}
+  .judge-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
 
-.finalize-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .judge-card.ready {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.1);
+  }
 
-.finalized-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--success);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
+  .judge-card .judge-ready-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    flex-shrink: 0;
+  }
 
-/* Empty state for chief judge panel */
-.chief-empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  gap: 12px;
-  padding: 40px 20px;
-}
+  .judge-card.ready .judge-ready-indicator {
+    background: var(--success);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  }
 
-.chief-empty-state svg {
-  opacity: 0.5;
-}
+  .judge-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
 
-.chief-empty-state span {
-  font-size: 0.875rem;
-}
+  .judge-gates {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+  }
 
-/* Penalty Configuration Row */
-.penalty-config-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--surface-elevated);
-  margin-block-end: 8px;
-}
+  /* ===== Chief Export Actions ===== */
 
-.penalty-mode-toggle {
-  display: flex;
-  gap: 2px;
-  background: var(--surface-elevated);
-  border-radius: 8px;
-  padding: 2px;
-}
+  .chief-export-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid var(--surface-elevated);
+    margin-block-start: auto;
+  }
 
-.penalty-mode-btn {
-  padding: 12px 16px;
-  min-height: var(--btn-height-md);
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
+  .chief-export-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 8px;
+    min-height: 48px;
+    border: 1px solid var(--surface-elevated);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
 
-.penalty-mode-btn.active {
-  background: var(--primary);
-  color: white;
-}
+  .chief-export-btn:active {
+    transform: scale(0.97);
+    background: var(--surface-elevated);
+  }
 
-.penalty-mode-btn:not(.active):hover {
-  color: var(--text-primary);
-}
+  .chief-export-btn svg {
+    flex-shrink: 0;
+  }
 
-.penalty-seconds-selector {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+  .chief-export-btn.whatsapp {
+    background: #25d366;
+    border-color: #25d366;
+    color: white;
+  }
 
-.penalty-adj-btn {
-  width: var(--btn-height-md);
-  height: var(--btn-height-md);
-  border: 1px solid var(--surface-elevated);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.penalty-adj-btn:active {
-  transform: scale(0.95);
-  background: var(--surface-elevated);
-}
-
-.penalty-seconds-value {
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--warning);
-  min-width: 32px;
-  text-align: center;
-}
-
-.penalty-seconds-unit {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-inline-end: 4px;
-}
-
-/* Hide penalty seconds when in DSQ mode */
-.penalty-config-row.dsq-mode .penalty-seconds-selector {
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-/* ===== Judges Overview in Chief Panel ===== */
-
-.judges-overview {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 12px;
-  margin-block-end: 12px;
-}
-
-.judges-overview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-block-end: 10px;
-}
-
-.judges-overview-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.judges-overview-count {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--success);
-  background: rgba(34, 197, 94, 0.15);
-  padding: 2px 8px;
-  border-radius: 9999px;
-}
-
-.judges-overview-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.judges-overview-empty {
-  color: var(--text-tertiary);
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-.judge-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--surface-elevated);
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  transition: all 0.15s ease;
-}
-
-.judge-card.ready {
-  border-color: rgba(34, 197, 94, 0.4);
-  background: rgba(34, 197, 94, 0.1);
-}
-
-.judge-card .judge-ready-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.judge-card.ready .judge-ready-indicator {
-  background: var(--success);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
-}
-
-.judge-name {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100px;
-}
-
-.judge-gates {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--primary);
-  white-space: nowrap;
-}
-
-/* ===== Chief Export Actions ===== */
-
-.chief-export-actions {
-  display: flex;
-  gap: 8px;
-  padding: 12px 0;
-  border-top: 1px solid var(--surface-elevated);
-  margin-block-start: auto;
-}
-
-.chief-export-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 8px;
-  min-height: 48px;
-  border: 1px solid var(--surface-elevated);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.chief-export-btn:active {
-  transform: scale(0.97);
-  background: var(--surface-elevated);
-}
-
-.chief-export-btn svg {
-  flex-shrink: 0;
-}
-
-.chief-export-btn.whatsapp {
-  background: #25d366;
-  border-color: #25d366;
-  color: white;
-}
-
-.chief-export-btn.whatsapp:active {
-  background: #1fa855;
-}
-
+  .chief-export-btn.whatsapp:active {
+    background: #1fa855;
+  }
 } /* end @layer components */

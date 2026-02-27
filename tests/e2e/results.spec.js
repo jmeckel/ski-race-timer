@@ -123,7 +123,10 @@ test.describe('Results View', () => {
       await expect(page.locator('.modal-overlay.show')).toBeVisible();
 
       await page.click('.modal-btn:not(.primary):not(.danger)');
-      await page.waitForSelector('.modal-overlay.show', { state: 'hidden', timeout: 3000 });
+      await page.waitForSelector('.modal-overlay.show', {
+        state: 'hidden',
+        timeout: 3000,
+      });
     });
   });
 

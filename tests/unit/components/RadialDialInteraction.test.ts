@@ -15,7 +15,12 @@ import {
 vi.mock('../../../src/utils/listenerManager', () => {
   class MockListenerManager {
     private tracked: Array<
-      [EventTarget, string, EventListener, boolean | AddEventListenerOptions | undefined]
+      [
+        EventTarget,
+        string,
+        EventListener,
+        boolean | AddEventListenerOptions | undefined,
+      ]
     > = [];
 
     add = vi.fn(
@@ -668,9 +673,7 @@ describe('RadialDialInteraction', () => {
     });
 
     it('should use momentum for negative velocity exceeding threshold', () => {
-      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(
-        -0.8,
-      );
+      (callbacks.getVelocity as ReturnType<typeof vi.fn>).mockReturnValue(-0.8);
 
       simulateMouseDown(container, 380, 230);
       simulateMouseMove(380, 260);

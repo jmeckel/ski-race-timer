@@ -76,8 +76,12 @@ test.describe('Production PWA - Timer View', () => {
     await expect(page.locator('#radial-bib-value')).toBeVisible();
     await expect(page.locator('.dial-number[data-num="0"]')).toBeVisible();
     await expect(page.locator('.dial-number[data-num="9"]')).toBeVisible();
-    await expect(page.locator('.radial-point-btn[data-point="S"]')).toBeVisible();
-    await expect(page.locator('.radial-point-btn[data-point="F"]')).toBeVisible();
+    await expect(
+      page.locator('.radial-point-btn[data-point="S"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('.radial-point-btn[data-point="F"]'),
+    ).toBeVisible();
     await expect(page.locator('#radial-time-btn')).toBeVisible();
   });
 
@@ -85,11 +89,23 @@ test.describe('Production PWA - Timer View', () => {
     const clockUpdates = await page.evaluate(() => {
       return new Promise((resolve) => {
         const clock = document.querySelector('#radial-time-seconds');
-        if (!clock) { resolve(-1); return; }
+        if (!clock) {
+          resolve(-1);
+          return;
+        }
         let updateCount = 0;
-        const observer = new MutationObserver(() => { updateCount++; });
-        observer.observe(clock, { childList: true, characterData: true, subtree: true });
-        setTimeout(() => { observer.disconnect(); resolve(updateCount); }, 1000);
+        const observer = new MutationObserver(() => {
+          updateCount++;
+        });
+        observer.observe(clock, {
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+        setTimeout(() => {
+          observer.disconnect();
+          resolve(updateCount);
+        }, 1000);
       });
     });
     expect(clockUpdates).toBeGreaterThan(0);
@@ -118,12 +134,20 @@ test.describe('Production PWA - Timer View', () => {
   test('should handle timing point and tab navigation', async ({ page }) => {
     // Timing point selection
     await page.click('.radial-point-btn[data-point="S"]');
-    await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(/active/);
-    await expect(page.locator('.radial-point-btn[data-point="F"]')).not.toHaveClass(/active/);
+    await expect(page.locator('.radial-point-btn[data-point="S"]')).toHaveClass(
+      /active/,
+    );
+    await expect(
+      page.locator('.radial-point-btn[data-point="F"]'),
+    ).not.toHaveClass(/active/);
 
     await page.click('.radial-point-btn[data-point="F"]');
-    await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(/active/);
-    await expect(page.locator('.radial-point-btn[data-point="S"]')).not.toHaveClass(/active/);
+    await expect(page.locator('.radial-point-btn[data-point="F"]')).toHaveClass(
+      /active/,
+    );
+    await expect(
+      page.locator('.radial-point-btn[data-point="S"]'),
+    ).not.toHaveClass(/active/);
 
     // Tab navigation
     await page.click('[data-view="results"]');
@@ -148,9 +172,13 @@ test.describe('Production PWA - Timer View', () => {
     await page.click('#radial-time-btn');
 
     // Confirmation overlay
-    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).toHaveClass(
+      /show/,
+    );
     await waitForConfirmationToHide(page);
-    await expect(page.locator('#radial-confirmation-overlay')).not.toHaveClass(/show/);
+    await expect(page.locator('#radial-confirmation-overlay')).not.toHaveClass(
+      /show/,
+    );
 
     // Entry visible in results
     await page.click('[data-view="results"]');
@@ -315,14 +343,16 @@ test.describe('Production PWA - PWA Features', () => {
     expect(viewport).toContain('initial-scale=1');
 
     // Theme color
-    await expect(
-      page.locator('meta[name="theme-color"]'),
-    ).toHaveAttribute('content', /.+/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      'content',
+      /.+/,
+    );
 
     // Apple touch icon
-    await expect(
-      page.locator('link[rel="apple-touch-icon"]'),
-    ).toHaveAttribute('href', /.+/);
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+      'href',
+      /.+/,
+    );
 
     // Security
     expect((await page.goto(PROD_URL)).status()).toBe(200);

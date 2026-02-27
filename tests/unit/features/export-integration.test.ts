@@ -197,7 +197,9 @@ describe('Export Integration', () => {
       it('should export FLT when penalty mode is on', () => {
         mockGetState.mockReturnValue({
           entries: [entry({ bib: '045', point: 'F' })],
-          faultEntries: [fault({ bib: '045', gateNumber: 5, faultType: 'STR' })],
+          faultEntries: [
+            fault({ bib: '045', gateNumber: 5, faultType: 'STR' }),
+          ],
           currentLang: 'en',
           raceId: 'RACE',
           usePenaltyMode: true,

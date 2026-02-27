@@ -64,9 +64,7 @@ vi.mock('../../../../src/features/race/pinManagement', () => ({
 
 import { showToast } from '../../../../src/components';
 import { closeModal } from '../../../../src/features/modals';
-import {
-  handleAdminPinVerify,
-} from '../../../../src/features/race/raceAdmin';
+import { handleAdminPinVerify } from '../../../../src/features/race/raceAdmin';
 import { logError } from '../../../../src/utils';
 
 /**
@@ -82,19 +80,25 @@ async function triggerLoadRaceList(waitForToast = false): Promise<void> {
   if (waitForToast) {
     // Error paths: 401 returns early without clearing aria-busy.
     // Wait for showToast or logError to be called instead.
-    await vi.waitFor(() => {
-      if ((showToast as ReturnType<typeof vi.fn>).mock.calls.length === 0) {
-        throw new Error('Waiting for toast');
-      }
-    }, { timeout: 1000 });
+    await vi.waitFor(
+      () => {
+        if ((showToast as ReturnType<typeof vi.fn>).mock.calls.length === 0) {
+          throw new Error('Waiting for toast');
+        }
+      },
+      { timeout: 1000 },
+    );
   } else {
     // Success paths: wait for aria-busy to clear.
-    await vi.waitFor(() => {
-      const list = document.getElementById('race-list');
-      if (list?.getAttribute('aria-busy') === 'true') {
-        throw new Error('Still loading');
-      }
-    }, { timeout: 1000 });
+    await vi.waitFor(
+      () => {
+        const list = document.getElementById('race-list');
+        if (list?.getAttribute('aria-busy') === 'true') {
+          throw new Error('Still loading');
+        }
+      },
+      { timeout: 1000 },
+    );
   }
 }
 

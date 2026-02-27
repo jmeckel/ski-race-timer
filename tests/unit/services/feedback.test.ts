@@ -62,14 +62,17 @@ const vibrateSpy = vi.fn(() => true);
 // We need navigator.vibrate to be a callable spy. Define it once as configurable.
 // Since this runs before tests, and we never redefine the property itself (just mock.clear),
 // there's no "Cannot redefine" issue.
-vi.stubGlobal('navigator', new Proxy(globalThis.navigator, {
-  get(target, prop, receiver) {
-    if (prop === 'vibrate') {
-      return vibrateSpy;
-    }
-    return Reflect.get(target, prop, receiver);
-  },
-}));
+vi.stubGlobal(
+  'navigator',
+  new Proxy(globalThis.navigator, {
+    get(target, prop, receiver) {
+      if (prop === 'vibrate') {
+        return vibrateSpy;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  }),
+);
 
 // --- AudioContext mock infrastructure ---
 let mockOscillator: {
@@ -477,12 +480,15 @@ describe('Feedback Service', () => {
 
       vi.unstubAllGlobals();
       // Re-stub navigator for remaining tests
-      vi.stubGlobal('navigator', new Proxy(globalThis.navigator ?? {}, {
-        get(target, prop) {
-          if (prop === 'vibrate') return vibrateSpy;
-          return Reflect.get(target, prop);
-        },
-      }));
+      vi.stubGlobal(
+        'navigator',
+        new Proxy(globalThis.navigator ?? {}, {
+          get(target, prop) {
+            if (prop === 'vibrate') return vibrateSpy;
+            return Reflect.get(target, prop);
+          },
+        }),
+      );
     });
 
     it('should not throw if speechSynthesis is undefined', () => {
@@ -504,12 +510,15 @@ describe('Feedback Service', () => {
       expect(() => feedback.cleanupFeedback()).not.toThrow();
 
       vi.unstubAllGlobals();
-      vi.stubGlobal('navigator', new Proxy(globalThis.navigator ?? {}, {
-        get(target, prop) {
-          if (prop === 'vibrate') return vibrateSpy;
-          return Reflect.get(target, prop);
-        },
-      }));
+      vi.stubGlobal(
+        'navigator',
+        new Proxy(globalThis.navigator ?? {}, {
+          get(target, prop) {
+            if (prop === 'vibrate') return vibrateSpy;
+            return Reflect.get(target, prop);
+          },
+        }),
+      );
     });
 
     it('should allow a new AudioContext to be created after cleanup', async () => {

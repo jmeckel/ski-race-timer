@@ -217,7 +217,10 @@ describe('Photo Viewer Feature Module', () => {
     it('should warn and NOT open modal when IndexedDB returns null', async () => {
       vi.mocked(photoStorage.getPhoto).mockResolvedValue(null);
 
-      const entry = createMockEntry({ id: 'entry-missing', photo: 'indexeddb' });
+      const entry = createMockEntry({
+        id: 'entry-missing',
+        photo: 'indexeddb',
+      });
       await openPhotoViewer(entry);
 
       expect(logger.warn).toHaveBeenCalledWith(
@@ -237,7 +240,10 @@ describe('Photo Viewer Feature Module', () => {
         }),
       );
 
-      const entry = createMockEntry({ id: 'pending-entry', photo: 'indexeddb' });
+      const entry = createMockEntry({
+        id: 'pending-entry',
+        photo: 'indexeddb',
+      });
       const promise = openPhotoViewer(entry);
 
       // Entry ID should be set immediately, before IndexedDB resolves

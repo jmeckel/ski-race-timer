@@ -99,18 +99,18 @@ vi.mock('../../../../src/features/race', () => ({
   verifyPinForRaceJoin: vi.fn(() => Promise.resolve(true)),
 }));
 
-import { syncService } from '../../../../src/services';
-import { getTodaysRecentRaces } from '../../../../src/utils/recentRaces';
-import {
-  attachRecentRaceItemHandlers,
-  renderRecentRaceItems,
-} from '../../../../src/utils/recentRacesUi';
 import {
   checkRaceExists,
   fetchRacesFromApi,
   showSettingsRecentRacesDropdown,
   updateRaceExistsIndicator,
 } from '../../../../src/features/settings/syncSettings';
+import { syncService } from '../../../../src/services';
+import { getTodaysRecentRaces } from '../../../../src/utils/recentRaces';
+import {
+  attachRecentRaceItemHandlers,
+  renderRecentRaceItems,
+} from '../../../../src/utils/recentRacesUi';
 
 describe('Sync Settings — extended coverage', () => {
   let container: HTMLDivElement;
@@ -251,7 +251,7 @@ describe('Sync Settings — extended coverage', () => {
       await expect(fetchRacesFromApi()).rejects.toThrow('API error: 500');
     });
 
-    it('should filter to today\'s races only', async () => {
+    it("should filter to today's races only", async () => {
       mockGetRaw.mockReturnValue('token');
       const now = Date.now();
       const yesterday = now - 86400000 * 2; // 2 days ago

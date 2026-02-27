@@ -12,6 +12,8 @@ import './styles/radial-dial.css';
 import { initApp } from './app';
 import { getToast } from './components/Toast';
 import { batteryService } from './services/battery';
+import { initInstallPrompt } from './services/installPrompt';
+import { initSwUpdateHandler } from './services/swUpdateHandler';
 import { initGlobalErrorHandlers } from './utils/errorBoundary';
 import { logStorageUsage } from './utils/storageQuota';
 
@@ -30,6 +32,12 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
+// Register SW update handler (runs independently of DOM readiness)
+initSwUpdateHandler();
+
+// Initialize install prompt capture (must run before user dismisses browser banner)
+initInstallPrompt();
 
 // Toggle power-saver CSS class based on battery level
 // Stops infinite GPU animations when battery is low to save power

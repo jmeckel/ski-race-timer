@@ -477,7 +477,10 @@ describe('Camera Service - Full Coverage', () => {
       // Set up deferred getUserMedia for reinit
       let resolveMedia!: (value: unknown) => void;
       (navigator.mediaDevices as any).getUserMedia = vi.fn(
-        () => new Promise((resolve) => { resolveMedia = resolve; }),
+        () =>
+          new Promise((resolve) => {
+            resolveMedia = resolve;
+          }),
       );
 
       // Show page -> triggers reinitializeCamera (state = 'resuming')
@@ -511,7 +514,10 @@ describe('Camera Service - Full Coverage', () => {
       // Set up deferred getUserMedia for reinit
       let resolveMedia!: (value: unknown) => void;
       (navigator.mediaDevices as any).getUserMedia = vi.fn(
-        () => new Promise((resolve) => { resolveMedia = resolve; }),
+        () =>
+          new Promise((resolve) => {
+            resolveMedia = resolve;
+          }),
       );
 
       // Show -> starts reinitialize (state = 'resuming')
@@ -575,10 +581,7 @@ describe('Camera Service - Full Coverage', () => {
         setDocumentHidden(true);
         setDocumentHidden(false);
         await vi.waitFor(() => {
-          expect(mockSetCameraReady).toHaveBeenCalledWith(
-            false,
-            'Camera busy',
-          );
+          expect(mockSetCameraReady).toHaveBeenCalledWith(false, 'Camera busy');
         });
         vi.clearAllMocks();
       }
@@ -607,10 +610,7 @@ describe('Camera Service - Full Coverage', () => {
       setDocumentHidden(true);
       setDocumentHidden(false);
       await vi.waitFor(() => {
-        expect(mockSetCameraReady).toHaveBeenCalledWith(
-          false,
-          'Camera busy',
-        );
+        expect(mockSetCameraReady).toHaveBeenCalledWith(false, 'Camera busy');
       });
       vi.clearAllMocks();
 
@@ -639,9 +639,7 @@ describe('Camera Service - Full Coverage', () => {
       // Camera should still be paused (not stopped) — still has 1 retry left
       // Verify by doing one more cycle — getUserMedia should be called
       vi.clearAllMocks();
-      const lastGetUserMedia = vi.fn(() =>
-        Promise.reject(new Error('Final')),
-      );
+      const lastGetUserMedia = vi.fn(() => Promise.reject(new Error('Final')));
       (navigator.mediaDevices as any).getUserMedia = lastGetUserMedia;
       setDocumentHidden(true);
       setDocumentHidden(false);
@@ -1116,10 +1114,7 @@ describe('Camera Service - Full Coverage', () => {
         setDocumentHidden(true);
         setDocumentHidden(false);
         await vi.waitFor(() => {
-          expect(mockSetCameraReady).toHaveBeenCalledWith(
-            false,
-            'Camera busy',
-          );
+          expect(mockSetCameraReady).toHaveBeenCalledWith(false, 'Camera busy');
         });
         vi.clearAllMocks();
       }

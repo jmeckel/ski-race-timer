@@ -1698,7 +1698,9 @@ body:has(.modal-overlay.show) #toast-container .toast {
   color: var(--text-primary);
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
   pointer-events: auto;
   max-width: 90vw;
 }

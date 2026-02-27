@@ -47,10 +47,7 @@ async function setupChiefJudge(page, { lang = 'en', faults = [] } = {}) {
 
       // Gate judge role is required for chief judge toggle initialization
       localStorage.setItem('skiTimerDeviceRole', 'gateJudge');
-      localStorage.setItem(
-        'skiTimerGateAssignment',
-        JSON.stringify([1, 10]),
-      );
+      localStorage.setItem('skiTimerGateAssignment', JSON.stringify([1, 10]));
       localStorage.setItem('skiTimerFirstGateColor', 'red');
 
       if (faults.length > 0) {
@@ -251,9 +248,27 @@ test.describe('Chief Judge - Empty State', () => {
 
 test.describe('Chief Judge - Fault Summary', () => {
   const testFaults = [
-    createTestFault({ id: 'f1', bib: '42', gateNumber: 5, faultType: 'MG', deviceName: 'Judge A' }),
-    createTestFault({ id: 'f2', bib: '42', gateNumber: 8, faultType: 'STR', deviceName: 'Judge B' }),
-    createTestFault({ id: 'f3', bib: '15', gateNumber: 3, faultType: 'BR', deviceName: 'Judge A' }),
+    createTestFault({
+      id: 'f1',
+      bib: '42',
+      gateNumber: 5,
+      faultType: 'MG',
+      deviceName: 'Judge A',
+    }),
+    createTestFault({
+      id: 'f2',
+      bib: '42',
+      gateNumber: 8,
+      faultType: 'STR',
+      deviceName: 'Judge B',
+    }),
+    createTestFault({
+      id: 'f3',
+      bib: '15',
+      gateNumber: 3,
+      faultType: 'BR',
+      deviceName: 'Judge A',
+    }),
   ];
 
   test('should display fault summary cards when faults exist', async ({
@@ -364,9 +379,7 @@ test.describe('Chief Judge - Pending Deletions', () => {
   test('should hide pending deletions section when none exist', async ({
     page,
   }) => {
-    const faults = [
-      createTestFault({ id: 'f1', bib: '42', gateNumber: 5 }),
-    ];
+    const faults = [createTestFault({ id: 'f1', bib: '42', gateNumber: 5 })];
     await setupChiefJudge(page, { faults });
     await activateChiefJudgePanel(page);
 
@@ -685,9 +698,7 @@ test.describe('Chief Judge - Accessibility', () => {
     await expect(toggleBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('should have aria-pressed on penalty mode buttons', async ({
-    page,
-  }) => {
+  test('should have aria-pressed on penalty mode buttons', async ({ page }) => {
     await setupChiefJudge(page);
     await activateChiefJudgePanel(page);
 
@@ -738,9 +749,7 @@ test.describe('Chief Judge - Accessibility', () => {
   test('should have aria-label on edit and delete buttons in fault rows', async ({
     page,
   }) => {
-    const faults = [
-      createTestFault({ id: 'f1', bib: '42', gateNumber: 5 }),
-    ];
+    const faults = [createTestFault({ id: 'f1', bib: '42', gateNumber: 5 })];
     await setupChiefJudge(page, { faults });
     await activateChiefJudgePanel(page);
 
@@ -814,9 +823,7 @@ test.describe('Chief Judge - Notes Indicator', () => {
   test('should not show note icon for faults without notes', async ({
     page,
   }) => {
-    const faults = [
-      createTestFault({ id: 'f1', bib: '42', gateNumber: 5 }),
-    ];
+    const faults = [createTestFault({ id: 'f1', bib: '42', gateNumber: 5 })];
     await setupChiefJudge(page, { faults });
     await activateChiefJudgePanel(page);
 

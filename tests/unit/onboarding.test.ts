@@ -87,11 +87,21 @@ const mockListenerInstances: Array<{
 
 vi.mock('../../src/utils/listenerManager', () => {
   class MockListenerManager {
-    private tracked: Array<{ el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }> = [];
-    add = vi.fn((el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
-      el.addEventListener(event, handler);
-      this.tracked.push({ el, event, handler });
-    });
+    private tracked: Array<{
+      el: EventTarget;
+      event: string;
+      handler: EventListenerOrEventListenerObject;
+    }> = [];
+    add = vi.fn(
+      (
+        el: EventTarget,
+        event: string,
+        handler: EventListenerOrEventListenerObject,
+      ) => {
+        el.addEventListener(event, handler);
+        this.tracked.push({ el, event, handler });
+      },
+    );
     removeAll = vi.fn(function (this: MockListenerManager) {
       for (const { el, event, handler } of this.tracked) {
         el.removeEventListener(event, handler);
@@ -435,7 +445,9 @@ describe('OnboardingController', () => {
     it('should store callback without throwing', () => {
       const controller = new OnboardingController();
       const callback = vi.fn();
-      expect(() => controller.setUpdateTranslationsCallback(callback)).not.toThrow();
+      expect(() =>
+        controller.setUpdateTranslationsCallback(callback),
+      ).not.toThrow();
     });
   });
 
@@ -1361,9 +1373,7 @@ describe('OnboardingController', () => {
       await (controller as unknown as PrivateAccess).handleAction('back');
 
       // Should still be on step 1
-      expect(
-        (controller as unknown as PrivateAccess).currentStep,
-      ).toBe(1);
+      expect((controller as unknown as PrivateAccess).currentStep).toBe(1);
     });
 
     it('should handle unknown action gracefully', async () => {
@@ -1723,9 +1733,7 @@ describe('OnboardingController', () => {
       await (controller as unknown as PrivateAccess).handleAction('next');
 
       // Should still be on step 3
-      expect(
-        (controller as unknown as PrivateAccess).currentStep,
-      ).toBe(3);
+      expect((controller as unknown as PrivateAccess).currentStep).toBe(3);
     });
   });
 });

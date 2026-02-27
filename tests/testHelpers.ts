@@ -47,7 +47,9 @@ export function createMockFault(
  * Accepts partial overrides including nested `data` overrides.
  */
 export function createMockFaultVersion(
-  overrides: Partial<FaultVersion> & { data?: Partial<FaultVersion['data']> } = {},
+  overrides: Partial<FaultVersion> & {
+    data?: Partial<FaultVersion['data']>;
+  } = {},
 ): FaultVersion {
   const { data: dataOverrides, ...rest } = overrides;
   return {
@@ -146,9 +148,16 @@ export function setupModalDOM(
     let tag: keyof HTMLElementTagNameMap = 'div';
     if (childId.includes('input')) tag = 'input';
     else if (childId.includes('select')) tag = 'select';
-    else if (childId.includes('textarea') || childId.includes('notes')) tag = 'textarea';
+    else if (childId.includes('textarea') || childId.includes('notes'))
+      tag = 'textarea';
     else if (childId.includes('btn')) tag = 'button';
-    else if (childId.includes('span') || childId.includes('count') || childId.includes('range') || childId.includes('label')) tag = 'span';
+    else if (
+      childId.includes('span') ||
+      childId.includes('count') ||
+      childId.includes('range') ||
+      childId.includes('label')
+    )
+      tag = 'span';
 
     const el = document.createElement(tag);
     el.id = childId;

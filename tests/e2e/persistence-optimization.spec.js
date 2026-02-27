@@ -15,6 +15,7 @@ import {
   navigateTo,
   setupPage,
   waitForConfirmationToHide,
+  waitForStorageSave,
 } from './helpers.js';
 
 test.describe('Dirty-Slice Persistence', () => {
@@ -36,8 +37,8 @@ test.describe('Dirty-Slice Persistence', () => {
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
-    // Wait for debounced save
-    await page.waitForTimeout(500);
+    // Wait for debounced save (100ms debounce)
+    await waitForStorageSave(page, 'skiTimerEntries');
 
     // Verify entries saved to localStorage
     const entries = await page.evaluate(() => {
@@ -57,8 +58,8 @@ test.describe('Dirty-Slice Persistence', () => {
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
-    // Wait for debounced save
-    await page.waitForTimeout(300);
+    // Wait for debounced save (100ms debounce)
+    await waitForStorageSave(page, 'skiTimerEntries');
 
     // Record the entries state
     const entriesBefore = await page.evaluate(() =>
@@ -69,8 +70,15 @@ test.describe('Dirty-Slice Persistence', () => {
     await navigateTo(page, 'settings');
     await clickToggle(page, '#sound-toggle');
 
-    // Wait for debounced save
-    await page.waitForTimeout(300);
+    // Wait for debounced save (100ms debounce)
+    await page.waitForFunction(
+      () => {
+        const data = localStorage.getItem('skiTimerSettings');
+        if (!data) return false;
+        return JSON.parse(data).sound === true;
+      },
+      { timeout: 3000 },
+    );
 
     // Settings should have changed
     const settings = await page.evaluate(() => {
@@ -97,7 +105,16 @@ test.describe('Dirty-Slice Persistence', () => {
     // Change a setting
     await navigateTo(page, 'settings');
     await clickToggle(page, '#sound-toggle');
-    await page.waitForTimeout(300);
+
+    // Wait for debounced settings save
+    await page.waitForFunction(
+      () => {
+        const data = localStorage.getItem('skiTimerSettings');
+        if (!data) return false;
+        return JSON.parse(data).sound === true;
+      },
+      { timeout: 3000 },
+    );
 
     // Verify settings saved before reload
     const settingsBefore = await page.evaluate(() => {
@@ -120,14 +137,19 @@ test.describe('Dirty-Slice Persistence', () => {
     await enterBib(page, 10);
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
-    await page.waitForTimeout(300);
+    await waitForStorageSave(page, 'skiTimerEntries');
 
     // Change language to English
     await navigateTo(page, 'settings');
     const langToggle = page.locator('#lang-toggle');
     const enOption = langToggle.locator('[data-lang="en"]');
     await enOption.click();
-    await page.waitForTimeout(300);
+
+    // Wait for language save
+    await page.waitForFunction(
+      () => localStorage.getItem('skiTimerLang') === 'en',
+      { timeout: 3000 },
+    );
 
     // Verify language was saved
     const lang = await page.evaluate(() =>
@@ -162,8 +184,16 @@ test.describe('Dirty-Slice Persistence', () => {
     await clickToggle(page, '#haptic-toggle');
     await clickToggle(page, '#auto-toggle');
 
-    // Wait for debounced save
-    await page.waitForTimeout(500);
+    // Wait for debounced save — auto was toggled off (was true, now false)
+    await page.waitForFunction(
+      () => {
+        const data = localStorage.getItem('skiTimerSettings');
+        if (!data) return false;
+        const s = JSON.parse(data);
+        return s.sound === true && s.haptic === false && s.auto === false;
+      },
+      { timeout: 3000 },
+    );
 
     // Reload and verify nothing was lost
     await page.reload();
@@ -196,7 +226,16 @@ test.describe('Persistence - Run Selection', () => {
     // Change a setting
     await navigateTo(page, 'settings');
     await clickToggle(page, '#sound-toggle');
-    await page.waitForTimeout(300);
+
+    // Wait for debounced settings save
+    await page.waitForFunction(
+      () => {
+        const data = localStorage.getItem('skiTimerSettings');
+        if (!data) return false;
+        return JSON.parse(data).sound === true;
+      },
+      { timeout: 3000 },
+    );
 
     // Go back to timer - run should still be 2
     await navigateTo(page, 'timer');

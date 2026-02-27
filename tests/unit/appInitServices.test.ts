@@ -125,10 +125,7 @@ import {
 } from '../../src/appEventListeners';
 import { disposePhotoEffect, initServices } from '../../src/appInitServices';
 import { showToast } from '../../src/components';
-import {
-  handleAuthExpired,
-  handleRaceDeleted,
-} from '../../src/features/race';
+import { handleAuthExpired, handleRaceDeleted } from '../../src/features/race';
 import { applySettings } from '../../src/features/settingsView';
 
 // --- Tests ---
@@ -562,7 +559,11 @@ describe('App Init Services Module', () => {
     it('should not initialize ambient mode directly (handled by appStateHandlers effect)', async () => {
       mockGetState.mockReturnValue({
         ...mockGetState(),
-        settings: { ...mockGetState().settings, sync: false, ambientMode: true },
+        settings: {
+          ...mockGetState().settings,
+          sync: false,
+          ambientMode: true,
+        },
       });
 
       initServices();
@@ -607,11 +608,9 @@ describe('App Init Services Module', () => {
     it('should register event listeners before applying settings', () => {
       const callOrder: string[] = [];
 
-      mockListenerAdd.mockImplementation(
-        (_target: unknown, event: string) => {
-          callOrder.push(`listener:${event}`);
-        },
-      );
+      mockListenerAdd.mockImplementation((_target: unknown, event: string) => {
+        callOrder.push(`listener:${event}`);
+      });
 
       const origApplySettings = vi.mocked(applySettings);
       origApplySettings.mockImplementation(() => {

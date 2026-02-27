@@ -317,7 +317,6 @@ test.describe('Tab Order', () => {
     // Should have multiple tabbable elements
     expect(tabbableElements.length).toBeGreaterThan(5);
   });
-
 });
 
 test.describe('Screen Reader Support', () => {

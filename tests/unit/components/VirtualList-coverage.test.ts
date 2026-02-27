@@ -141,7 +141,9 @@ describe('VirtualList — extended coverage', () => {
       );
 
       // Should select first item
-      const selected = container.querySelector('.selected, [aria-selected="true"]');
+      const selected = container.querySelector(
+        '.selected, [aria-selected="true"]',
+      );
       // If selection system is active, check for selected state
       // The exact DOM state depends on implementation
       expect(list.getVisibleCount()).toBe(3);
@@ -225,9 +227,7 @@ describe('VirtualList — extended coverage', () => {
       expect(list.getVisibleCount()).toBe(0);
 
       // Should show empty/no-results state
-      const emptyState = container.querySelector(
-        '.empty-state, .no-results',
-      );
+      const emptyState = container.querySelector('.empty-state, .no-results');
       expect(emptyState).not.toBeNull();
 
       list.destroy();

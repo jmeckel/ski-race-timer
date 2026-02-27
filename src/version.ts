@@ -71,7 +71,7 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
     description: {
       en: 'UI polish and design token consistency. Unified color system, 48px touch targets, accessible ARIA patterns, and cellular-optimized performance.',
       de: 'UI-Feinschliff und einheitliche Design-Tokens. Vereinheitlichtes Farbsystem, 48px-Touchziele, barrierefreie ARIA-Muster und mobilfunkoptimierte Leistung.',
-      fr: "Finitions UI et cohérence des tokens de design. Système de couleurs unifié, zones tactiles 48px, modèles ARIA accessibles et performances optimisées pour le réseau mobile.",
+      fr: 'Finitions UI et cohérence des tokens de design. Système de couleurs unifié, zones tactiles 48px, modèles ARIA accessibles et performances optimisées pour le réseau mobile.',
     },
   },
   '5.26': {
@@ -88,6 +88,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       en: 'Lazy-loaded fault modals, deepened camera and feedback service tests, and build artifact cleanup for a leaner repository.',
       de: 'Verzögertes Laden der Fehlerdialoge, vertiefte Kamera- und Feedback-Service-Tests und Bereinigung der Build-Artefakte für ein schlankeres Repository.',
       fr: 'Chargement différé des modales de fautes, tests approfondis des services caméra et feedback, et nettoyage des artefacts de build pour un dépôt plus léger.',
+    },
+  },
+  '5.28': {
+    name: 'Firn Wengen',
+    description: {
+      en: 'PWA install prompt and update handler, deterministic E2E tests replacing 60 arbitrary timeouts, and Biome 2.4 upgrade.',
+      de: 'PWA-Installationsaufforderung und Update-Handler, deterministische E2E-Tests mit 60 ersetzten Wartezeiten und Biome-2.4-Upgrade.',
+      fr: "Invite d'installation PWA et gestionnaire de mises à jour, tests E2E déterministes remplaçant 60 délais arbitraires et mise à jour Biome 2.4.",
     },
   },
 };

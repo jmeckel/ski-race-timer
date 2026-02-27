@@ -48,10 +48,18 @@ vi.mock('../../../../src/utils', () => ({
 
 vi.mock('../../../../src/utils/listenerManager', () => ({
   ListenerManager: vi.fn().mockImplementation(() => {
-    const tracked: { el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }[] = [];
+    const tracked: {
+      el: EventTarget;
+      event: string;
+      handler: EventListenerOrEventListenerObject;
+    }[] = [];
     return {
       add: vi.fn(
-        (el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
+        (
+          el: EventTarget,
+          event: string,
+          handler: EventListenerOrEventListenerObject,
+        ) => {
           el.addEventListener(event, handler);
           tracked.push({ el, event, handler });
         },
@@ -258,10 +266,7 @@ describe('PIN Management — Edge Cases', () => {
 
     it('should pass undefined when no role specified', async () => {
       await authenticateWithPin('1234');
-      expect(mockExchangePinForToken).toHaveBeenCalledWith(
-        '1234',
-        undefined,
-      );
+      expect(mockExchangePinForToken).toHaveBeenCalledWith('1234', undefined);
     });
   });
 
@@ -303,12 +308,12 @@ describe('PIN Management — Edge Cases', () => {
 
       updatePinStatusDisplay();
 
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinSet');
-      expect(
-        document.getElementById('change-pin-btn-text')!.textContent,
-      ).toBe('changePin');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinSet',
+      );
+      expect(document.getElementById('change-pin-btn-text')!.textContent).toBe(
+        'changePin',
+      );
     });
 
     it('should set pinNotSet text when not authenticated', () => {
@@ -317,12 +322,12 @@ describe('PIN Management — Edge Cases', () => {
 
       updatePinStatusDisplay();
 
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinNotSet');
-      expect(
-        document.getElementById('change-pin-btn-text')!.textContent,
-      ).toBe('setPin');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinNotSet',
+      );
+      expect(document.getElementById('change-pin-btn-text')!.textContent).toBe(
+        'setPin',
+      );
     });
 
     it('should use current language from store', () => {
@@ -333,9 +338,9 @@ describe('PIN Management — Edge Cases', () => {
       updatePinStatusDisplay();
 
       // The t() mock always returns the key, but we verify getState was called
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinSet');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinSet',
+      );
     });
 
     it('should handle missing status element gracefully', () => {
@@ -363,9 +368,9 @@ describe('PIN Management — Edge Cases', () => {
 
       initPinManagement();
 
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinSet');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinSet',
+      );
     });
 
     it('should make PIN inputs numeric-only', () => {
@@ -459,9 +464,9 @@ describe('PIN Management — Edge Cases', () => {
 
       const promise = verifyPinForRaceJoin('en');
 
-      expect(
-        document.getElementById('admin-pin-modal-text')!.textContent,
-      ).toBe('enterPinToJoinRace');
+      expect(document.getElementById('admin-pin-modal-text')!.textContent).toBe(
+        'enterPinToJoinRace',
+      );
 
       cancelRaceJoinPinVerify();
       return promise;
@@ -502,9 +507,9 @@ describe('PIN Management — Edge Cases', () => {
 
       const promise = verifyPinForChiefJudge('en');
 
-      expect(
-        document.getElementById('admin-pin-modal-text')!.textContent,
-      ).toBe('enterPinForChiefJudgeInfo');
+      expect(document.getElementById('admin-pin-modal-text')!.textContent).toBe(
+        'enterPinForChiefJudgeInfo',
+      );
 
       cancelRaceJoinPinVerify();
       return promise;
@@ -548,10 +553,7 @@ describe('PIN Management — Edge Cases', () => {
 
       await handleRaceJoinPinVerify();
 
-      expect(mockExchangePinForToken).toHaveBeenCalledWith(
-        '1234',
-        undefined,
-      );
+      expect(mockExchangePinForToken).toHaveBeenCalledWith('1234', undefined);
       await promise;
     });
 
@@ -568,10 +570,7 @@ describe('PIN Management — Edge Cases', () => {
 
       await handleRaceJoinPinVerify();
 
-      expect(mockExchangePinForToken).toHaveBeenCalledWith(
-        '1234',
-        undefined,
-      );
+      expect(mockExchangePinForToken).toHaveBeenCalledWith('1234', undefined);
       await promise;
     });
   });

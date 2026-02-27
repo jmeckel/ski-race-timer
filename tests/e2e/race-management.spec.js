@@ -6,7 +6,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { navigateTo, setupPage } from './helpers.js';
+import { navigateTo, setupPage, waitForToastToHide } from './helpers.js';
 
 // Skip tests that require backend API
 const skipBackendTests = !process.env.BACKEND_TESTS;
@@ -226,7 +226,7 @@ test.describe('Race Management - PIN Verification Modal', () => {
     await expect(pinModal).toHaveClass(/show/, { timeout: 5000 });
 
     // Wait for any toast to disappear
-    await page.waitForTimeout(1000);
+    await waitForToastToHide(page);
 
     // Enter wrong PIN
     const pinVerifyInput = page.locator('#admin-pin-verify-input');

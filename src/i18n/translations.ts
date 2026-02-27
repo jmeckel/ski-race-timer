@@ -330,6 +330,9 @@ export const translations = {
     skipToMain: 'Skip to main content',
     reload: 'Reload',
     updateAvailable: 'Update available! Reload to get the latest version.',
+    installApp: 'Install CHRONO',
+    installAppDesc: 'Install as app for quick access and offline use.',
+    iosInstallInstructions: 'Tap the Share button, then "Add to Home Screen".',
     operationFailed: 'Operation failed. Please try again.',
     raceIdPlaceholder: 'RACE-001',
     deviceNamePlaceholder: 'Timer 1',
@@ -897,6 +900,11 @@ export const translations = {
     skipToMain: 'Zum Hauptinhalt springen',
     reload: 'Neu laden',
     updateAvailable: 'Update verfügbar! Neu laden für die neueste Version.',
+    installApp: 'CHRONO installieren',
+    installAppDesc:
+      'Als App installieren für schnellen Zugriff und Offline-Nutzung.',
+    iosInstallInstructions:
+      'Tippe auf "Teilen" und dann auf "Zum Home-Bildschirm".',
     operationFailed: 'Vorgang fehlgeschlagen. Bitte erneut versuchen.',
     raceIdPlaceholder: 'RENNEN-001',
     deviceNamePlaceholder: 'Timer 1',
@@ -1473,6 +1481,11 @@ export const translations = {
     reload: 'Recharger',
     updateAvailable:
       'Mise à jour disponible ! Rechargez pour obtenir la dernière version.',
+    installApp: 'Installer CHRONO',
+    installAppDesc:
+      "Installer en tant qu'application pour un accès rapide et une utilisation hors ligne.",
+    iosInstallInstructions:
+      'Appuyez sur "Partager" puis sur "Sur l\'écran d\'accueil".',
     operationFailed: 'Opération échouée. Veuillez réessayer.',
     raceIdPlaceholder: 'COURSE-001',
     deviceNamePlaceholder: 'Chrono 1',

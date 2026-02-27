@@ -195,24 +195,24 @@ describe('PIN Management — extended coverage', () => {
       setupPinDOM();
       mockHasAuthToken.mockReturnValue(true);
       updatePinStatusDisplay();
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinSet');
-      expect(
-        document.getElementById('change-pin-btn-text')!.textContent,
-      ).toBe('changePin');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinSet',
+      );
+      expect(document.getElementById('change-pin-btn-text')!.textContent).toBe(
+        'changePin',
+      );
     });
 
     it('should show pinNotSet when not authenticated', () => {
       setupPinDOM();
       mockHasAuthToken.mockReturnValue(false);
       updatePinStatusDisplay();
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinNotSet');
-      expect(
-        document.getElementById('change-pin-btn-text')!.textContent,
-      ).toBe('setPin');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinNotSet',
+      );
+      expect(document.getElementById('change-pin-btn-text')!.textContent).toBe(
+        'setPin',
+      );
     });
   });
 
@@ -278,9 +278,7 @@ describe('PIN Management — extended coverage', () => {
 
       // Simulate entering PIN
       (
-        document.getElementById(
-          'admin-pin-verify-input',
-        ) as HTMLInputElement
+        document.getElementById('admin-pin-verify-input') as HTMLInputElement
       ).value = '1234';
       await handleRaceJoinPinVerify();
 
@@ -295,15 +293,13 @@ describe('PIN Management — extended coverage', () => {
       const promise = verifyPinForRaceJoin('en');
 
       (
-        document.getElementById(
-          'admin-pin-verify-input',
-        ) as HTMLInputElement
+        document.getElementById('admin-pin-verify-input') as HTMLInputElement
       ).value = '0000';
       await handleRaceJoinPinVerify();
 
-      expect(
-        document.getElementById('admin-pin-error')!.style.display,
-      ).toBe('block');
+      expect(document.getElementById('admin-pin-error')!.style.display).toBe(
+        'block',
+      );
       expect(feedbackWarning).toHaveBeenCalled();
 
       // Cleanup
@@ -318,9 +314,7 @@ describe('PIN Management — extended coverage', () => {
       const promise = verifyPinForChiefJudge('en');
 
       (
-        document.getElementById(
-          'admin-pin-verify-input',
-        ) as HTMLInputElement
+        document.getElementById('admin-pin-verify-input') as HTMLInputElement
       ).value = '5678';
       await handleRaceJoinPinVerify();
 
@@ -372,9 +366,9 @@ describe('PIN Management — extended coverage', () => {
       setupPinDOM();
       mockHasAuthToken.mockReturnValue(true);
       initPinManagement();
-      expect(
-        document.getElementById('admin-pin-status')!.textContent,
-      ).toBe('pinSet');
+      expect(document.getElementById('admin-pin-status')!.textContent).toBe(
+        'pinSet',
+      );
     });
   });
 });

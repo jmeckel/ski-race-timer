@@ -23,12 +23,8 @@ test.describe('Timer View', () => {
       const clockSec = page.locator('#radial-time-seconds');
       const initialSec = await clockSec.textContent();
 
-      // Wait for clock to update (WebKit in CI can have throttled animation)
-      await page.waitForTimeout(1000);
-      const newSec = await clockSec.textContent();
-
-      // Either seconds or subseconds should change
-      expect(newSec).not.toBe(initialSec);
+      // Clock should tick within 3s (WebKit in CI can have throttled animation)
+      await expect(clockSec).not.toHaveText(initialSec, { timeout: 3000 });
     });
 
     test('should display time in HH:MM:SS.mmm format', async ({ page }) => {

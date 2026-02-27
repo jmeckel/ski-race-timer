@@ -63,10 +63,18 @@ vi.mock('../../../src/utils', () => ({
 
 vi.mock('../../../src/utils/listenerManager', () => ({
   ListenerManager: vi.fn().mockImplementation(() => {
-    const tracked: { el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }[] = [];
+    const tracked: {
+      el: EventTarget;
+      event: string;
+      handler: EventListenerOrEventListenerObject;
+    }[] = [];
     return {
       add: vi.fn(
-        (el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
+        (
+          el: EventTarget,
+          event: string,
+          handler: EventListenerOrEventListenerObject,
+        ) => {
           el.addEventListener(event, handler);
           tracked.push({ el, event, handler });
         },
@@ -163,9 +171,30 @@ describe('Results View Module', () => {
     it('should count entries correctly', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'F', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e3', bib: '043', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'F',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e3',
+            bib: '043',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -189,8 +218,22 @@ describe('Results View Module', () => {
     it('should detect cross-device duplicates', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_2' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_2',
+          },
         ],
       });
 
@@ -211,7 +254,14 @@ describe('Results View Module', () => {
     it('should hide duplicates item when no duplicates', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -423,11 +473,46 @@ describe('Results View Module', () => {
     it('should count unique racers correctly with multiple entries per bib', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'F', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e3', bib: '042', point: 'S', run: 2, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e4', bib: '042', point: 'F', run: 2, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e5', bib: '043', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'F',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e3',
+            bib: '042',
+            point: 'S',
+            run: 2,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e4',
+            bib: '042',
+            point: 'F',
+            run: 2,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e5',
+            bib: '043',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -443,11 +528,46 @@ describe('Results View Module', () => {
     it('should count finished racers only for OK finishes', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'F', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '043', point: 'F', run: 1, status: 'dsq', deviceId: 'dev_1' },
-          { id: 'e3', bib: '044', point: 'F', run: 1, status: 'dns', deviceId: 'dev_1' },
-          { id: 'e4', bib: '045', point: 'F', run: 1, status: 'dnf', deviceId: 'dev_1' },
-          { id: 'e5', bib: '046', point: 'F', run: 1, status: 'flt', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'F',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '043',
+            point: 'F',
+            run: 1,
+            status: 'dsq',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e3',
+            bib: '044',
+            point: 'F',
+            run: 1,
+            status: 'dns',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e4',
+            bib: '045',
+            point: 'F',
+            run: 1,
+            status: 'dnf',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e5',
+            bib: '046',
+            point: 'F',
+            run: 1,
+            status: 'flt',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -464,7 +584,14 @@ describe('Results View Module', () => {
     it('should count start entries not as finished', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -480,10 +607,38 @@ describe('Results View Module', () => {
     it('should detect multiple cross-device duplicates', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_2' },
-          { id: 'e3', bib: '043', point: 'F', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e4', bib: '043', point: 'F', run: 1, status: 'ok', deviceId: 'dev_3' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_2',
+          },
+          {
+            id: 'e3',
+            bib: '043',
+            point: 'F',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e4',
+            bib: '043',
+            point: 'F',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_3',
+          },
         ],
       });
 
@@ -499,8 +654,22 @@ describe('Results View Module', () => {
     it('should not count same-device entries as duplicates', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_1' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
         ],
       });
 
@@ -520,8 +689,22 @@ describe('Results View Module', () => {
     it('should treat entries without run as run 1', () => {
       mockGetState.mockReturnValue({
         entries: [
-          { id: 'e1', bib: '042', point: 'S', run: undefined, status: 'ok', deviceId: 'dev_1' },
-          { id: 'e2', bib: '042', point: 'S', run: 1, status: 'ok', deviceId: 'dev_2' },
+          {
+            id: 'e1',
+            bib: '042',
+            point: 'S',
+            run: undefined,
+            status: 'ok',
+            deviceId: 'dev_1',
+          },
+          {
+            id: 'e2',
+            bib: '042',
+            point: 'S',
+            run: 1,
+            status: 'ok',
+            deviceId: 'dev_2',
+          },
         ],
       });
 
@@ -759,11 +942,13 @@ describe('Results View Module', () => {
 
       // Need to mock querySelector to find the filter bar
       const origQuerySelector = document.querySelector.bind(document);
-      vi.spyOn(document, 'querySelector').mockImplementation((selector: string) => {
-        if (selector === '.search-filter-bar') return filterBar;
-        if (selector === '.results-view') return null;
-        return origQuerySelector(selector);
-      });
+      vi.spyOn(document, 'querySelector').mockImplementation(
+        (selector: string) => {
+          if (selector === '.search-filter-bar') return filterBar;
+          if (selector === '.results-view') return null;
+          return origQuerySelector(selector);
+        },
+      );
 
       mockGetState.mockReturnValue({
         currentView: 'results',

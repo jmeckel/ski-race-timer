@@ -15,13 +15,17 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
 }));
 
 import {
+  checkPhotoRateLimit,
   PHOTO_RATE_LIMIT_MAX,
   PHOTO_RATE_LIMIT_WINDOW,
-  checkPhotoRateLimit,
 } from '../../api/lib/photoRateLimit.js';
 
 describe('checkPhotoRateLimit', () => {
-  let mockMulti: { incr: ReturnType<typeof vi.fn>; expire: ReturnType<typeof vi.fn>; exec: ReturnType<typeof vi.fn> };
+  let mockMulti: {
+    incr: ReturnType<typeof vi.fn>;
+    expire: ReturnType<typeof vi.fn>;
+    exec: ReturnType<typeof vi.fn>;
+  };
   let mockClient: { multi: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -36,7 +40,10 @@ describe('checkPhotoRateLimit', () => {
   });
 
   it('should allow first upload (count = 1)', async () => {
-    mockMulti.exec.mockResolvedValue([[null, 1], [null, 1]]);
+    mockMulti.exec.mockResolvedValue([
+      [null, 1],
+      [null, 1],
+    ]);
 
     const result = await checkPhotoRateLimit(
       mockClient as any,
@@ -50,7 +57,10 @@ describe('checkPhotoRateLimit', () => {
   });
 
   it('should allow upload at exact limit (count = 20)', async () => {
-    mockMulti.exec.mockResolvedValue([[null, PHOTO_RATE_LIMIT_MAX], [null, 1]]);
+    mockMulti.exec.mockResolvedValue([
+      [null, PHOTO_RATE_LIMIT_MAX],
+      [null, 1],
+    ]);
 
     const result = await checkPhotoRateLimit(
       mockClient as any,
@@ -107,7 +117,10 @@ describe('checkPhotoRateLimit', () => {
   });
 
   it('should use correct Redis key format with time window', async () => {
-    mockMulti.exec.mockResolvedValue([[null, 1], [null, 1]]);
+    mockMulti.exec.mockResolvedValue([
+      [null, 1],
+      [null, 1],
+    ]);
 
     await checkPhotoRateLimit(mockClient as any, 'my-race', 'dev-1');
 
@@ -118,7 +131,10 @@ describe('checkPhotoRateLimit', () => {
   });
 
   it('should set expire with window + 10s buffer', async () => {
-    mockMulti.exec.mockResolvedValue([[null, 1], [null, 1]]);
+    mockMulti.exec.mockResolvedValue([
+      [null, 1],
+      [null, 1],
+    ]);
 
     await checkPhotoRateLimit(mockClient as any, 'race', 'dev');
 
@@ -128,7 +144,10 @@ describe('checkPhotoRateLimit', () => {
   });
 
   it('should isolate rate limits by race and device', async () => {
-    mockMulti.exec.mockResolvedValue([[null, 5], [null, 1]]);
+    mockMulti.exec.mockResolvedValue([
+      [null, 5],
+      [null, 1],
+    ]);
 
     await checkPhotoRateLimit(mockClient as any, 'race-A', 'device-1');
     const key1 = mockMulti.incr.mock.calls[0][0];

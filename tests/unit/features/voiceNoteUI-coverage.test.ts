@@ -109,9 +109,6 @@ vi.mock('../../../src/features/modals', () => ({
 }));
 
 import { showToast } from '../../../src/components';
-import { feedbackTap } from '../../../src/services';
-import { voiceModeService } from '../../../src/services/voice';
-import { store } from '../../../src/store';
 import {
   cleanupVoiceNoteUI,
   initVoiceNoteUI,
@@ -119,6 +116,9 @@ import {
   saveVoiceNote,
   startVoiceRecording,
 } from '../../../src/features/voiceNoteUI';
+import { feedbackTap } from '../../../src/services';
+import { voiceModeService } from '../../../src/services/voice';
+import { store } from '../../../src/store';
 
 describe('Voice Note UI — extended coverage', () => {
   let container: HTMLDivElement;
@@ -394,9 +394,7 @@ describe('Voice Note UI — extended coverage', () => {
       overlay.classList.add('show');
 
       // Click on overlay itself (backdrop), not on content child
-      overlay.dispatchEvent(
-        new MouseEvent('click', { bubbles: true }),
-      );
+      overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
       expect(overlay.classList.contains('show')).toBe(false);
     });

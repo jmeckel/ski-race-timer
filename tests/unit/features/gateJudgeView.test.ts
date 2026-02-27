@@ -51,12 +51,22 @@ vi.mock('../../../src/utils', () => ({
 
 vi.mock('../../../src/utils/listenerManager', () => ({
   ListenerManager: vi.fn().mockImplementation(() => {
-    const tracked: { el: EventTarget; event: string; handler: EventListenerOrEventListenerObject }[] = [];
+    const tracked: {
+      el: EventTarget;
+      event: string;
+      handler: EventListenerOrEventListenerObject;
+    }[] = [];
     return {
-      add: vi.fn((el: EventTarget, event: string, handler: EventListenerOrEventListenerObject) => {
-        el.addEventListener(event, handler);
-        tracked.push({ el, event, handler });
-      }),
+      add: vi.fn(
+        (
+          el: EventTarget,
+          event: string,
+          handler: EventListenerOrEventListenerObject,
+        ) => {
+          el.addEventListener(event, handler);
+          tracked.push({ el, event, handler });
+        },
+      ),
       removeAll: vi.fn(() => {
         for (const { el, event, handler } of tracked) {
           el.removeEventListener(event, handler);
@@ -122,7 +132,11 @@ import {
 } from '../../../src/features/gateJudgeView';
 import { closeModal, openModal } from '../../../src/features/modals';
 import { initVoiceNoteUI } from '../../../src/features/voiceNoteUI';
-import { feedbackSuccess, feedbackTap, syncService } from '../../../src/services';
+import {
+  feedbackSuccess,
+  feedbackTap,
+  syncService,
+} from '../../../src/services';
 
 describe('Gate Judge View Module', () => {
   let container: HTMLDivElement;
@@ -683,7 +697,9 @@ describe('Gate Judge View Module', () => {
     });
 
     it('should show coverage when other judges have assignments', () => {
-      const mockSync = syncService as { getOtherGateAssignments: ReturnType<typeof vi.fn> };
+      const mockSync = syncService as {
+        getOtherGateAssignments: ReturnType<typeof vi.fn>;
+      };
       mockSync.getOtherGateAssignments.mockReturnValue([
         {
           deviceId: 'dev_2',
@@ -711,7 +727,9 @@ describe('Gate Judge View Module', () => {
     });
 
     it('should show ready check for ready judges', () => {
-      const mockSync = syncService as { getOtherGateAssignments: ReturnType<typeof vi.fn> };
+      const mockSync = syncService as {
+        getOtherGateAssignments: ReturnType<typeof vi.fn>;
+      };
       mockSync.getOtherGateAssignments.mockReturnValue([
         {
           deviceId: 'dev_2',
@@ -743,7 +761,9 @@ describe('Gate Judge View Module', () => {
 
   describe('updateJudgeReadyStatus - additional states', () => {
     it('should add some-ready class when partially ready', () => {
-      const mockSync = syncService as { getOtherGateAssignments: ReturnType<typeof vi.fn> };
+      const mockSync = syncService as {
+        getOtherGateAssignments: ReturnType<typeof vi.fn>;
+      };
       mockSync.getOtherGateAssignments.mockReturnValue([
         {
           deviceId: 'dev_2',

@@ -1,597 +1,596 @@
 /* ===== Breathing Animation System ===== */
 /* Slow, organic pulse animations for liquid glass UI */
 @layer components {
+  /* ===== Keyframes ===== */
 
-/* ===== Keyframes ===== */
-
-/* Primary breathing cycle - 8 second slow pulse */
-@keyframes breatheGlow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 20px color-mix(in srgb, var(--primary) 20%, transparent),
-      0 0 40px color-mix(in srgb, var(--primary) 10%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 30px color-mix(in srgb, var(--primary) 35%, transparent),
-      0 0 60px color-mix(in srgb, var(--primary) 20%, transparent);
-  }
-}
-
-@keyframes breatheGlowSuccess {
-  0%,
-  100% {
-    box-shadow:
-      0 0 20px color-mix(in srgb, var(--success) 20%, transparent),
-      0 0 40px color-mix(in srgb, var(--success) 10%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 30px color-mix(in srgb, var(--success) 35%, transparent),
-      0 0 60px color-mix(in srgb, var(--success) 20%, transparent);
-  }
-}
-
-@keyframes breatheGlowDanger {
-  0%,
-  100% {
-    box-shadow:
-      0 0 20px color-mix(in srgb, var(--error) 20%, transparent),
-      0 0 40px color-mix(in srgb, var(--error) 10%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 30px color-mix(in srgb, var(--error) 35%, transparent),
-      0 0 60px color-mix(in srgb, var(--error) 20%, transparent);
-  }
-}
-
-/* Scale breathing */
-@keyframes breatheScale {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-}
-
-/* Opacity breathing */
-@keyframes breatheOpacity {
-  0%,
-  100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Subtle border glow */
-@keyframes breatheBorder {
-  0%,
-  100% {
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  50% {
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-}
-
-/* Active tab pulse */
-@keyframes tabPulse {
-  0%,
-  100% {
-    background: color-mix(in srgb, var(--primary) 15%, transparent);
-  }
-  50% {
-    background: color-mix(in srgb, var(--primary) 25%, transparent);
-  }
-}
-
-/* ===== Utility Classes ===== */
-
-.breathe-glow {
-  animation: breatheGlow 8s ease-in-out infinite;
-}
-
-.breathe-glow-success {
-  animation: breatheGlowSuccess 8s ease-in-out infinite;
-}
-
-.breathe-glow-danger {
-  animation: breatheGlowDanger 8s ease-in-out infinite;
-}
-
-.breathe-scale {
-  animation: breatheScale 8s ease-in-out infinite;
-}
-
-.breathe-opacity {
-  animation: breatheOpacity 8s ease-in-out infinite;
-}
-
-.breathe-border {
-  animation: breatheBorder 8s ease-in-out infinite;
-}
-
-/* Combined breathing effect */
-.breathe-full {
-  animation:
-    breatheGlow 8s ease-in-out infinite,
-    breatheScale 8s ease-in-out infinite;
-}
-
-/* ===== Spring Entrance Animation ===== */
-@keyframes springIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.9) translateY(20px);
-  }
-  50% {
-    transform: scale(1.02) translateY(-5px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.spring-in {
-  animation: springIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* ===== Fade In Animation ===== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* ===== Slide Up Animation ===== */
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.slide-up {
-  animation: slideUp 0.3s ease-out forwards;
-}
-
-/* ===== Press Effect ===== */
-.press-effect {
-  transition:
-    transform 0.1s ease,
-    box-shadow 0.1s ease;
-}
-
-.press-effect:active {
-  transform: scale(0.97) translateY(2px);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* ===== Hover Glow ===== */
-.hover-glow {
-  transition: box-shadow 0.3s ease;
-}
-
-.hover-glow:hover {
-  box-shadow:
-    0 0 15px color-mix(in srgb, var(--primary) 30%, transparent),
-    0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* ===== Selection Glow ===== */
-.selection-glow {
-  transition:
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
-}
-
-.selection-glow.selected {
-  box-shadow:
-    0 0 0 2px var(--primary),
-    0 0 20px color-mix(in srgb, var(--primary) 40%, transparent);
-  border-color: var(--primary);
-}
-
-/* ===== Reduced Motion ===== */
-/* Comprehensive prefers-reduced-motion support across all CSS files.
-   The blanket rule shortens all animation/transition durations.
-   Explicit overrides below disable specific infinite/decorative animations
-   while preserving functional state changes (e.g. active states, colors). */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Primary breathing cycle - 8 second slow pulse */
+  @keyframes breatheGlow {
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px color-mix(in srgb, var(--primary) 20%, transparent),
+        0 0 40px color-mix(in srgb, var(--primary) 10%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 30px color-mix(in srgb, var(--primary) 35%, transparent),
+        0 0 60px color-mix(in srgb, var(--primary) 20%, transparent);
+    }
   }
 
-  /* --- animations.css: breathing, entrance, decorative --- */
-  .breathe-glow,
-  .breathe-glow-success,
-  .breathe-glow-danger,
-  .breathe-scale,
-  .breathe-opacity,
-  .breathe-border,
-  .breathe-full,
-  .spring-in,
-  .fade-in,
+  @keyframes breatheGlowSuccess {
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px color-mix(in srgb, var(--success) 20%, transparent),
+        0 0 40px color-mix(in srgb, var(--success) 10%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 30px color-mix(in srgb, var(--success) 35%, transparent),
+        0 0 60px color-mix(in srgb, var(--success) 20%, transparent);
+    }
+  }
+
+  @keyframes breatheGlowDanger {
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px color-mix(in srgb, var(--error) 20%, transparent),
+        0 0 40px color-mix(in srgb, var(--error) 10%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 30px color-mix(in srgb, var(--error) 35%, transparent),
+        0 0 60px color-mix(in srgb, var(--error) 20%, transparent);
+    }
+  }
+
+  /* Scale breathing */
+  @keyframes breatheScale {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+  }
+
+  /* Opacity breathing */
+  @keyframes breatheOpacity {
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* Subtle border glow */
+  @keyframes breatheBorder {
+    0%,
+    100% {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  /* Active tab pulse */
+  @keyframes tabPulse {
+    0%,
+    100% {
+      background: color-mix(in srgb, var(--primary) 15%, transparent);
+    }
+    50% {
+      background: color-mix(in srgb, var(--primary) 25%, transparent);
+    }
+  }
+
+  /* ===== Utility Classes ===== */
+
+  .breathe-glow {
+    animation: breatheGlow 8s ease-in-out infinite;
+  }
+
+  .breathe-glow-success {
+    animation: breatheGlowSuccess 8s ease-in-out infinite;
+  }
+
+  .breathe-glow-danger {
+    animation: breatheGlowDanger 8s ease-in-out infinite;
+  }
+
+  .breathe-scale {
+    animation: breatheScale 8s ease-in-out infinite;
+  }
+
+  .breathe-opacity {
+    animation: breatheOpacity 8s ease-in-out infinite;
+  }
+
+  .breathe-border {
+    animation: breatheBorder 8s ease-in-out infinite;
+  }
+
+  /* Combined breathing effect */
+  .breathe-full {
+    animation:
+      breatheGlow 8s ease-in-out infinite,
+      breatheScale 8s ease-in-out infinite;
+  }
+
+  /* ===== Spring Entrance Animation ===== */
+  @keyframes springIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+    50% {
+      transform: scale(1.02) translateY(-5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .spring-in {
+    animation: springIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* ===== Fade In Animation ===== */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  /* ===== Slide Up Animation ===== */
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .slide-up {
-    animation: none !important;
+    animation: slideUp 0.3s ease-out forwards;
+  }
+
+  /* ===== Press Effect ===== */
+  .press-effect {
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
   }
 
   .press-effect:active {
-    transform: none;
+    transform: scale(0.97) translateY(2px);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ===== Hover Glow ===== */
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
   }
 
   .hover-glow:hover {
-    box-shadow: none;
+    box-shadow:
+      0 0 15px color-mix(in srgb, var(--primary) 30%, transparent),
+      0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ===== Selection Glow ===== */
+  .selection-glow {
+    transition:
+      box-shadow 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .selection-glow.selected {
+    box-shadow:
+      0 0 0 2px var(--primary),
+      0 0 20px color-mix(in srgb, var(--primary) 40%, transparent);
+    border-color: var(--primary);
+  }
+
+  /* ===== Reduced Motion ===== */
+  /* Comprehensive prefers-reduced-motion support across all CSS files.
+   The blanket rule shortens all animation/transition durations.
+   Explicit overrides below disable specific infinite/decorative animations
+   while preserving functional state changes (e.g. active states, colors). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    /* --- animations.css: breathing, entrance, decorative --- */
+    .breathe-glow,
+    .breathe-glow-success,
+    .breathe-glow-danger,
+    .breathe-scale,
+    .breathe-opacity,
+    .breathe-border,
+    .breathe-full,
+    .spring-in,
+    .fade-in,
+    .slide-up {
+      animation: none !important;
+    }
+
+    .press-effect:active {
+      transform: none;
+    }
+
+    .hover-glow:hover {
+      box-shadow: none;
+    }
+
+    .snowflake-spinner .flake {
+      animation: none !important;
+      opacity: 0.7;
+    }
+
+    .snowflake-burst .flake {
+      animation: none !important;
+      display: none;
+    }
+
+    /* --- main.css: status indicator pulses, ripple, ambient --- */
+    .ripple {
+      animation: none !important;
+    }
+
+    .sync-dot.syncing {
+      animation: none !important;
+    }
+
+    .gps-dot.active,
+    .gps-dot.searching {
+      animation: none !important;
+    }
+
+    .judges-ready-indicator.all-ready {
+      animation: none !important;
+    }
+
+    .judge-ready-dot {
+      animation: none !important;
+    }
+
+    .voice-indicator.listening .voice-dot,
+    .voice-indicator.processing .voice-dot,
+    .voice-indicator.confirming .voice-dot {
+      animation: none !important;
+    }
+
+    body.ambient-mode .timer-view::after {
+      animation: none !important;
+    }
+
+    /* Tab bar: disable active transform and indicator slide */
+    .tab-btn:active {
+      transform: none !important;
+    }
+
+    /* --- radial-dial.css: dial flash, blink cursor, button flash, status pulse --- */
+    .dial-ring.flash {
+      animation: none !important;
+    }
+
+    .radial-time-display.flash {
+      animation: none !important;
+    }
+
+    .radial-time-btn.flash {
+      animation: none !important;
+    }
+
+    .radial-status-dot.warning {
+      animation: none !important;
+    }
+
+    .dial-number.flash {
+      animation: none !important;
+    }
+
+    /* Radial confirmation: instant show instead of opacity transition */
+    .radial-confirmation-overlay {
+      transition: none !important;
+    }
+
+    /* --- timer.css: timestamp button flash, last-recorded pulse --- */
+    .timestamp-btn.flash {
+      animation: none !important;
+    }
+
+    .timestamp-btn.breathe-glow {
+      animation: none !important;
+    }
+
+    .last-recorded-inline.pulse {
+      animation: none !important;
+    }
+
+    /* --- modals.css: modal/overlay enter/exit, confirmation, voice pulse --- */
+    .modal-overlay.show {
+      animation: none !important;
+    }
+
+    .modal-content {
+      animation: none !important;
+    }
+
+    .modal-overlay.closing {
+      animation: none !important;
+    }
+
+    .modal-overlay.closing .modal-content {
+      animation: none !important;
+    }
+
+    .confirmation-overlay .confirmation-content {
+      animation: none !important;
+    }
+
+    .fault-confirmation-content {
+      animation: none !important;
+    }
+
+    .voice-note-listening-indicator.active .voice-note-pulse-ring {
+      animation: none !important;
+    }
+
+    .voice-note-mic-btn.recording,
+    .voice-note-mic-btn.loading {
+      animation: none !important;
+    }
+
+    .fault-edit-mic-btn.recording {
+      animation: none !important;
+    }
+
+    /* --- gate-judge.css: bib auto-fill flash --- */
+    .inline-bib-input.bib-auto-filled {
+      animation: none !important;
+    }
+
+    /* --- onboarding.css: card slide-in --- */
+    .onboarding-card {
+      animation: none !important;
+    }
+
+    .progress-dot.active {
+      transform: none !important;
+    }
+
+    /* --- Disable :active scale transforms on interactive elements --- */
+    /* These are decorative spring/press effects; the tap still registers */
+    .modal-btn:active,
+    .action-btn:active,
+    .num-btn:active,
+    .timing-point-btn:active,
+    .run-btn:active,
+    .timestamp-btn:active,
+    .radial-clear-btn:active,
+    .radial-time-btn:active,
+    .gate-grid-btn:active,
+    .inline-bib-btn:active,
+    .inline-fault-type-btn:active,
+    .inline-save-fault-btn:active,
+    .ready-toggle-btn:active,
+    .record-fault-btn:active,
+    .fault-bib-btn:active,
+    .fault-gate-btn:active,
+    .fault-type-btn:active,
+    .fault-confirmation-btn:active,
+    .onboarding-btn:active,
+    .role-card:active,
+    .lang-option:active,
+    .recent-races-btn:active,
+    .race-delete-btn:active,
+    .pending-deletion-btn.approve:active,
+    .pending-deletion-btn.reject:active,
+    .chief-judge-toggle-btn:active,
+    .chief-export-btn:active,
+    .finalize-btn:active,
+    .penalty-adj-btn:active,
+    .bib-action-btn:active,
+    .active-bib-card:active,
+    .role-card-setting:active,
+    .onboarding-regenerate-btn:active {
+      transform: none !important;
+    }
+  }
+
+  /* ===== Snowflake Animations ===== */
+
+  /* Snowflake spinner for loading states */
+  @keyframes snowflakePulse {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Snowflake burst for success confirmations */
+  @keyframes snowflakeBurst {
+    0% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--burst-x, 50px), var(--burst-y, -60px)) scale(0)
+        rotate(var(--burst-rot, 360deg));
+      opacity: 0;
+    }
+  }
+
+  /* Snowflake loading spinner */
+  .snowflake-spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
   .snowflake-spinner .flake {
-    animation: none !important;
-    opacity: 0.7;
+    font-size: 1rem;
+    color: var(--primary-light);
+    animation: snowflakePulse 1.5s ease-in-out infinite;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, var(--primary-light) 50%, transparent);
+  }
+
+  .snowflake-spinner .flake:nth-child(2) {
+    animation-delay: 0.3s;
+    font-size: 0.8rem;
+  }
+
+  .snowflake-spinner .flake:nth-child(3) {
+    animation-delay: 0.6s;
+  }
+
+  /* Snowflake success burst container */
+  .snowflake-burst {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
   }
 
   .snowflake-burst .flake {
-    animation: none !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 1rem;
+    animation: snowflakeBurst 1s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* ===== No Glass Effects / Power Saver Override ===== */
+  /* .no-glass-effects: user preference to disable glass effects */
+  /* .power-saver: applied via JS when battery is low - stops infinite animations to save GPU */
+  :is(.no-glass-effects, .power-saver) .breathe-glow,
+  :is(.no-glass-effects, .power-saver) .breathe-glow-success,
+  :is(.no-glass-effects, .power-saver) .breathe-glow-danger,
+  :is(.no-glass-effects, .power-saver) .breathe-full {
+    animation: none;
+  }
+
+  /* Power saver also stops additional breathing and snowflake animations */
+  .power-saver .breathe-scale,
+  .power-saver .breathe-opacity,
+  .power-saver .breathe-border {
+    animation: none;
+  }
+
+  .power-saver .snowflake-spinner .flake {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .power-saver .snowflake-burst .flake {
+    animation: none;
     display: none;
   }
 
-  /* --- main.css: status indicator pulses, ripple, ambient --- */
-  .ripple {
-    animation: none !important;
+  /* Power saver: disable all backdrop-filter effects to save GPU */
+  .power-saver .glass-surface-1,
+  .power-saver .glass-surface-2,
+  .power-saver .glass-surface-3,
+  .power-saver .glass-frosted,
+  .power-saver .glass-frosted-top,
+  .power-saver .glass-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
-  .sync-dot.syncing {
-    animation: none !important;
+  .power-saver .glass-surface-1 {
+    background: var(--surface-elevated);
   }
 
-  .gps-dot.active,
-  .gps-dot.searching {
-    animation: none !important;
+  .power-saver .glass-surface-2 {
+    background: var(--surface-elevated);
   }
 
-  .judges-ready-indicator.all-ready {
-    animation: none !important;
+  .power-saver .glass-surface-3 {
+    background: var(--surface);
   }
 
-  .judge-ready-dot {
-    animation: none !important;
+  .power-saver .glass-frosted,
+  .power-saver .glass-frosted-top {
+    background: #0f1d32;
   }
 
-  .voice-indicator.listening .voice-dot,
-  .voice-indicator.processing .voice-dot,
-  .voice-indicator.confirming .voice-dot {
-    animation: none !important;
+  .power-saver .glass-backdrop {
+    background: rgba(0, 0, 0, 0.85);
   }
 
-  body.ambient-mode .timer-view::after {
-    animation: none !important;
+  /* Power saver: disable direct backdrop-filter usage in modals */
+  .power-saver .modal-overlay,
+  .power-saver .modal-content,
+  .power-saver .confirmation-overlay,
+  .power-saver .confirmation-content,
+  .power-saver .fault-confirmation-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
-  /* Tab bar: disable active transform and indicator slide */
-  .tab-btn:active {
-    transform: none !important;
+  .power-saver .modal-content {
+    background: rgba(20, 20, 20, 0.98);
   }
 
-  /* --- radial-dial.css: dial flash, blink cursor, button flash, status pulse --- */
-  .dial-ring.flash {
-    animation: none !important;
+  .power-saver .confirmation-content {
+    background: rgba(10, 10, 10, 0.98);
   }
 
-  .radial-time-display.flash {
-    animation: none !important;
+  /* Power saver: disable direct backdrop-filter in main.css glass enhancements */
+  .power-saver .entry-count-badge,
+  .power-saver .header.glass-frosted-top,
+  .power-saver .tab-bar.glass-frosted,
+  .power-saver .num-btn.glass-surface-3,
+  .power-saver .modal-content.glass-surface-1,
+  .power-saver .confirmation-overlay.glass-surface-1 .confirmation-content,
+  .power-saver .timing-point-btn.glass-surface-3,
+  .power-saver .run-btn.glass-surface-3,
+  .power-saver .results-header.glass-frosted-top,
+  .power-saver .results-actions.glass-frosted,
+  .power-saver .bib-display.glass-surface-2 {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
-  .radial-time-btn.flash {
-    animation: none !important;
+  /* Power saver: disable backdrop-filter on radial time button */
+  .power-saver .radial-time-btn {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
-
-  .radial-status-dot.warning {
-    animation: none !important;
-  }
-
-  .dial-number.flash {
-    animation: none !important;
-  }
-
-  /* Radial confirmation: instant show instead of opacity transition */
-  .radial-confirmation-overlay {
-    transition: none !important;
-  }
-
-  /* --- timer.css: timestamp button flash, last-recorded pulse --- */
-  .timestamp-btn.flash {
-    animation: none !important;
-  }
-
-  .timestamp-btn.breathe-glow {
-    animation: none !important;
-  }
-
-  .last-recorded-inline.pulse {
-    animation: none !important;
-  }
-
-  /* --- modals.css: modal/overlay enter/exit, confirmation, voice pulse --- */
-  .modal-overlay.show {
-    animation: none !important;
-  }
-
-  .modal-content {
-    animation: none !important;
-  }
-
-  .modal-overlay.closing {
-    animation: none !important;
-  }
-
-  .modal-overlay.closing .modal-content {
-    animation: none !important;
-  }
-
-  .confirmation-overlay .confirmation-content {
-    animation: none !important;
-  }
-
-  .fault-confirmation-content {
-    animation: none !important;
-  }
-
-  .voice-note-listening-indicator.active .voice-note-pulse-ring {
-    animation: none !important;
-  }
-
-  .voice-note-mic-btn.recording,
-  .voice-note-mic-btn.loading {
-    animation: none !important;
-  }
-
-  .fault-edit-mic-btn.recording {
-    animation: none !important;
-  }
-
-  /* --- gate-judge.css: bib auto-fill flash --- */
-  .inline-bib-input.bib-auto-filled {
-    animation: none !important;
-  }
-
-  /* --- onboarding.css: card slide-in --- */
-  .onboarding-card {
-    animation: none !important;
-  }
-
-  .progress-dot.active {
-    transform: none !important;
-  }
-
-  /* --- Disable :active scale transforms on interactive elements --- */
-  /* These are decorative spring/press effects; the tap still registers */
-  .modal-btn:active,
-  .action-btn:active,
-  .num-btn:active,
-  .timing-point-btn:active,
-  .run-btn:active,
-  .timestamp-btn:active,
-  .radial-clear-btn:active,
-  .radial-time-btn:active,
-  .gate-grid-btn:active,
-  .inline-bib-btn:active,
-  .inline-fault-type-btn:active,
-  .inline-save-fault-btn:active,
-  .ready-toggle-btn:active,
-  .record-fault-btn:active,
-  .fault-bib-btn:active,
-  .fault-gate-btn:active,
-  .fault-type-btn:active,
-  .fault-confirmation-btn:active,
-  .onboarding-btn:active,
-  .role-card:active,
-  .lang-option:active,
-  .recent-races-btn:active,
-  .race-delete-btn:active,
-  .pending-deletion-btn.approve:active,
-  .pending-deletion-btn.reject:active,
-  .chief-judge-toggle-btn:active,
-  .chief-export-btn:active,
-  .finalize-btn:active,
-  .penalty-adj-btn:active,
-  .bib-action-btn:active,
-  .active-bib-card:active,
-  .role-card-setting:active,
-  .onboarding-regenerate-btn:active {
-    transform: none !important;
-  }
-}
-
-/* ===== Snowflake Animations ===== */
-
-/* Snowflake spinner for loading states */
-@keyframes snowflakePulse {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Snowflake burst for success confirmations */
-@keyframes snowflakeBurst {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--burst-x, 50px), var(--burst-y, -60px)) scale(0)
-      rotate(var(--burst-rot, 360deg));
-    opacity: 0;
-  }
-}
-
-/* Snowflake loading spinner */
-.snowflake-spinner {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.snowflake-spinner .flake {
-  font-size: 1rem;
-  color: var(--primary-light);
-  animation: snowflakePulse 1.5s ease-in-out infinite;
-  text-shadow: 0 0 8px color-mix(in srgb, var(--primary-light) 50%, transparent);
-}
-
-.snowflake-spinner .flake:nth-child(2) {
-  animation-delay: 0.3s;
-  font-size: 0.8rem;
-}
-
-.snowflake-spinner .flake:nth-child(3) {
-  animation-delay: 0.6s;
-}
-
-/* Snowflake success burst container */
-.snowflake-burst {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.snowflake-burst .flake {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  font-size: 1rem;
-  animation: snowflakeBurst 1s ease-out forwards;
-  pointer-events: none;
-}
-
-/* ===== No Glass Effects / Power Saver Override ===== */
-/* .no-glass-effects: user preference to disable glass effects */
-/* .power-saver: applied via JS when battery is low - stops infinite animations to save GPU */
-:is(.no-glass-effects, .power-saver) .breathe-glow,
-:is(.no-glass-effects, .power-saver) .breathe-glow-success,
-:is(.no-glass-effects, .power-saver) .breathe-glow-danger,
-:is(.no-glass-effects, .power-saver) .breathe-full {
-  animation: none;
-}
-
-/* Power saver also stops additional breathing and snowflake animations */
-.power-saver .breathe-scale,
-.power-saver .breathe-opacity,
-.power-saver .breathe-border {
-  animation: none;
-}
-
-.power-saver .snowflake-spinner .flake {
-  animation: none;
-  opacity: 0.7;
-}
-
-.power-saver .snowflake-burst .flake {
-  animation: none;
-  display: none;
-}
-
-/* Power saver: disable all backdrop-filter effects to save GPU */
-.power-saver .glass-surface-1,
-.power-saver .glass-surface-2,
-.power-saver .glass-surface-3,
-.power-saver .glass-frosted,
-.power-saver .glass-frosted-top,
-.power-saver .glass-backdrop {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.power-saver .glass-surface-1 {
-  background: var(--surface-elevated);
-}
-
-.power-saver .glass-surface-2 {
-  background: var(--surface-elevated);
-}
-
-.power-saver .glass-surface-3 {
-  background: var(--surface);
-}
-
-.power-saver .glass-frosted,
-.power-saver .glass-frosted-top {
-  background: #0f1d32;
-}
-
-.power-saver .glass-backdrop {
-  background: rgba(0, 0, 0, 0.85);
-}
-
-/* Power saver: disable direct backdrop-filter usage in modals */
-.power-saver .modal-overlay,
-.power-saver .modal-content,
-.power-saver .confirmation-overlay,
-.power-saver .confirmation-content,
-.power-saver .fault-confirmation-overlay {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.power-saver .modal-content {
-  background: rgba(20, 20, 20, 0.98);
-}
-
-.power-saver .confirmation-content {
-  background: rgba(10, 10, 10, 0.98);
-}
-
-/* Power saver: disable direct backdrop-filter in main.css glass enhancements */
-.power-saver .entry-count-badge,
-.power-saver .header.glass-frosted-top,
-.power-saver .tab-bar.glass-frosted,
-.power-saver .num-btn.glass-surface-3,
-.power-saver .modal-content.glass-surface-1,
-.power-saver .confirmation-overlay.glass-surface-1 .confirmation-content,
-.power-saver .timing-point-btn.glass-surface-3,
-.power-saver .run-btn.glass-surface-3,
-.power-saver .results-header.glass-frosted-top,
-.power-saver .results-actions.glass-frosted,
-.power-saver .bib-display.glass-surface-2 {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-/* Power saver: disable backdrop-filter on radial time button */
-.power-saver .radial-time-btn {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
 } /* end @layer components */

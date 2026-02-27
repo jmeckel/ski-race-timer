@@ -1027,7 +1027,10 @@ describe('Entries Slice', () => {
     });
 
     it('sequential undos past empty stack return null result', () => {
-      const entry = createEntry({ id: 'e1', timestamp: '2024-01-15T10:00:00.000Z' });
+      const entry = createEntry({
+        id: 'e1',
+        timestamp: '2024-01-15T10:00:00.000Z',
+      });
       let state = addEntry([], entry, []);
 
       // Undo the add
@@ -1087,9 +1090,18 @@ describe('Entries Slice', () => {
     });
 
     it('interleaved add/delete/undo produces correct final state', () => {
-      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
-      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
-      const e3 = createEntry({ id: 'e3', timestamp: '2024-01-15T10:00:00.000Z' });
+      const e1 = createEntry({
+        id: 'e1',
+        timestamp: '2024-01-15T08:00:00.000Z',
+      });
+      const e2 = createEntry({
+        id: 'e2',
+        timestamp: '2024-01-15T09:00:00.000Z',
+      });
+      const e3 = createEntry({
+        id: 'e3',
+        timestamp: '2024-01-15T10:00:00.000Z',
+      });
 
       // Add e1, e2
       let state = addEntry([], e1, []);
@@ -1120,8 +1132,14 @@ describe('Entries Slice', () => {
     });
 
     it('undo clearAll then redo clearAll roundtrips correctly', () => {
-      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
-      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
+      const e1 = createEntry({
+        id: 'e1',
+        timestamp: '2024-01-15T08:00:00.000Z',
+      });
+      const e2 = createEntry({
+        id: 'e2',
+        timestamp: '2024-01-15T09:00:00.000Z',
+      });
 
       const clearResult = clearAll([e1, e2], []);
       expect(clearResult).not.toBeNull();
@@ -1141,9 +1159,18 @@ describe('Entries Slice', () => {
     });
 
     it('new action after undo invalidates entire redo stack', () => {
-      const e1 = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
-      const e2 = createEntry({ id: 'e2', timestamp: '2024-01-15T09:00:00.000Z' });
-      const e3 = createEntry({ id: 'e3', timestamp: '2024-01-15T10:00:00.000Z' });
+      const e1 = createEntry({
+        id: 'e1',
+        timestamp: '2024-01-15T08:00:00.000Z',
+      });
+      const e2 = createEntry({
+        id: 'e2',
+        timestamp: '2024-01-15T09:00:00.000Z',
+      });
+      const e3 = createEntry({
+        id: 'e3',
+        timestamp: '2024-01-15T10:00:00.000Z',
+      });
 
       // Add e1, e2, e3
       let state = addEntry([], e1, []);
@@ -1166,9 +1193,18 @@ describe('Entries Slice', () => {
     });
 
     it('undo/redo preserves entry sort order across all action types', () => {
-      const early = createEntry({ id: 'e1', timestamp: '2024-01-15T08:00:00.000Z' });
-      const mid = createEntry({ id: 'e2', timestamp: '2024-01-15T10:00:00.000Z' });
-      const late = createEntry({ id: 'e3', timestamp: '2024-01-15T12:00:00.000Z' });
+      const early = createEntry({
+        id: 'e1',
+        timestamp: '2024-01-15T08:00:00.000Z',
+      });
+      const mid = createEntry({
+        id: 'e2',
+        timestamp: '2024-01-15T10:00:00.000Z',
+      });
+      const late = createEntry({
+        id: 'e3',
+        timestamp: '2024-01-15T12:00:00.000Z',
+      });
 
       // Delete middle entry
       const delResult = deleteEntry([early, mid, late], 'e2', []);

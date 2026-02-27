@@ -42,27 +42,23 @@ vi.mock('../../api/lib/redis.js', () => ({
 }));
 
 vi.mock('../../api/lib/jwt.js', () => ({
-  validateAuth: vi
-    .fn()
-    .mockResolvedValue({
-      valid: true,
-      method: 'jwt',
-      payload: { role: 'timer' },
-    }),
+  validateAuth: vi.fn().mockResolvedValue({
+    valid: true,
+    method: 'jwt',
+    payload: { role: 'timer' },
+  }),
 }));
 
 vi.mock('../../api/lib/validation.js', () => ({
   isValidRaceId: vi.fn(
     (id: string) => /^[a-zA-Z0-9_-]+$/.test(id) && id.length <= 50,
   ),
-  checkRateLimit: vi
-    .fn()
-    .mockResolvedValue({
-      allowed: true,
-      remaining: 99,
-      reset: 9999,
-      limit: 100,
-    }),
+  checkRateLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 99,
+    reset: 9999,
+    limit: 100,
+  }),
   VALID_FAULT_TYPES: ['MG', 'STR', 'BR'],
   MAX_DEVICE_NAME_LENGTH: 100,
   isValidDeviceId: vi.fn(() => true),

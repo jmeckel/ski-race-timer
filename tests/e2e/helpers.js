@@ -206,6 +206,37 @@ export async function enterBib(page, bib) {
 }
 
 /**
+ * Wait for localStorage to have a specific key with data.
+ * Replaces arbitrary waitForTimeout after actions that trigger debounced saves.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} key - localStorage key to check
+ * @param {number} timeout - Max wait time in ms (default 3000)
+ */
+export async function waitForStorageSave(page, key, timeout = 3000) {
+  await page.waitForFunction((k) => localStorage.getItem(k) !== null, key, {
+    timeout,
+  });
+}
+
+/**
+ * Wait for focus to be inside a specific element.
+ * Replaces arbitrary waitForTimeout after modal open for deferred focus.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} selector - CSS selector for the container element
+ * @param {number} timeout - Max wait time in ms (default 3000)
+ */
+export async function waitForFocusInside(page, selector, timeout = 3000) {
+  await page.waitForFunction(
+    (sel) => {
+      const container = document.querySelector(sel);
+      return container?.contains(document.activeElement) ?? false;
+    },
+    selector,
+    { timeout },
+  );
+}
+
+/**
  * Dismiss all visible toast notifications by removing them from the DOM.
  * Useful when toasts intercept pointer events on underlying buttons.
  */

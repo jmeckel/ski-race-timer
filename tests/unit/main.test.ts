@@ -58,6 +58,15 @@ vi.mock('../../src/services/battery', () => ({
   },
 }));
 
+// Mock PWA-related modules (virtual:pwa-register does not exist in test context)
+vi.mock('../../src/services/swUpdateHandler', () => ({
+  initSwUpdateHandler: vi.fn(),
+}));
+
+vi.mock('../../src/services/installPrompt', () => ({
+  initInstallPrompt: vi.fn(),
+}));
+
 // Mock CSS imports (jsdom does not handle CSS)
 vi.mock('../../src/styles/main.css', () => ({}));
 vi.mock('../../src/styles/modals.css', () => ({}));

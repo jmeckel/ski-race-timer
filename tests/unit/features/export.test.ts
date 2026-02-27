@@ -48,53 +48,53 @@ describe('escapeCSVField', () => {
 
   describe('formula injection prevention', () => {
     it('should prefix "=" and wrap in quotes', () => {
-      expect(escapeCSVField('=SUM(A1)')).toBe("\"'=SUM(A1)\"");
-      expect(escapeCSVField('=SUM(A1:A10)')).toBe("\"'=SUM(A1:A10)\"");
-      expect(escapeCSVField('=CMD()')).toBe("\"'=CMD()\"");
+      expect(escapeCSVField('=SUM(A1)')).toBe('"\'=SUM(A1)"');
+      expect(escapeCSVField('=SUM(A1:A10)')).toBe('"\'=SUM(A1:A10)"');
+      expect(escapeCSVField('=CMD()')).toBe('"\'=CMD()"');
     });
 
     it('should prefix "+" and wrap in quotes', () => {
-      expect(escapeCSVField('+1234')).toBe("\"'+1234\"");
-      expect(escapeCSVField('+cmd')).toBe("\"'+cmd\"");
+      expect(escapeCSVField('+1234')).toBe('"\'+1234"');
+      expect(escapeCSVField('+cmd')).toBe('"\'+cmd"');
     });
 
     it('should prefix "-" and wrap in quotes', () => {
-      expect(escapeCSVField('-1234')).toBe("\"'-1234\"");
-      expect(escapeCSVField('-1+2')).toBe("\"'-1+2\"");
+      expect(escapeCSVField('-1234')).toBe('"\'-1234"');
+      expect(escapeCSVField('-1+2')).toBe('"\'-1+2"');
     });
 
     it('should prefix "@" and wrap in quotes', () => {
-      expect(escapeCSVField('@mention')).toBe("\"'@mention\"");
-      expect(escapeCSVField('@SUM(A1)')).toBe("\"'@SUM(A1)\"");
+      expect(escapeCSVField('@mention')).toBe('"\'@mention"');
+      expect(escapeCSVField('@SUM(A1)')).toBe('"\'@SUM(A1)"');
     });
 
     it('should prefix "|" and wrap in quotes', () => {
-      expect(escapeCSVField('|data')).toBe("\"'|data\"");
-      expect(escapeCSVField('|cmd')).toBe("\"'|cmd\"");
+      expect(escapeCSVField('|data')).toBe('"\'|data"');
+      expect(escapeCSVField('|cmd')).toBe('"\'|cmd"');
     });
 
     it('should prefix tab character and wrap in quotes', () => {
-      expect(escapeCSVField('\tdata')).toBe("\"'\tdata\"");
+      expect(escapeCSVField('\tdata')).toBe('"\'\tdata"');
       expect(escapeCSVField('\t=cmd')).toContain("'");
     });
 
     it('should prefix carriage return and wrap in quotes', () => {
-      expect(escapeCSVField('\rdata')).toBe("\"'\rdata\"");
+      expect(escapeCSVField('\rdata')).toBe('"\'\rdata"');
     });
 
     it('should prefix newline and wrap in quotes', () => {
-      expect(escapeCSVField('\ndata')).toBe("\"'\ndata\"");
+      expect(escapeCSVField('\ndata')).toBe('"\'\ndata"');
     });
 
     it('should protect against 0x hex injection', () => {
-      expect(escapeCSVField('0x41414141')).toBe("\"'0x41414141\"");
-      expect(escapeCSVField('0xFF')).toBe("\"'0xFF\"");
+      expect(escapeCSVField('0x41414141')).toBe('"\'0x41414141"');
+      expect(escapeCSVField('0xFF')).toBe('"\'0xFF"');
     });
 
     it('should prefix +0xFF only once (no double prefix)', () => {
       // + triggers formula prefix, then hex check tests the prefixed string
       // which starts with ' so hex regex doesn't match
-      expect(escapeCSVField('+0xFF')).toBe("\"'+0xFF\"");
+      expect(escapeCSVField('+0xFF')).toBe('"\'+0xFF"');
     });
   });
 

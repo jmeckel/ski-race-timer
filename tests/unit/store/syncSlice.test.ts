@@ -153,9 +153,7 @@ describe('Sync Slice', () => {
         name: 'Timer 2',
         lastSeen: Date.now(),
       };
-      const currentDevices = new Map<string, DeviceInfo>([
-        ['dev-1', existing],
-      ]);
+      const currentDevices = new Map<string, DeviceInfo>([['dev-1', existing]]);
 
       const result = addConnectedDevice(newDevice, currentDevices);
 
@@ -175,9 +173,7 @@ describe('Sync Slice', () => {
         name: 'Timer 1 (renamed)',
         lastSeen: Date.now() + 1000,
       };
-      const currentDevices = new Map<string, DeviceInfo>([
-        ['dev-1', existing],
-      ]);
+      const currentDevices = new Map<string, DeviceInfo>([['dev-1', existing]]);
 
       const result = addConnectedDevice(updated, currentDevices);
 
@@ -280,9 +276,7 @@ describe('Sync Slice', () => {
         name: 'Timer 1',
         lastSeen: Date.now(),
       };
-      const currentDevices = new Map<string, DeviceInfo>([
-        ['dev-1', device],
-      ]);
+      const currentDevices = new Map<string, DeviceInfo>([['dev-1', device]]);
 
       const result = removeConnectedDevice('dev-1', currentDevices);
 
@@ -295,9 +289,7 @@ describe('Sync Slice', () => {
         name: 'Timer 1',
         lastSeen: Date.now(),
       };
-      const currentDevices = new Map<string, DeviceInfo>([
-        ['dev-1', device],
-      ]);
+      const currentDevices = new Map<string, DeviceInfo>([['dev-1', device]]);
 
       const result = removeConnectedDevice('dev-nonexistent', currentDevices);
 
@@ -318,9 +310,7 @@ describe('Sync Slice', () => {
         name: 'Timer 1',
         lastSeen: Date.now(),
       };
-      const currentDevices = new Map<string, DeviceInfo>([
-        ['dev-1', device],
-      ]);
+      const currentDevices = new Map<string, DeviceInfo>([['dev-1', device]]);
 
       removeConnectedDevice('dev-1', currentDevices);
 

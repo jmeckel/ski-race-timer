@@ -164,9 +164,6 @@ test.describe('Results Filtering - Timing Points', () => {
     // Filter by Start only
     await page.selectOption('#filter-point', 'S');
 
-    // Wait for debounce
-    await page.waitForTimeout(400);
-
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(1);
     await expect(entries.first().locator('.result-point')).toContainText(
@@ -250,9 +247,6 @@ test.describe('Results Filtering - Status Display', () => {
     await page.click('#toggle-filters-btn');
     await page.selectOption('#filter-status', 'dns');
 
-    // Wait for debounce
-    await page.waitForTimeout(400);
-
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(1);
     await expect(entries.first().locator('.result-status')).toContainText(
@@ -324,9 +318,6 @@ test.describe('Results Filtering - Search by Bib', () => {
     const searchInput = page.locator('#search-input');
     await searchInput.fill('020');
 
-    // Wait for debounce (300ms) + rendering
-    await page.waitForTimeout(500);
-
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(1);
   });
@@ -337,8 +328,6 @@ test.describe('Results Filtering - Search by Bib', () => {
     const searchInput = page.locator('#search-input');
     await searchInput.fill('999');
 
-    await page.waitForTimeout(500);
-
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(0);
   });
@@ -348,12 +337,10 @@ test.describe('Results Filtering - Search by Bib', () => {
 
     const searchInput = page.locator('#search-input');
     await searchInput.fill('010');
-    await page.waitForTimeout(500);
     await expect(page.locator('.result-item')).toHaveCount(1);
 
     // Clear search
     await searchInput.fill('');
-    await page.waitForTimeout(500);
     await expect(page.locator('.result-item')).toHaveCount(3);
   });
 
@@ -363,7 +350,6 @@ test.describe('Results Filtering - Search by Bib', () => {
     const searchInput = page.locator('#search-input');
     // "0" matches all three bibs (010, 020, 030)
     await searchInput.fill('0');
-    await page.waitForTimeout(500);
 
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(3);
@@ -397,9 +383,7 @@ test.describe('Results Filtering - Empty State', () => {
     await expect(emptyState).toContainText('No entries recorded');
   });
 
-  test('should hide empty state after recording an entry', async ({
-    page,
-  }) => {
+  test('should hide empty state after recording an entry', async ({ page }) => {
     await setupPage(page);
     await navigateTo(page, 'results');
 
@@ -499,8 +483,6 @@ test.describe('Results Filtering - Combined Filters', () => {
     await page.selectOption('#filter-point', 'F');
     await page.selectOption('#filter-status', 'dnf');
 
-    await page.waitForTimeout(400);
-
     // Only bib 3 (Finish + DNF) should show
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(1);
@@ -524,8 +506,6 @@ test.describe('Results Filtering - Combined Filters', () => {
     await page.locator('#search-input').fill('010');
     await page.selectOption('#filter-point', 'S');
 
-    await page.waitForTimeout(500);
-
     // Only bib 10 Start entry should show
     const entries = page.locator('.result-item');
     await expect(entries).toHaveCount(1);
@@ -546,12 +526,10 @@ test.describe('Results Filtering - Combined Filters', () => {
     // Open filter bar and apply search
     await page.click('#toggle-filters-btn');
     await page.locator('#search-input').fill('001');
-    await page.waitForTimeout(500);
     await expect(page.locator('.result-item')).toHaveCount(1);
 
     // Clear search manually
     await page.locator('#search-input').fill('');
-    await page.waitForTimeout(500);
     await expect(page.locator('.result-item')).toHaveCount(2);
   });
 });
