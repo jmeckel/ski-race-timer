@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="en" data-active-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHRONO - User Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   CHRONO - User Manual Styles
+   Brand Identity Design System
+   ============================================ */
+
+:root {
+  --chrono-navy: #0a1628;
+  --chrono-navy-mid: #0f1d32;
+  --chrono-navy-light: #152240;
+  --chrono-surface: #111d30;
+  --chrono-elevated: #182844;
+  --chrono-cyan: #00d4ff;
+  --chrono-cyan-dim: #00a8cc;
+  --chrono-cyan-glow: rgba(0, 212, 255, 0.15);
+  --chrono-cyan-glow2: rgba(0, 212, 255, 0.08);
+  --chrono-gold: #ffd700;
+  --chrono-gold-dim: #ccac00;
+  --chrono-gold-glow: rgba(255, 215, 0, 0.12);
+  --chrono-start: #ff8c42;
+  --chrono-finish: #00e68a;
+  --chrono-error: #ff4757;
+  --chrono-text: #f0f4f8;
+  --chrono-text-secondary: #8899aa;
+  --chrono-text-muted: #556677;
+  --chrono-border: rgba(0, 212, 255, 0.08);
+  --chrono-divider: rgba(255, 255, 255, 0.04);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-2xl: 48px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --header-height: 56px;
+  --sidebar-width: 260px;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + var(--sp-lg));
+}
+
+body {
+  background: var(--chrono-navy);
+  color: var(--chrono-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Language visibility */
+.lang-en, .lang-de, .lang-fr { display: none; }
+[data-active-lang="en"] .lang-en,
+[data-active-lang="de"] .lang-de,
+[data-active-lang="fr"] .lang-fr { display: block; }
+
+/* ---- FIXED HEADER ---- */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: linear-gradient(180deg, rgba(10, 22, 40, 0.97) 0%, rgba(10, 22, 40, 0.92) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--chrono-divider);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-lg);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.header-logo { width: 32px; height: 32px; flex-shrink: 0; }
+
+.header-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--chrono-cyan) 0%, #66e0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--chrono-border);
+  margin: 0 var(--sp-xs);
+}
+
+.header-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chrono-text-secondary);
+}
+
+.header-right { display: flex; align-items: center; gap: var(--sp-sm); }
+
+.lang-switcher { display: flex; gap: 2px; }
+
+.lang-btn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border: 1px solid var(--chrono-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--chrono-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  border-color: var(--chrono-cyan-dim);
+  color: var(--chrono-text);
+}
+
+.lang-btn.active {
+  background: var(--chrono-cyan-glow);
+  border-color: var(--chrono-cyan);
+  color: var(--chrono-cyan);
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--chrono-text);
+  cursor: pointer;
+  padding: var(--sp-sm);
+  margin-inline-start: var(--sp-xs);
+}
+
+.hamburger svg { display: block; }
+
+/* ---- LAYOUT ---- */
+.page-layout {
+  display: flex;
+  margin-top: var(--header-height);
+  min-height: calc(100vh - var(--header-height));
+}
+
+/* ---- SIDEBAR / TOC ---- */
+.sidebar {
+  position: sticky;
+  top: var(--header-height);
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--header-height));
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: var(--sp-lg) var(--sp-md);
+  border-right: 1px solid var(--chrono-divider);
+  background: var(--chrono-navy-mid);
+  scrollbar-width: thin;
+  scrollbar-color: var(--chrono-navy-light) transparent;
+}
+
+.toc-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chrono-text-muted);
+  margin-bottom: var(--sp-md);
+}
+
+.toc-list { list-style: none; }
+
+.toc-list li { margin-bottom: 2px; }
+
+.toc-link {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--chrono-text-secondary);
+  text-decoration: none;
+  padding: 6px var(--sp-sm);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+
+.toc-link:hover {
+  color: var(--chrono-text);
+  background: var(--chrono-cyan-glow2);
+}
+
+.toc-link.active {
+  color: var(--chrono-cyan);
+  border-left-color: var(--chrono-cyan);
+  background: var(--chrono-cyan-glow2);
+}
+
+/* ---- MAIN CONTENT ---- */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 860px;
+  padding: var(--sp-2xl) var(--sp-xl);
+}
+
+/* ---- HERO ---- */
+.hero {
+  text-align: center;
+  padding: var(--sp-2xl) 0;
+  margin-bottom: var(--sp-2xl);
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 300px at 50% 40%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
+    radial-gradient(ellipse 250px 250px at 30% 60%, rgba(255, 215, 0, 0.02) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hero-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--sp-lg);
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--chrono-text);
+  margin-bottom: var(--sp-xs);
+}
+
+.hero-title span {
+  background: linear-gradient(135deg, var(--chrono-cyan) 0%, #66e0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--chrono-text-secondary);
+  margin-bottom: var(--sp-md);
+}
+
+.hero-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--chrono-text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* ---- SECTIONS ---- */
+.manual-section {
+  margin-bottom: var(--sp-2xl);
+  padding-bottom: var(--sp-2xl);
+  border-bottom: 1px solid var(--chrono-divider);
+}
+
+.manual-section:last-child { border-bottom: none; }
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chrono-cyan);
+  margin-bottom: var(--sp-lg);
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--chrono-border);
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--chrono-text);
+  margin-bottom: var(--sp-lg);
+  letter-spacing: -0.01em;
+}
+
+.sub-heading {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--chrono-text);
+  margin-top: var(--sp-xl);
+  margin-bottom: var(--sp-md);
+}
+
+p { margin-bottom: var(--sp-md); color: var(--chrono-text-secondary); }
+
+/* ---- FEATURE LIST ---- */
+.feature-list {
+  list-style: none;
+  margin-bottom: var(--sp-lg);
+}
+
+.feature-list li {
+  position: relative;
+  padding-left: var(--sp-lg);
+  margin-bottom: var(--sp-sm);
+  color: var(--chrono-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.feature-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chrono-cyan);
+}
+
+/* ---- ORDERED LIST ---- */
+.steps-list {
+  counter-reset: step;
+  list-style: none;
+  margin-bottom: var(--sp-lg);
+}
+
+.steps-list li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 40px;
+  margin-bottom: var(--sp-md);
+  color: var(--chrono-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.steps-list li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--chrono-cyan-glow);
+  border: 1px solid var(--chrono-cyan);
+  color: var(--chrono-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-align: center;
+}
+
+/* ---- SCREENSHOT FRAME ---- */
+.screenshot-container {
+  max-width: 390px;
+  margin: var(--sp-lg) auto;
+}
+
+.screenshot-frame {
+  background: var(--chrono-navy);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--chrono-border);
+  box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.04), 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.screenshot-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.screenshot-caption {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--chrono-text-muted);
+  margin-top: var(--sp-sm);
+  letter-spacing: 0.05em;
+}
+
+/* ---- TABLES ---- */
+.chrono-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--sp-lg) 0;
+  font-size: 0.88rem;
+}
+
+.chrono-table thead th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--chrono-cyan);
+  background: var(--chrono-elevated);
+  padding: var(--sp-sm) var(--sp-md);
+  text-align: left;
+  border-bottom: 1px solid var(--chrono-border);
+}
+
+.chrono-table tbody td {
+  padding: var(--sp-sm) var(--sp-md);
+  color: var(--chrono-text-secondary);
+  border-bottom: 1px solid var(--chrono-divider);
+}
+
+.chrono-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.chrono-table tbody tr:hover {
+  background: var(--chrono-cyan-glow2);
+}
+
+/* ---- CALLOUT / TIP ---- */
+.callout {
+  padding: var(--sp-md) var(--sp-lg);
+  border-radius: var(--radius-sm);
+  margin: var(--sp-lg) 0;
+  background: var(--chrono-surface);
+  border: 1px solid var(--chrono-divider);
+  font-size: 0.9rem;
+}
+
+.callout-cyan { border-left: 3px solid var(--chrono-cyan); }
+.callout-gold { border-left: 3px solid var(--chrono-gold); }
+.callout-start { border-left: 3px solid var(--chrono-start); }
+
+.callout-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-xs);
+}
+
+.callout-cyan .callout-label { color: var(--chrono-cyan); }
+.callout-gold .callout-label { color: var(--chrono-gold); }
+.callout-start .callout-label { color: var(--chrono-start); }
+
+.callout p { margin-bottom: 0; font-size: 0.88rem; }
+
+/* ---- KBD ---- */
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--chrono-elevated);
+  border: 1px solid var(--chrono-border);
+  color: var(--chrono-cyan);
+  white-space: nowrap;
+}
+
+/* ---- CODE ---- */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--chrono-surface);
+  color: var(--chrono-cyan-dim);
+}
+
+/* ---- SYNC DIAGRAM ---- */
+.sync-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-md);
+  margin: var(--sp-lg) 0;
+  padding: var(--sp-lg);
+  background: var(--chrono-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--chrono-divider);
+}
+
+.sync-cloud {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--chrono-cyan);
+  padding: var(--sp-sm) var(--sp-lg);
+  border: 1px solid var(--chrono-cyan);
+  border-radius: var(--radius-pill);
+  background: var(--chrono-cyan-glow);
+}
+
+.sync-arrow {
+  width: 2px;
+  height: 24px;
+  background: var(--chrono-border);
+  position: relative;
+}
+
+.sync-devices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  justify-content: center;
+}
+
+.sync-device {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chrono-divider);
+  background: var(--chrono-elevated);
+  color: var(--chrono-text-secondary);
+}
+
+.sync-device.device-start { border-color: var(--chrono-start); color: var(--chrono-start); }
+.sync-device.device-finish { border-color: var(--chrono-finish); color: var(--chrono-finish); }
+.sync-device.device-gate { border-color: var(--chrono-gold); color: var(--chrono-gold); }
+.sync-device.device-chief { border-color: var(--chrono-cyan); color: var(--chrono-cyan); }
+
+/* ---- BACK TO TOP ---- */
+.back-to-top {
+  position: fixed;
+  bottom: var(--sp-lg);
+  right: var(--sp-lg);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--chrono-elevated);
+  border: 1px solid var(--chrono-border);
+  color: var(--chrono-cyan);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 900;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.back-to-top:hover {
+  background: var(--chrono-cyan-glow);
+  transform: translateY(-2px);
+}
+
+/* ---- FOOTER ---- */
+.site-footer {
+  text-align: center;
+  padding: var(--sp-2xl) var(--sp-lg);
+  border-top: 1px solid var(--chrono-divider);
+  margin-top: var(--sp-2xl);
+}
+
+.footer-logo { width: 36px; height: 36px; margin: 0 auto var(--sp-md); opacity: 0.5; }
+
+.footer-text {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--chrono-text-muted);
+  letter-spacing: 0.05em;
+  line-height: 2;
+}
+
+.footer-text a {
+  color: var(--chrono-cyan-dim);
+  text-decoration: none;
+}
+
+.footer-text a:hover { color: var(--chrono-cyan); }
+
+/* ---- MOBILE ---- */
+@media (max-width: 768px) {
+  :root { --sidebar-width: 0px; }
+
+  .hamburger { display: block; }
+
+  .sidebar {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    width: 280px;
+    height: calc(100vh - var(--header-height));
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+    border-right: 1px solid var(--chrono-border);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: var(--header-height);
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+  }
+
+  .sidebar.open ~ .sidebar-overlay { display: block; }
+
+  .main-content {
+    padding: var(--sp-lg) var(--sp-md);
+  }
+
+  .header-subtitle { display: none; }
+  .header-divider { display: none; }
+
+  .hero { padding: var(--sp-lg) 0; }
+
+  .sync-devices { flex-direction: column; align-items: center; }
+}
+
+/* ---- PRINT ---- */
+@media print {
+  body { background: #fff; color: #000; }
+  .site-header, .sidebar, .back-to-top, .hamburger, .sidebar-overlay { display: none !important; }
+  .page-layout { display: block; }
+  .main-content { max-width: 100%; padding: 0; }
+  .manual-section { page-break-inside: avoid; border-bottom-color: #ccc; }
+  .section-label { color: #0077aa; border-bottom-color: #ccc; }
+  .section-heading { color: #000; }
+  .sub-heading { color: #222; }
+  p, .feature-list li, .steps-list li, .chrono-table tbody td { color: #333; }
+  .feature-list li::before { background: #0077aa; }
+  .chrono-table thead th { background: #eee; color: #0077aa; border-bottom-color: #ccc; }
+  .chrono-table tbody td { border-bottom-color: #eee; }
+  .callout { background: #f8f8f8; border-color: #ddd; }
+  kbd { background: #eee; border-color: #ccc; color: #0077aa; }
+  .screenshot-frame { box-shadow: none; border-color: #ccc; }
+  .hero::before { display: none; }
+  .sync-diagram { background: #f8f8f8; border-color: #ccc; }
+  a { color: #0077aa; }
+  .lang-en, .lang-de, .lang-fr { display: none !important; }
+  [data-active-lang="en"] .lang-en,
+  [data-active-lang="de"] .lang-de,
+  [data-active-lang="fr"] .lang-fr { display: block !important; }
+}
+</style>
+</head>
+<body>
+<!-- ====== HEADER ====== -->
+<header class="site-header">
+  <div class="header-left">
+    <svg class="header-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="60" r="54" stroke="url(#hdr-ring)" stroke-width="2.5" opacity="0.6"/>
+      <g opacity="0.3">
+        <line x1="60" y1="8" x2="60" y2="16" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="60" y1="104" x2="60" y2="112" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="8" y1="60" x2="16" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="104" y1="60" x2="112" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+      <line x1="60" y1="60" x2="60" y2="22" stroke="#00d4ff" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="60" cy="60" r="4" fill="#00d4ff"/>
+      <circle cx="60" cy="60" r="2" fill="#0a1628"/>
+      <path d="M 88 35 A 38 38 0 1 0 88 85" stroke="#00d4ff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+      <line x1="92" y1="35" x2="97" y2="28" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="92" y1="85" x2="97" y2="92" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <defs><linearGradient id="hdr-ring" x1="0" y1="0" x2="120" y2="120"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066aa"/></linearGradient></defs>
+    </svg>
+    <span class="header-brand">CHRONO</span>
+    <span class="header-divider"></span>
+    <span class="header-subtitle lang-en">User Manual</span>
+    <span class="header-subtitle lang-de">Benutzerhandbuch</span>
+    <span class="header-subtitle lang-fr">Manuel d'utilisation</span>
+  </div>
+  <div class="header-right">
+    <div class="lang-switcher">
+      <button class="lang-btn" data-lang="de" title="Deutsch">DE</button>
+      <button class="lang-btn active" data-lang="en" title="English">EN</button>
+      <button class="lang-btn" data-lang="fr" title="Fran&ccedil;ais">FR</button>
+    </div>
+    <button class="hamburger" aria-label="Toggle navigation">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ====== PAGE LAYOUT ====== -->
+<div class="page-layout">
+
+  <!-- ====== SIDEBAR / TOC ====== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="toc-title lang-en">Contents</div>
+    <div class="toc-title lang-de">Inhalt</div>
+    <div class="toc-title lang-fr">Sommaire</div>
+    <nav>
+      <ul class="toc-list" id="toc-list">
+        <li><a class="toc-link" href="#introduction"><span class="lang-en">Introduction</span><span class="lang-de">Einleitung</span><span class="lang-fr">Introduction</span></a></li>
+        <li><a class="toc-link" href="#getting-started"><span class="lang-en">Getting Started</span><span class="lang-de">Erste Schritte</span><span class="lang-fr">Premiers pas</span></a></li>
+        <li><a class="toc-link" href="#timer-view"><span class="lang-en">Timer View</span><span class="lang-de">Timer-Ansicht</span><span class="lang-fr">Vue chrono</span></a></li>
+        <li><a class="toc-link" href="#results-view"><span class="lang-en">Results View</span><span class="lang-de">Ergebnis-Ansicht</span><span class="lang-fr">Vue r&eacute;sultats</span></a></li>
+        <li><a class="toc-link" href="#gate-judge"><span class="lang-en">Gate Judge Mode</span><span class="lang-de">Torrichter-Modus</span><span class="lang-fr">Mode juge de porte</span></a></li>
+        <li><a class="toc-link" href="#chief-judge"><span class="lang-en">Chief Judge Mode</span><span class="lang-de">Obmann-Modus</span><span class="lang-fr">Mode directeur</span></a></li>
+        <li><a class="toc-link" href="#settings"><span class="lang-en">Settings</span><span class="lang-de">Einstellungen</span><span class="lang-fr">Param&egrave;tres</span></a></li>
+        <li><a class="toc-link" href="#multi-device-sync"><span class="lang-en">Multi-Device Sync</span><span class="lang-de">Mehrger&auml;te-Sync</span><span class="lang-fr">Sync multi-appareils</span></a></li>
+        <li><a class="toc-link" href="#export-formats"><span class="lang-en">Export Formats</span><span class="lang-de">Export-Formate</span><span class="lang-fr">Formats d'export</span></a></li>
+        <li><a class="toc-link" href="#keyboard-shortcuts"><span class="lang-en">Keyboard Shortcuts</span><span class="lang-de">Tastenkombinationen</span><span class="lang-fr">Raccourcis clavier</span></a></li>
+        <li><a class="toc-link" href="#troubleshooting"><span class="lang-en">Troubleshooting</span><span class="lang-de">Fehlerbehebung</span><span class="lang-fr">D&eacute;pannage</span></a></li>
+      </ul>
+    </nav>
+  </aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="main-content">
+
+    <!-- ====== HERO ====== -->
+    <div class="hero">
+      <svg class="hero-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="54" stroke="url(#hero-ring)" stroke-width="2.5" opacity="0.6"/>
+        <g opacity="0.3">
+          <line x1="60" y1="8" x2="60" y2="16" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+          <line x1="60" y1="104" x2="60" y2="112" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="60" x2="16" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="104" y1="60" x2="112" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+        <line x1="60" y1="60" x2="60" y2="22" stroke="#00d4ff" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="60" cy="60" r="4" fill="#00d4ff"/>
+        <circle cx="60" cy="60" r="2" fill="#0a1628"/>
+        <path d="M 88 35 A 38 38 0 1 0 88 85" stroke="#00d4ff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+        <line x1="92" y1="35" x2="97" y2="28" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        <line x1="92" y1="85" x2="97" y2="92" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        <defs><linearGradient id="hero-ring" x1="0" y1="0" x2="120" y2="120"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066aa"/></linearGradient></defs>
+      </svg>
+      <div class="lang-en">
+        <h1 class="hero-title">Ski Race Timer &mdash; <span>User Manual</span></h1>
+        <p class="hero-subtitle">GPS-Synchronized Race Timing for Ski Events</p>
+        <p class="hero-meta">Version 5.26.2 &middot; Last Updated: February 2026</p>
+      </div>
+      <div class="lang-de">
+        <h1 class="hero-title">Ski Race Timer &mdash; <span>Benutzerhandbuch</span></h1>
+        <p class="hero-subtitle">GPS-synchronisierte Zeitmessung f&uuml;r Skirennen</p>
+        <p class="hero-meta">Version 5.26.2 &middot; Stand: Februar 2026</p>
+      </div>
+      <div class="lang-fr">
+        <h1 class="hero-title">Ski Race Timer &mdash; <span>Manuel d'utilisation</span></h1>
+        <p class="hero-subtitle">Chronom&eacute;trage de courses de ski synchronis&eacute; par GPS</p>
+        <p class="hero-meta">Version 5.26.2 &middot; Derni&egrave;re mise &agrave; jour : F&eacute;vrier 2026</p>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 1: INTRODUCTION
+         ============================================================ -->
+    <section class="manual-section" id="introduction">
+      <div class="section-label">01</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Introduction</h2>
+        <p>Ski Race Timer is a GPS-synchronized Progressive Web App (PWA) for timing alpine ski races. Designed for mobile use in outdoor race conditions, it provides accurate, coordinated timing across multiple devices.</p>
+        <h3 class="sub-heading">Key Features</h3>
+        <ul class="feature-list">
+          <li>GPS-synchronized timing for accurate timestamps across devices</li>
+          <li>Multi-device sync to coordinate start and finish timers</li>
+          <li>Gate Judge mode with gate-first quick entry for recording gate faults</li>
+          <li>Chief Judge mode for fault review, penalty decisions, and deletion approvals</li>
+          <li>Two-run support for slalom and giant slalom races</li>
+          <li>Voice Mode for hands-free voice commands during timing</li>
+          <li>Ambient Mode to save battery by dimming the screen during inactivity</li>
+          <li>Battery Power Saver &mdash; automatic animation reduction on low battery</li>
+          <li>FLT status for U8/U10 categories (finished with fault penalty)</li>
+          <li>Offline-first &mdash; works without internet, syncs when connected</li>
+          <li>Photo capture &mdash; optional documentation for each timestamp</li>
+          <li>Race Horology export &mdash; industry-standard CSV format</li>
+          <li>Trilingual &mdash; English, German, and French interfaces</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Einleitung</h2>
+        <p>Ski Race Timer ist eine GPS-synchronisierte Progressive Web App (PWA) zur Zeitmessung bei alpinen Skirennen. F&uuml;r den mobilen Einsatz bei Rennen im Freien konzipiert, bietet sie eine pr&auml;zise, ger&auml;te&uuml;bergreifende Zeitmessung.</p>
+        <h3 class="sub-heading">Hauptfunktionen</h3>
+        <ul class="feature-list">
+          <li>GPS-synchronisierte Zeitmessung f&uuml;r pr&auml;zise Zeitstempel &uuml;ber alle Ger&auml;te</li>
+          <li>Mehrger&auml;te-Synchronisation zur Koordination von Start- und Zielzeitmessung</li>
+          <li>Torrichter-Modus zur Erfassung von Torfehlern mit Tor-zuerst-Eingabe</li>
+          <li>Obmann-Modus zur Fehler&uuml;bersicht, Strafberechnung und L&ouml;schgenehmigung</li>
+          <li>Sprachsteuerung f&uuml;r freih&auml;ndige Bedienung am Hang</li>
+          <li>Ruhemodus zum Schutz vor versehentlichen Zeitstempeln bei Inaktivit&auml;t</li>
+          <li>Batterieschoner &mdash; automatische Reduzierung von Animationen bei niedrigem Akkustand</li>
+          <li>STR-Status (Strafzeit) f&uuml;r U8/U10-Kategorien</li>
+          <li>Zwei-Lauf-Unterst&uuml;tzung f&uuml;r Slalom und Riesenslalom</li>
+          <li>Offline-First &mdash; funktioniert ohne Internet, synchronisiert bei Verbindung</li>
+          <li>Fotoaufnahme &mdash; optionale Dokumentation f&uuml;r jeden Zeitstempel</li>
+          <li>Race Horology Export &mdash; branchen&uuml;bliches CSV-Format</li>
+          <li>Dreisprachig &mdash; Deutsche, englische und franz&ouml;sische Oberfl&auml;che</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Introduction</h2>
+        <p>Ski Race Timer est une application web progressive (PWA) synchronis&eacute;e par GPS pour le chronom&eacute;trage des courses de ski alpin. Con&ccedil;ue pour une utilisation mobile en conditions ext&eacute;rieures, elle fournit un chronom&eacute;trage pr&eacute;cis et coordonn&eacute; sur plusieurs appareils.</p>
+        <h3 class="sub-heading">Fonctionnalit&eacute;s principales</h3>
+        <ul class="feature-list">
+          <li>Chronom&eacute;trage synchronis&eacute; par GPS pour des horodatages pr&eacute;cis sur tous les appareils</li>
+          <li>Synchronisation multi-appareils pour coordonner les chronom&eacute;trages</li>
+          <li>Mode Juge de porte avec saisie rapide porte-en-premier</li>
+          <li>Mode Directeur de course pour la revue des fautes et d&eacute;cisions de p&eacute;nalit&eacute;</li>
+          <li>Commande vocale pour utilisation mains libres sur la piste</li>
+          <li>Mode veille pour prot&eacute;ger contre les horodatages accidentels</li>
+          <li>&Eacute;conomiseur de batterie &mdash; r&eacute;duction automatique des animations</li>
+          <li>Statut FLT pour les cat&eacute;gories U8/U10</li>
+          <li>Support deux manches pour le slalom et le slalom g&eacute;ant</li>
+          <li>Hors ligne d'abord &mdash; fonctionne sans internet</li>
+          <li>Capture photo &mdash; documentation optionnelle</li>
+          <li>Export Race Horology &mdash; format CSV standard</li>
+          <li>Trilingue &mdash; interfaces en allemand, anglais et fran&ccedil;ais</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 2: GETTING STARTED
+         ============================================================ -->
+    <section class="manual-section" id="getting-started">
+      <div class="section-label">02</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Getting Started</h2>
+        <h3 class="sub-heading">First-Time Setup</h3>
+        <p>The onboarding wizard guides you through setup in 6 steps:</p>
+        <ol class="steps-list">
+          <li><strong>Language</strong> &mdash; Choose Deutsch or English</li>
+          <li><strong>Device Role</strong> &mdash; Choose Timer or Gate Judge</li>
+          <li><strong>Device Name</strong> &mdash; Name this timer (e.g., &ldquo;Start Gate&rdquo;, &ldquo;Finish Line&rdquo;)</li>
+          <li><strong>Photo Capture</strong> &mdash; Enable for photos with each timestamp</li>
+          <li><strong>Cloud Sync</strong> &mdash; Enter Race ID and PIN to sync</li>
+          <li><strong>Summary</strong> &mdash; Review settings</li>
+        </ol>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-onboarding.png" alt="Onboarding wizard" loading="lazy"></div>
+          <p class="screenshot-caption">Onboarding wizard</p>
+        </div>
+        <h3 class="sub-heading">Installing as an App</h3>
+        <div class="callout callout-cyan">
+          <div class="callout-label">iOS</div>
+          <p>Safari &rarr; Share &rarr; Add to Home Screen</p>
+        </div>
+        <div class="callout callout-cyan">
+          <div class="callout-label">Android</div>
+          <p>Chrome &rarr; Menu &rarr; Install app</p>
+        </div>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Erste Schritte</h2>
+        <h3 class="sub-heading">Ersteinrichtung</h3>
+        <p>Der Einrichtungsassistent f&uuml;hrt Sie in 6 Schritten durch die Konfiguration:</p>
+        <ol class="steps-list">
+          <li><strong>Sprache</strong> &mdash; Deutsch oder English w&auml;hlen</li>
+          <li><strong>Rolle</strong> &mdash; Zeitnehmer oder Torrichter</li>
+          <li><strong>Ger&auml;tename</strong> &mdash; z.B. &bdquo;Starttor&ldquo;, &bdquo;Ziellinie&ldquo;</li>
+          <li><strong>Fotoaufnahme</strong> &mdash; Aktivieren f&uuml;r Fotos bei jedem Zeitstempel</li>
+          <li><strong>Cloud-Sync</strong> &mdash; Rennen-ID und PIN eingeben</li>
+          <li><strong>Zusammenfassung</strong> &mdash; Einstellungen &uuml;berpr&uuml;fen</li>
+        </ol>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/de-onboarding.png" alt="Einrichtungsassistent" loading="lazy"></div>
+          <p class="screenshot-caption">Einrichtungsassistent</p>
+        </div>
+        <h3 class="sub-heading">Als App installieren</h3>
+        <div class="callout callout-cyan">
+          <div class="callout-label">iOS</div>
+          <p>Safari &rarr; Teilen &rarr; Zum Home-Bildschirm</p>
+        </div>
+        <div class="callout callout-cyan">
+          <div class="callout-label">Android</div>
+          <p>Chrome &rarr; Men&uuml; &rarr; App installieren</p>
+        </div>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Premiers pas</h2>
+        <h3 class="sub-heading">Configuration initiale</h3>
+        <p>L'assistant de configuration vous guide en 6 &eacute;tapes :</p>
+        <ol class="steps-list">
+          <li><strong>Langue</strong> &mdash; Choisissez Deutsch ou English</li>
+          <li><strong>R&ocirc;le</strong> &mdash; Chronom&eacute;treur ou Juge de porte</li>
+          <li><strong>Nom de l'appareil</strong> &mdash; par ex. &laquo; D&eacute;part &raquo;, &laquo; Arriv&eacute;e &raquo;</li>
+          <li><strong>Capture photo</strong> &mdash; Activez pour photos &agrave; chaque horodatage</li>
+          <li><strong>Synchronisation cloud</strong> &mdash; Identifiant de course et PIN</li>
+          <li><strong>R&eacute;capitulatif</strong> &mdash; V&eacute;rifiez les param&egrave;tres</li>
+        </ol>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-onboarding.png" alt="Assistant de configuration" loading="lazy"></div>
+          <p class="screenshot-caption">Assistant de configuration</p>
+        </div>
+        <h3 class="sub-heading">Installer comme application</h3>
+        <div class="callout callout-cyan">
+          <div class="callout-label">iOS</div>
+          <p>Safari &rarr; Partager &rarr; Sur l'&eacute;cran d'accueil</p>
+        </div>
+        <div class="callout callout-cyan">
+          <div class="callout-label">Android</div>
+          <p>Chrome &rarr; Menu &rarr; Installer l'application</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 3: TIMER VIEW
+         ============================================================ -->
+    <section class="manual-section" id="timer-view">
+      <div class="section-label">03</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Timer View</h2>
+        <p>The main workspace features a radial dial (iPod-style) for quick bib number input along with timing controls.</p>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-timer-radial.png" alt="Timer radial dial view" loading="lazy"></div>
+          <p class="screenshot-caption">Radial dial timer view</p>
+        </div>
+        <h3 class="sub-heading">Recording Times</h3>
+        <ol class="steps-list">
+          <li>Enter bib number using radial dial or number keys (displays as 3 digits)</li>
+          <li>Select timing point &mdash; Start (S) or Finish (F)</li>
+          <li>Select run &mdash; L1 or L2</li>
+          <li>Tap &ldquo;Record Time&rdquo;</li>
+        </ol>
+        <h3 class="sub-heading">Radial Dial</h3>
+        <p>Digits 0&ndash;9 are arranged in a circle. Tap to enter a digit or use the spin gesture.</p>
+        <h3 class="sub-heading">Spin Gesture</h3>
+        <ul class="feature-list">
+          <li>Clockwise = increment</li>
+          <li>Counter-clockwise = decrement</li>
+          <li>Momentum physics for fast spinning</li>
+          <li>Snap-back after 800ms of inactivity</li>
+        </ul>
+        <h3 class="sub-heading">Timing Points &amp; Run Selection</h3>
+        <p>Toggle between <strong>Start (S)</strong> and <strong>Finish (F)</strong> timing points. Select <strong>L1</strong> (first run) or <strong>L2</strong> (second run) for slalom races.</p>
+        <h3 class="sub-heading">Additional Features</h3>
+        <ul class="feature-list">
+          <li><strong>Auto-Increment</strong> &mdash; bib number increases by 1 after recording Finish</li>
+          <li><strong>Duplicate Warning</strong> &mdash; yellow warning for same bib+point+run</li>
+          <li><strong>Landscape Mode</strong> &mdash; two-column layout (dial left, controls right)</li>
+          <li><strong>Wake Lock</strong> &mdash; screen stays active during timing</li>
+          <li><strong>Ambient Mode</strong> &mdash; dims after 30s, first tap wakes, second tap records</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Timer-Ansicht</h2>
+        <p>Der Hauptarbeitsbereich mit radialem Zifferblatt (iPod-Stil) zur schnellen Startnummern-Eingabe und Zeitmesssteuerung.</p>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/de-timer-radial.png" alt="Radiales Zifferblatt" loading="lazy"></div>
+          <p class="screenshot-caption">Radiales Zifferblatt</p>
+        </div>
+        <h3 class="sub-heading">Zeiten erfassen</h3>
+        <ol class="steps-list">
+          <li>Startnummer eingeben (0&ndash;9 auf Zifferblatt, 3-stellig)</li>
+          <li>Messpunkt: S (Start) oder Z (Ziel)</li>
+          <li>Lauf: L1 oder L2</li>
+          <li>&bdquo;Zeit erfassen&ldquo; tippen</li>
+        </ol>
+        <h3 class="sub-heading">Radiales Zifferblatt</h3>
+        <p>Ziffern 0&ndash;9 im Kreis angeordnet. Antippen oder Drehen zur Eingabe.</p>
+        <h3 class="sub-heading">Drehgeste</h3>
+        <ul class="feature-list">
+          <li>Im Uhrzeigersinn = erh&ouml;hen</li>
+          <li>Gegen den Uhrzeigersinn = verringern</li>
+          <li>Schwungphysik f&uuml;r schnelles Drehen</li>
+          <li>R&uuml;ckschnappen nach 800ms Inaktivit&auml;t</li>
+        </ul>
+        <h3 class="sub-heading">Messpunkte &amp; Laufauswahl</h3>
+        <p>Umschalten zwischen <strong>Start (S)</strong> und <strong>Ziel (Z)</strong>. Laufauswahl <strong>L1</strong> oder <strong>L2</strong> f&uuml;r Slalom-Rennen.</p>
+        <h3 class="sub-heading">Weitere Funktionen</h3>
+        <ul class="feature-list">
+          <li><strong>Auto-Inkrement</strong> &mdash; Startnummer +1 nach Ziel-Erfassung</li>
+          <li><strong>Duplikat-Warnung</strong> &mdash; gelbe Warnung bei gleicher Kombination</li>
+          <li><strong>Querformat</strong> &mdash; Zwei-Spalten-Layout</li>
+          <li><strong>Bildschirmsperre</strong> &mdash; Bildschirm bleibt aktiv</li>
+          <li><strong>Ruhemodus</strong> &mdash; dimmt nach 30s, erstes Tippen weckt, zweites erfasst</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Vue chronom&egrave;tre</h2>
+        <p>L'espace de travail principal avec cadran radial (style iPod) pour la saisie rapide des dossards et contr&ocirc;les de chronom&eacute;trage.</p>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-timer-radial.png" alt="Vue cadran radial" loading="lazy"></div>
+          <p class="screenshot-caption">Vue cadran radial</p>
+        </div>
+        <h3 class="sub-heading">Enregistrer des temps</h3>
+        <ol class="steps-list">
+          <li>Saisir le dossard (cadran ou touches, 3 chiffres)</li>
+          <li>Point de mesure : D&eacute;part (S) ou Arriv&eacute;e (F)</li>
+          <li>Manche : M1 ou M2</li>
+          <li>Appuyer sur &laquo; Enregistrer le temps &raquo;</li>
+        </ol>
+        <h3 class="sub-heading">Cadran radial</h3>
+        <p>Chiffres 0&ndash;9 dispos&eacute;s en cercle. Appui direct ou rotation pour la saisie.</p>
+        <h3 class="sub-heading">Geste de rotation</h3>
+        <ul class="feature-list">
+          <li>Horaire = incr&eacute;menter</li>
+          <li>Antihoraire = d&eacute;cr&eacute;menter</li>
+          <li>Physique d'inertie pour rotation rapide</li>
+          <li>Retour apr&egrave;s 800ms d'inactivit&eacute;</li>
+        </ul>
+        <h3 class="sub-heading">Points de mesure &amp; s&eacute;lection de manche</h3>
+        <p>Basculer entre <strong>D&eacute;part (S)</strong> et <strong>Arriv&eacute;e (F)</strong>. S&eacute;lectionner <strong>M1</strong> ou <strong>M2</strong> pour les courses de slalom.</p>
+        <h3 class="sub-heading">Fonctionnalit&eacute;s suppl&eacute;mentaires</h3>
+        <ul class="feature-list">
+          <li><strong>Auto-incr&eacute;mentation</strong> &mdash; dossard +1 apr&egrave;s arriv&eacute;e</li>
+          <li><strong>Avertissement de doublon</strong> &mdash; avertissement jaune</li>
+          <li><strong>Mode paysage</strong> &mdash; deux colonnes</li>
+          <li><strong>Verrouillage &eacute;cran</strong> &mdash; &eacute;cran actif</li>
+          <li><strong>Mode veille</strong> &mdash; att&eacute;nue apr&egrave;s 30s, premi&egrave;re pression r&eacute;veille, deuxi&egrave;me enregistre</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 4: RESULTS VIEW
+         ============================================================ -->
+    <section class="manual-section" id="results-view">
+      <div class="section-label">04</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Results View</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-results-new.png" alt="Results view" loading="lazy"></div>
+          <p class="screenshot-caption">Results view</p>
+        </div>
+        <h3 class="sub-heading">Entry Information</h3>
+        <p>Each entry shows: Bib number, Timing point, Run, Timestamp, Device name, and Photo thumbnail (if available).</p>
+        <h3 class="sub-heading">Statistics</h3>
+        <ul class="feature-list">
+          <li>Total entries</li>
+          <li>Unique racers</li>
+          <li>Finish count</li>
+        </ul>
+        <h3 class="sub-heading">Search &amp; Filter</h3>
+        <p>Filter entries by bib number, timing point (All/Start/Finish), or status (OK/DNS/DNF/DSQ/FLT). Pull-to-Refresh triggers a manual sync.</p>
+        <h3 class="sub-heading">Editing</h3>
+        <p>Tap an entry to edit its bib number, run, or status.</p>
+        <h3 class="sub-heading">Status Codes</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>OK</code></td><td>Normal timing entry</td></tr>
+            <tr><td><code>DNS</code></td><td>Did Not Start</td></tr>
+            <tr><td><code>DNF</code></td><td>Did Not Finish</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualified</td></tr>
+            <tr><td><code>FLT</code></td><td>Finished with fault penalty (U8/U10)</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Actions</h3>
+        <ul class="feature-list">
+          <li><strong>Undo</strong> &mdash; reverse the last action</li>
+          <li><strong>Export CSV</strong> &mdash; Race Horology format</li>
+          <li><strong>Delete All</strong> &mdash; clear all entries</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Ergebnis-Ansicht</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/de-results-new.png" alt="Ergebnis-Ansicht" loading="lazy"></div>
+          <p class="screenshot-caption">Ergebnis-Ansicht</p>
+        </div>
+        <h3 class="sub-heading">Eintragsinformationen</h3>
+        <p>Jeder Eintrag zeigt: Startnummer, Messpunkt, Lauf, Zeitstempel, Ger&auml;tename und Foto-Vorschau (falls vorhanden).</p>
+        <h3 class="sub-heading">Statistik</h3>
+        <ul class="feature-list">
+          <li>Gesamteintr&auml;ge</li>
+          <li>Einzigartige L&auml;ufer</li>
+          <li>Im Ziel</li>
+        </ul>
+        <h3 class="sub-heading">Suche &amp; Filter</h3>
+        <p>Filtern nach Startnummer, Messpunkt (Alle/Start/Ziel) oder Status (OK/DNS/DNF/DSQ/STR). Pull-to-Refresh f&uuml;r manuelle Synchronisation.</p>
+        <h3 class="sub-heading">Bearbeiten</h3>
+        <p>Eintrag antippen zum &Auml;ndern von Startnummer, Lauf oder Status.</p>
+        <h3 class="sub-heading">Statuscodes</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Bedeutung</th></tr></thead>
+          <tbody>
+            <tr><td><code>OK</code></td><td>Normaler Zeiteintrag</td></tr>
+            <tr><td><code>DNS</code></td><td>Nicht gestartet</td></tr>
+            <tr><td><code>DNF</code></td><td>Nicht im Ziel</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualifiziert</td></tr>
+            <tr><td><code>STR</code></td><td>Im Ziel mit Strafzeit (U8/U10)</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Aktionen</h3>
+        <ul class="feature-list">
+          <li><strong>R&uuml;ckg&auml;ngig</strong> &mdash; letzte Aktion zur&uuml;cknehmen</li>
+          <li><strong>CSV Export</strong> &mdash; Race Horology Format</li>
+          <li><strong>Alle l&ouml;schen</strong> &mdash; alle Eintr&auml;ge entfernen</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Vue r&eacute;sultats</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-results-new.png" alt="Vue r&eacute;sultats" loading="lazy"></div>
+          <p class="screenshot-caption">Vue r&eacute;sultats</p>
+        </div>
+        <h3 class="sub-heading">Informations d'entr&eacute;e</h3>
+        <p>Chaque entr&eacute;e affiche : Dossard, Point de mesure, Manche, Horodatage, Nom de l'appareil et Miniature photo (si disponible).</p>
+        <h3 class="sub-heading">Statistiques</h3>
+        <ul class="feature-list">
+          <li>Total des entr&eacute;es</li>
+          <li>Coureurs uniques</li>
+          <li>&Agrave; l'arriv&eacute;e</li>
+        </ul>
+        <h3 class="sub-heading">Recherche &amp; Filtres</h3>
+        <p>Filtrer par dossard, point de mesure (Tous/D&eacute;part/Arriv&eacute;e) ou statut (OK/DNS/DNF/DSQ/FLT). Tirer pour actualiser d&eacute;clenche une synchronisation manuelle.</p>
+        <h3 class="sub-heading">Modifier</h3>
+        <p>Appuyer sur une entr&eacute;e pour modifier le dossard, la manche ou le statut.</p>
+        <h3 class="sub-heading">Codes de statut</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Signification</th></tr></thead>
+          <tbody>
+            <tr><td><code>OK</code></td><td>Entr&eacute;e de chronom&eacute;trage normale</td></tr>
+            <tr><td><code>DNS</code></td><td>N'a pas pris le d&eacute;part</td></tr>
+            <tr><td><code>DNF</code></td><td>N'a pas termin&eacute;</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualifi&eacute;</td></tr>
+            <tr><td><code>FLT</code></td><td>Termin&eacute; avec p&eacute;nalit&eacute; de faute (U8/U10)</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Actions</h3>
+        <ul class="feature-list">
+          <li><strong>Annuler</strong> &mdash; inverser la derni&egrave;re action</li>
+          <li><strong>Exporter CSV</strong> &mdash; format Race Horology</li>
+          <li><strong>Tout supprimer</strong> &mdash; effacer toutes les entr&eacute;es</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 5: GATE JUDGE MODE
+         ============================================================ -->
+    <section class="manual-section" id="gate-judge">
+      <div class="section-label">05</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Gate Judge Mode</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-gate-judge-new.png" alt="Gate Judge view" loading="lazy"></div>
+          <p class="screenshot-caption">Gate Judge view</p>
+        </div>
+        <h3 class="sub-heading">Gate-First Workflow</h3>
+        <ol class="steps-list">
+          <li>Tap a gate number in the grid</li>
+          <li>Bib number auto-fills from the current racer</li>
+          <li>Select fault type</li>
+          <li>Save the fault entry</li>
+        </ol>
+        <div class="callout callout-gold">
+          <div class="callout-label">Minimum 2 taps</div>
+          <p>The gate-first workflow is designed for speed: tap gate, then confirm &mdash; a minimum of 2 taps to record a fault.</p>
+        </div>
+        <h3 class="sub-heading">Setup</h3>
+        <p>Settings &rarr; Gate Judge role &rarr; Set gate range &rarr; Select run</p>
+        <h3 class="sub-heading">Fault Types</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr><td><code>MG</code></td><td>Missed Gate</td></tr>
+            <tr><td><code>STR</code></td><td>Straddled</td></tr>
+            <tr><td><code>BR</code></td><td>Binding Release</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Gate Grid</h3>
+        <ul class="feature-list">
+          <li>5-column layout</li>
+          <li>Red = odd gates, Blue = even gates</li>
+          <li>Fault count badges on each gate</li>
+        </ul>
+        <h3 class="sub-heading">Voice Notes</h3>
+        <p>After recording a fault, you can add a voice note that is transcribed in real-time (max 500 characters).</p>
+        <h3 class="sub-heading">Ready Status</h3>
+        <p>Signal readiness for the next racer to coordinate with other judges and the chief judge.</p>
+        <h3 class="sub-heading">Layout</h3>
+        <p>Header &rarr; Gate Grid &rarr; Fault Detail &rarr; Recorded Faults &rarr; Footer (Save + Ready)</p>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Torrichter-Modus</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/de-gate-judge-new.png" alt="Torrichter-Ansicht" loading="lazy"></div>
+          <p class="screenshot-caption">Torrichter-Ansicht</p>
+        </div>
+        <h3 class="sub-heading">Tor-zuerst-Ablauf</h3>
+        <ol class="steps-list">
+          <li>Tor im Raster antippen</li>
+          <li>Startnummer wird automatisch ausgef&uuml;llt</li>
+          <li>Fehlerart w&auml;hlen</li>
+          <li>Fehler speichern</li>
+        </ol>
+        <div class="callout callout-gold">
+          <div class="callout-label">Mindestens 2 Taps</div>
+          <p>Der Tor-zuerst-Ablauf ist auf Geschwindigkeit ausgelegt: Tor antippen, dann best&auml;tigen &mdash; mindestens 2 Taps f&uuml;r einen Fehler.</p>
+        </div>
+        <h3 class="sub-heading">Einrichtung</h3>
+        <p>Einstellungen &rarr; Torrichter &rarr; Torbereich festlegen &rarr; Lauf w&auml;hlen</p>
+        <h3 class="sub-heading">Fehlerarten</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Fehlerart</th></tr></thead>
+          <tbody>
+            <tr><td><code>TF</code></td><td>Tor ausgelassen</td></tr>
+            <tr><td><code>EF</code></td><td>Einf&auml;dler</td></tr>
+            <tr><td><code>BO</code></td><td>Bindung offen</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Torraster</h3>
+        <ul class="feature-list">
+          <li>5 Spalten</li>
+          <li>Rot = ungerade Tore, Blau = gerade Tore</li>
+          <li>Fehlerz&auml;hler-Badges an jedem Tor</li>
+        </ul>
+        <h3 class="sub-heading">Sprachnotizen</h3>
+        <p>Nach der Erfassung k&ouml;nnen Sie eine Sprachnotiz hinzuf&uuml;gen (Echtzeit-Transkription, max 500 Zeichen).</p>
+        <h3 class="sub-heading">Bereit-Status</h3>
+        <p>Bereitschaft f&uuml;r den n&auml;chsten Rennl&auml;ufer signalisieren.</p>
+        <h3 class="sub-heading">Layout</h3>
+        <p>Kopfzeile &rarr; Torraster &rarr; Fehlerdetail &rarr; Erfasste Fehler &rarr; Fusszeile</p>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Mode juge de porte</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-gate-judge-new.png" alt="Vue juge de porte" loading="lazy"></div>
+          <p class="screenshot-caption">Vue juge de porte</p>
+        </div>
+        <h3 class="sub-heading">Processus porte-en-premier</h3>
+        <ol class="steps-list">
+          <li>Appuyer sur une porte dans la grille</li>
+          <li>Le dossard se remplit automatiquement</li>
+          <li>S&eacute;lectionner le type de faute</li>
+          <li>Enregistrer la faute</li>
+        </ol>
+        <div class="callout callout-gold">
+          <div class="callout-label">Minimum 2 appuis</div>
+          <p>Le processus porte-en-premier est con&ccedil;u pour la vitesse : appuyer sur la porte, puis confirmer &mdash; un minimum de 2 appuis pour enregistrer une faute.</p>
+        </div>
+        <h3 class="sub-heading">Configuration</h3>
+        <p>Param&egrave;tres &rarr; Juge de porte &rarr; D&eacute;finir les portes &rarr; S&eacute;lectionner la manche</p>
+        <h3 class="sub-heading">Types de fautes</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Code</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr><td><code>PM</code></td><td>Porte manqu&eacute;e</td></tr>
+            <tr><td><code>ENF</code></td><td>Enfourch&eacute;</td></tr>
+            <tr><td><code>FO</code></td><td>Fixation ouverte</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Grille de portes</h3>
+        <ul class="feature-list">
+          <li>5 colonnes</li>
+          <li>Rouge = portes impaires, Bleu = portes paires</li>
+          <li>Badges compteur de fautes</li>
+        </ul>
+        <h3 class="sub-heading">Notes vocales</h3>
+        <p>Apr&egrave;s l'enregistrement, ajoutez une note vocale (transcription en temps r&eacute;el, max 500 caract&egrave;res).</p>
+        <h3 class="sub-heading">Statut Pr&ecirc;t</h3>
+        <p>Signaler la disponibilit&eacute; pour le prochain coureur.</p>
+        <h3 class="sub-heading">Disposition</h3>
+        <p>En-t&ecirc;te &rarr; Grille de portes &rarr; D&eacute;tail faute &rarr; Fautes enregistr&eacute;es &rarr; Pied de page (Enregistrer + Pr&ecirc;t)</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 6: CHIEF JUDGE MODE
+         ============================================================ -->
+    <section class="manual-section" id="chief-judge">
+      <div class="section-label">06</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Chief Judge Mode</h2>
+        <h3 class="sub-heading">Access</h3>
+        <p>Results tab &rarr; Chief Judge toggle &rarr; PIN verification</p>
+        <h3 class="sub-heading">Fault Summary</h3>
+        <p>Faults are grouped by bib number, showing gates, fault types, judge names, and penalty calculations.</p>
+        <h3 class="sub-heading">Deletion Approval</h3>
+        <p>When a gate judge requests deletion, the chief judge must approve or reject the request.</p>
+        <h3 class="sub-heading">Penalty Mode</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>FLT</code></td><td>Time penalty per fault (for U8/U10 categories)</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualification</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Finalize</h3>
+        <p>Lock results per bib/run to prevent further edits.</p>
+        <h3 class="sub-heading">Judges Overview</h3>
+        <p>View gate assignments, ready status, and connection status for all judges.</p>
+        <h3 class="sub-heading">Export Options</h3>
+        <ul class="feature-list">
+          <li>CSV export</li>
+          <li>Summary report</li>
+          <li>WhatsApp formatted message</li>
+          <li>Gate Judge Card (printable)</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Obmann-Modus</h2>
+        <h3 class="sub-heading">Zugang</h3>
+        <p>Ergebnis-Tab &rarr; Obmann-Schalter &rarr; PIN-Verifizierung</p>
+        <h3 class="sub-heading">Fehler&uuml;bersicht</h3>
+        <p>Fehler werden nach Startnummer gruppiert mit Toren, Fehlerarten, Richternamen und Strafberechnung.</p>
+        <h3 class="sub-heading">L&ouml;schgenehmigung</h3>
+        <p>Wenn ein Torrichter eine L&ouml;schung beantragt, muss der Obmann den Antrag genehmigen oder ablehnen.</p>
+        <h3 class="sub-heading">Strafmodus</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Modus</th><th>Beschreibung</th></tr></thead>
+          <tbody>
+            <tr><td><code>STR</code></td><td>Strafzeit pro Fehler (f&uuml;r U8/U10-Kategorien)</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualifikation</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Finalisieren</h3>
+        <p>Ergebnisse pro Startnummer/Lauf sperren.</p>
+        <h3 class="sub-heading">Richter&uuml;bersicht</h3>
+        <p>Torbereich, Bereit-Status und Verbindungsstatus aller Richter einsehen.</p>
+        <h3 class="sub-heading">Export-Optionen</h3>
+        <ul class="feature-list">
+          <li>CSV-Export</li>
+          <li>Zusammenfassung</li>
+          <li>WhatsApp-Nachricht</li>
+          <li>Torrichterkarte (druckbar)</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Mode directeur de course</h2>
+        <h3 class="sub-heading">Acc&egrave;s</h3>
+        <p>Onglet R&eacute;sultats &rarr; Bouton Directeur de course &rarr; V&eacute;rification PIN</p>
+        <h3 class="sub-heading">Panneau des fautes</h3>
+        <p>Les fautes sont group&eacute;es par dossard avec portes, types de fautes, noms des juges et calcul des p&eacute;nalit&eacute;s.</p>
+        <h3 class="sub-heading">Approbation de suppression</h3>
+        <p>Quand un juge de porte demande une suppression, le directeur de course doit approuver ou rejeter la demande.</p>
+        <h3 class="sub-heading">Mode p&eacute;nalit&eacute;</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>FLT</code></td><td>Temps de p&eacute;nalit&eacute; par faute (cat&eacute;gories U8/U10)</td></tr>
+            <tr><td><code>DSQ</code></td><td>Disqualification</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Finaliser</h3>
+        <p>Verrouiller les r&eacute;sultats par dossard/manche.</p>
+        <h3 class="sub-heading">Vue des juges</h3>
+        <p>Voir les portes assign&eacute;es, le statut pr&ecirc;t et la connexion de tous les juges.</p>
+        <h3 class="sub-heading">Options d'export</h3>
+        <ul class="feature-list">
+          <li>Export CSV</li>
+          <li>R&eacute;sum&eacute;</li>
+          <li>Message WhatsApp</li>
+          <li>Carte juge de porte (imprimable)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 7: SETTINGS
+         ============================================================ -->
+    <section class="manual-section" id="settings">
+      <div class="section-label">07</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Settings</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-settings-full.png" alt="Settings view" loading="lazy"></div>
+          <p class="screenshot-caption">Settings view</p>
+        </div>
+        <h3 class="sub-heading">Device Role</h3>
+        <p>Choose between <strong>Timer</strong> or <strong>Gate Judge</strong> mode.</p>
+        <h3 class="sub-heading">Race Setup</h3>
+        <ul class="feature-list">
+          <li>Cloud Sync &mdash; enable/disable</li>
+          <li>Race ID &mdash; unique identifier for the race</li>
+          <li>Device Name &mdash; identify this device</li>
+          <li>Sync Photos &mdash; include photos in sync</li>
+        </ul>
+        <h3 class="sub-heading">Advanced</h3>
+        <ul class="feature-list">
+          <li>GPS synchronization</li>
+          <li>Auto-Increment bib numbers</li>
+          <li>Haptic Feedback</li>
+          <li>Sound Feedback</li>
+          <li>Ambient Mode</li>
+          <li>Voice Mode</li>
+          <li>Photo Capture</li>
+        </ul>
+        <h3 class="sub-heading">Battery Power Saver</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Level</th><th>Threshold</th></tr></thead>
+          <tbody>
+            <tr><td>Medium</td><td>&lt;30% battery</td></tr>
+            <tr><td>Low</td><td>&lt;15% battery</td></tr>
+            <tr><td>Critical</td><td>&lt;5% battery</td></tr>
+            <tr><td>Charging</td><td>Connected to power</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Language</h3>
+        <p>Toggle between DE / EN / FR.</p>
+        <h3 class="sub-heading">Other</h3>
+        <ul class="feature-list">
+          <li>Show Tutorial &mdash; re-run the onboarding wizard</li>
+          <li>Admin &mdash; PIN management, Manage Races</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Einstellungen</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/de-settings-full.png" alt="Einstellungen" loading="lazy"></div>
+          <p class="screenshot-caption">Einstellungen</p>
+        </div>
+        <h3 class="sub-heading">Ger&auml;te-Rolle</h3>
+        <p><strong>Zeitnehmer</strong> oder <strong>Torrichter</strong> w&auml;hlen.</p>
+        <h3 class="sub-heading">Rennen</h3>
+        <ul class="feature-list">
+          <li>Cloud-Sync &mdash; aktivieren/deaktivieren</li>
+          <li>Rennen-ID &mdash; eindeutiger Bezeichner</li>
+          <li>Ger&auml;tename &mdash; Ger&auml;t identifizieren</li>
+          <li>Fotos synchronisieren</li>
+        </ul>
+        <h3 class="sub-heading">Erweitert</h3>
+        <ul class="feature-list">
+          <li>GPS-Synchronisation</li>
+          <li>Startnr. automatisch erh&ouml;hen</li>
+          <li>Vibration</li>
+          <li>Signalton</li>
+          <li>Ruhemodus</li>
+          <li>Sprachsteuerung</li>
+          <li>Fotoaufnahme</li>
+        </ul>
+        <h3 class="sub-heading">Batterieschoner</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Stufe</th><th>Schwellwert</th></tr></thead>
+          <tbody>
+            <tr><td>Mittel</td><td>&lt;30% Akku</td></tr>
+            <tr><td>Niedrig</td><td>&lt;15% Akku</td></tr>
+            <tr><td>Kritisch</td><td>&lt;5% Akku</td></tr>
+            <tr><td>Laden</td><td>Am Ladeger&auml;t</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Sprache</h3>
+        <p>Umschalten zwischen DE / EN / FR.</p>
+        <h3 class="sub-heading">Sonstiges</h3>
+        <ul class="feature-list">
+          <li>Tutorial anzeigen &mdash; Einrichtungsassistent erneut starten</li>
+          <li>Admin &mdash; PIN-Verwaltung, Rennen verwalten</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Param&egrave;tres</h2>
+        <div class="screenshot-container">
+          <div class="screenshot-frame"><img src="screenshots/en-settings-full.png" alt="Param&egrave;tres" loading="lazy"></div>
+          <p class="screenshot-caption">Param&egrave;tres</p>
+        </div>
+        <h3 class="sub-heading">R&ocirc;le de l'appareil</h3>
+        <p>Choisir entre <strong>Chronom&eacute;treur</strong> ou <strong>Juge de porte</strong>.</p>
+        <h3 class="sub-heading">Course</h3>
+        <ul class="feature-list">
+          <li>Synchronisation cloud &mdash; activer/d&eacute;sactiver</li>
+          <li>Identifiant de course &mdash; identifiant unique</li>
+          <li>Nom de l'appareil &mdash; identifier cet appareil</li>
+          <li>Synchroniser les photos</li>
+        </ul>
+        <h3 class="sub-heading">Avanc&eacute;</h3>
+        <ul class="feature-list">
+          <li>Synchronisation GPS</li>
+          <li>Auto-incr&eacute;mentation des dossards</li>
+          <li>Vibration</li>
+          <li>Signal sonore</li>
+          <li>Mode veille</li>
+          <li>Commande vocale</li>
+          <li>Capture photo</li>
+        </ul>
+        <h3 class="sub-heading">&Eacute;conomiseur de batterie</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Niveau</th><th>Seuil</th></tr></thead>
+          <tbody>
+            <tr><td>Moyen</td><td>&lt;30% batterie</td></tr>
+            <tr><td>Faible</td><td>&lt;15% batterie</td></tr>
+            <tr><td>Critique</td><td>&lt;5% batterie</td></tr>
+            <tr><td>En charge</td><td>Connect&eacute; au secteur</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Langue</h3>
+        <p>Basculer entre DE / EN / FR.</p>
+        <h3 class="sub-heading">Autres</h3>
+        <ul class="feature-list">
+          <li>Afficher le tutoriel &mdash; relancer l'assistant de configuration</li>
+          <li>Administration &mdash; gestion du PIN, g&eacute;rer les courses</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 8: MULTI-DEVICE SYNC
+         ============================================================ -->
+    <section class="manual-section" id="multi-device-sync">
+      <div class="section-label">08</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Multi-Device Sync</h2>
+        <h3 class="sub-heading">Typical Setup</h3>
+        <div class="sync-diagram">
+          <div class="sync-cloud">Cloud</div>
+          <div class="sync-arrow"></div>
+          <div class="sync-devices">
+            <div class="sync-device device-start">Start Timer</div>
+            <div class="sync-device device-finish">Finish Timer</div>
+            <div class="sync-device device-gate">Gate Judge</div>
+            <div class="sync-device device-chief">Chief Judge</div>
+          </div>
+        </div>
+        <h3 class="sub-heading">Setup</h3>
+        <p><strong>First device:</strong> Enable sync, enter Race ID, set PIN, and assign a device name.</p>
+        <p><strong>Additional devices:</strong> Use the same Race ID and PIN, but assign a unique device name.</p>
+        <h3 class="sub-heading">What Syncs</h3>
+        <ul class="feature-list">
+          <li>Timing entries</li>
+          <li>Fault entries</li>
+          <li>Edits</li>
+          <li>Photos</li>
+          <li>Deletion approvals</li>
+        </ul>
+        <div class="callout callout-start">
+          <div class="callout-label">Note</div>
+          <p>Settings are NOT synced between devices. Each device maintains its own configuration.</p>
+        </div>
+        <h3 class="sub-heading">Sync Intervals</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Condition</th><th>Interval</th></tr></thead>
+          <tbody>
+            <tr><td>Normal operation</td><td>5 seconds</td></tr>
+            <tr><td>On error</td><td>30 seconds</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Same-Browser Sync</h3>
+        <p>BroadcastChannel provides instant synchronization between tabs in the same browser.</p>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Mehrger&auml;te-Synchronisation</h2>
+        <h3 class="sub-heading">Typischer Aufbau</h3>
+        <div class="sync-diagram">
+          <div class="sync-cloud">Cloud</div>
+          <div class="sync-arrow"></div>
+          <div class="sync-devices">
+            <div class="sync-device device-start">Start Timer</div>
+            <div class="sync-device device-finish">Ziel Timer</div>
+            <div class="sync-device device-gate">Torrichter</div>
+            <div class="sync-device device-chief">Obmann</div>
+          </div>
+        </div>
+        <h3 class="sub-heading">Einrichtung</h3>
+        <p><strong>Erstes Ger&auml;t:</strong> Sync aktivieren, Rennen-ID eingeben, PIN festlegen, Ger&auml;tenamen vergeben.</p>
+        <p><strong>Weitere Ger&auml;te:</strong> Gleiche Rennen-ID und PIN, aber eindeutiger Ger&auml;tename.</p>
+        <h3 class="sub-heading">Was synchronisiert wird</h3>
+        <ul class="feature-list">
+          <li>Zeiteintr&auml;ge</li>
+          <li>Fehlereintr&auml;ge</li>
+          <li>Bearbeitungen</li>
+          <li>Fotos</li>
+          <li>L&ouml;schantr&auml;ge</li>
+        </ul>
+        <div class="callout callout-start">
+          <div class="callout-label">Hinweis</div>
+          <p>Einstellungen werden NICHT zwischen Ger&auml;ten synchronisiert. Jedes Ger&auml;t beh&auml;lt seine eigene Konfiguration.</p>
+        </div>
+        <h3 class="sub-heading">Sync-Intervalle</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Zustand</th><th>Intervall</th></tr></thead>
+          <tbody>
+            <tr><td>Normalbetrieb</td><td>5 Sekunden</td></tr>
+            <tr><td>Bei Fehler</td><td>30 Sekunden</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Tab-Synchronisation</h3>
+        <p>BroadcastChannel erm&ouml;glicht sofortige Synchronisation zwischen Tabs im gleichen Browser.</p>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Synchronisation multi-appareils</h2>
+        <h3 class="sub-heading">Configuration type</h3>
+        <div class="sync-diagram">
+          <div class="sync-cloud">Cloud</div>
+          <div class="sync-arrow"></div>
+          <div class="sync-devices">
+            <div class="sync-device device-start">D&eacute;part</div>
+            <div class="sync-device device-finish">Arriv&eacute;e</div>
+            <div class="sync-device device-gate">Juge de porte</div>
+            <div class="sync-device device-chief">Directeur</div>
+          </div>
+        </div>
+        <h3 class="sub-heading">Configuration</h3>
+        <p><strong>Premier appareil :</strong> Activer la synchronisation, entrer l'identifiant de course, d&eacute;finir le PIN et nommer l'appareil.</p>
+        <p><strong>Appareils suppl&eacute;mentaires :</strong> M&ecirc;me identifiant de course et PIN, mais nom unique.</p>
+        <h3 class="sub-heading">Ce qui est synchronis&eacute;</h3>
+        <ul class="feature-list">
+          <li>Entr&eacute;es de chronom&eacute;trage</li>
+          <li>Entr&eacute;es de fautes</li>
+          <li>Modifications</li>
+          <li>Photos</li>
+          <li>Approbations de suppression</li>
+        </ul>
+        <div class="callout callout-start">
+          <div class="callout-label">Note</div>
+          <p>Les param&egrave;tres ne sont PAS synchronis&eacute;s entre les appareils. Chaque appareil conserve sa propre configuration.</p>
+        </div>
+        <h3 class="sub-heading">Intervalles de synchronisation</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Condition</th><th>Intervalle</th></tr></thead>
+          <tbody>
+            <tr><td>Fonctionnement normal</td><td>5 secondes</td></tr>
+            <tr><td>En cas d'erreur</td><td>30 secondes</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Synchronisation entre onglets</h3>
+        <p>BroadcastChannel fournit une synchronisation instantan&eacute;e entre les onglets du m&ecirc;me navigateur.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 9: EXPORT FORMATS
+         ============================================================ -->
+    <section class="manual-section" id="export-formats">
+      <div class="section-label">09</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Export Formats</h2>
+        <h3 class="sub-heading">CSV (Race Horology)</h3>
+        <p>Semicolon-delimited CSV format compatible with the Race Horology timing software.</p>
+        <table class="chrono-table">
+          <thead><tr><th>Column</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Startnummer</code></td><td>Bib number</td></tr>
+            <tr><td><code>Lauf</code></td><td>Run number</td></tr>
+            <tr><td><code>Messpunkt</code></td><td>Timing point</td></tr>
+            <tr><td><code>Zeit</code></td><td>Timestamp</td></tr>
+            <tr><td><code>Status</code></td><td>Status code</td></tr>
+            <tr><td><code>Geraet</code></td><td>Device name</td></tr>
+            <tr><td><code>Torstrafzeit</code></td><td>Gate penalty time</td></tr>
+            <tr><td><code>Torfehler</code></td><td>Gate faults</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Chief Judge Summary</h3>
+        <p>Faults per bib with penalty calculations.</p>
+        <h3 class="sub-heading">WhatsApp Summary</h3>
+        <p>Emoji-formatted summary, automatically copied to clipboard for quick sharing.</p>
+        <h3 class="sub-heading">Gate Judge Card</h3>
+        <p>Printable card with header, fault table, signature line, and fault code legend.</p>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Export-Formate</h2>
+        <h3 class="sub-heading">CSV (Race Horology)</h3>
+        <p>Semikolon-getrenntes CSV-Format kompatibel mit der Race Horology Zeitmesssoftware.</p>
+        <table class="chrono-table">
+          <thead><tr><th>Spalte</th><th>Beschreibung</th></tr></thead>
+          <tbody>
+            <tr><td><code>Startnummer</code></td><td>Startnummer</td></tr>
+            <tr><td><code>Lauf</code></td><td>Laufnummer</td></tr>
+            <tr><td><code>Messpunkt</code></td><td>Messpunkt</td></tr>
+            <tr><td><code>Zeit</code></td><td>Zeitstempel</td></tr>
+            <tr><td><code>Status</code></td><td>Statuscode</td></tr>
+            <tr><td><code>Ger&auml;t</code></td><td>Ger&auml;tename</td></tr>
+            <tr><td><code>Torstrafzeit</code></td><td>Torstrafzeit</td></tr>
+            <tr><td><code>Torfehler</code></td><td>Torfehler</td></tr>
+          </tbody>
+        </table>
+        <h3 class="sub-heading">Obmann-Zusammenfassung</h3>
+        <p>Fehler pro Startnummer mit Strafberechnung.</p>
+        <h3 class="sub-heading">WhatsApp-Zusammenfassung</h3>
+        <p>Formatierte Zusammenfassung, automatisch in die Zwischenablage kopiert.</p>
+        <h3 class="sub-heading">Torrichterkarte</h3>
+        <p>Druckbare Karte mit Kopfzeile, Fehlertabelle, Unterschrift und Legende.</p>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Formats d'export</h2>
+        <h3 class="sub-heading">CSV (Race Horology)</h3>
+        <p>Format CSV s&eacute;par&eacute; par points-virgules, compatible avec le logiciel de chronom&eacute;trage Race Horology.</p>
+        <table class="chrono-table">
+          <thead><tr><th>Colonne</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Startnummer</code></td><td>Num&eacute;ro de dossard</td></tr>
+            <tr><td><code>Lauf</code></td><td>Num&eacute;ro de manche</td></tr>
+            <tr><td><code>Messpunkt</code></td><td>Point de mesure</td></tr>
+            <tr><td><code>Zeit</code></td><td>Horodatage</td></tr>
+            <tr><td><code>Status</code></td><td>Code de statut</td></tr>
+            <tr><td><code>Geraet</code></td><td>Nom de l'appareil</td></tr>
+            <tr><td><code>Torstrafzeit</code></td><td>Temps de p&eacute;nalit&eacute; de porte</td></tr>
+            <tr><td><code>Torfehler</code></td><td>Fautes de porte</td></tr>
+          </tbody>
+        </table>
+        <div class="callout callout-cyan">
+          <div class="callout-label">Note</div>
+          <p>Les en-t&ecirc;tes de colonnes sont en allemand pour la compatibilit&eacute; avec Race Horology.</p>
+        </div>
+        <h3 class="sub-heading">R&eacute;sum&eacute; Directeur</h3>
+        <p>Fautes par dossard avec calcul des p&eacute;nalit&eacute;s.</p>
+        <h3 class="sub-heading">R&eacute;sum&eacute; WhatsApp</h3>
+        <p>R&eacute;sum&eacute; format&eacute; avec emojis, copi&eacute; automatiquement dans le presse-papiers.</p>
+        <h3 class="sub-heading">Carte juge de porte</h3>
+        <p>Carte imprimable avec en-t&ecirc;te, tableau des fautes, signature et l&eacute;gende des codes.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 10: KEYBOARD SHORTCUTS
+         ============================================================ -->
+    <section class="manual-section" id="keyboard-shortcuts">
+      <div class="section-label">10</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Keyboard Shortcuts</h2>
+
+        <h3 class="sub-heading">Timer</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>0</kbd>&ndash;<kbd>9</kbd></td><td>Enter bib digit</td></tr>
+            <tr><td><kbd>S</kbd> / <kbd>F</kbd></td><td>Select timing point</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd></td><td>Select run</td></tr>
+            <tr><td><kbd>Space</kbd> / <kbd>Enter</kbd></td><td>Record time</td></tr>
+            <tr><td><kbd>Escape</kbd> / <kbd>Delete</kbd></td><td>Clear bib</td></tr>
+            <tr><td><kbd>Backspace</kbd></td><td>Delete last digit</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Gate Judge</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>M</kbd> / <kbd>G</kbd></td><td>Missed Gate (MG)</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Straddled (STR)</td></tr>
+            <tr><td><kbd>B</kbd> / <kbd>R</kbd></td><td>Binding Release (BR)</td></tr>
+            <tr><td><kbd>1</kbd>&ndash;<kbd>9</kbd>, <kbd>0</kbd></td><td>Select gate</td></tr>
+            <tr><td>Arrow keys</td><td>Navigate gates</td></tr>
+            <tr><td><kbd>Space</kbd> / <kbd>Enter</kbd></td><td>Confirm</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Results</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Navigate entries</td></tr>
+            <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd> / <kbd>E</kbd></td><td>Edit entry</td></tr>
+            <tr><td><kbd>Delete</kbd> / <kbd>D</kbd></td><td>Delete entry</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Global</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Move between components</td></tr>
+            <tr><td><kbd>Escape</kbd></td><td>Close modal</td></tr>
+            <tr><td>Arrow keys</td><td>Navigate within component</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Tastenkombinationen</h2>
+
+        <h3 class="sub-heading">Timer</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Taste</th><th>Aktion</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>0</kbd>&ndash;<kbd>9</kbd></td><td>Startnummer-Ziffer eingeben</td></tr>
+            <tr><td><kbd>S</kbd> / <kbd>F</kbd></td><td>Messpunkt w&auml;hlen</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd></td><td>Lauf w&auml;hlen</td></tr>
+            <tr><td><kbd>Leertaste</kbd> / <kbd>Enter</kbd></td><td>Zeit erfassen</td></tr>
+            <tr><td><kbd>Escape</kbd> / <kbd>Entf</kbd></td><td>Startnummer l&ouml;schen</td></tr>
+            <tr><td><kbd>R&uuml;cktaste</kbd></td><td>Letzte Ziffer l&ouml;schen</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Torrichter</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Taste</th><th>Aktion</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>M</kbd> / <kbd>G</kbd></td><td>Tor ausgelassen (TF)</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Einf&auml;dler (EF)</td></tr>
+            <tr><td><kbd>B</kbd> / <kbd>R</kbd></td><td>Bindung offen (BO)</td></tr>
+            <tr><td><kbd>1</kbd>&ndash;<kbd>9</kbd>, <kbd>0</kbd></td><td>Tor w&auml;hlen</td></tr>
+            <tr><td>Pfeiltasten</td><td>Navigation im Raster</td></tr>
+            <tr><td><kbd>Leertaste</kbd> / <kbd>Enter</kbd></td><td>Best&auml;tigen</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Ergebnisse</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Taste</th><th>Aktion</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Eintr&auml;ge navigieren</td></tr>
+            <tr><td><kbd>Enter</kbd> / <kbd>Leertaste</kbd> / <kbd>E</kbd></td><td>Eintrag bearbeiten</td></tr>
+            <tr><td><kbd>Entf</kbd> / <kbd>D</kbd></td><td>Eintrag l&ouml;schen</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Global</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Taste</th><th>Aktion</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Zwischen Bereichen wechseln</td></tr>
+            <tr><td><kbd>Escape</kbd></td><td>Modal schliessen</td></tr>
+            <tr><td>Pfeiltasten</td><td>Innerhalb eines Bereichs navigieren</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">Raccourcis clavier</h2>
+
+        <h3 class="sub-heading">Chronom&egrave;tre</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Touche</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>0</kbd>&ndash;<kbd>9</kbd></td><td>Saisir un chiffre de dossard</td></tr>
+            <tr><td><kbd>S</kbd> / <kbd>F</kbd></td><td>S&eacute;lectionner le point de mesure</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>2</kbd></td><td>S&eacute;lectionner la manche</td></tr>
+            <tr><td><kbd>Espace</kbd> / <kbd>Entr&eacute;e</kbd></td><td>Enregistrer le temps</td></tr>
+            <tr><td><kbd>&Eacute;chap</kbd> / <kbd>Suppr</kbd></td><td>Effacer le dossard</td></tr>
+            <tr><td><kbd>Retour</kbd></td><td>Supprimer le dernier chiffre</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Juge de porte</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Touche</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>M</kbd> / <kbd>G</kbd></td><td>Porte manqu&eacute;e (PM)</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Enfourch&eacute; (ENF)</td></tr>
+            <tr><td><kbd>B</kbd> / <kbd>R</kbd></td><td>Fixation ouverte (FO)</td></tr>
+            <tr><td><kbd>1</kbd>&ndash;<kbd>9</kbd>, <kbd>0</kbd></td><td>S&eacute;lectionner la porte</td></tr>
+            <tr><td>Fl&egrave;ches</td><td>Naviguer dans la grille</td></tr>
+            <tr><td><kbd>Espace</kbd> / <kbd>Entr&eacute;e</kbd></td><td>Confirmer</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">R&eacute;sultats</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Touche</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Naviguer dans les entr&eacute;es</td></tr>
+            <tr><td><kbd>Entr&eacute;e</kbd> / <kbd>Espace</kbd> / <kbd>E</kbd></td><td>Modifier l'entr&eacute;e</td></tr>
+            <tr><td><kbd>Suppr</kbd> / <kbd>D</kbd></td><td>Supprimer l'entr&eacute;e</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub-heading">Global</h3>
+        <table class="chrono-table">
+          <thead><tr><th>Touche</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Tab</kbd> / <kbd>Maj</kbd>+<kbd>Tab</kbd></td><td>Naviguer entre les zones</td></tr>
+            <tr><td><kbd>&Eacute;chap</kbd></td><td>Fermer la fen&ecirc;tre modale</td></tr>
+            <tr><td>Fl&egrave;ches</td><td>Naviguer &agrave; l'int&eacute;rieur d'une zone</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 11: TROUBLESHOOTING
+         ============================================================ -->
+    <section class="manual-section" id="troubleshooting">
+      <div class="section-label">11</div>
+
+      <div class="lang-en">
+        <h2 class="section-heading">Troubleshooting</h2>
+
+        <h3 class="sub-heading">Sync Issues</h3>
+        <ul class="feature-list">
+          <li>Check that the Race ID matches on all devices</li>
+          <li>Verify the PIN is correct</li>
+          <li>Pull-to-refresh to trigger a manual sync</li>
+          <li>Toggle sync off and on again</li>
+        </ul>
+
+        <h3 class="sub-heading">GPS Issues</h3>
+        <ul class="feature-list">
+          <li>Enable GPS/Location Services on your device</li>
+          <li>Grant location permission to the browser</li>
+          <li>Use the app outdoors with a clear sky view</li>
+          <li>Wait 30&ndash;60 seconds for the initial GPS fix</li>
+        </ul>
+
+        <h3 class="sub-heading">Camera Issues</h3>
+        <ul class="feature-list">
+          <li>Grant camera permission to the browser</li>
+          <li>Enable photo capture in Settings</li>
+          <li>Reload the app if the camera does not start</li>
+        </ul>
+
+        <h3 class="sub-heading">Wake Lock Issues</h3>
+        <ul class="feature-list">
+          <li>Enable Ambient Mode to keep the screen active</li>
+          <li>Adjust your device&rsquo;s screen timeout settings</li>
+        </ul>
+
+        <h3 class="sub-heading">Voice Mode Issues</h3>
+        <ul class="feature-list">
+          <li>Voice Mode requires an internet connection</li>
+          <li>Grant microphone permission to the browser</li>
+          <li>Speak clearly and avoid background noise</li>
+        </ul>
+
+        <h3 class="sub-heading">Ambient Mode Issues</h3>
+        <div class="callout callout-gold">
+          <div class="callout-label">By Design</div>
+          <p>The first tap on the dimmed screen only wakes the display. The second tap records the timestamp. This is intentional to prevent accidental recordings.</p>
+        </div>
+
+        <h3 class="sub-heading">General</h3>
+        <ul class="feature-list">
+          <li>Clear the browser cache and reload</li>
+          <li>Reinstall the PWA from the browser</li>
+          <li>Try a different browser (Chrome, Safari, Firefox)</li>
+        </ul>
+      </div>
+
+      <div class="lang-de">
+        <h2 class="section-heading">Fehlerbehebung</h2>
+
+        <h3 class="sub-heading">Sync-Probleme</h3>
+        <ul class="feature-list">
+          <li>Rennen-ID auf allen Ger&auml;ten pr&uuml;fen</li>
+          <li>PIN &uuml;berpr&uuml;fen</li>
+          <li>Pull-to-Refresh f&uuml;r manuelle Synchronisation</li>
+          <li>Sync aus- und wieder einschalten</li>
+        </ul>
+
+        <h3 class="sub-heading">GPS-Probleme</h3>
+        <ul class="feature-list">
+          <li>GPS/Standortdienste auf dem Ger&auml;t aktivieren</li>
+          <li>Standort-Berechtigung im Browser erteilen</li>
+          <li>App im Freien mit freier Sicht verwenden</li>
+          <li>30&ndash;60 Sekunden auf GPS-Fix warten</li>
+        </ul>
+
+        <h3 class="sub-heading">Kamera-Probleme</h3>
+        <ul class="feature-list">
+          <li>Kamera-Berechtigung im Browser erteilen</li>
+          <li>Fotoaufnahme in Einstellungen aktivieren</li>
+          <li>App neu laden, falls Kamera nicht startet</li>
+        </ul>
+
+        <h3 class="sub-heading">Bildschirmsperre-Probleme</h3>
+        <ul class="feature-list">
+          <li>Ruhemodus nutzen, um Bildschirm aktiv zu halten</li>
+          <li>Ger&auml;te-Timeout in den Systemeinstellungen anpassen</li>
+        </ul>
+
+        <h3 class="sub-heading">Sprachsteuerung-Probleme</h3>
+        <ul class="feature-list">
+          <li>Internetverbindung erforderlich</li>
+          <li>Mikrofon-Berechtigung im Browser erteilen</li>
+          <li>Deutlich und ohne Hintergrundger&auml;usche sprechen</li>
+        </ul>
+
+        <h3 class="sub-heading">Ruhemodus-Probleme</h3>
+        <div class="callout callout-gold">
+          <div class="callout-label">Beabsichtigt</div>
+          <p>Das erste Tippen auf den gedimmten Bildschirm weckt nur die Anzeige. Das zweite Tippen erfasst den Zeitstempel. Dies ist absichtlich so, um versehentliche Erfassungen zu vermeiden.</p>
+        </div>
+
+        <h3 class="sub-heading">Allgemein</h3>
+        <ul class="feature-list">
+          <li>Browser-Cache leeren und neu laden</li>
+          <li>PWA &uuml;ber den Browser neu installieren</li>
+          <li>Anderen Browser versuchen (Chrome, Safari, Firefox)</li>
+        </ul>
+      </div>
+
+      <div class="lang-fr">
+        <h2 class="section-heading">D&eacute;pannage</h2>
+
+        <h3 class="sub-heading">Probl&egrave;mes de synchronisation</h3>
+        <ul class="feature-list">
+          <li>V&eacute;rifier l'identifiant de course sur tous les appareils</li>
+          <li>V&eacute;rifier le PIN</li>
+          <li>Tirer pour actualiser (synchronisation manuelle)</li>
+          <li>D&eacute;sactiver et r&eacute;activer la synchronisation</li>
+        </ul>
+
+        <h3 class="sub-heading">Probl&egrave;mes GPS</h3>
+        <ul class="feature-list">
+          <li>Activer le GPS/Services de localisation</li>
+          <li>Accorder l'autorisation de localisation au navigateur</li>
+          <li>Utiliser l'application en ext&eacute;rieur avec ciel d&eacute;gag&eacute;</li>
+          <li>Attendre 30&ndash;60 secondes pour le premier fix GPS</li>
+        </ul>
+
+        <h3 class="sub-heading">Probl&egrave;mes de cam&eacute;ra</h3>
+        <ul class="feature-list">
+          <li>Accorder l'autorisation cam&eacute;ra au navigateur</li>
+          <li>Activer la capture photo dans les param&egrave;tres</li>
+          <li>Recharger l'application si la cam&eacute;ra ne d&eacute;marre pas</li>
+        </ul>
+
+        <h3 class="sub-heading">Probl&egrave;mes de verrouillage &eacute;cran</h3>
+        <ul class="feature-list">
+          <li>Activer le mode veille pour garder l'&eacute;cran actif</li>
+          <li>Ajuster le d&eacute;lai d'&eacute;cran de l'appareil</li>
+        </ul>
+
+        <h3 class="sub-heading">Probl&egrave;mes de commande vocale</h3>
+        <ul class="feature-list">
+          <li>Connexion internet requise</li>
+          <li>Accorder l'autorisation du micro au navigateur</li>
+          <li>Parler clairement et &eacute;viter le bruit de fond</li>
+        </ul>
+
+        <h3 class="sub-heading">Probl&egrave;mes du mode veille</h3>
+        <div class="callout callout-gold">
+          <div class="callout-label">Intentionnel</div>
+          <p>La premi&egrave;re pression sur l'&eacute;cran att&eacute;nu&eacute; ne fait que r&eacute;veiller l'affichage. La deuxi&egrave;me pression enregistre l'horodatage. C'est intentionnel pour &eacute;viter les enregistrements accidentels.</p>
+        </div>
+
+        <h3 class="sub-heading">G&eacute;n&eacute;ral</h3>
+        <ul class="feature-list">
+          <li>Vider le cache du navigateur et recharger</li>
+          <li>R&eacute;installer la PWA depuis le navigateur</li>
+          <li>Essayer un autre navigateur (Chrome, Safari, Firefox)</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<!-- ====== FOOTER ====== -->
+<footer class="site-footer">
+  <svg class="footer-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="54" stroke="url(#ftr-ring)" stroke-width="2.5" opacity="0.6"/>
+    <g opacity="0.3">
+      <line x1="60" y1="8" x2="60" y2="16" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="60" y1="104" x2="60" y2="112" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="8" y1="60" x2="16" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="104" y1="60" x2="112" y2="60" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    <line x1="60" y1="60" x2="60" y2="22" stroke="#00d4ff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="4" fill="#00d4ff"/>
+    <circle cx="60" cy="60" r="2" fill="#0a1628"/>
+    <path d="M 88 35 A 38 38 0 1 0 88 85" stroke="#00d4ff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+    <line x1="92" y1="35" x2="97" y2="28" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <line x1="92" y1="85" x2="97" y2="92" stroke="#ffd700" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <defs><linearGradient id="ftr-ring" x1="0" y1="0" x2="120" y2="120"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066aa"/></linearGradient></defs>
+  </svg>
+  <div class="lang-en">
+    <p class="footer-text">
+      CHRONO &mdash; Ski Race Timer v5.26.2<br>
+      <a href="https://ski-race-timer.vercel.app">ski-race-timer.vercel.app</a><br>
+      &copy; 2025&ndash;2026 Ski Race Timer. All rights reserved.
+    </p>
+  </div>
+  <div class="lang-de">
+    <p class="footer-text">
+      CHRONO &mdash; Ski Race Timer v5.26.2<br>
+      <a href="https://ski-race-timer.vercel.app">ski-race-timer.vercel.app</a><br>
+      &copy; 2025&ndash;2026 Ski Race Timer. Alle Rechte vorbehalten.
+    </p>
+  </div>
+  <div class="lang-fr">
+    <p class="footer-text">
+      CHRONO &mdash; Ski Race Timer v5.26.2<br>
+      <a href="https://ski-race-timer.vercel.app">ski-race-timer.vercel.app</a><br>
+      &copy; 2025&ndash;2026 Ski Race Timer. Tous droits r&eacute;serv&eacute;s.
+    </p>
+  </div>
+</footer>
+<script>
+// ============================================
+// CHRONO Manual — Language, TOC, Navigation
+// ============================================
+
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'chrono-manual-lang';
+
+  // --- Language Switching ---
+  function setLang(lang) {
+    document.documentElement.setAttribute('data-active-lang', lang);
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+    try { localStorage.setItem(STORAGE_KEY, lang); } catch(e) {}
+  }
+
+  // Init language from localStorage or default
+  var savedLang = null;
+  try { savedLang = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+  if (savedLang && ['en', 'de', 'fr'].indexOf(savedLang) !== -1) {
+    setLang(savedLang);
+  }
+
+  // Language button clicks
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setLang(btn.getAttribute('data-lang'));
+    });
+  });
+
+  // --- Mobile sidebar toggle ---
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  var hamburger = document.querySelector('.hamburger');
+
+  function toggleSidebar() {
+    sidebar.classList.toggle('open');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+  }
+
+  if (hamburger) {
+    hamburger.addEventListener('click', toggleSidebar);
+  }
+  if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
+  }
+
+  // Close sidebar when a TOC link is clicked (mobile)
+  document.querySelectorAll('.toc-link').forEach(function(link) {
+    link.addEventListener('click', closeSidebar);
+  });
+
+  // --- TOC active section highlighting (IntersectionObserver) ---
+  var sections = document.querySelectorAll('.manual-section[id]');
+  var tocLinks = document.querySelectorAll('.toc-link');
+  var tocMap = {};
+
+  tocLinks.forEach(function(link) {
+    var href = link.getAttribute('href');
+    if (href) {
+      tocMap[href.replace('#', '')] = link;
+    }
+  });
+
+  if ('IntersectionObserver' in window && sections.length > 0) {
+    var currentActive = null;
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var id = entry.target.getAttribute('id');
+          if (currentActive) {
+            currentActive.classList.remove('active');
+          }
+          if (tocMap[id]) {
+            tocMap[id].classList.add('active');
+            currentActive = tocMap[id];
+          }
+        }
+      });
+    }, {
+      rootMargin: '-80px 0px -60% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(function(section) {
+      observer.observe(section);
+    });
+  }
+
+  // --- Back to Top button ---
+  var backToTop = document.getElementById('back-to-top');
+  if (backToTop) {
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 400) {
+        backToTop.classList.add('visible');
+      } else {
+        backToTop.classList.remove('visible');
+      }
+    }, { passive: true });
+
+    backToTop.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+})();
+</script>
+</body>
+</html>
