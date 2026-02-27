@@ -23,11 +23,11 @@ export default defineConfig({
   // Fail the build on CI if you accidentally left test.only
   forbidOnly: !!process.env.CI,
 
-  // Retry flaky tests (1 retry locally, 2 on CI)
-  retries: process.env.CI ? 2 : 1,
+  // Retry flaky tests (1 retry locally, 1 on CI)
+  retries: 1,
 
-  // Parallel workers - more workers for faster runs
-  workers: process.env.CI ? 2 : 4,
+  // Parallel workers - use available cores
+  workers: process.env.CI ? 4 : 4,
 
   // Reporter
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
@@ -37,8 +37,8 @@ export default defineConfig({
     // Base URL for navigation
     baseURL: isProduction ? prodUrl : 'http://localhost:3000',
 
-    // Collect trace on failure only
-    trace: 'on-first-retry',
+    // Collect trace on retry (off in CI for speed)
+    trace: process.env.CI ? 'off' : 'on-first-retry',
 
     // Screenshot on failure
     screenshot: 'only-on-failure',
