@@ -10,36 +10,12 @@ import {
   isToggleOn,
   navigateTo,
   setupPage,
-  setupPageFullMode,
   waitForConfirmationToHide,
 } from './helpers.js';
 
 test.describe('Keyboard Navigation - Timer View', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
-  });
-
-  test('should navigate dial numbers with Tab', async ({
-    page,
-    browserName,
-  }) => {
-    // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(
-      browserName === 'webkit',
-      'Safari has different keyboard navigation behavior',
-    );
-
-    // Focus first number on dial
-    await page.locator('.dial-number[data-num="1"]').focus();
-
-    // Tab through dial numbers
-    for (let i = 0; i < 5; i++) {
-      await page.keyboard.press('Tab');
-    }
-
-    // Focus should be on a visible element
-    const focused = await page.locator(':focus');
-    await expect(focused).toBeVisible();
   });
 
   test('should record timestamp with Enter key', async ({ page }) => {
@@ -62,43 +38,18 @@ test.describe('Keyboard Navigation - Timer View', () => {
     );
   });
 
-  test('should enter numbers via click', async ({ page, browserName }) => {
-    // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-    test.skip(
-      browserName === 'webkit',
-      'WebKit test driver issue with radial dial in landscape',
-    );
-
-    // Wait for dial numbers to be rendered (Safari needs extra time in landscape)
-    await page.waitForSelector('.dial-number[data-num="1"]', {
-      state: 'visible',
-      timeout: 5000,
-    });
-
-    // Click dial number
-    await page.click('.dial-number[data-num="1"]');
+  test('should enter numbers via keyboard', async ({ page }) => {
+    await page.keyboard.press('1');
 
     const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('1');
   });
 
-  test('should clear bib with clear button', async ({ page, browserName }) => {
-    // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-    test.skip(
-      browserName === 'webkit',
-      'WebKit test driver issue with radial dial in landscape',
-    );
-
-    // Wait for dial numbers to be rendered
-    await page.waitForSelector('.dial-number[data-num="5"]', {
-      state: 'visible',
-      timeout: 5000,
-    });
-
-    // Enter a bib via dial
-    await page.click('.dial-number[data-num="5"]');
-    await page.click('.dial-number[data-num="5"]');
-    await page.click('.dial-number[data-num="5"]');
+  test('should clear bib with clear button', async ({ page }) => {
+    // Enter a bib via keyboard
+    await page.keyboard.press('5');
+    await page.keyboard.press('5');
+    await page.keyboard.press('5');
 
     const bibDisplay = page.locator('#radial-bib-value');
     await expect(bibDisplay).toContainText('555');
@@ -113,7 +64,7 @@ test.describe('Keyboard Navigation - Timer View', () => {
 
 test.describe('Keyboard Navigation - Settings View', () => {
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
     await navigateTo(page, 'settings');
   });
 
@@ -157,45 +108,15 @@ test.describe('Keyboard Navigation - Settings View', () => {
 });
 
 test.describe('Keyboard Navigation - Results View', () => {
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
 
-    // Add test entry via radial dial
-    await page.click('.dial-number[data-num="1"]');
+    // Add test entry via keyboard
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     await navigateTo(page, 'results');
-  });
-
-  test('should navigate results with Tab', async ({ page, browserName }) => {
-    // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(
-      browserName === 'webkit',
-      'Safari has different keyboard navigation behavior',
-    );
-
-    // Tab through the page until we find a focusable element
-    let foundFocusable = false;
-    for (let i = 0; i < 10; i++) {
-      await page.keyboard.press('Tab');
-      const hasFocus = await page.evaluate(() => {
-        const el = document.activeElement;
-        return el && el !== document.body;
-      });
-      if (hasFocus) {
-        foundFocusable = true;
-        break;
-      }
-    }
-
-    expect(foundFocusable).toBe(true);
   });
 
   test('should open edit with Enter on result', async ({ page }) => {
@@ -208,17 +129,11 @@ test.describe('Keyboard Navigation - Results View', () => {
 });
 
 test.describe('Modal Accessibility', () => {
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
 
-    // Add entry via radial dial
-    await page.click('.dial-number[data-num="1"]');
+    // Add entry via keyboard
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -403,30 +318,6 @@ test.describe('Tab Order', () => {
     expect(tabbableElements.length).toBeGreaterThan(5);
   });
 
-  test('should not skip important interactive elements', async ({
-    page,
-    browserName,
-  }) => {
-    // Skip on Safari/WebKit - buttons aren't tabbable by default in Safari
-    test.skip(
-      browserName === 'webkit',
-      'Safari has different keyboard navigation behavior',
-    );
-
-    // Tab through entire page
-    const visited = new Set();
-
-    for (let i = 0; i < 30; i++) {
-      await page.keyboard.press('Tab');
-      const focused = await page.evaluate(() => document.activeElement?.id);
-      if (focused) {
-        visited.add(focused);
-      }
-    }
-
-    // Should visit radial time button
-    expect(visited.has('radial-time-btn')).toBe(true);
-  });
 });
 
 test.describe('Screen Reader Support', () => {

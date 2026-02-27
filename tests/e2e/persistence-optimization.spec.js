@@ -18,12 +18,6 @@ import {
 } from './helpers.js';
 
 test.describe('Dirty-Slice Persistence', () => {
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.setTimeout(30000);
 
   test.beforeEach(async ({ page }) => {
@@ -182,12 +176,6 @@ test.describe('Dirty-Slice Persistence', () => {
 });
 
 test.describe('Persistence - Run Selection', () => {
-  // Skip on WebKit
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.setTimeout(30000);
 
   test.beforeEach(async ({ page }) => {

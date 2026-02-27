@@ -99,10 +99,10 @@ async function dismissRaceChangeModal(page) {
 async function addTestEntry(page, bib = '001') {
   await navigateTo(page, 'timer');
 
-  // Clear and enter bib
-  await page.click('#radial-clear-btn');
+  // Clear and enter bib via keyboard
+  await page.keyboard.press('Delete');
   for (const digit of bib) {
-    await page.click(`.dial-number[data-num="${digit}"]`);
+    await page.keyboard.press(digit);
   }
 
   // Record timestamp — wait for bib display to change (auto-increment or clear)
@@ -886,8 +886,8 @@ test.describe('Delete Sync', () => {
     // Add multiple entries
     await navigateTo(page, 'timer');
     for (let i = 1; i <= 3; i++) {
-      await page.click('#radial-clear-btn');
-      await page.click(`.dial-number[data-num="${i}"]`);
+      await page.keyboard.press('Delete');
+      await page.keyboard.press(String(i));
       const bibBefore = await page.locator('#radial-bib-value').textContent();
       await page.click('#radial-time-btn');
       await expect(page.locator('#radial-bib-value')).not.toHaveText(

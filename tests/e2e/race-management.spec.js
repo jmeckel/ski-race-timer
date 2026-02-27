@@ -6,7 +6,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { navigateTo, setupPage, setupPageFullMode } from './helpers.js';
+import { navigateTo, setupPage } from './helpers.js';
 
 // Skip tests that require backend API
 const skipBackendTests = !process.env.BACKEND_TESTS;
@@ -72,20 +72,10 @@ test.describe('Race Management - Admin PIN', () => {
   });
 
   test('should save admin PIN via modal when no PIN set', async ({ page }) => {
+    test.skip(skipBackendTests, 'Requires backend server to save PIN via API');
     await clearPinAndSetup(page);
 
-    // Verify no PIN is set
-    const status = await page.locator('#admin-pin-status').textContent();
-    if (
-      status?.toLowerCase().includes('set') ||
-      status?.toLowerCase().includes('gesetzt')
-    ) {
-      // Skip if PIN is already set (can't clear it properly)
-      test.skip();
-      return;
-    }
-
-    // Open change PIN modal
+    // Open change PIN modal (clearPinAndSetup ensures no PIN is set)
     await page.click('#change-pin-btn');
     await expect(page.locator('#change-pin-modal')).toHaveClass(/show/);
 
@@ -156,18 +146,7 @@ test.describe('Race Management - Admin PIN', () => {
   test('should show error for mismatched PINs', async ({ page }) => {
     await clearPinAndSetup(page);
 
-    // Check if PIN is already set
-    const status = await page.locator('#admin-pin-status').textContent();
-    const pinAlreadySet =
-      status?.toLowerCase().includes('set') ||
-      status?.toLowerCase().includes('gesetzt');
-
-    if (pinAlreadySet) {
-      // Skip when PIN is set - can't test mismatch without knowing current PIN
-      test.skip();
-      return;
-    }
-
+    // clearPinAndSetup ensures no PIN is set
     await page.click('#change-pin-btn');
 
     // Enter mismatched PINs (only works when no PIN is set)
@@ -225,13 +204,6 @@ test.describe('Race Management - PIN Verification Modal', () => {
   });
 
   test('should close PIN modal on cancel', async ({ page }) => {
-    // Skip in landscape mode - viewport layout causes modal interaction issues in test driver
-    const viewport = page.viewportSize();
-    if (viewport && viewport.width > viewport.height) {
-      test.skip();
-      return;
-    }
-
     await page.click('#manage-races-btn');
 
     // Wait for modal to be fully visible first
@@ -241,9 +213,10 @@ test.describe('Race Management - PIN Verification Modal', () => {
     // Wait for any toast to disappear (ambient mode notification can intercept clicks)
     await page.waitForTimeout(1000);
 
-    // Click cancel button
+    // Use keyboard to dismiss — more reliable than click in landscape viewports
     const cancelBtn = page.locator('#admin-pin-modal [data-action="cancel"]');
-    await cancelBtn.click({ force: true });
+    await cancelBtn.focus();
+    await page.keyboard.press('Enter');
 
     // Wait a moment for modal close animation
     await page.waitForTimeout(500);
@@ -410,7 +383,7 @@ test.describe('Race Management - Delete Confirmation Modal', () => {
 test.describe('Race Management - Translations', () => {
   test.beforeEach(async ({ page }) => {
     // Use full mode so admin section is visible
-    await setupPageFullMode(page);
+    await setupPage(page);
     await navigateTo(page, 'settings');
   });
 

@@ -8,7 +8,6 @@ import {
   enterBib,
   navigateTo,
   setupPage,
-  setupPageFullMode,
   waitForConfirmationToHide,
 } from './helpers.js';
 
@@ -56,64 +55,29 @@ test.describe('Timer View', () => {
   });
 
   test.describe('Bib Number Input', () => {
-    test('should enter bib number via radial dial', async ({
-      page,
-      browserName,
-    }) => {
-      // Skip on Safari landscape - WebKit test driver has issues with dial clicks
-      // Real Safari works fine (verified manually)
-      test.skip(
-        browserName === 'webkit',
-        'WebKit test driver issue with radial dial in landscape',
-      );
-
-      await page.waitForSelector('.dial-number[data-num="1"]', {
-        state: 'visible',
-        timeout: 5000,
-      });
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('.dial-number[data-num="3"]');
+    test('should enter bib number via keyboard', async ({ page }) => {
+      await page.keyboard.press('1');
+      await page.keyboard.press('2');
+      await page.keyboard.press('3');
 
       const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('123');
     });
 
-    test('should limit bib to 3 digits', async ({ page, browserName }) => {
-      test.skip(
-        browserName === 'webkit',
-        'WebKit test driver issue with radial dial in landscape',
-      );
-
-      await page.waitForSelector('.dial-number[data-num="1"]', {
-        state: 'visible',
-        timeout: 5000,
-      });
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('.dial-number[data-num="3"]');
-      await page.click('.dial-number[data-num="4"]');
+    test('should limit bib to 3 digits', async ({ page }) => {
+      await page.keyboard.press('1');
+      await page.keyboard.press('2');
+      await page.keyboard.press('3');
+      await page.keyboard.press('4');
 
       const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('123');
     });
 
-    test('should clear bib with clear button', async ({
-      page,
-      browserName,
-    }) => {
-      test.skip(
-        browserName === 'webkit',
-        'WebKit test driver issue with radial dial in landscape',
-      );
-
-      await page.waitForSelector('.dial-number[data-num="1"]', {
-        state: 'visible',
-        timeout: 5000,
-      });
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('#radial-clear-btn');
+    test('should clear bib with Delete key', async ({ page }) => {
+      await page.keyboard.press('1');
+      await page.keyboard.press('2');
+      await page.keyboard.press('Delete');
 
       const bibDisplay = page.locator('#radial-bib-value');
       await expect(bibDisplay).toContainText('---');
@@ -121,20 +85,10 @@ test.describe('Timer View', () => {
 
     test('should delete last digit with keyboard backspace', async ({
       page,
-      browserName,
     }) => {
-      test.skip(
-        browserName === 'webkit',
-        'WebKit test driver issue with radial dial in landscape',
-      );
-
-      await page.waitForSelector('.dial-number[data-num="1"]', {
-        state: 'visible',
-        timeout: 5000,
-      });
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('.dial-number[data-num="3"]');
+      await page.keyboard.press('1');
+      await page.keyboard.press('2');
+      await page.keyboard.press('3');
       await page.keyboard.press('Backspace');
 
       const bibDisplay = page.locator('#radial-bib-value');
@@ -171,16 +125,7 @@ test.describe('Timer View', () => {
       await expect(overlay).not.toHaveClass(/show/);
     });
 
-    test('should auto-increment bib after recording', async ({
-      page,
-      browserName,
-    }) => {
-      // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-      test.skip(
-        browserName === 'webkit',
-        'WebKit test driver issue with radial dial in landscape',
-      );
-
+    test('should auto-increment bib after recording', async ({ page }) => {
       await enterBib(page, 1);
       await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
@@ -219,8 +164,8 @@ test.describe('Timer View', () => {
 
   test.describe('Undo Functionality', () => {
     test('should undo last entry', async ({ page }) => {
-      // Record an entry using radial dial
-      await page.click('.dial-number[data-num="1"]');
+      // Record an entry using keyboard
+      await page.keyboard.press('1');
       await page.click('#radial-time-btn');
       await waitForConfirmationToHide(page);
 
@@ -242,7 +187,7 @@ test.describe('Timer View', () => {
 
 test.describe('Timer View - Full Mode', () => {
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
   });
 
   test.describe('Timing Point Selection', () => {
@@ -350,17 +295,17 @@ test.describe('Timer View - Duplicate Warning', () => {
     page,
   }) => {
     // Record first entry with bib 001
-    await page.click('.dial-number[data-num="0"]');
-    await page.click('.dial-number[data-num="0"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('0');
+    await page.keyboard.press('0');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Record duplicate entry with same bib
-    await page.click('#radial-clear-btn');
-    await page.click('.dial-number[data-num="0"]');
-    await page.click('.dial-number[data-num="0"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('Delete');
+    await page.keyboard.press('0');
+    await page.keyboard.press('0');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
 
     // Radial mode shows confirmation overlay (warning feedback is via different visual cues)

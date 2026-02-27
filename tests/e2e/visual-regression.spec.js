@@ -44,18 +44,17 @@ function getHeaderMasks(page) {
   return [page.locator('#entry-count-badge')];
 }
 
-test.describe('Visual Regression', () => {
-  // Visual regression tests only run on portrait projects.
-  // Landscape uses CSS `display: contents` on view containers,
-  // making element-level screenshots impossible (zero-size box).
-  // WebKit is also skipped due to radial dial test driver issues.
-  test.skip(
-    ({ browserName, viewport }) =>
-      browserName === 'webkit' ||
-      (viewport && viewport.width > viewport.height),
-    'Visual regression runs on portrait Chromium only',
-  );
+/**
+ * Get the right locator for Timer View screenshots.
+ * In landscape, .timer-view uses `display: contents` (zero-size box),
+ * so we screenshot .app instead which is the actual grid container.
+ */
+function getTimerViewLocator(page, viewport) {
+  const isLandscape = viewport && viewport.width > viewport.height;
+  return isLandscape ? page.locator('.app') : page.locator('.timer-view');
+}
 
+test.describe('Visual Regression', () => {
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
     // Let all animations and transitions settle
@@ -64,59 +63,47 @@ test.describe('Visual Regression', () => {
 
   test.describe('Timer View', () => {
     test('default state', async ({ page }) => {
-      await expect(page.locator('.timer-view')).toHaveScreenshot(
-        'timer-default.png',
-        {
-          maxDiffPixelRatio: 0.01,
-          mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
-        },
-      );
+      const target = getTimerViewLocator(page, page.viewportSize());
+      await expect(target).toHaveScreenshot('timer-default.png', {
+        maxDiffPixelRatio: 0.01,
+        mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
+      });
     });
 
-    test('with bib entered', async ({ page, browserName }) => {
-      // Enter bib number via dial
-      await page.waitForSelector('.dial-number[data-num="1"]', {
-        state: 'visible',
-        timeout: 5000,
-      });
-      await page.click('.dial-number[data-num="1"]');
-      await page.click('.dial-number[data-num="2"]');
-      await page.click('.dial-number[data-num="3"]');
+    test('with bib entered', async ({ page }) => {
+      // Enter bib number via keyboard
+      await page.keyboard.press('1');
+      await page.keyboard.press('2');
+      await page.keyboard.press('3');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('.timer-view')).toHaveScreenshot(
-        'timer-with-bib.png',
-        {
-          maxDiffPixelRatio: 0.01,
-          mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
-        },
-      );
+      const target = getTimerViewLocator(page, page.viewportSize());
+      await expect(target).toHaveScreenshot('timer-with-bib.png', {
+        maxDiffPixelRatio: 0.01,
+        mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
+      });
     });
 
     test('start point selected', async ({ page }) => {
       await page.click('.radial-point-btn[data-point="S"]');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('.timer-view')).toHaveScreenshot(
-        'timer-start-selected.png',
-        {
-          maxDiffPixelRatio: 0.01,
-          mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
-        },
-      );
+      const target = getTimerViewLocator(page, page.viewportSize());
+      await expect(target).toHaveScreenshot('timer-start-selected.png', {
+        maxDiffPixelRatio: 0.01,
+        mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
+      });
     });
 
     test('run 2 selected', async ({ page }) => {
       await page.click('#radial-run-selector [data-run="2"]');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('.timer-view')).toHaveScreenshot(
-        'timer-run2-selected.png',
-        {
-          maxDiffPixelRatio: 0.01,
-          mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
-        },
-      );
+      const target = getTimerViewLocator(page, page.viewportSize());
+      await expect(target).toHaveScreenshot('timer-run2-selected.png', {
+        maxDiffPixelRatio: 0.01,
+        mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
+      });
     });
 
     test('confirmation overlay after recording', async ({ page }) => {
@@ -129,18 +116,16 @@ test.describe('Visual Regression', () => {
       });
       await page.waitForTimeout(300);
 
-      await expect(page.locator('.timer-view')).toHaveScreenshot(
-        'timer-confirmation-overlay.png',
-        {
-          maxDiffPixelRatio: 0.01,
-          mask: [
-            ...getTimerMasks(page),
-            ...getHeaderMasks(page),
-            // Mask the confirmation time since it varies
-            page.locator('#radial-confirm-time'),
-          ],
-        },
-      );
+      const target = getTimerViewLocator(page, page.viewportSize());
+      await expect(target).toHaveScreenshot('timer-confirmation-overlay.png', {
+        maxDiffPixelRatio: 0.01,
+        mask: [
+          ...getTimerMasks(page),
+          ...getHeaderMasks(page),
+          // Mask the confirmation time since it varies
+          page.locator('#radial-confirm-time'),
+        ],
+      });
     });
   });
 

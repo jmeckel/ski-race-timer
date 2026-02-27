@@ -10,7 +10,6 @@ import {
   setupPage,
   setupPageEnglish,
   setupPageFrench,
-  setupPageFullMode,
   waitForConfirmationToHide,
 } from './helpers.js';
 
@@ -249,7 +248,7 @@ test.describe('Status Labels by Language', () => {
 
 test.describe('Timing Point Labels by Language', () => {
   test('should show Start as S in both languages', async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
 
     const startBtn = page.locator('.radial-point-btn[data-point="S"]');
     const text = await startBtn.textContent();

@@ -9,7 +9,6 @@ import { expect, test } from '@playwright/test';
 import {
   navigateTo,
   setupPage,
-  setupPageFullMode,
   waitForConfirmationToHide,
 } from './helpers.js';
 
@@ -20,15 +19,13 @@ async function dismissToasts(page) {
   );
 }
 
-// Helper to add test entries via radial dial
+// Helper to add test entries via keyboard
 async function addTestEntries(page, count = 3) {
   for (let i = 1; i <= count; i++) {
-    // Wait for clear button to be ready (not covered by overlay)
-    await page.waitForSelector('#radial-clear-btn', { state: 'visible' });
-    await page.click('#radial-clear-btn');
+    await page.keyboard.press('Delete');
     const bib = String(i).padStart(3, '0');
     for (const digit of bib) {
-      await page.click(`.dial-number[data-num="${digit}"]`);
+      await page.keyboard.press(digit);
     }
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
@@ -40,13 +37,6 @@ async function addTestEntries(page, count = 3) {
 test.describe('Export - Race Horology CSV', () => {
   // Export tests need more time due to multiple entry recording in beforeEach
   test.setTimeout(30000);
-
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  // Real Safari works fine (verified manually)
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -177,12 +167,6 @@ test.describe('Export - Race Horology CSV', () => {
 });
 
 test.describe('Export - Edge Cases', () => {
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test('should export empty results gracefully', async ({ page }) => {
     await setupPage(page);
 
@@ -231,7 +215,7 @@ test.describe('Export - Edge Cases', () => {
     await setupPage(page);
 
     // Add entry
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -262,19 +246,13 @@ test.describe('Export - Multiple Runs', () => {
   // Tests with multiple entries need more time in CI
   test.setTimeout(30000);
 
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
   });
 
   test('should export entries with run number', async ({ page }) => {
     // Add Run 1 entry
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -300,7 +278,7 @@ test.describe('Export - Multiple Runs', () => {
   test('should export Run 2 entries correctly', async ({ page }) => {
     // Select Run 2
     await page.click('#radial-run-selector [data-run="2"]');
-    await page.click('.dial-number[data-num="2"]');
+    await page.keyboard.press('2');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -324,14 +302,14 @@ test.describe('Export - Multiple Runs', () => {
   test('should export both Run 1 and Run 2 entries', async ({ page }) => {
     // Add Run 1 entry
     await page.click('#radial-run-selector [data-run="1"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Run 2 entry
-    await page.click('#radial-clear-btn');
+    await page.keyboard.press('Delete');
     await page.click('#radial-run-selector [data-run="2"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -358,14 +336,8 @@ test.describe('Export - Multiple Timing Points', () => {
   // Tests with multiple entries need more time in CI
   test.setTimeout(30000);
 
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
-    await setupPageFullMode(page);
+    await setupPage(page);
   });
 
   test('should export entries with different timing points', async ({
@@ -373,15 +345,15 @@ test.describe('Export - Multiple Timing Points', () => {
   }) => {
     // Add Start entry
     await page.click('.radial-point-btn[data-point="S"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
     await dismissToasts(page);
-    await page.click('#radial-clear-btn');
+    await page.keyboard.press('Delete');
     await page.click('.radial-point-btn[data-point="F"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -408,7 +380,7 @@ test.describe('Export - Multiple Timing Points', () => {
   }) => {
     // Add Start entry
     await page.click('.radial-point-btn[data-point="S"]');
-    await page.click('.dial-number[data-num="5"]');
+    await page.keyboard.press('5');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -434,7 +406,7 @@ test.describe('Export - Multiple Timing Points', () => {
   }) => {
     // Add Finish entry
     await page.click('.radial-point-btn[data-point="F"]');
-    await page.click('.dial-number[data-num="7"]');
+    await page.keyboard.press('7');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -458,15 +430,15 @@ test.describe('Export - Multiple Timing Points', () => {
   test('should export both ST and FT in same file', async ({ page }) => {
     // Add Start entry
     await page.click('.radial-point-btn[data-point="S"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
     // Add Finish entry
     await dismissToasts(page);
-    await page.click('#radial-clear-btn');
+    await page.keyboard.press('Delete');
     await page.click('.radial-point-btn[data-point="F"]');
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 

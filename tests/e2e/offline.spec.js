@@ -12,13 +12,13 @@ import {
   waitForConfirmationToHide,
 } from './helpers.js';
 
-// Helper to add test entries via radial dial
+// Helper to add test entries via keyboard
 async function addTestEntries(page, count = 3) {
   for (let i = 1; i <= count; i++) {
-    await page.click('#radial-clear-btn');
+    await page.keyboard.press('Delete');
     const bib = String(i).padStart(3, '0');
     for (const digit of bib) {
-      await page.click(`.dial-number[data-num="${digit}"]`);
+      await page.keyboard.press(digit);
     }
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
@@ -28,12 +28,6 @@ async function addTestEntries(page, count = 3) {
 test.describe('Data Persistence', () => {
   // Tests with multiple entries need more time in CI
   test.setTimeout(30000);
-
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
 
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
@@ -71,17 +65,11 @@ test.describe('Data Persistence', () => {
 });
 
 test.describe('LocalStorage Operations', () => {
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test('should save entries to localStorage', async ({ page }) => {
     await setupPage(page);
 
     // Add entry via radial dial
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -128,7 +116,7 @@ test.describe('LocalStorage Operations', () => {
     await page.waitForSelector('#radial-time-hm', { timeout: 5000 });
 
     // App should still work
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     await page.click('#radial-time-btn');
 
     // Should show confirmation (app recovered)
@@ -159,12 +147,6 @@ test.describe('Offline Functionality', () => {
   // Tests with multiple entries need more time in CI
   test.setTimeout(30000);
 
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
@@ -181,7 +163,7 @@ test.describe('Offline Functionality', () => {
     await context.setOffline(true);
 
     // Record entry via radial dial
-    await page.click('.dial-number[data-num="5"]');
+    await page.keyboard.press('5');
     await page.click('#radial-time-btn');
     await waitForConfirmationToHide(page);
 
@@ -308,12 +290,6 @@ test.describe('Edge Cases', () => {
   // Tests with multiple entries need more time in CI
   test.setTimeout(30000);
 
-  // Skip on WebKit - test driver has issues with radial dial clicks in landscape mode
-  test.skip(
-    ({ browserName }) => browserName === 'webkit',
-    'WebKit test driver issue with radial dial in landscape',
-  );
-
   test.beforeEach(async ({ page }) => {
     await setupPage(page);
   });
@@ -336,7 +312,7 @@ test.describe('Edge Cases', () => {
 
   test('should handle concurrent operations', async ({ page }) => {
     // Add entry while navigating
-    await page.click('.dial-number[data-num="1"]');
+    await page.keyboard.press('1');
     const timestampButton = page.locator('#radial-time-btn');
     await expect(timestampButton).toBeVisible();
     await Promise.all([
