@@ -791,38 +791,11 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 }
 
 /* ===== Landscape Mode ===== */
+/* Timer-view is now an internal grid (set in main.css @layer components):
+   grid-template-columns: auto 1fr
+   grid-template-rows: auto auto 1fr
+   All children placed within this 3-row grid. */
 @media (orientation: landscape) {
-  /* Grid at .app level: dial full-height left, header/content/tabs right */
-  .app:has(.timer-view.radial-mode.active) {
-    display: grid !important;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto auto auto 1fr auto;
-    column-gap: 16px;
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-
-  /* Header in right column only */
-  .app:has(.timer-view.radial-mode.active) > .header {
-    grid-column: 2;
-    grid-row: 1;
-    padding: 4px 16px;
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-
-  /* Offline banner should not participate in landscape grid */
-  .app:has(.timer-view.radial-mode.active) > .offline-banner {
-    display: none;
-  }
-
-  /* Main dissolves so timer-view children participate in grid */
-  .app:has(.timer-view.radial-mode.active) > #main {
-    display: contents;
-  }
-
-  /* Timer view display:contents is set in main.css @layer components
-     to ensure it beats .view.active's layered !important declaration */
-
   /* Confirmation overlay: remove from grid flow, overlay the whole app */
   .radial-confirmation-overlay {
     position: fixed;
@@ -843,9 +816,10 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     background: var(--background);
   }
 
-  /* Dial sized to full viewport height */
+  /* Dial sized to viewport height minus header + tab bar chrome
+     96px ≈ 39px header + 49px tab-bar + 8px breathing room */
   .dial-container {
-    --dial-size: min(calc(100vh - 8px), calc(100dvh - 8px), 55vw);
+    --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 55vw);
     width: var(--dial-size);
     height: var(--dial-size);
     max-width: none;
@@ -858,10 +832,10 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     transform-origin: 0 calc(50cqi - 8px);
   }
 
-  /* Top row (bib + clear) in right column */
+  /* Top row (bib + clear) in right column, row 1 */
   .radial-top-row {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -906,30 +880,32 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     font-size: 16px;
   }
 
-  /* Controls row in right column */
+  /* Controls row in right column, row 2 */
   .radial-controls-row {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     justify-content: flex-start;
     padding: 8px 0;
     padding-right: max(16px, env(safe-area-inset-right));
   }
 
-  /* Bottom row dissolves to place children in grid */
+  /* Bottom row: flex column containing stats + time button, row 3 */
   .radial-bottom-row {
-    display: contents !important;
+    grid-column: 2;
+    grid-row: 3;
+    display: flex !important;
+    flex-direction: column;
+    padding: 0;
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 
   /* Stats - compact single row, visible in landscape */
   .radial-stats-corner {
-    grid-column: 2;
-    grid-row: 4;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 12px;
     padding: 8px 0;
-    padding-right: max(16px, env(safe-area-inset-right));
     background: transparent;
     margin: 0;
     border-radius: 0;
@@ -956,13 +932,11 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     margin-inline-start: auto;
   }
 
-  /* Time button in right column */
+  /* Time button grows to fill remaining space */
   .radial-time-btn-corner {
-    grid-column: 2;
-    grid-row: 5;
     display: flex;
-    padding: 16px 0 8px 0;
-    padding-right: max(16px, env(safe-area-inset-right));
+    flex: 1;
+    padding: 8px 0;
   }
 
   .radial-time-btn {
@@ -970,13 +944,6 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     padding-inline: 16px;
     min-height: 64px;
     font-size: 14px;
-  }
-
-  /* Tab bar in right column only */
-  .app:has(.timer-view.radial-mode.active) > .tab-bar {
-    grid-column: 2;
-    grid-row: 6;
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
   }
 
   /* Dial center elements */
@@ -1021,11 +988,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
 /* Landscape with short height (e.g., phones) */
 @media (orientation: landscape) and (max-height: 450px) {
   .dial-container {
-    --dial-size: min(calc(100vh - 12px), calc(100dvh - 12px), 50vw);
-  }
-
-  .app:has(.timer-view.radial-mode.active) > .header {
-    padding: 2px 10px;
+    --dial-size: min(calc(100dvh - 96px), calc(100vh - 96px), 50vw);
   }
 
   .radial-top-row {
@@ -1080,9 +1043,5 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     min-width: 48px;
     min-height: 48px;
     font-size: 14px;
-  }
-
-  .app:has(.timer-view.radial-mode.active) > .tab-bar {
-    padding-bottom: max(2px, env(safe-area-inset-bottom));
   }
 }

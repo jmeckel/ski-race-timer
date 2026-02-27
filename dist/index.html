@@ -31,18 +31,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/main-Bln_BwIH.js"></script>
+  <script type="module" crossorigin src="/assets/main-xzkwAxO-.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/vendor-signals-BA-R9xnX.js">
-  <link rel="modulepreload" crossorigin href="/assets/chief-judge-DZDn8YDo.js">
-  <link rel="modulepreload" crossorigin href="/assets/gate-judge-BjNnlYdu.js">
-  <link rel="modulepreload" crossorigin href="/assets/results-CYn6XhfZ.js">
-  <link rel="modulepreload" crossorigin href="/assets/settings-BiCWpLPa.js">
-  <link rel="modulepreload" crossorigin href="/assets/timer-CD-qe5oc.js">
-  <link rel="stylesheet" crossorigin href="/assets/main-vEU6KCrT.css">
+  <link rel="modulepreload" crossorigin href="/assets/chief-judge-riJEdY3M.js">
+  <link rel="modulepreload" crossorigin href="/assets/gate-judge-BcJMKlnh.js">
+  <link rel="modulepreload" crossorigin href="/assets/settings-DouXa31l.js">
+  <link rel="modulepreload" crossorigin href="/assets/results-CgMF_Mmw.js">
+  <link rel="modulepreload" crossorigin href="/assets/timer-DIxjZgeJ.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-w-Axgta1.css">
 <link rel="manifest" href="/manifest.json"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 <body>
   <!-- Skip Link -->
-  <a href="#main" class="skip-link">Skip to main content</a>
+  <a href="#main" class="skip-link" data-i18n="skipToMain">Skip to main content</a>
 
   <div class="app" role="application" aria-label="CHRONO Race Timer">
     <!-- Header -->
@@ -60,31 +60,31 @@
       </h1>
       <div class="header-status">
         <div class="sync-indicator" id="sync-indicator" style="display: none;">
-          <span class="sync-dot" aria-label="Sync status"></span>
+          <span class="sync-dot" aria-hidden="true"></span>
           <span class="sync-status-text" data-i18n="connecting">Connecting...</span>
           <span class="sync-device-count" id="sync-device-count" style="display: none;" aria-live="polite"></span>
         </div>
-        <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready">
+        <span class="judges-ready-indicator" id="judges-ready-indicator" style="display: none;" title="Judges ready" role="status" aria-label="Judges ready: 0 of 0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M20 6L9 17l-5-5"/>
           </svg>
           <span class="judges-ready-count" id="judges-ready-count">0/0</span>
         </span>
         <div class="gps-indicator" id="gps-indicator" style="display: none;">
-          <span class="gps-dot" aria-label="GPS status"></span>
+          <span class="gps-dot" aria-hidden="true"></span>
           <span class="gps-status-text" data-i18n="gpsInactive">GPS Inactive</span>
         </div>
         <div class="judge-ready-indicator" id="judge-ready-indicator" style="display: none;">
-          <span class="judge-ready-dot"></span>
+          <span class="judge-ready-dot" aria-hidden="true"></span>
           <span class="judge-ready-text" data-i18n="signalReady">Ready</span>
         </div>
-        <div class="camera-indicator" id="camera-indicator" style="display: none;">
+        <div class="camera-indicator" id="camera-indicator" style="display: none;" role="status" aria-live="polite" aria-label="Photo capture active" data-i18n-aria-label="photoCaptureActive">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
         </div>
-        <div class="voice-indicator" id="voice-indicator" style="display: none;">
+        <div class="voice-indicator" id="voice-indicator" role="status" aria-live="polite" style="display: none;">
           <span class="voice-dot"></span>
           <span class="voice-status-text" id="voice-status-text"></span>
         </div>
@@ -99,9 +99,9 @@
     </div>
 
     <!-- Main Content -->
-    <main id="main">
+    <main id="main" tabindex="-1">
         <!-- Timer View (Radial Dial Mode) -->
-        <div class="view timer-view radial-mode active">
+        <div class="view timer-view radial-mode active" id="timer-panel" role="tabpanel" aria-labelledby="timer-tab">
           <!-- Top Row: Bib + Status -->
           <div class="radial-top-row">
             <!-- Top Left: Bib -->
@@ -112,7 +112,7 @@
 
             <!-- Top Right: Clear Button -->
             <div class="radial-clear-corner">
-              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number">C</button>
+              <button class="radial-clear-btn" id="radial-clear-btn" aria-label="Clear bib number" data-i18n-aria-label="clearBibLabel">C</button>
             </div>
 
             <!-- Status (hidden, using header instead) -->
@@ -160,8 +160,8 @@
               <button class="radial-point-btn finish active" data-point="F" data-i18n="finish" role="radio" aria-checked="true">Finish</button>
             </div>
             <div class="radial-run-selector" id="radial-run-selector" role="radiogroup" aria-label="Run selector">
-              <button class="radial-run-btn active" data-run="1" role="radio" aria-checked="true" aria-label="Run 1" data-i18n="runLabel1">Run 1</button>
-              <button class="radial-run-btn" data-run="2" role="radio" aria-checked="false" aria-label="Run 2" data-i18n="runLabel2">Run 2</button>
+              <button class="radial-run-btn active" data-run="1" role="radio" aria-checked="true" data-i18n="runLabel1">Run 1</button>
+              <button class="radial-run-btn" data-run="2" role="radio" aria-checked="false" data-i18n="runLabel2">Run 2</button>
             </div>
           </div>
 
@@ -180,23 +180,29 @@
 
             <!-- Record Button -->
             <div class="radial-time-btn-corner">
-              <button class="radial-time-btn" id="radial-time-btn" aria-label="Record timestamp">
+              <button class="radial-time-btn" id="radial-time-btn" aria-label="Record time" data-i18n-aria-label="time">
                 <span data-i18n="time">Record time</span>
               </button>
             </div>
           </div>
 
           <!-- Confirmation Overlay -->
-          <div class="radial-confirmation-overlay" id="radial-confirmation-overlay">
+          <div class="radial-confirmation-overlay" id="radial-confirmation-overlay" aria-hidden="true">
             <div class="radial-confirmation-check" aria-hidden="true">✓</div>
             <div class="radial-confirmation-bib" id="radial-confirm-bib">---</div>
             <div class="radial-confirmation-time" id="radial-confirm-time">--:--:--.---</div>
             <div class="radial-confirmation-point finish" id="radial-confirm-point">Finish</div>
+            <div class="radial-confirmation-warning" id="radial-confirm-warning" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/>
+              </svg>
+              <span id="radial-confirm-warning-text"></span>
+            </div>
           </div>
         </div>
 
       <!-- Results View -->
-      <div class="view results-view">
+      <div class="view results-view" id="results-panel" role="tabpanel" aria-labelledby="results-tab">
         <div class="results-header">
           <!-- Chief Judge Toggle -->
           <div class="chief-judge-toggle-row" id="chief-judge-toggle-row">
@@ -216,18 +222,18 @@
               <span class="stat-label" data-i18n="entriesRecorded">entries recorded</span>
             </div>
             <div class="results-info-actions">
-              <button class="results-info-btn" id="toggle-filters-btn" aria-label="Filter" aria-expanded="false">
+              <button class="results-info-btn" id="toggle-filters-btn" aria-label="Filter" aria-expanded="false" aria-controls="search-filter-bar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               </button>
               <span class="results-info-spacer"></span>
-              <button class="results-info-btn" id="undo-btn" aria-label="Undo" disabled>
+              <button class="results-info-btn" id="undo-btn" aria-label="Undo" data-i18n-aria-label="undo" disabled>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg>
               </button>
-              <button class="results-info-btn danger" id="clear-all-btn" aria-label="Delete All">
+              <button class="results-info-btn danger" id="clear-all-btn" aria-label="Clear All" data-i18n-aria-label="clearAll">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
               <span class="results-info-spacer"></span>
-              <button class="results-info-btn" id="quick-export-btn" aria-label="Export">
+              <button class="results-info-btn" id="quick-export-btn" aria-label="Export" data-i18n-aria-label="export">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               </button>
             </div>
@@ -239,14 +245,14 @@
           </div>
 
           <!-- Search & Filter (toggled by filter icon) -->
-          <div class="search-filter-bar" data-advanced>
+          <div class="search-filter-bar" id="search-filter-bar" data-advanced>
             <input type="search" class="search-input" id="search-input" data-i18n-placeholder="search" aria-label="Search results" data-i18n-aria-label="searchResults">
-            <select class="filter-select" id="filter-point" aria-label="Filter by point">
+            <select class="filter-select" id="filter-point" aria-label="Filter by point" data-i18n-aria-label="filterByPoint">
               <option value="all" data-i18n="all">All</option>
-              <option value="S">Start</option>
-              <option value="F">Finish</option>
+              <option value="S" data-i18n="start">Start</option>
+              <option value="F" data-i18n="finish">Finish</option>
             </select>
-            <select class="filter-select" id="filter-status" aria-label="Filter by status">
+            <select class="filter-select" id="filter-status" aria-label="Filter by status" data-i18n-aria-label="filterByStatus">
               <option value="all" data-i18n="all">All</option>
               <option value="ok">OK</option>
               <option value="dns">DNS</option>
@@ -362,7 +368,7 @@
       </div>
 
       <!-- Gate Judge View -->
-      <div class="view gate-judge-view">
+      <div class="view gate-judge-view" id="gate-judge-panel" role="tabpanel" aria-labelledby="gate-judge-tab">
         <!-- Gate Assignment Header -->
         <div class="gate-judge-header">
           <div class="gate-assignment-display">
@@ -400,9 +406,9 @@
           </div>
 
           <!-- Fault Detail Panel (appears after selecting a gate) -->
-          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;" aria-live="polite">
+          <div class="fault-detail-panel" id="fault-detail-panel" style="display: none;">
             <div class="fault-detail-header">
-              <span class="fault-detail-gate-label" id="fault-detail-gate-label"></span>
+              <span class="fault-detail-gate-label" id="fault-detail-gate-label" aria-live="polite"></span>
               <button class="fault-detail-close" id="fault-detail-close" aria-label="Close" data-i18n-aria-label="close">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
@@ -412,15 +418,15 @@
 
             <!-- Fault Type Selection -->
             <div class="inline-fault-types" id="inline-fault-types">
-              <button class="inline-fault-type-btn" data-fault="MG" aria-pressed="false">
+              <button class="inline-fault-type-btn" data-fault="MG" aria-pressed="false" aria-label="Missed Gate" data-i18n-aria-label="faultMG">
                 <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
                 <span class="fault-type-long" data-i18n="faultMG">Missed Gate</span>
               </button>
-              <button class="inline-fault-type-btn" data-fault="STR" aria-pressed="false">
+              <button class="inline-fault-type-btn" data-fault="STR" aria-pressed="false" aria-label="Straddling" data-i18n-aria-label="faultSTR">
                 <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
                 <span class="fault-type-long" data-i18n="faultSTR">Straddling</span>
               </button>
-              <button class="inline-fault-type-btn" data-fault="BR" aria-pressed="false">
+              <button class="inline-fault-type-btn" data-fault="BR" aria-pressed="false" aria-label="Binding Release" data-i18n-aria-label="faultBR">
                 <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
                 <span class="fault-type-long" data-i18n="faultBR">Binding Release</span>
               </button>
@@ -462,7 +468,7 @@
       </div>
 
       <!-- Settings View -->
-      <div class="view settings-view">
+      <div class="view settings-view" id="settings-panel" role="tabpanel" aria-labelledby="settings-tab">
         <!-- ===== Race Setup Group ===== -->
         <div class="settings-group">
           <h3 class="settings-group-title" data-i18n="settingsRaceSetup">Race Setup</h3>
@@ -719,7 +725,7 @@
 
         <!-- Version (at the very bottom) -->
         <div class="settings-section settings-version-section">
-          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info">
+          <button class="version-info-btn" id="version-info-btn" title="Tap to copy debug info" aria-label="Copy debug info" data-i18n-aria-label="copyDebugInfo">
             <span data-i18n="version">Version</span>&nbsp;<span id="app-version"></span>
             <span id="app-version-name" class="version-name"></span>
             <div id="app-version-description" class="version-description"></div>
@@ -730,27 +736,27 @@
 
     <!-- Tab Bar -->
     <nav class="tab-bar glass-frosted glass-enable-target" role="tablist" aria-label="Main navigation">
-      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true" id="timer-tab">
+      <button class="tab-btn active" data-view="timer" role="tab" aria-selected="true" id="timer-tab" aria-controls="timer-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
         <span data-i18n="timer">Timer</span>
       </button>
-      <button class="tab-btn" data-view="results" role="tab" aria-selected="false">
+      <button class="tab-btn" data-view="results" role="tab" aria-selected="false" id="results-tab" aria-controls="results-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6"/>
         </svg>
         <span data-i18n="results">Results</span>
       </button>
-      <button class="tab-btn" data-view="gateJudge" role="tab" aria-selected="false" id="gate-judge-tab" style="display: none;">
+      <button class="tab-btn" data-view="gateJudge" role="tab" aria-selected="false" id="gate-judge-tab" aria-controls="gate-judge-panel" style="display: none;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
           <line x1="4" y1="22" x2="4" y2="15"/>
         </svg>
         <span data-i18n="gateJudgeTab">Gate</span>
       </button>
-      <button class="tab-btn" data-view="settings" role="tab" aria-selected="false">
+      <button class="tab-btn" data-view="settings" role="tab" aria-selected="false" id="settings-tab" aria-controls="settings-panel">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
           <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
@@ -761,10 +767,10 @@
   </div>
 
   <!-- Confirmation Overlay (outside app, same level as modals) -->
-  <div class="confirmation-overlay" id="confirmation-overlay">
+  <div class="confirmation-overlay" id="confirmation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirmation-bib" aria-hidden="true">
     <div class="confirmation-content">
       <div class="snowflake-burst" id="snowflake-burst"></div>
-      <div class="confirmation-bib">---</div>
+      <div class="confirmation-bib" id="confirmation-bib">---</div>
       <div class="confirmation-point">-</div>
       <div class="confirmation-run" data-advanced>-</div>
       <div class="confirmation-time">--:--:--.---</div>
@@ -876,7 +882,7 @@
     <div class="modal-content glass-surface-1 photo-viewer-content">
       <div class="modal-header photo-viewer-header">
         <h2 class="modal-title" id="photo-viewer-modal-title" data-i18n="viewPhoto">View Photo</h2>
-        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close">
+        <button class="photo-viewer-close" id="photo-viewer-close-btn" aria-label="Close" data-i18n-aria-label="close">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
@@ -1091,7 +1097,7 @@
             <!-- Populated dynamically with active bibs -->
           </div>
           <div class="manual-bib-row">
-            <span>or enter manually:</span>
+            <span data-i18n="orEnterManually">or enter:</span>
             <input type="text" class="text-input" id="fault-bib-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="---">
           </div>
         </div>
@@ -1108,15 +1114,15 @@
         <div class="fault-type-section">
           <label data-i18n="faultType">Fault Type</label>
           <div class="fault-type-buttons" id="fault-type-buttons">
-            <button class="fault-type-btn" data-fault="MG">
+            <button class="fault-type-btn" data-fault="MG" aria-pressed="false" aria-label="Missed Gate" data-i18n-aria-label="faultMG">
               <span class="fault-type-short" data-i18n="faultMGShort">MG</span>
               <span class="fault-type-label" data-i18n="faultMG">Missed Gate</span>
             </button>
-            <button class="fault-type-btn" data-fault="STR">
+            <button class="fault-type-btn" data-fault="STR" aria-pressed="false" aria-label="Straddling" data-i18n-aria-label="faultSTR">
               <span class="fault-type-short" data-i18n="faultSTRShort">STR</span>
               <span class="fault-type-label" data-i18n="faultSTR">Straddling</span>
             </button>
-            <button class="fault-type-btn" data-fault="BR">
+            <button class="fault-type-btn" data-fault="BR" aria-pressed="false" aria-label="Binding Release" data-i18n-aria-label="faultBR">
               <span class="fault-type-short" data-i18n="faultBRShort">BR</span>
               <span class="fault-type-label" data-i18n="faultBR">Binding Release</span>
             </button>
@@ -1167,7 +1173,7 @@
         </div>
         <!-- Notes -->
         <div class="fault-edit-notes-section" style="margin-bottom: 16px;">
-          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Notes</label>
+          <label for="fault-edit-notes" style="display: block; margin-bottom: 8px; color: var(--text-secondary);" data-i18n="faultNotes">Notes</label>
           <div class="fault-edit-notes-row">
             <textarea class="text-input fault-edit-notes" id="fault-edit-notes" maxlength="500" rows="2" data-i18n-placeholder="typeNote" placeholder="Type or speak your note..." aria-label="Note text"></textarea>
             <button class="fault-edit-mic-btn" id="fault-edit-mic-btn" type="button" aria-label="Record voice note" aria-pressed="false">
@@ -1219,7 +1225,7 @@
   </div>
 
   <!-- Fault Confirmation Overlay -->
-  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="fault-confirmation-title">
+  <div class="fault-confirmation-overlay" id="fault-confirmation-overlay" role="alertdialog" aria-modal="true" aria-hidden="true" aria-labelledby="fault-confirmation-title">
     <div class="fault-confirmation-content">
       <div class="fault-confirmation-icon" aria-hidden="true">✓</div>
       <div class="fault-confirmation-bib" id="fault-confirmation-title">---</div>
@@ -1263,7 +1269,7 @@
               <line x1="8" y1="23" x2="16" y2="23"/>
             </svg>
           </div>
-          <span class="voice-note-status-text" data-i18n="listening">Listening...</span>
+          <span class="voice-note-status-text" aria-live="polite" data-i18n="listening">Listening...</span>
         </div>
 
         <!-- Note Textarea -->
@@ -1382,10 +1388,10 @@
           <div class="onboarding-icon"><svg aria-hidden="true" width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="34" r="24" stroke="#00d4ff" stroke-width="6"/><line x1="32" y1="34" x2="32" y2="18" stroke="#00d4ff" stroke-width="3.5" stroke-linecap="round"/><circle cx="32" cy="34" r="5" fill="#00d4ff"/><line x1="32" y1="10" x2="32" y2="4" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/><line x1="26" y1="5" x2="38" y2="5" stroke="#ffd700" stroke-width="2.5" stroke-linecap="round"/></svg></div>
           <h2 data-i18n="onboardingWelcome">Welcome to CHRONO</h2>
           <p data-i18n="onboardingWelcomeDesc">GPS-synchronized timing for ski races</p>
-          <div class="onboarding-lang-select">
-            <button class="lang-btn" data-lang="de">Deutsch</button>
-            <button class="lang-btn" data-lang="fr">Français</button>
-            <button class="lang-btn" data-lang="en">English</button>
+          <div class="onboarding-lang-select" role="radiogroup" aria-label="Language">
+            <button class="lang-btn" data-lang="de" role="radio" aria-checked="true">Deutsch</button>
+            <button class="lang-btn" data-lang="fr" role="radio" aria-checked="false">Français</button>
+            <button class="lang-btn" data-lang="en" role="radio" aria-checked="false">English</button>
           </div>
           <button class="onboarding-btn primary" data-action="next" data-i18n="getStarted">Get Started</button>
         </div>
@@ -1482,7 +1488,7 @@
           <h2 data-i18n="onboardingRaceSetup">Join a Race</h2>
           <p data-i18n="onboardingRaceSetupDesc">Enter a race ID to sync with other timers</p>
           <div class="race-id-input-row">
-            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024" aria-label="Race ID">
+            <input type="text" class="text-input" id="onboarding-race-id" placeholder="e.g. RACE-2024" data-i18n-placeholder="onboardingRaceIdPlaceholder" aria-label="Race ID">
             <button class="recent-races-btn" id="onboarding-recent-races-btn" type="button" aria-label="Recent races" aria-expanded="false" aria-haspopup="listbox">
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -1492,7 +1498,7 @@
             <div class="recent-races-dropdown" id="onboarding-recent-races-dropdown" style="display:none"></div>
           </div>
           <div class="race-status" id="onboarding-race-status"></div>
-          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" maxlength="4" inputmode="numeric" style="display:none" aria-label="PIN">
+          <input type="password" class="text-input" id="onboarding-pin" placeholder="PIN (4 digits)" data-i18n-placeholder="onboardingPinPlaceholder" maxlength="4" inputmode="numeric" style="display:none" aria-label="PIN">
           <label class="onboarding-toggle-row">
             <span data-i18n="enableSync">Enable Cloud Sync</span>
             <label class="toggle-switch">

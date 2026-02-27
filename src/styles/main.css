@@ -453,7 +453,12 @@
 
   @media (orientation: landscape) {
     .timer-view.radial-mode.active {
-      display: contents !important;
+      display: grid !important;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 0 var(--space-lg);
+      padding: 0;
+      overflow: hidden;
     }
   }
 
@@ -1029,14 +1034,18 @@
     border-radius: var(--radius);
   }
 
-  /* Settings View - better use of width */
+  /* Settings View - 2-column grid in landscape */
   .settings-view {
     padding: var(--space-sm) var(--space-xl);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--space-xl);
+    align-content: start;
   }
 
-  .settings-content {
-    max-width: 600px;
-    margin: 0 auto;
+  #admin-section,
+  .settings-version-section {
+    grid-column: 1 / -1;
   }
 
   /* Header adjustments - more compact in landscape */

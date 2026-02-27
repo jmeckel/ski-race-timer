@@ -74,6 +74,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       fr: "Finitions UI et cohérence des tokens de design. Système de couleurs unifié, zones tactiles 48px, modèles ARIA accessibles et performances optimisées pour le réseau mobile.",
     },
   },
+  '5.26': {
+    name: 'Graupel Schladming',
+    description: {
+      en: 'Consistent landscape layout across all views. Full-width header and tab bar, 2-column settings and gate judge, and internal grid for the radial timer.',
+      de: 'Einheitliches Querformat-Layout in allen Ansichten. Vollbreite Kopfzeile und Tab-Leiste, 2-Spalten-Einstellungen und Torrichter, internes Raster für den Radial-Timer.',
+      fr: "Mise en page paysage cohérente dans toutes les vues. En-tête et barre d'onglets pleine largeur, paramètres et juge de porte à 2 colonnes, grille interne pour le minuteur radial.",
+    },
+  },
 };
 
 export function getVersionInfo(

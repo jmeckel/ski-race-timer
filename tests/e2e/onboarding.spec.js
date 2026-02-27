@@ -135,19 +135,22 @@ test.describe('Onboarding Flow', () => {
     // Step 1: Welcome - click next
     await page.locator('[data-step="1"] [data-action="next"]').click();
 
-    // Step 2: Role (Timer is default) - click next
+    // Step 2: Role (Timer is default) - wait for step then click next
+    await expect(page.locator('[data-step="2"]')).toBeVisible();
     await page.locator('[data-step="2"] [data-action="next"]').click();
 
-    // Step 3: Device name - fill and click next
+    // Step 3: Device name - wait for step, fill and click next
+    await expect(page.locator('[data-step="3"]')).toBeVisible();
     await page.fill('#onboarding-device-name', 'E2E Timer');
     await page.locator('[data-step="3"] [data-action="next"]').click();
 
-    // Step 4: Photo capture - click next
-    await page
-      .locator('[data-step="4"][data-path="timer"] [data-action="next"]')
-      .click();
+    // Step 4: Photo capture - wait for step then click next
+    const step4 = page.locator('[data-step="4"][data-path="timer"]');
+    await expect(step4).toBeVisible();
+    await step4.locator('[data-action="next"]').click();
 
-    // Step 5: Race setup - skip
+    // Step 5: Race setup - wait for step then skip
+    await expect(page.locator('[data-step="5"]')).toBeVisible();
     await page.locator('[data-step="5"] [data-action="skip"]').click();
 
     // Step 6: Summary
@@ -173,21 +176,24 @@ test.describe('Onboarding Flow', () => {
     await page.locator('[data-step="1"] [data-action="next"]').click();
 
     // Step 2: Select Gate Judge and click next
+    await expect(page.locator('[data-step="2"]')).toBeVisible();
     await page.click('.role-card[data-role="gateJudge"]');
     await page.locator('[data-step="2"] [data-action="next"]').click();
 
-    // Step 3: Device name - fill and click next
+    // Step 3: Device name - wait for step, fill and click next
+    await expect(page.locator('[data-step="3"]')).toBeVisible();
     await page.fill('#onboarding-device-name', 'Judge Maria');
     await page.locator('[data-step="3"] [data-action="next"]').click();
 
-    // Step 4: Gate assignment - fill and click next
+    // Step 4: Gate assignment - wait for step, fill and click next
+    const step4 = page.locator('[data-step="4"][data-path="gateJudge"]');
+    await expect(step4).toBeVisible();
     await page.fill('#onboarding-gate-start', '5');
     await page.fill('#onboarding-gate-end', '12');
-    await page
-      .locator('[data-step="4"][data-path="gateJudge"] [data-action="next"]')
-      .click();
+    await step4.locator('[data-action="next"]').click();
 
-    // Step 5: Race setup - skip
+    // Step 5: Race setup - wait for step then skip
+    await expect(page.locator('[data-step="5"]')).toBeVisible();
     await page.locator('[data-step="5"] [data-action="skip"]').click();
 
     // Step 6: Summary - should show gate judge specific text

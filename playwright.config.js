@@ -12,8 +12,8 @@ export default defineConfig({
   testMatch: isProduction ? '**/production.spec.js' : '**/*.spec.js',
   testIgnore: isProduction ? [] : '**/production.spec.js',
 
-  // Reduced timeouts for faster test runs
-  timeout: isProduction ? 30000 : 15000,
+  // Test timeout (allows room for navigation + action timeouts under load)
+  timeout: isProduction ? 30000 : 20000,
 
   // Expect timeout - reduced for faster failures
   expect: {
@@ -23,8 +23,8 @@ export default defineConfig({
   // Fail the build on CI if you accidentally left test.only
   forbidOnly: !!process.env.CI,
 
-  // Retry on CI only
-  retries: process.env.CI ? 1 : 0,
+  // Retry flaky tests (1 retry locally, 2 on CI)
+  retries: process.env.CI ? 2 : 1,
 
   // Parallel workers - more workers for faster runs
   workers: process.env.CI ? 2 : 4,

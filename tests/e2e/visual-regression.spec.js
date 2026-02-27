@@ -45,13 +45,12 @@ function getHeaderMasks(page) {
 }
 
 /**
- * Get the right locator for Timer View screenshots.
- * In landscape, .timer-view uses `display: contents` (zero-size box),
- * so we screenshot .app instead which is the actual grid container.
+ * Get the locator for Timer View screenshots.
+ * Timer-view now uses its own internal grid in landscape (not display:contents),
+ * so .timer-view is always a valid screenshot target.
  */
-function getTimerViewLocator(page, viewport) {
-  const isLandscape = viewport && viewport.width > viewport.height;
-  return isLandscape ? page.locator('.app') : page.locator('.timer-view');
+function getTimerViewLocator(page) {
+  return page.locator('.timer-view');
 }
 
 test.describe('Visual Regression', () => {
@@ -63,7 +62,7 @@ test.describe('Visual Regression', () => {
 
   test.describe('Timer View', () => {
     test('default state', async ({ page }) => {
-      const target = getTimerViewLocator(page, page.viewportSize());
+      const target = getTimerViewLocator(page);
       await expect(target).toHaveScreenshot('timer-default.png', {
         maxDiffPixelRatio: 0.01,
         mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
@@ -77,7 +76,7 @@ test.describe('Visual Regression', () => {
       await page.keyboard.press('3');
       await page.waitForTimeout(300);
 
-      const target = getTimerViewLocator(page, page.viewportSize());
+      const target = getTimerViewLocator(page);
       await expect(target).toHaveScreenshot('timer-with-bib.png', {
         maxDiffPixelRatio: 0.01,
         mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
@@ -88,7 +87,7 @@ test.describe('Visual Regression', () => {
       await page.click('.radial-point-btn[data-point="S"]');
       await page.waitForTimeout(300);
 
-      const target = getTimerViewLocator(page, page.viewportSize());
+      const target = getTimerViewLocator(page);
       await expect(target).toHaveScreenshot('timer-start-selected.png', {
         maxDiffPixelRatio: 0.01,
         mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
@@ -99,7 +98,7 @@ test.describe('Visual Regression', () => {
       await page.click('#radial-run-selector [data-run="2"]');
       await page.waitForTimeout(300);
 
-      const target = getTimerViewLocator(page, page.viewportSize());
+      const target = getTimerViewLocator(page);
       await expect(target).toHaveScreenshot('timer-run2-selected.png', {
         maxDiffPixelRatio: 0.01,
         mask: [...getTimerMasks(page), ...getHeaderMasks(page)],
@@ -116,7 +115,7 @@ test.describe('Visual Regression', () => {
       });
       await page.waitForTimeout(300);
 
-      const target = getTimerViewLocator(page, page.viewportSize());
+      const target = getTimerViewLocator(page);
       await expect(target).toHaveScreenshot('timer-confirmation-overlay.png', {
         maxDiffPixelRatio: 0.01,
         mask: [

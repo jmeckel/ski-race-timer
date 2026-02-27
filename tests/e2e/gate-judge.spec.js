@@ -5,7 +5,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { setupPageEnglish, waitForToastToHide } from './helpers.js';
+import { navigateTo, setupPageEnglish, waitForToastToHide } from './helpers.js';
 
 /** Scoped selectors for fault type buttons inside the inline panel */
 const faultBtn = (type) => `#inline-fault-types [data-fault="${type}"]`;
@@ -58,7 +58,7 @@ test.describe('Gate Judge - Role Switching', () => {
     page,
   }) => {
     // Navigate to settings
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Switch to Gate Judge
     await page.click('.role-card-setting[data-role="gateJudge"]');
@@ -75,7 +75,7 @@ test.describe('Gate Judge - Role Switching', () => {
   test('should complete gate judge setup and show gate tab', async ({
     page,
   }) => {
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Switch to Gate Judge role
     await page.click('.role-card-setting[data-role="gateJudge"]');
@@ -98,7 +98,7 @@ test.describe('Gate Judge - Role Switching', () => {
   });
 
   test('should switch back to timer role', async ({ page }) => {
-    await page.click('[data-view="settings"]');
+    await navigateTo(page, 'settings');
 
     // Switch to Gate Judge first
     await page.click('.role-card-setting[data-role="gateJudge"]');

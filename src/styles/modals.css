@@ -98,6 +98,7 @@
 .modal-body {
   padding: 16px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -106,6 +107,44 @@
   gap: 8px;
   padding: 16px;
   border-top: 1px solid var(--surface-elevated);
+}
+
+/* Landscape: tighten modal spacing to maximize visible content.
+   At 393px viewport height, 130px+ is lost to padding alone. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-header {
+    padding: 8px 16px;
+  }
+
+  .modal-body {
+    padding: 8px 16px;
+
+    /* Tighten form group spacing (overrides inline margin-bottom: 16px) */
+    & > div {
+      margin-bottom: 8px !important;
+    }
+
+    /* Tighten labels (overrides inline margin-bottom: 8px) */
+    & label {
+      margin-bottom: 4px !important;
+    }
+  }
+
+  .modal-footer {
+    padding: 8px 16px;
+  }
+
+  .modal-btn {
+    padding: 8px;
+  }
 }
 
 .modal-btn {

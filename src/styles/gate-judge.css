@@ -886,6 +886,44 @@
 }
 
 /* ===== Gate Judge Landscape Mode ===== */
+@media (orientation: landscape) {
+  /* Two-column layout: gates + detail on left, faults on right */
+  .gate-first-layout {
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+  }
+
+  .gate-grid-section {
+    flex: 0 0 auto;
+    width: 35%;
+    min-width: 160px;
+  }
+
+  .fault-detail-panel {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .gate-judge-faults-section {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .gate-judge-footer {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .gate-judge-footer .ready-toggle-btn {
+    width: auto;
+    flex: 1;
+  }
+}
+
+/* Landscape with short height (phones) — tighter spacing */
 @media (orientation: landscape) and (max-height: 500px) {
   .gate-judge-view {
     padding: 4px 8px;
@@ -901,20 +939,6 @@
     font-size: 1rem;
   }
 
-  /* Two-column layout: gates + detail on left, faults on right */
-  .gate-first-layout {
-    flex-direction: row;
-    gap: 8px;
-    flex-wrap: nowrap;
-    overflow-x: hidden;
-  }
-
-  .gate-grid-section {
-    flex: 0 0 auto;
-    width: 35%;
-    min-width: 160px;
-  }
-
   .gate-grid {
     gap: 4px;
   }
@@ -925,15 +949,7 @@
   }
 
   .fault-detail-panel {
-    flex: 1;
-    min-width: 0;
     padding: 6px;
-  }
-
-  .gate-judge-faults-section {
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
   }
 
   .gate-judge-faults-section .section-header {
@@ -999,18 +1015,11 @@
   }
 
   .gate-judge-footer {
-    flex-direction: row;
-    gap: 6px;
     padding-block-start: 4px;
   }
 
   .inline-save-fault-btn {
     padding: 8px 14px;
     font-size: 0.8rem;
-  }
-
-  .gate-judge-footer .ready-toggle-btn {
-    width: auto;
-    flex: 1;
   }
 }
