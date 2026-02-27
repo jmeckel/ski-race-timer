@@ -82,6 +82,14 @@ const VERSION_NAMES: Record<string, VersionInfo> = {
       fr: "Mise en page paysage cohérente dans toutes les vues. En-tête et barre d'onglets pleine largeur, paramètres et juge de porte à 2 colonnes, grille interne pour le minuteur radial.",
     },
   },
+  '5.27': {
+    name: 'Harsch Kitzbühel',
+    description: {
+      en: 'Lazy-loaded fault modals, deepened camera and feedback service tests, and build artifact cleanup for a leaner repository.',
+      de: 'Verzögertes Laden der Fehlerdialoge, vertiefte Kamera- und Feedback-Service-Tests und Bereinigung der Build-Artefakte für ein schlankeres Repository.',
+      fr: 'Chargement différé des modales de fautes, tests approfondis des services caméra et feedback, et nettoyage des artefacts de build pour un dépôt plus léger.',
+    },
+  },
 };
 
 export function getVersionInfo(

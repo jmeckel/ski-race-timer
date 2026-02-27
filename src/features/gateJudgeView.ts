@@ -16,10 +16,14 @@ import {
   refreshInlineFaultUI,
   updateActiveBibsList,
 } from './faults';
-import {
-  initFaultRecordingModal,
-  recordFaultFromVoice,
-} from './faults/faultModals';
+// Lazy-load faultModals — only needed when gate judge opens the recording modal
+let _faultModalsModule: typeof import('./faults/faultModals') | null = null;
+async function getFaultModals() {
+  if (!_faultModalsModule) {
+    _faultModalsModule = await import('./faults/faultModals');
+  }
+  return _faultModalsModule;
+}
 import { closeModal, openModal } from './modals';
 import { initVoiceNoteUI } from './voiceNoteUI';
 
@@ -117,8 +121,8 @@ export function initGateJudgeView(): void {
   // Initialize gate assignment modal handlers
   initGateAssignmentModal();
 
-  // Initialize fault recording modal handlers
-  initFaultRecordingModal();
+  // Initialize fault recording modal handlers (lazy-loaded)
+  getFaultModals().then((m) => m.initFaultRecordingModal());
 
   // Initialize inline fault entry handlers
   initInlineFaultEntry();
@@ -433,10 +437,12 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
         intent.params?.gate !== undefined &&
         intent.params?.faultType
       ) {
-        recordFaultFromVoice(
-          intent.params.bib,
-          intent.params.gate,
-          intent.params.faultType,
+        getFaultModals().then((m) =>
+          m.recordFaultFromVoice(
+            intent.params!.bib!,
+            intent.params!.gate!,
+            intent.params!.faultType!,
+          ),
         );
       }
       break;

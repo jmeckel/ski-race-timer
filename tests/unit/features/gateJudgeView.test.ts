@@ -416,13 +416,16 @@ describe('Gate Judge View Module', () => {
   });
 
   describe('handleGateJudgeVoiceIntent', () => {
-    it('should record fault on record_fault intent', () => {
+    it('should record fault on record_fault intent', async () => {
       handleGateJudgeVoiceIntent({
         action: 'record_fault',
         params: { bib: '042', gate: 5, faultType: 'MG' },
       });
 
-      expect(recordFaultFromVoice).toHaveBeenCalledWith('042', 5, 'MG');
+      // recordFaultFromVoice is called via dynamic import (.then), so await microtasks
+      await vi.waitFor(() => {
+        expect(recordFaultFromVoice).toHaveBeenCalledWith('042', 5, 'MG');
+      });
     });
 
     it('should toggle ready on toggle_ready intent', () => {
@@ -481,10 +484,13 @@ describe('Gate Judge View Module', () => {
       window.removeEventListener('update-role-toggle', eventSpy);
     });
 
-    it('should initialize all sub-modules', () => {
+    it('should initialize all sub-modules', async () => {
       initGateJudgeView();
 
-      expect(initFaultRecordingModal).toHaveBeenCalled();
+      // initFaultRecordingModal is called via dynamic import (.then), so await microtasks
+      await vi.waitFor(() => {
+        expect(initFaultRecordingModal).toHaveBeenCalled();
+      });
       expect(initInlineFaultEntry).toHaveBeenCalled();
       expect(refreshInlineFaultUI).toHaveBeenCalled();
       expect(initVoiceNoteUI).toHaveBeenCalled();
@@ -934,22 +940,26 @@ describe('Gate Judge View Module', () => {
       expect(feedbackTap).toHaveBeenCalled();
     });
 
-    it('should record fault with STR fault type', () => {
+    it('should record fault with STR fault type', async () => {
       handleGateJudgeVoiceIntent({
         action: 'record_fault',
         params: { bib: '15', gate: 3, faultType: 'STR' },
       } as any);
 
-      expect(recordFaultFromVoice).toHaveBeenCalledWith('15', 3, 'STR');
+      await vi.waitFor(() => {
+        expect(recordFaultFromVoice).toHaveBeenCalledWith('15', 3, 'STR');
+      });
     });
 
-    it('should record fault with BR fault type', () => {
+    it('should record fault with BR fault type', async () => {
       handleGateJudgeVoiceIntent({
         action: 'record_fault',
         params: { bib: '99', gate: 8, faultType: 'BR' },
       } as any);
 
-      expect(recordFaultFromVoice).toHaveBeenCalledWith('99', 8, 'BR');
+      await vi.waitFor(() => {
+        expect(recordFaultFromVoice).toHaveBeenCalledWith('99', 8, 'BR');
+      });
     });
   });
 

@@ -5,6 +5,6 @@ coverage/
 playwright-report/
 .playwright-mcp/
 test-results/
-dist/stats.html
+dist/
 .DS_Store
 chrono-prototype.html
