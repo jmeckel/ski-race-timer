@@ -30,7 +30,9 @@
   <title>CHRONO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 </head>
 <body>
   <!-- Skip Link -->
@@ -1371,7 +1373,7 @@
   <!-- Onboarding Modal (Full-screen setup wizard) -->
   <div class="modal-overlay onboarding-fullscreen" id="onboarding-modal" role="dialog" aria-modal="true" aria-label="Setup wizard">
     <div class="onboarding-container">
-      <button class="onboarding-skip-btn" data-action="dismiss" aria-label="Skip setup" data-i18n="skipSetup">Skip</button>
+      <button class="onboarding-skip-btn" data-action="dismiss" data-i18n="skipSetup">Skip</button>
       <div class="onboarding-progress" id="onboarding-progress">
         <span class="progress-dot active"></span>
         <span class="progress-dot"></span>

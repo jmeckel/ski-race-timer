@@ -230,7 +230,7 @@
 
   .onboarding-btn.primary {
     background: var(--primary);
-    color: white;
+    color: #003040;
     box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
   }
 

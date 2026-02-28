@@ -1,6 +1,6 @@
 {
   "name": "chrono-race-timer",
-  "version": "5.28.2",
+  "version": "5.28.3",
   "description": "Precision race timing, GPS-synchronized",
   "private": true,
   "sideEffects": false,

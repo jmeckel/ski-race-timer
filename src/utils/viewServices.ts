@@ -4,12 +4,18 @@ import { logger } from './logger';
 
 /**
  * Apply GPS service behavior based on current view and settings.
+ * Pass skipStart to defer geolocation until user interaction.
  */
-export function applyGpsService(state: Readonly<AppState>): void {
+export function applyGpsService(
+  state: Readonly<AppState>,
+  options?: { skipStart?: boolean },
+): void {
   const isTimerView = state.currentView === 'timer';
 
   if (isTimerView && state.settings.gps) {
-    gpsService.start();
+    if (!options?.skipStart) {
+      gpsService.start();
+    }
   } else if (state.settings.gps) {
     gpsService.pause();
   } else {
@@ -40,8 +46,12 @@ export async function applyCameraService(
 
 /**
  * Apply view-specific service behavior to reduce battery drain.
+ * Pass skipStart to defer geolocation until user interaction.
  */
-export function applyViewServices(state: Readonly<AppState>): void {
-  applyGpsService(state);
+export function applyViewServices(
+  state: Readonly<AppState>,
+  options?: { skipStart?: boolean },
+): void {
+  applyGpsService(state, options);
   void applyCameraService(state);
 }

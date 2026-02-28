@@ -596,10 +596,12 @@ describe('App Init Services Module', () => {
       expect(applySettings).toHaveBeenCalled();
     });
 
-    it('should call applyViewServices with current state', () => {
+    it('should call applyViewServices with current state and skipStart', () => {
       const state = mockGetState();
       initServices();
-      expect(mockApplyViewServices).toHaveBeenCalledWith(state);
+      expect(mockApplyViewServices).toHaveBeenCalledWith(state, {
+        skipStart: true,
+      });
     });
   });
 

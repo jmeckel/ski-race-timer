@@ -44,7 +44,7 @@ export function initServices(): void {
       }, 500);
     }
   }
-  applyViewServices(store.getState());
+  applyViewServices(store.getState(), { skipStart: true });
 
   // Listen for race deleted events from sync service
   listeners.add(window, 'race-deleted', handleRaceDeleted as EventListener);
