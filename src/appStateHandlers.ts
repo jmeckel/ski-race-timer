@@ -208,11 +208,17 @@ export function initStateEffects(): () => void {
   );
 
   // 2. GPS service: tracks GPS setting and current view
+  // Skip initial effect run to avoid requesting geolocation on page load
+  let gpsEffectInitialized = false;
   disposers.push(
     effect(() => {
       void $settingsGps.value;
       void $currentView.value;
       untracked(() => updateGpsIndicator());
+      if (!gpsEffectInitialized) {
+        gpsEffectInitialized = true;
+        return;
+      }
       // Defer service calls: gpsService.start/stop/pause write to store synchronously
       queueMicrotask(() => applyGpsService(store.getState()));
     }),

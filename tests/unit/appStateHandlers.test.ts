@@ -276,12 +276,14 @@ describe('App State Handlers', () => {
       expect(updateSyncStatusIndicator).toHaveBeenCalled();
     });
 
-    it('should update GPS indicator and GPS service when GPS setting changes', () => {
+    it('should update GPS indicator and GPS service when GPS setting changes', async () => {
       mockState.value = {
         ...mockState.value,
         settings: { ...mockState.value.settings, gps: false },
       };
       expect(updateGpsIndicator).toHaveBeenCalled();
+      // applyGpsService is deferred via queueMicrotask
+      await Promise.resolve();
       expect(applyGpsService).toHaveBeenCalled();
     });
 
@@ -342,8 +344,10 @@ describe('App State Handlers', () => {
       expect(updateJudgeReadyStatus).toHaveBeenCalled();
     });
 
-    it('should call GPS and camera services on view change', () => {
+    it('should call GPS and camera services on view change', async () => {
       mockState.value = { ...mockState.value, currentView: 'results' };
+      // applyGpsService is deferred via queueMicrotask
+      await Promise.resolve();
       expect(applyGpsService).toHaveBeenCalled();
       expect(applyCameraService).toHaveBeenCalled();
     });
