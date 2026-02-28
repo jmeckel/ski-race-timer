@@ -511,6 +511,10 @@ describe('App Init Services Module', () => {
       initServices();
 
       const callback = mockAmbientSubscribe.mock.calls[0][0];
+      // First call is the initial subscribe notification (GPS start skipped)
+      // Second call simulates ambient mode deactivation
+      callback({ isActive: true, triggeredBy: 'idle' });
+      mockGpsStart.mockClear();
       callback({ isActive: false, triggeredBy: null });
 
       expect(mockGpsStart).toHaveBeenCalled();

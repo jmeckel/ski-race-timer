@@ -75,6 +75,8 @@ export function initServices(): void {
 
   // Ambient mode initialization is handled reactively in appStateHandlers.ts
   // Subscribe to ambient mode state changes (CSS class, GPS pause/resume)
+  // Skip GPS start on initial subscribe notification to avoid geolocation on page load
+  let ambientInitialized = false;
   ambientModeService.subscribe((state) => {
     document.body.classList.toggle('ambient-mode', state.isActive);
     if (state.triggeredBy) {
@@ -88,10 +90,11 @@ export function initServices(): void {
     if (appState.settings.gps) {
       if (state.isActive) {
         gpsService.pause();
-      } else if (appState.currentView === 'timer') {
+      } else if (appState.currentView === 'timer' && ambientInitialized) {
         gpsService.start();
       }
     }
+    ambientInitialized = true;
   });
 
   // Stop camera immediately when photo capture setting is disabled
