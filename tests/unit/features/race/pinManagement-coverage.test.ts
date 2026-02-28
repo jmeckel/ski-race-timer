@@ -46,14 +46,16 @@ vi.mock('../../../../src/utils', () => ({
 vi.mock('../../../../src/utils/listenerManager', () => {
   const handlers = new Map<string, Function>();
   return {
-    ListenerManager: vi.fn().mockImplementation(() => ({
-      add: vi.fn((el: HTMLElement, event: string, handler: Function) => {
-        // Store handler by element id + event for retrieval in tests
-        const key = `${el.id}:${event}`;
-        handlers.set(key, handler);
-      }),
-      removeAll: vi.fn(),
-    })),
+    ListenerManager: vi.fn().mockImplementation(function () {
+      return {
+        add: vi.fn((el: HTMLElement, event: string, handler: Function) => {
+          // Store handler by element id + event for retrieval in tests
+          const key = `${el.id}:${event}`;
+          handlers.set(key, handler);
+        }),
+        removeAll: vi.fn(),
+      };
+    }),
     _handlers: handlers,
   };
 });

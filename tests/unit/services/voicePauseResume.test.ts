@@ -39,10 +39,14 @@ beforeEach(() => {
   (globalThis as unknown as Record<string, unknown>).SpeechRecognition =
     undefined;
   (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
-    () => mockRecognition,
+    function () {
+      return mockRecognition;
+    },
   );
   (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
-    vi.fn(() => mockRecognition);
+    vi.fn(function () {
+      return mockRecognition;
+    });
 
   // Mock speechSynthesis for initialize()
   (window as unknown as Record<string, unknown>).speechSynthesis = {

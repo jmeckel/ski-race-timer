@@ -39,7 +39,7 @@ vi.mock('../../../src/utils', () => ({
 vi.mock('../../../src/utils/listenerManager', () => {
   // Use a real listener approach: actually add the event listeners
   return {
-    ListenerManager: vi.fn().mockImplementation(() => {
+    ListenerManager: vi.fn().mockImplementation(function () {
       const tracked: Array<{
         el: EventTarget;
         event: string;

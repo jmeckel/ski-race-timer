@@ -15,17 +15,19 @@ const mockPause = vi.fn();
 const mockResume = vi.fn();
 
 vi.mock('../../../src/components', () => ({
-  PullToRefresh: vi.fn(() => ({
-    destroy: vi.fn(),
-  })),
+  PullToRefresh: vi.fn(function () {
+    return { destroy: vi.fn() };
+  }),
   showToast: vi.fn(),
-  VirtualList: vi.fn(() => ({
-    setEntries: mockSetEntries,
-    applyFilters: mockApplyFilters,
-    destroy: mockDestroy,
-    pause: mockPause,
-    resume: mockResume,
-  })),
+  VirtualList: vi.fn(function () {
+    return {
+      setEntries: mockSetEntries,
+      applyFilters: mockApplyFilters,
+      destroy: mockDestroy,
+      pause: mockPause,
+      resume: mockResume,
+    };
+  }),
 }));
 
 vi.mock('../../../src/i18n/translations', () => ({
@@ -62,7 +64,7 @@ vi.mock('../../../src/utils', () => ({
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => {
+  ListenerManager: vi.fn().mockImplementation(function () {
     const tracked: {
       el: EventTarget;
       event: string;

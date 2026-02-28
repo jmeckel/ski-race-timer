@@ -199,6 +199,12 @@ describe('Voice Note UI — extended coverage', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
 
+    // Reset mock return values (Vitest 4: clearAllMocks no longer clears
+    // mockReturnValue/mockImplementation — only call history)
+    mockVoiceNoteIsSupported.mockReturnValue(true);
+    mockVoiceNoteStart.mockReturnValue(true);
+    mockIsRecording.mockReturnValue(false);
+
     mockGetState.mockReturnValue({
       currentLang: 'en',
       faultEntries: [
@@ -436,10 +442,11 @@ describe('Voice Note UI — extended coverage', () => {
       expect(mockVoiceNoteStart).toHaveBeenCalled();
 
       // Simulate modal being hidden via class change
-      faultEditModal.style.display = 'none';
       faultEditModal.classList.remove('show');
+      faultEditModal.style.display = 'none';
 
-      // MutationObserver fires asynchronously — flush microtasks
+      // MutationObserver fires asynchronously — flush microtasks + macrotasks
+      await new Promise((r) => setTimeout(r, 0));
       await new Promise((r) => setTimeout(r, 0));
 
       expect(mockVoiceNoteStop).toHaveBeenCalled();

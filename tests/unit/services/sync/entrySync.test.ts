@@ -147,6 +147,14 @@ describe('Entry Sync Module', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset photoStorage mocks (Vitest 4: clearAllMocks no longer clears
+    // mockReturnValue/mockResolvedValue — only call history)
+    (photoStorage.hasPhoto as ReturnType<typeof vi.fn>).mockResolvedValue(
+      false,
+    );
+    (photoStorage.savePhoto as ReturnType<typeof vi.fn>).mockResolvedValue(
+      true,
+    );
     mockGetState.mockReturnValue({ ...baseState });
     initializeEntrySync(mockCallbacks);
   });

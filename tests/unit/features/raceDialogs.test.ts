@@ -50,13 +50,17 @@ vi.mock('../../../src/utils/format', () => ({
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => ({
-    add: vi.fn((target: EventTarget, event: string, handler: EventListener) => {
-      target.addEventListener(event, handler);
-    }),
-    removeAll: vi.fn(),
-    count: 0,
-  })),
+  ListenerManager: vi.fn().mockImplementation(function () {
+    return {
+      add: vi.fn(
+        (target: EventTarget, event: string, handler: EventListener) => {
+          target.addEventListener(event, handler);
+        },
+      ),
+      removeAll: vi.fn(),
+      count: 0,
+    };
+  }),
 }));
 
 vi.mock('../../../src/utils/logger', () => ({

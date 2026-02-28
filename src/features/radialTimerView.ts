@@ -15,8 +15,8 @@ import {
   photoStorage,
   syncEntry,
 } from '../services';
-import { captureTimingPhoto } from '../services/camera';
 import { ambientModeService } from '../services/ambient';
+import { captureTimingPhoto } from '../services/camera';
 import {
   $cloudDeviceCount,
   $entries,

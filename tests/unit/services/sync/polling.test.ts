@@ -38,6 +38,14 @@ describe('Polling Module', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     pollCallback = vi.fn();
+
+    // Reset mock return values (Vitest 4: clearAllMocks no longer clears
+    // mockReturnValue/mockImplementation — only call history)
+    mockIsMetered.mockReturnValue(false);
+    mockGetQuality.mockReturnValue('good' as const);
+    mockBatterySubscribe.mockReturnValue(vi.fn());
+    mockOnMeteredChange.mockReturnValue(vi.fn());
+    mockOnQualityChange.mockReturnValue(vi.fn());
   });
 
   afterEach(() => {

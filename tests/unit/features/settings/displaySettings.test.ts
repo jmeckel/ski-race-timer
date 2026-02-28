@@ -39,10 +39,9 @@ vi.mock('../../../../src/utils', () => ({
 }));
 
 vi.mock('../../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    removeAll: vi.fn(),
-  })),
+  ListenerManager: vi.fn().mockImplementation(function () {
+    return { add: vi.fn(), removeAll: vi.fn() };
+  }),
 }));
 
 import {

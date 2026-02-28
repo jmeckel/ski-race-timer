@@ -16,7 +16,9 @@ const MockRedisInstance = {
 
 vi.mock('ioredis', () => {
   return {
-    default: vi.fn(() => MockRedisInstance),
+    default: vi.fn(function () {
+      return MockRedisInstance;
+    }),
   };
 });
 
@@ -45,10 +47,9 @@ describe('Redis Utility', () => {
 
     // Re-mock after resetModules
     vi.doMock('ioredis', () => ({
-      default: vi.fn(() => ({
-        on: mockOn,
-        disconnect: mockDisconnect,
-      })),
+      default: vi.fn(function () {
+        return { on: mockOn, disconnect: mockDisconnect };
+      }),
     }));
 
     vi.doMock('../../api/lib/apiLogger.js', () => ({

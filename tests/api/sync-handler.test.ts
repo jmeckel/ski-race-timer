@@ -217,6 +217,19 @@ describe('API: /api/v1/sync', () => {
     mockRedisClient.expire.mockResolvedValue(1);
     mockRedisClient.hset.mockResolvedValue(1);
     mockMultiResult.exec.mockResolvedValue([[null, 1]]);
+    // Reset safeJsonParse to clear any stale mockReturnValueOnce queue (Vitest 4:
+    // clearAllMocks no longer clears unconsumed once-values)
+    vi.mocked(safeJsonParse)
+      .mockReset()
+      .mockImplementation((str: string | null, defaultValue: any) => {
+        if (str === null || str === undefined || str === '')
+          return defaultValue;
+        try {
+          return JSON.parse(str);
+        } catch {
+          return defaultValue;
+        }
+      });
     vi.mocked(validateAuth).mockResolvedValue({
       valid: true,
       method: 'jwt',

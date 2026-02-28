@@ -50,7 +50,7 @@ vi.mock('../../../src/utils', () => ({
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => {
+  ListenerManager: vi.fn().mockImplementation(function () {
     const tracked: {
       el: EventTarget;
       event: string;
@@ -143,6 +143,13 @@ describe('Gate Judge View Module', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset syncService mock return values (Vitest 4: clearAllMocks no longer
+    // clears mockReturnValue, only call history)
+    const mockSync = syncService as {
+      getOtherGateAssignments: ReturnType<typeof vi.fn>;
+    };
+    mockSync.getOtherGateAssignments.mockReturnValue([]);
+
     container = document.createElement('div');
     document.body.appendChild(container);
 

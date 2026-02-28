@@ -73,10 +73,9 @@ vi.mock('../../src/store', () => ({
 }));
 
 vi.mock('../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    removeAll: vi.fn(),
-  })),
+  ListenerManager: vi.fn().mockImplementation(function () {
+    return { add: vi.fn(), removeAll: vi.fn() };
+  }),
 }));
 
 vi.mock('../../src/utils/modalContext', () => ({

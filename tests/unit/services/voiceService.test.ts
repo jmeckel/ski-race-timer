@@ -105,7 +105,9 @@ describe('Voice Mode Service - Comprehensive', () => {
     };
 
     (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
-      () => mockRecognition,
+      function () {
+        return mockRecognition;
+      },
     );
 
     Object.defineProperty(navigator, 'onLine', {
@@ -170,7 +172,9 @@ describe('Voice Mode Service - Comprehensive', () => {
     it('isSupported should return true for webkitSpeechRecognition', async () => {
       delete (window as unknown as Record<string, unknown>).SpeechRecognition;
       (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
-        vi.fn(() => mockRecognition);
+        vi.fn(function () {
+          return mockRecognition;
+        });
       const service = await getService();
       expect(service.isSupported()).toBe(true);
     });

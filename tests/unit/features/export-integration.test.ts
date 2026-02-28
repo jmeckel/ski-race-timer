@@ -93,7 +93,10 @@ describe('Export Integration', () => {
 
     // Intercept Blob constructor to capture CSV content
     OriginalBlob = globalThis.Blob;
-    const BlobSpy = vi.fn((parts?: BlobPart[], options?: BlobPropertyBag) => {
+    const BlobSpy = vi.fn(function (
+      parts?: BlobPart[],
+      options?: BlobPropertyBag,
+    ) {
       if (parts) capturedBlobContents.push(extractBlobText(parts));
       return new OriginalBlob(parts, options);
     });

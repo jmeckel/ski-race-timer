@@ -94,10 +94,9 @@ describe('StorageService', () => {
       );
       expect(result1).toEqual({ cached: true });
 
-      // Replace localStorage.getItem with a spy AFTER the first read
-      const originalGetItem = localStorage.getItem;
-      const getItemSpy = vi.fn(originalGetItem);
-      localStorage.getItem = getItemSpy;
+      // Spy on Storage.prototype.getItem AFTER the first read
+      // (jsdom 28: direct localStorage.getItem assignment is ignored)
+      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
 
       // Second read - should come from cache
       const result2 = storageService.storage.get<{ cached: boolean }>(
@@ -108,16 +107,15 @@ describe('StorageService', () => {
       // localStorage.getItem should NOT have been called for the second read
       expect(getItemSpy).not.toHaveBeenCalled();
 
-      localStorage.getItem = originalGetItem;
+      getItemSpy.mockRestore();
     });
 
     it('should serve getRaw from cache after setRaw', () => {
       storageService.storage.setRaw('rawCache', 'hello');
 
-      // Replace localStorage.getItem with a spy
-      const originalGetItem = localStorage.getItem;
-      const getItemSpy = vi.fn(originalGetItem);
-      localStorage.getItem = getItemSpy;
+      // Spy on Storage.prototype.getItem
+      // (jsdom 28: direct localStorage.getItem assignment is ignored)
+      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
 
       const result = storageService.storage.getRaw('rawCache');
       expect(result).toBe('hello');
@@ -125,7 +123,7 @@ describe('StorageService', () => {
       // Should not hit localStorage since it's in cache
       expect(getItemSpy).not.toHaveBeenCalled();
 
-      localStorage.getItem = originalGetItem;
+      getItemSpy.mockRestore();
     });
   });
 

@@ -263,6 +263,24 @@ describe('Sync Service', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
 
+    // Reset localStorage mock (Vitest 4: clearAllMocks no longer clears
+    // mockReturnValue, so restore the default implementation)
+    localStorageMock.getItem.mockImplementation((key: string) => {
+      if (key === 'skiTimerSettings') {
+        return JSON.stringify({ sync: true });
+      }
+      if (key === 'skiTimerRaceId') {
+        return 'RACE001';
+      }
+      if (key === 'skiTimerDeviceId') {
+        return 'dev_test123';
+      }
+      return null;
+    });
+
+    // Reset BroadcastChannel tracking
+    lastBroadcastChannel = null;
+
     // Reset fetch mock
     mockFetch.mockReset();
     mockFetch.mockResolvedValue({

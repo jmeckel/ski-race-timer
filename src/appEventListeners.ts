@@ -56,8 +56,9 @@ import { logger } from './utils/logger';
 const customEventListeners = new ListenerManager();
 
 // Lazy-loaded voice service reference (cached after first load for sync cleanup)
-let _voiceModeService: typeof import('./services/voice').voiceModeService | null =
-  null;
+let _voiceModeService:
+  | typeof import('./services/voice').voiceModeService
+  | null = null;
 
 /**
  * Register a custom event listener and store its reference for cleanup

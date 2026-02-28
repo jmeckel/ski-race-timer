@@ -69,13 +69,17 @@ function createMockInteractionInstance() {
 
 vi.mock('../../../src/components/RadialDialAnimation', () => {
   return {
-    RadialDialAnimation: vi.fn().mockImplementation(() => mocks.animation),
+    RadialDialAnimation: vi.fn().mockImplementation(function () {
+      return mocks.animation;
+    }),
   };
 });
 
 vi.mock('../../../src/components/RadialDialInteraction', () => {
   return {
-    RadialDialInteraction: vi.fn().mockImplementation(() => mocks.interaction),
+    RadialDialInteraction: vi.fn().mockImplementation(function () {
+      return mocks.interaction;
+    }),
   };
 });
 
@@ -136,12 +140,12 @@ describe('RadialDial Component', () => {
     };
     mocks.resizeCallback = null;
 
-    globalThis.ResizeObserver = vi
-      .fn()
-      .mockImplementation((cb: ResizeObserverCallback) => {
-        mocks.resizeCallback = cb;
-        return mocks.resizeObserver;
-      });
+    globalThis.ResizeObserver = vi.fn().mockImplementation(function (
+      cb: ResizeObserverCallback,
+    ) {
+      mocks.resizeCallback = cb;
+      return mocks.resizeObserver;
+    });
 
     // Re-import to get fresh references
     const mod = await import('../../../src/components/RadialDial');
@@ -159,10 +163,14 @@ describe('RadialDial Component', () => {
     // which strips the implementation set in the vi.mock factory
     (
       RadialDialAnimation as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => mocks.animation);
+    ).mockImplementation(function () {
+      return mocks.animation;
+    });
     (
       RadialDialInteraction as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => mocks.interaction);
+    ).mockImplementation(function () {
+      return mocks.interaction;
+    });
 
     const services = await import('../../../src/services');
     feedbackDialDetent = services.feedbackDialDetent as unknown as ReturnType<

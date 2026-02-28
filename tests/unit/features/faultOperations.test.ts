@@ -54,7 +54,7 @@ vi.mock('../../../src/utils', () => ({
 }));
 
 vi.mock('../../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => {
+  ListenerManager: vi.fn().mockImplementation(function () {
     const tracked: {
       el: EventTarget;
       event: string;

@@ -9,6 +9,66 @@ import {
   SwipeActions,
 } from '../../../src/components/SwipeActions';
 
+// Helper: jsdom 28 exposes PointerEvent, so SwipeActions uses pointer events.
+// Provide pointer event helpers for the tests.
+const HAS_POINTER_EVENTS =
+  typeof window !== 'undefined' && 'PointerEvent' in window;
+
+function dispatchStart(
+  el: HTMLElement,
+  clientX: number,
+  clientY: number,
+): void {
+  if (HAS_POINTER_EVENTS) {
+    el.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        clientX,
+        clientY,
+        pointerId: 1,
+        bubbles: true,
+      }),
+    );
+  } else {
+    el.dispatchEvent(
+      new TouchEvent('touchstart', {
+        touches: [{ clientX, clientY } as Touch],
+      }),
+    );
+  }
+}
+
+function dispatchMove(el: HTMLElement, clientX: number, clientY: number): void {
+  if (HAS_POINTER_EVENTS) {
+    el.dispatchEvent(
+      new PointerEvent('pointermove', {
+        clientX,
+        clientY,
+        pointerId: 1,
+        bubbles: true,
+      }),
+    );
+  } else {
+    el.dispatchEvent(
+      new TouchEvent('touchmove', {
+        touches: [{ clientX, clientY } as Touch],
+      }),
+    );
+  }
+}
+
+function dispatchEnd(el: HTMLElement): void {
+  if (HAS_POINTER_EVENTS) {
+    el.dispatchEvent(
+      new PointerEvent('pointerup', {
+        pointerId: 1,
+        bubbles: true,
+      }),
+    );
+  } else {
+    el.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+  }
+}
+
 describe('SwipeActions Component', () => {
   let element: HTMLElement;
   let onSwipeLeft: ReturnType<typeof vi.fn>;
@@ -65,19 +125,8 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 200, clientY: 100 } as Touch],
-        }),
-      );
-
-      // Move left
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 50, clientY: 100 } as Touch],
-        }),
-      );
+      dispatchStart(wrapper, 200, 100);
+      dispatchMove(wrapper, 50, 100);
 
       expect(wrapper.style.transform).not.toBe('translateX(0)');
 
@@ -88,19 +137,8 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 50, clientY: 100 } as Touch],
-        }),
-      );
-
-      // Move right
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 200, clientY: 100 } as Touch],
-        }),
-      );
+      dispatchStart(wrapper, 50, 100);
+      dispatchMove(wrapper, 200, 100);
 
       expect(wrapper.style.transform).not.toBe('translateX(0)');
 
@@ -111,22 +149,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 100, clientY: 50 } as Touch],
-        }),
-      );
-
-      // Move down (vertical)
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 100, clientY: 200 } as Touch],
-        }),
-      );
-
-      // End touch
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 100, 50);
+      dispatchMove(wrapper, 100, 200);
+      dispatchEnd(wrapper);
 
       expect(onSwipeLeft).not.toHaveBeenCalled();
       expect(onSwipeRight).not.toHaveBeenCalled();
@@ -140,22 +165,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 200, clientY: 100 } as Touch],
-        }),
-      );
-
-      // Move left past threshold (80px)
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 50, clientY: 100 } as Touch],
-        }),
-      );
-
-      // End touch
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 200, 100);
+      dispatchMove(wrapper, 50, 100);
+      dispatchEnd(wrapper);
 
       await vi.advanceTimersByTimeAsync(250);
 
@@ -168,22 +180,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 50, clientY: 100 } as Touch],
-        }),
-      );
-
-      // Move right past threshold
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 200, clientY: 100 } as Touch],
-        }),
-      );
-
-      // End touch
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 50, 100);
+      dispatchMove(wrapper, 200, 100);
+      dispatchEnd(wrapper);
 
       await vi.advanceTimersByTimeAsync(250);
 
@@ -196,22 +195,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Start touch
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 100, clientY: 100 } as Touch],
-        }),
-      );
-
-      // Very small swipe (less than 10px to determine direction)
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 95, clientY: 100 } as Touch],
-        }),
-      );
-
-      // End touch
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 100, 100);
+      dispatchMove(wrapper, 95, 100);
+      dispatchEnd(wrapper);
 
       await vi.advanceTimersByTimeAsync(250);
 
@@ -226,18 +212,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Perform swipe
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 200, clientY: 100 } as Touch],
-        }),
-      );
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 50, clientY: 100 } as Touch],
-        }),
-      );
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 200, 100);
+      dispatchMove(wrapper, 50, 100);
+      dispatchEnd(wrapper);
 
       await vi.advanceTimersByTimeAsync(250);
 
@@ -252,18 +229,9 @@ describe('SwipeActions Component', () => {
       const swipe = new SwipeActions({ element, onSwipeLeft, onSwipeRight });
       const wrapper = element.querySelector('.swipe-content') as HTMLElement;
 
-      // Very small movement - not enough to determine direction
-      wrapper.dispatchEvent(
-        new TouchEvent('touchstart', {
-          touches: [{ clientX: 100, clientY: 100 } as Touch],
-        }),
-      );
-      wrapper.dispatchEvent(
-        new TouchEvent('touchmove', {
-          touches: [{ clientX: 98, clientY: 100 } as Touch],
-        }),
-      );
-      wrapper.dispatchEvent(new TouchEvent('touchend', { touches: [] }));
+      dispatchStart(wrapper, 100, 100);
+      dispatchMove(wrapper, 98, 100);
+      dispatchEnd(wrapper);
 
       // Should be at initial position (may be reset via transition)
       swipe.reset();

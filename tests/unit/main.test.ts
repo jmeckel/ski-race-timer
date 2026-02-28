@@ -58,7 +58,7 @@ vi.mock('../../src/services/battery', () => ({
   },
 }));
 
-// Mock PWA-related modules (virtual:pwa-register does not exist in test context)
+// Mock PWA-related modules (virtual:pwa-register aliased in vitest.config.js)
 vi.mock('../../src/services/swUpdateHandler', () => ({
   initSwUpdateHandler: vi.fn(),
 }));

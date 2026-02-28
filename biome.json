@@ -19,7 +19,8 @@
       "recommended": true,
       "complexity": {
         "noForEach": "off",
-        "noImportantStyles": "off"
+        "noImportantStyles": "off",
+        "useArrowFunction": "off"
       },
       "style": {
         "noNonNullAssertion": "off",

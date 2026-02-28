@@ -86,7 +86,9 @@ describe('Voice Mode Service - Full Coverage', () => {
 
     // Set up SpeechRecognition on window
     (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
-      () => mockRecognition,
+      function () {
+        return mockRecognition;
+      },
     );
 
     // Ensure navigator.onLine is true

@@ -104,10 +104,12 @@ const mockListenerAdd = vi.fn();
 const mockListenerRemoveAll = vi.fn();
 
 vi.mock('../../src/utils/listenerManager', () => ({
-  ListenerManager: vi.fn().mockImplementation(() => ({
-    add: (...args: unknown[]) => mockListenerAdd(...args),
-    removeAll: (...args: unknown[]) => mockListenerRemoveAll(...args),
-  })),
+  ListenerManager: vi.fn().mockImplementation(function () {
+    return {
+      add: (...args: unknown[]) => mockListenerAdd(...args),
+      removeAll: (...args: unknown[]) => mockListenerRemoveAll(...args),
+    };
+  }),
 }));
 
 const mockApplyViewServices = vi.fn();
@@ -167,7 +169,11 @@ describe('App Init Services Module', () => {
       // Transition from true -> false should trigger stop
       mockSettingsSignal.value = { photoCapture: false };
 
-      // Dynamic import + .then(): flush async queue with fake timers
+      // The effect uses void import('./services/camera').then(...) — a dynamic
+      // import that creates a promise chain. Resolve the import by awaiting it
+      // directly (Vitest reuses the same mocked module), then flush microtasks
+      // so the .then() callback runs.
+      await import('../../src/services/camera');
       await vi.advanceTimersByTimeAsync(0);
 
       expect(mockCameraStop).toHaveBeenCalled();
@@ -194,6 +200,9 @@ describe('App Init Services Module', () => {
       // Now toggle: only the latest effect should be active
       mockSettingsSignal.value = { photoCapture: true };
       mockSettingsSignal.value = { photoCapture: false };
+
+      // Flush the dynamic import promise chain (see comment in first test)
+      await import('../../src/services/camera');
       await vi.advanceTimersByTimeAsync(0);
 
       // Should only be called once (from the second effect, not both)

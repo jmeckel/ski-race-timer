@@ -34,10 +34,14 @@ let mockRecognition: MockSpeechRecognition;
 beforeEach(() => {
   mockRecognition = new MockSpeechRecognition();
   (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
-    () => mockRecognition,
+    function () {
+      return mockRecognition;
+    },
   );
   (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
-    vi.fn(() => mockRecognition);
+    vi.fn(function () {
+      return mockRecognition;
+    });
 });
 
 afterEach(() => {

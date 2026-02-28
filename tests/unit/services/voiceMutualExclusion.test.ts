@@ -62,10 +62,14 @@ beforeEach(() => {
   recognitionInstances = [];
   _activeRecognitions = 0;
   (window as unknown as Record<string, unknown>).SpeechRecognition = vi.fn(
-    () => new MockSpeechRecognition(),
+    function () {
+      return new MockSpeechRecognition();
+    },
   );
   (window as unknown as Record<string, unknown>).webkitSpeechRecognition =
-    vi.fn(() => new MockSpeechRecognition());
+    vi.fn(function () {
+      return new MockSpeechRecognition();
+    });
   (window as unknown as Record<string, unknown>).speechSynthesis = {
     speak: vi.fn(),
     cancel: vi.fn(),

@@ -49,6 +49,20 @@ function runAllRafs(
   return count;
 }
 
+// Provide a default matchMedia stub if jsdom does not define it
+if (!window.matchMedia) {
+  (window as any).matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
+}
+
 describe('RadialDialAnimation', () => {
   let callbacks: RadialDialAnimationCallbacks;
   let config: RadialDialAnimationConfig;
