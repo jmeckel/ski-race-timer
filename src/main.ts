@@ -20,6 +20,10 @@ import { logStorageUsage } from './utils/storageQuota';
 // Initialize global error handlers first (catches errors during init)
 initGlobalErrorHandlers();
 
+// Activate non-render-blocking Google Fonts (loaded as media="print" in HTML)
+const fontsLink = document.getElementById('google-fonts') as HTMLLinkElement;
+if (fontsLink) fontsLink.media = 'all';
+
 // Log storage usage on startup
 logStorageUsage();
 
