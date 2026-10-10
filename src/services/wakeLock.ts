@@ -24,6 +24,8 @@ class WakeLockService {
   private idleCheckInterval: ReturnType<typeof setInterval> | null = null;
   private interactionHandler: (() => void) | null = null;
   private hasShownFailureToast = false;
+  // In-flight request guard: concurrent callers share one browser request
+  private pendingRequest: Promise<boolean> | null = null;
 
   /**
    * Check if Wake Lock API is supported
@@ -155,7 +157,16 @@ class WakeLockService {
   /**
    * Request wake lock from the browser
    */
-  private async requestWakeLock(): Promise<boolean> {
+  private requestWakeLock(): Promise<boolean> {
+    if (!this.pendingRequest) {
+      this.pendingRequest = this.doRequestWakeLock().finally(() => {
+        this.pendingRequest = null;
+      });
+    }
+    return this.pendingRequest;
+  }
+
+  private async doRequestWakeLock(): Promise<boolean> {
     if (!this.isSupported() || this.wakeLock) {
       return !!this.wakeLock;
     }
@@ -167,11 +178,19 @@ class WakeLockService {
     }
 
     try {
-      this.wakeLock = await navigator.wakeLock.request('screen');
+      const sentinel = await navigator.wakeLock.request('screen');
 
+      // disable() may have run while the request was pending — don't keep
+      // a lock nobody holds a reference to release
+      if (!this.isEnabled) {
+        await sentinel.release();
+        return false;
+      }
+
+      this.wakeLock = sentinel;
       // Listen for release (e.g., when tab becomes hidden)
-      this.wakeLock.addEventListener('release', () => {
-        this.wakeLock = null;
+      sentinel.addEventListener('release', () => {
+        if (this.wakeLock === sentinel) this.wakeLock = null;
       });
 
       return true;

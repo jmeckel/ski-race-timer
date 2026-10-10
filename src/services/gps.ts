@@ -2,6 +2,9 @@ import { store } from '../store';
 import { logger } from '../utils/logger';
 import { batteryService } from './battery';
 
+// Fixes older than this are treated as cached and not used for clock offset
+const STALE_FIX_THRESHOLD_MS = 2000;
+
 // GPS configuration
 // maximumAge: 30s allows reuse of cached position, reducing GPS chip wake-ups
 // while still providing fresh-enough coordinates for race timing location tracking
@@ -309,6 +312,18 @@ class GpsService {
     // Calculate offset between GPS time and system time
     // offset = gpsTimestamp - Date.now() (at time of position receipt)
     const newOffset = position.timestamp - Date.now();
+
+    // With maximumAge > 0 the platform may hand back a cached fix. Its timestamp
+    // reflects when it was taken, so the "offset" would just be the fix's age
+    // (up to 30-120s) and would skew every recorded time. Coordinates are still
+    // fine to use; only the clock offset must come from a fresh fix.
+    if (newOffset < -STALE_FIX_THRESHOLD_MS) {
+      logger.debug(
+        `[GPS] Ignoring stale fix (${-newOffset}ms old) for time offset`,
+      );
+      store.setGpsStatus('active', position.coords.accuracy);
+      return;
+    }
 
     // Warn if clock drift exceeds 500ms - significant for race timing
     if (Math.abs(newOffset) > 500) {

@@ -169,6 +169,33 @@ describe('Queue Processor', () => {
       expect(callback).toHaveBeenCalledWith(entry);
     });
 
+    it('should count a throwing send as a failed attempt', async () => {
+      const entry = {
+        id: '1',
+        bib: '042',
+        point: 'F',
+        timestamp: '2024-01-15T10:00:00.000Z',
+        status: 'ok',
+        deviceId: 'dev_1',
+        deviceName: 'Timer 1',
+      };
+
+      mockGetState.mockReturnValue({
+        settings: { sync: true },
+        raceId: 'RACE',
+        syncQueue: [{ entry, retryCount: 0, lastAttempt: 0 }],
+      });
+
+      const callback = vi.fn(() => Promise.reject(new Error('boom')));
+      queueProcessor.initialize(callback);
+      await expect(queueProcessor.processQueue()).resolves.toBeUndefined();
+
+      expect(mockUpdateSyncQueueItem).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({ retryCount: 1 }),
+      );
+    });
+
     it('should remove entries that exceed max retries', async () => {
       const entry = {
         id: '1',

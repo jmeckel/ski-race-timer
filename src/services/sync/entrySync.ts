@@ -11,7 +11,7 @@ import { getPointLabel } from '../../utils/format';
 import { logger } from '../../utils/logger';
 import { hasFullPhotoData, isPhotoMarker } from '../../utils/photoHelpers';
 import { addRecentRace } from '../../utils/recentRaces';
-import { isValidEntry } from '../../utils/validation';
+import { sanitizeEntry } from '../../utils/validation';
 import {
   clearAuthToken,
   dispatchAuthExpired,
@@ -284,13 +284,17 @@ async function fetchCloudEntriesImpl(): Promise<void> {
 
     // Validate and filter entries - only accept well-formed entries
     const rawEntries = Array.isArray(data.entries) ? data.entries : [];
-    const cloudEntries = rawEntries.filter((entry) => {
-      if (!isValidEntry(entry)) {
+    // Sanitize too: validation checks shape, sanitization bounds lengths and
+    // strips malformed photo data before it reaches the store/IndexedDB
+    const cloudEntries: Entry[] = [];
+    for (const entry of rawEntries) {
+      const sanitized = sanitizeEntry(entry, '');
+      if (!sanitized) {
         logger.warn('Skipping invalid entry from cloud:', entry);
-        return false;
+        continue;
       }
-      return true;
-    });
+      cloudEntries.push(sanitized);
+    }
     const deletedIds = Array.isArray(data.deletedIds)
       ? data.deletedIds.filter(
           (id): id is string => typeof id === 'string' && id.length > 0,

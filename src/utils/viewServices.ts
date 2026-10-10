@@ -32,15 +32,20 @@ export async function applyCameraService(
 ): Promise<void> {
   const isTimerView = state.currentView === 'timer';
 
-  if (isTimerView && state.settings.photoCapture) {
-    const { cameraService } = await import('../services/camera');
-    void cameraService.initialize().catch((error) => {
-      logger.error('[Camera] Failed to initialize from view service:', error);
-    });
-  } else if (state.settings.photoCapture) {
-    // Only stop if photo capture was enabled (camera may have been loaded)
-    const { cameraService } = await import('../services/camera');
-    cameraService.stop();
+  // Callers fire-and-forget this, so it must never reject
+  try {
+    if (isTimerView && state.settings.photoCapture) {
+      const { cameraService } = await import('../services/camera');
+      void cameraService.initialize().catch((error) => {
+        logger.error('[Camera] Failed to initialize from view service:', error);
+      });
+    } else if (state.settings.photoCapture) {
+      // Only stop if photo capture was enabled (camera may have been loaded)
+      const { cameraService } = await import('../services/camera');
+      cameraService.stop();
+    }
+  } catch (error) {
+    logger.error('[Camera] Failed to load camera service:', error);
   }
 }
 

@@ -35,7 +35,11 @@ import {
   resolveRaceChangeDialog,
   updateRoleToggle,
 } from './features/settingsView';
-import { destroyClock, handleTimerVoiceIntent } from './features/timerView';
+import {
+  cleanupTimerView,
+  destroyClock,
+  handleTimerVoiceIntent,
+} from './features/timerView';
 import { t } from './i18n/translations';
 import {
   cleanupFeedback,
@@ -320,6 +324,7 @@ export function handleBeforeUnload(): void {
   // Cleanup timer components (both modes)
   try {
     destroyClock();
+    cleanupTimerView();
     destroyRadialTimerView();
   } catch (e) {
     logger.warn('Timer cleanup error:', e);

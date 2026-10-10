@@ -3,7 +3,7 @@
  * Tests: deleteEntriesWithCleanup (single, multiple, sync/no-sync)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockDeleteEntry = vi.fn();
 const mockDeleteMultiple = vi.fn();
@@ -19,7 +19,17 @@ vi.mock('../../../src/store', () => ({
 
 const mockDeletePhoto = vi.fn(() => Promise.resolve());
 const mockDeletePhotos = vi.fn(() => Promise.resolve());
-const mockDeleteEntryFromCloud = vi.fn(() => Promise.resolve());
+const mockDeleteEntryFromCloud = vi.fn<
+  (...args: unknown[]) => Promise<boolean>
+>(() => Promise.resolve(true));
+
+vi.mock('../../../src/components', () => ({
+  showToast: vi.fn(),
+}));
+
+vi.mock('../../../src/i18n/translations', () => ({
+  t: vi.fn((key: string) => key),
+}));
 
 vi.mock('../../../src/services', () => ({
   photoStorage: {
@@ -32,7 +42,11 @@ vi.mock('../../../src/services', () => ({
   },
 }));
 
-import { deleteEntriesWithCleanup } from '../../../src/features/entryDeletion';
+import { showToast } from '../../../src/components';
+import {
+  deleteEntriesWithCleanup,
+  syncDeletionsToCloud,
+} from '../../../src/features/entryDeletion';
 
 describe('Entry Deletion Module', () => {
   beforeEach(() => {
@@ -220,10 +234,86 @@ describe('Entry Deletion Module', () => {
       },
     ];
 
-    await deleteEntriesWithCleanup(entries);
+    vi.useFakeTimers();
+    try {
+      await deleteEntriesWithCleanup(entries);
+      // Cloud deletes are sequential and spaced to respect the rate limit
+      await vi.runAllTimersAsync();
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect(mockDeleteEntryFromCloud).toHaveBeenCalledTimes(2);
     expect(mockDeleteEntryFromCloud).toHaveBeenCalledWith('e1', 'dev_1');
     expect(mockDeleteEntryFromCloud).toHaveBeenCalledWith('e2', 'dev_2');
+  });
+});
+
+describe('syncDeletionsToCloud', () => {
+  const makeEntry = (id: string) => ({
+    id,
+    bib: '042',
+    point: 'F' as const,
+    run: 1,
+    timestamp: '2024-01-15T10:00:00.000Z',
+    status: 'ok' as const,
+    deviceId: 'dev_1',
+    deviceName: 'Timer 1',
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows a single toast when some cloud deletes fail', async () => {
+    mockGetState.mockReturnValue({
+      settings: { sync: true },
+      raceId: 'race-a',
+      currentLang: 'en',
+    });
+    mockDeleteEntryFromCloud
+      .mockResolvedValueOnce(false)
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(true);
+
+    const done = syncDeletionsToCloud([
+      makeEntry('a'),
+      makeEntry('b'),
+      makeEntry('c'),
+    ]);
+    await vi.runAllTimersAsync();
+    await done;
+
+    expect(mockDeleteEntryFromCloud).toHaveBeenCalledTimes(3);
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(showToast).toHaveBeenCalledWith('cloudDeleteFailed', 'warning');
+  });
+
+  it('stops sending when the race changes mid-way', async () => {
+    mockGetState.mockReturnValue({
+      settings: { sync: true },
+      raceId: 'race-a',
+      currentLang: 'en',
+    });
+    mockDeleteEntryFromCloud.mockImplementation(() => {
+      mockGetState.mockReturnValue({
+        settings: { sync: true },
+        raceId: 'race-b',
+        currentLang: 'en',
+      });
+      return Promise.resolve(true);
+    });
+
+    const done = syncDeletionsToCloud([makeEntry('a'), makeEntry('b')]);
+    await vi.runAllTimersAsync();
+    await done;
+
+    expect(mockDeleteEntryFromCloud).toHaveBeenCalledTimes(1);
+    expect(showToast).not.toHaveBeenCalled();
   });
 });

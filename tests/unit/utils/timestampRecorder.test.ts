@@ -8,7 +8,9 @@ import type { Entry } from '../../../src/types';
 import {
   type CreateTimestampEntryParams,
   createTimestampEntry,
+  getNextBibInput,
   isDuplicateEntry,
+  isZeroBib,
   type TimestampGpsService,
 } from '../../../src/utils/timestampRecorder';
 
@@ -257,5 +259,41 @@ describe('Timestamp Recorder', () => {
 
       expect(isDuplicateEntry(entry, existing)).toBe(false);
     });
+  });
+});
+
+describe('isZeroBib', () => {
+  it('detects all-zero bibs', () => {
+    expect(isZeroBib('0')).toBe(true);
+    expect(isZeroBib('000')).toBe(true);
+    expect(isZeroBib('010')).toBe(false);
+    expect(isZeroBib('')).toBe(false);
+  });
+});
+
+describe('getNextBibInput', () => {
+  const base = { bibInput: '042', auto: true, sync: false, cloudHighestBib: 0 };
+
+  it('increments when auto is on', () => {
+    expect(getNextBibInput(base)).toBe('43');
+  });
+
+  it('clears when auto is off or no bib entered', () => {
+    expect(getNextBibInput({ ...base, auto: false })).toBe('');
+    expect(getNextBibInput({ ...base, bibInput: '' })).toBe('');
+  });
+
+  it('skips past the cloud highest bib only when syncing', () => {
+    expect(getNextBibInput({ ...base, sync: true, cloudHighestBib: 99 })).toBe(
+      '100',
+    );
+    expect(getNextBibInput({ ...base, cloudHighestBib: 99 })).toBe('43');
+    expect(getNextBibInput({ ...base, sync: true, cloudHighestBib: 10 })).toBe(
+      '43',
+    );
+  });
+
+  it('caps at 999', () => {
+    expect(getNextBibInput({ ...base, bibInput: '999' })).toBe('999');
   });
 });

@@ -1,5 +1,8 @@
 import { clearToasts, showToast, type ToastAction } from './components';
-import { deleteEntriesWithCleanup } from './features/entryDeletion';
+import {
+  deleteEntriesWithCleanup,
+  syncDeletionsToCloud,
+} from './features/entryDeletion';
 import { updateInlineFaultsList } from './features/faults/faultInlineEntry';
 import { initFaultEditModal } from './features/faults/faultOperations';
 import {
@@ -13,12 +16,7 @@ import {
   hasPendingPinVerification,
 } from './features/race';
 import { t } from './i18n/translations';
-import {
-  feedbackDelete,
-  feedbackUndo,
-  photoStorage,
-  syncService,
-} from './services';
+import { feedbackDelete, feedbackUndo, photoStorage } from './services';
 import { deleteFaultFromCloud, syncEntry } from './services/sync';
 import { store } from './store';
 import type { Entry } from './types';
@@ -260,17 +258,9 @@ async function handleConfirmDelete(): Promise<void> {
     store.clearAll();
     await photoStorage.clearAll();
 
-    // Sync deletions to cloud (re-read state after await — raceId may have changed)
+    // Sync deletions to cloud (in background, rate-limit friendly)
+    void syncDeletionsToCloud(entriesToDelete);
     const postClearState = store.getState();
-    if (postClearState.settings.sync && postClearState.raceId) {
-      for (const entry of entriesToDelete) {
-        void syncService
-          .deleteEntryFromCloud(entry.id, entry.deviceId)
-          .catch(() => {
-            /* handled by queue */
-          });
-      }
-    }
 
     showToast(t('cleared', postClearState.currentLang), 'success');
   } else if (action === 'deleteSelected') {
@@ -291,14 +281,7 @@ async function handleConfirmDelete(): Promise<void> {
       // Delete orphaned photo from IndexedDB
       await photoStorage.deletePhoto(entry.id);
       // Sync undo to cloud (re-read state after await)
-      const postUndoState = store.getState();
-      if (postUndoState.settings.sync && postUndoState.raceId) {
-        void syncService
-          .deleteEntryFromCloud(entry.id, entry.deviceId)
-          .catch(() => {
-            /* handled by queue */
-          });
-      }
+      void syncDeletionsToCloud([entry]);
     }
     closeAllModals();
     return; // Early return - don't call feedbackDelete

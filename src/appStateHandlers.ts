@@ -168,33 +168,45 @@ export function initStateEffects(): () => void {
 
   // --- View changes (wake lock, virtual list pause/resume, ambient mode) ---
 
+  let lastToggledView: string | null = null;
   disposers.push(
     effect(() => {
       const currentView = $currentView.value;
+      // DOM refreshes stay tracked (store.getState() subscribes them to the
+      // whole state, which some views rely on for refreshes).
       updateViewVisibility();
 
       // Refresh status indicators on all views
       updateGpsIndicator();
       updateSyncStatusIndicator();
 
-      // Wake Lock: keep screen on during active timing
-      if (currentView === 'timer') {
-        wakeLockService.enable();
-      } else {
-        wakeLockService.disable();
-      }
-
-      // VirtualList: pause when not on results view to save resources
-      const virtualList = getVirtualList();
-      if (virtualList) {
-        if (currentView === 'results') {
-          virtualList.resume();
-        } else {
-          virtualList.pause();
-        }
+      // This effect re-runs on any state change (see above), so service toggles
+      // are gated on an actual view change, not every GPS tick or keystroke.
+      if (currentView !== lastToggledView) {
+        lastToggledView = currentView;
+        untracked(() => toggleViewResources(currentView));
       }
     }),
   );
+
+  function toggleViewResources(currentView: string): void {
+    // Wake Lock: keep screen on during active timing
+    if (currentView === 'timer') {
+      wakeLockService.enable();
+    } else {
+      wakeLockService.disable();
+    }
+
+    // VirtualList: pause when not on results view to save resources
+    const virtualList = getVirtualList();
+    if (virtualList) {
+      if (currentView === 'results') {
+        virtualList.resume();
+      } else {
+        virtualList.pause();
+      }
+    }
+  }
 
   // --- Settings changes (split into targeted effects for performance) ---
 

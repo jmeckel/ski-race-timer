@@ -19,6 +19,7 @@ import {
 } from '../../utils';
 import { formatTime as formatTimeDisplay } from '../../utils/format';
 import { ListenerManager } from '../../utils/listenerManager';
+import { logger } from '../../utils/logger';
 import { setModalContext } from '../../utils/modalContext';
 import { openModal } from '../modals';
 import { createAndSyncFault } from './faultOperations';
@@ -90,7 +91,8 @@ export function updateActiveBibsList(): void {
 
     const card = document.createElement('div');
     card.className = `active-bib-card${hasFault ? ' has-fault' : ''}`;
-    card.setAttribute('data-bib', escapeAttr(bib));
+    // setAttribute does not parse HTML — escaping here would corrupt the value
+    card.dataset.bib = bib;
     card.setAttribute('role', 'listitem');
 
     const timeStr = startTime ? formatTimeDisplay(startTime) : '--:--:--';
@@ -127,9 +129,18 @@ export function updateActiveBibsList(): void {
       const action = actionBtn.getAttribute('data-action');
       if (action === 'fault') {
         feedbackTap();
-        import('./faultModals').then(({ openFaultRecordingModal }) => {
-          openFaultRecordingModal(bib);
-        });
+        import('./faultModals')
+          .then(({ openFaultRecordingModal }) => {
+            openFaultRecordingModal(bib);
+          })
+          .catch((error) => {
+            // Chunk fetch can fail offline or after a deploy
+            logger.error('Failed to load fault modals:', error);
+            showToast(
+              t('operationFailed', store.getState().currentLang),
+              'error',
+            );
+          });
       } else if (action === 'ok') {
         feedbackTap();
         showToast(t('ok', store.getState().currentLang), 'success', 1000);

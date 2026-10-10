@@ -97,3 +97,35 @@ export function isDuplicateEntry(
     )
   );
 }
+
+/** Check if bib is all zeros (e.g., "0", "00", "000") */
+export function isZeroBib(bib: string): boolean {
+  if (!bib) return false;
+  return /^0+$/.test(bib);
+}
+
+/** Highest bib the auto-increment will produce */
+const MAX_AUTO_BIB = 999;
+
+/**
+ * Bib input value after recording: the next bib when auto-increment is on,
+ * otherwise empty. With cloud sync, skips past the highest bib any device has
+ * recorded so devices don't hand out the same number.
+ */
+export function getNextBibInput(params: {
+  bibInput: string;
+  auto: boolean;
+  sync: boolean;
+  cloudHighestBib: number;
+}): string {
+  const { bibInput, auto, sync, cloudHighestBib } = params;
+  if (!auto || !bibInput) return '';
+
+  const localNext = parseInt(bibInput, 10) + 1;
+  if (Number.isNaN(localNext)) return '';
+  const next =
+    sync && cloudHighestBib > 0
+      ? Math.max(localNext, cloudHighestBib + 1)
+      : localNext;
+  return String(Math.min(next, MAX_AUTO_BIB));
+}

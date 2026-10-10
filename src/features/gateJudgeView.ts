@@ -124,7 +124,11 @@ export function initGateJudgeView(): void {
   initGateAssignmentModal();
 
   // Initialize fault recording modal handlers (lazy-loaded)
-  getFaultModals().then((m) => m.initFaultRecordingModal());
+  getFaultModals()
+    .then((m) => m.initFaultRecordingModal())
+    .catch((error) => {
+      logger.error('Failed to load fault modals:', error);
+    });
 
   // Initialize inline fault entry handlers
   initInlineFaultEntry();
@@ -439,13 +443,21 @@ export function handleGateJudgeVoiceIntent(intent: VoiceIntent): void {
         intent.params?.gate !== undefined &&
         intent.params?.faultType
       ) {
-        getFaultModals().then((m) =>
-          m.recordFaultFromVoice(
-            intent.params!.bib!,
-            intent.params!.gate!,
-            intent.params!.faultType!,
-          ),
-        );
+        getFaultModals()
+          .then((m) =>
+            m.recordFaultFromVoice(
+              intent.params!.bib!,
+              intent.params!.gate!,
+              intent.params!.faultType!,
+            ),
+          )
+          .catch((error) => {
+            logger.error('Failed to load fault modals:', error);
+            showToast(
+              t('operationFailed', store.getState().currentLang),
+              'error',
+            );
+          });
       }
       break;
 

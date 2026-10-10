@@ -17,6 +17,7 @@ import { ambientModeService } from './services/ambient';
 import { hasAuthToken } from './services/sync';
 import { $settingsPhotoCapture, effect, store } from './store';
 import { ListenerManager } from './utils/listenerManager';
+import { logger } from './utils/logger';
 import { applyViewServices } from './utils/viewServices';
 
 const listeners = new ListenerManager();
@@ -105,9 +106,13 @@ export function initServices(): void {
     const currentPhotoCapture = $settingsPhotoCapture.value;
     if (prevPhotoCapture && !currentPhotoCapture) {
       // Lazy-load camera service — only needed when disabling photo capture
-      void import('./services/camera').then(({ cameraService }) => {
-        cameraService.stop();
-      });
+      import('./services/camera')
+        .then(({ cameraService }) => {
+          cameraService.stop();
+        })
+        .catch((error) => {
+          logger.error('[Camera] Failed to load camera service:', error);
+        });
     }
     prevPhotoCapture = currentPhotoCapture;
   });

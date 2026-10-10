@@ -334,6 +334,7 @@ export const translations = {
     installAppDesc: 'Install as app for quick access and offline use.',
     iosInstallInstructions: 'Tap the Share button, then "Add to Home Screen".',
     operationFailed: 'Operation failed. Please try again.',
+    cloudDeleteFailed: 'Some deletions could not be synced to the cloud',
     raceIdPlaceholder: 'RACE-001',
     deviceNamePlaceholder: 'Timer 1',
     photoForBib: 'Photo for bib',
@@ -906,6 +907,8 @@ export const translations = {
     iosInstallInstructions:
       'Tippe auf "Teilen" und dann auf "Zum Home-Bildschirm".',
     operationFailed: 'Vorgang fehlgeschlagen. Bitte erneut versuchen.',
+    cloudDeleteFailed:
+      'Einige Löschungen konnten nicht mit der Cloud synchronisiert werden',
     raceIdPlaceholder: 'RENNEN-001',
     deviceNamePlaceholder: 'Timer 1',
     photoForBib: 'Foto für Startnr.',
@@ -1487,6 +1490,8 @@ export const translations = {
     iosInstallInstructions:
       'Appuyez sur "Partager" puis sur "Sur l\'écran d\'accueil".',
     operationFailed: 'Opération échouée. Veuillez réessayer.',
+    cloudDeleteFailed:
+      'Certaines suppressions n’ont pas pu être synchronisées avec le cloud',
     raceIdPlaceholder: 'COURSE-001',
     deviceNamePlaceholder: 'Chrono 1',
     photoForBib: 'Photo pour dossard',

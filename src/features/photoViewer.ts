@@ -59,14 +59,22 @@ export async function openPhotoViewer(entry: Entry): Promise<void> {
       const photoData = await photoStorage.getPhoto(entry.id);
       if (photoData) {
         // Use blob URL instead of data URI for better memory management
-        const byteChars = atob(photoData);
-        const byteArray = new Uint8Array(byteChars.length);
-        for (let i = 0; i < byteChars.length; i++) {
-          byteArray[i] = byteChars.charCodeAt(i);
+        try {
+          const byteChars = atob(photoData);
+          const byteArray = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteArray[i] = byteChars.charCodeAt(i);
+          }
+          const blob = new Blob([byteArray], { type: 'image/jpeg' });
+          currentBlobUrl = URL.createObjectURL(blob);
+          image.src = currentBlobUrl;
+        } catch (error) {
+          // Corrupt (non-base64) photo data — don't open an empty viewer
+          logger.warn('Photo data is corrupt for entry:', entry.id, error);
+          showToast(t('noPhotoAvailable', lang), 'warning');
+          currentPhotoEntryId = null;
+          return;
         }
-        const blob = new Blob([byteArray], { type: 'image/jpeg' });
-        currentBlobUrl = URL.createObjectURL(blob);
-        image.src = currentBlobUrl;
       } else {
         // Photo not found in IndexedDB — clear stale state since modal was never opened
         logger.warn('Photo not found in IndexedDB for entry:', entry.id);

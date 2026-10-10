@@ -55,7 +55,11 @@ class QueueProcessor {
       clearInterval(this.queueInterval);
     }
 
-    this.queueInterval = setInterval(() => this.processQueue(), intervalMs);
+    this.queueInterval = setInterval(() => {
+      this.processQueue().catch((error) => {
+        logger.error('Queue processor: unexpected error', error);
+      });
+    }, intervalMs);
   }
 
   /**
@@ -139,7 +143,15 @@ class QueueProcessor {
       // Use batch if 2+ entries are ready and batch callback is available
       if (readyItems.length >= 2 && this.sendBatchCallback) {
         const entries = readyItems.map((item) => item.entry);
-        const results = await this.sendBatchCallback(entries);
+        let results: Map<string, boolean>;
+        try {
+          results = await this.sendBatchCallback(entries);
+        } catch (error) {
+          // A throw must still count as a failed attempt, otherwise a poison
+          // entry retries forever and never reaches MAX_RETRIES
+          logger.warn('Queue processor: batch send threw', error);
+          results = new Map();
+        }
 
         // Handle individual results
         for (const item of readyItems) {
@@ -156,7 +168,12 @@ class QueueProcessor {
       } else {
         // Single entry path (1 item or no batch callback)
         for (const item of readyItems) {
-          const success = await this.sendEntryCallback(item.entry);
+          let success = false;
+          try {
+            success = await this.sendEntryCallback(item.entry);
+          } catch (error) {
+            logger.warn('Queue processor: entry send threw', error);
+          }
 
           if (!success) {
             store.updateSyncQueueItem(item.entry.id, {

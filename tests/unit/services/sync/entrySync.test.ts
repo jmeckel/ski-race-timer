@@ -63,9 +63,14 @@ vi.mock('../../../../src/utils/recentRaces', () => ({
   addRecentRace: vi.fn(),
 }));
 
-vi.mock('../../../../src/utils/validation', () => ({
-  isValidEntry: vi.fn(() => true),
-}));
+vi.mock('../../../../src/utils/validation', () => {
+  const isValidEntry = vi.fn(() => true);
+  return {
+    isValidEntry,
+    // Mirrors the real contract: null for invalid entries, sanitized copy otherwise
+    sanitizeEntry: vi.fn((entry: unknown) => (isValidEntry() ? entry : null)),
+  };
+});
 
 vi.mock('../../../../src/services/auth', () => ({
   clearAuthToken: vi.fn(),

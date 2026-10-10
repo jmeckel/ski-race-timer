@@ -6,7 +6,7 @@
 import { store } from '../../store';
 import type { DeviceInfo, Entry, FaultEntry } from '../../types';
 import { logger } from '../../utils/logger';
-import { isValidEntry, isValidFaultEntry } from '../../utils/validation';
+import { isValidFaultEntry, sanitizeEntry } from '../../utils/validation';
 
 /**
  * BroadcastChannel manager for cross-tab sync
@@ -37,8 +37,9 @@ class BroadcastManager {
         try {
           const { type, data } = event.data || {};
 
-          if (type === 'entry' && isValidEntry(data)) {
-            store.mergeCloudEntries([data]);
+          const entry = type === 'entry' ? sanitizeEntry(data, '') : null;
+          if (entry) {
+            store.mergeCloudEntries([entry]);
           } else if (type === 'presence') {
             // Validate presence data before using
             if (

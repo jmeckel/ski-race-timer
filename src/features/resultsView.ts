@@ -10,6 +10,7 @@ import { store } from '../store';
 import type { Entry, FaultEntry } from '../types';
 import { getElement } from '../utils';
 import { ListenerManager } from '../utils/listenerManager';
+import { syncDeletionsToCloud } from './entryDeletion';
 import { exportResults } from './export';
 import {
   openFaultEditModal,
@@ -200,19 +201,8 @@ function initResultsActions(): void {
           showToast(t('undone', store.getState().currentLang), 'success');
 
           // Sync undo to cloud if needed
-          const state = store.getState();
-          if (
-            result &&
-            result.type === 'ADD_ENTRY' &&
-            state.settings.sync &&
-            state.raceId
-          ) {
-            const entry = result.data as Entry;
-            void syncService
-              .deleteEntryFromCloud(entry.id, entry.deviceId)
-              .catch(() => {
-                /* handled by queue */
-              });
+          if (result && result.type === 'ADD_ENTRY') {
+            void syncDeletionsToCloud([result.data as Entry]);
           }
         }
       }

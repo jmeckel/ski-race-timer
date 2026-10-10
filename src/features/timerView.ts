@@ -3,27 +3,18 @@
  * Handles clock display, number pad, timing points, run selection, and timestamp recording
  */
 
-import { Clock, showToast } from '../components';
-import { t } from '../i18n/translations';
+import { Clock } from '../components';
 import {
   feedbackSuccess,
   feedbackTap,
   feedbackWarning,
   gpsService,
-  photoStorage,
   syncEntry,
 } from '../services';
 import { ambientModeService } from '../services/ambient';
-import { captureTimingPhoto } from '../services/camera';
 import { store } from '../store';
 import type { Entry, TimingPoint, VoiceIntent } from '../types';
-import {
-  getElement,
-  getPointLabel,
-  getRunColor,
-  getRunLabel,
-  logWarning,
-} from '../utils';
+import { getElement, getPointLabel, getRunColor, getRunLabel } from '../utils';
 import {
   formatTime as formatTimeDisplay,
   getPointColor,
@@ -32,8 +23,11 @@ import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
 import {
   createTimestampEntry,
+  getNextBibInput,
   isDuplicateEntry,
+  isZeroBib,
 } from '../utils/timestampRecorder';
+import { attachTimingPhoto } from './timingPhoto';
 
 // Module-level listener manager for lifecycle cleanup
 const listeners = new ListenerManager();
@@ -42,14 +36,6 @@ const listeners = new ListenerManager();
 let clock: Clock | null = null;
 const timerTimeoutIds: Set<number> = new Set();
 let warningHideTimeoutId: number | null = null;
-
-/**
- * Check if bib is all zeros (e.g., "0", "00", "000")
- */
-function isZeroBib(bib: string): boolean {
-  if (!bib) return false;
-  return /^0+$/.test(bib);
-}
 
 /**
  * Initialize clock component
@@ -269,6 +255,15 @@ export function initTimestampButton(): void {
       return;
     }
 
+    // Alt+1/Alt+2 for run selection. Checked before digits and matched on
+    // e.code: with Alt held, e.key is layout-dependent (e.g. "¡" on macOS).
+    if (e.altKey && (e.code === 'Digit1' || e.code === 'Digit2')) {
+      e.preventDefault();
+      store.setSelectedRun(e.code === 'Digit1' ? 1 : 2);
+      feedbackTap();
+      return;
+    }
+
     // Number keys 0-9 for bib input
     if (/^[0-9]$/.test(e.key)) {
       e.preventDefault();
@@ -323,21 +318,6 @@ export function initTimestampButton(): void {
       return;
     }
 
-    // 1/2 keys for run selection
-    if (e.key === '1' && e.altKey) {
-      e.preventDefault();
-      store.setSelectedRun(1);
-      feedbackTap();
-      return;
-    }
-
-    if (e.key === '2' && e.altKey) {
-      e.preventDefault();
-      store.setSelectedRun(2);
-      feedbackTap();
-      return;
-    }
-
     // Space or Enter for timestamp
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
@@ -389,53 +369,7 @@ export async function recordTimestamp(): Promise<void> {
   try {
     // Capture photo asynchronously - don't block timestamp recording
     if (state.settings.photoCapture) {
-      const entryId = entry.id;
-      captureTimingPhoto()
-        .then(async (photo) => {
-          if (photo) {
-            try {
-              const currentState = store.getState();
-              const entryStillExists = currentState.entries.some(
-                (e) => e.id === entryId,
-              );
-              if (!entryStillExists) {
-                logger.warn(
-                  'Entry was deleted before photo could be attached:',
-                  entryId,
-                );
-                return;
-              }
-
-              const saved = await photoStorage.savePhoto(entryId, photo);
-              if (saved) {
-                const updated = store.updateEntry(entryId, {
-                  photo: 'indexeddb',
-                });
-                if (!updated) {
-                  logger.warn(
-                    'Entry deleted during photo save, removing orphaned photo:',
-                    entryId,
-                  );
-                  await photoStorage.deletePhoto(entryId);
-                }
-              } else {
-                logger.warn('Photo save failed for entry:', entryId);
-                const lang = store.getState().currentLang;
-                showToast(t('photoSaveFailed', lang), 'warning');
-              }
-            } catch (err) {
-              logWarning('Camera', 'photo save/update', err, 'photoError');
-            }
-          }
-        })
-        .catch((err) => {
-          if (err instanceof Error && err.name === 'PhotoTooLargeError') {
-            const lang = store.getState().currentLang;
-            showToast(t('photoTooLarge', lang), 'warning');
-          } else {
-            logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
-          }
-        });
+      attachTimingPhoto(entry.id);
     }
 
     // Check for duplicate
@@ -465,20 +399,14 @@ export async function recordTimestamp(): Promise<void> {
     });
 
     // Auto-increment bib after recording
-    if (state.settings.auto && state.bibInput) {
-      const localNext = parseInt(state.bibInput, 10) + 1;
-      const nextBib = Math.min(
-        state.settings.sync && state.cloudHighestBib > 0
-          ? Math.max(localNext, state.cloudHighestBib + 1)
-          : localNext,
-        999,
-      );
-      store.setBibInput(String(nextBib));
-    } else if (!state.bibInput) {
-      store.setBibInput('');
-    } else if (!state.settings.auto) {
-      store.setBibInput('');
-    }
+    store.setBibInput(
+      getNextBibInput({
+        bibInput: state.bibInput,
+        auto: state.settings.auto,
+        sync: state.settings.sync,
+        cloudHighestBib: state.cloudHighestBib,
+      }),
+    );
 
     // Update last recorded display
     updateLastRecorded(entry);

@@ -202,6 +202,26 @@ export function initSyncSettings(): void {
         const wasPreviouslySynced = state.lastSyncedRaceId !== '';
         const isChangingRace = newRaceId !== state.raceId && newRaceId !== '';
 
+        // Validate and verify BEFORE asking to clear local data: an invalid ID or
+        // a cancelled PIN prompt must not have already wiped the timing data.
+        // Validate race ID format (allow empty to clear)
+        if (newRaceId && !isValidRaceId(newRaceId)) {
+          showToast(t('invalidRaceId', state.currentLang), 'error');
+          raceIdInput.value = state.raceId;
+          feedbackWarning();
+          return;
+        }
+
+        // Verify PIN before joining race if sync is enabled
+        if (state.settings.sync && newRaceId) {
+          const pinVerified = await verifyPinForRaceJoin(state.currentLang);
+          if (!pinVerified) {
+            // PIN verification cancelled or failed - restore old race ID
+            raceIdInput.value = state.raceId;
+            return;
+          }
+        }
+
         if (hasEntries && isChangingRace) {
           if (wasPreviouslySynced) {
             // Was synced with another race - ask to export or delete
@@ -242,24 +262,6 @@ export function initSyncSettings(): void {
               return;
             }
             // 'keep' - do nothing with entries
-          }
-        }
-
-        // Validate race ID format (allow empty to clear)
-        if (newRaceId && !isValidRaceId(newRaceId)) {
-          showToast(t('invalidRaceId', state.currentLang), 'error');
-          raceIdInput.value = state.raceId;
-          feedbackWarning();
-          return;
-        }
-
-        // Verify PIN before joining race if sync is enabled
-        if (state.settings.sync && newRaceId) {
-          const pinVerified = await verifyPinForRaceJoin(state.currentLang);
-          if (!pinVerified) {
-            // PIN verification cancelled or failed - restore old race ID
-            raceIdInput.value = state.raceId;
-            return;
           }
         }
 

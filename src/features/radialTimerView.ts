@@ -3,7 +3,6 @@
  * Handles the radial dial timer interface with iPod-style spin input
  */
 
-import { showToast } from '../components';
 import { Clock } from '../components/Clock';
 import { RadialDial } from '../components/RadialDial';
 import { t } from '../i18n/translations';
@@ -12,11 +11,9 @@ import {
   feedbackTap,
   feedbackWarning,
   gpsService,
-  photoStorage,
   syncEntry,
 } from '../services';
 import { ambientModeService } from '../services/ambient';
-import { captureTimingPhoto } from '../services/camera';
 import {
   $cloudDeviceCount,
   $entries,
@@ -30,20 +27,17 @@ import {
   store,
 } from '../store';
 import type { Entry, Run, TimingPoint } from '../types';
-import { getElement, getPointLabel, logWarning } from '../utils';
+import { getElement, getPointLabel } from '../utils';
 import { formatTime } from '../utils/format';
 import { ListenerManager } from '../utils/listenerManager';
 import { logger } from '../utils/logger';
 import {
   createTimestampEntry,
+  getNextBibInput,
   isDuplicateEntry,
+  isZeroBib,
 } from '../utils/timestampRecorder';
-
-/** Check if bib is all zeros (e.g., "0", "00", "000") */
-function isZeroBib(bib: string): boolean {
-  if (!bib) return false;
-  return /^0+$/.test(bib);
-}
+import { attachTimingPhoto } from './timingPhoto';
 
 // Module-level listener manager for lifecycle cleanup
 const listeners = new ListenerManager();
@@ -461,32 +455,7 @@ async function recordRadialTimestamp(): Promise<void> {
   try {
     // Photo capture (async, non-blocking)
     if (state.settings.photoCapture) {
-      captureTimingPhoto()
-        .then(async (photo) => {
-          if (photo) {
-            // Verify entry still exists (may have been undone/deleted)
-            const exists = store
-              .getState()
-              .entries.some((e) => e.id === entry.id);
-            if (!exists) return;
-            try {
-              const saved = await photoStorage.savePhoto(entry.id, photo);
-              if (saved) {
-                store.updateEntry(entry.id, { photo: 'indexeddb' });
-              }
-            } catch (err) {
-              logWarning('Camera', 'photo save', err, 'photoError');
-            }
-          }
-        })
-        .catch((err) => {
-          if (err instanceof Error && err.name === 'PhotoTooLargeError') {
-            const lang = store.getState().currentLang;
-            showToast(t('photoTooLarge', lang), 'warning');
-          } else {
-            logWarning('Camera', 'captureTimingPhoto', err, 'photoError');
-          }
-        });
+      attachTimingPhoto(entry.id);
     }
 
     // Check for duplicate and zero bib
@@ -514,22 +483,20 @@ async function recordRadialTimestamp(): Promise<void> {
     });
 
     // Auto-increment bib or clear after recording
-    if (state.settings.auto && state.bibInput) {
-      const localNext = parseInt(state.bibInput, 10) + 1;
-      const nextBib = Math.min(
-        state.settings.sync && state.cloudHighestBib > 0
-          ? Math.max(localNext, state.cloudHighestBib + 1)
-          : localNext,
-        999,
-      );
-      const newBib = String(nextBib);
+    if (state.bibInput) {
+      const newBib = getNextBibInput({
+        bibInput: state.bibInput,
+        auto: state.settings.auto,
+        sync: state.settings.sync,
+        cloudHighestBib: state.cloudHighestBib,
+      });
       store.setBibInput(newBib);
-      radialDial?.setValue(newBib);
+      if (newBib) {
+        radialDial?.setValue(newBib);
+      } else {
+        radialDial?.clear();
+      }
       updateRadialBibDisplay(newBib);
-    } else if (state.bibInput && !state.settings.auto) {
-      store.setBibInput('');
-      radialDial?.clear();
-      updateRadialBibDisplay('');
     }
 
     // Update stats

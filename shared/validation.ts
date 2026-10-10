@@ -28,6 +28,28 @@ export const MAX_BIB_LENGTH = 10;
 /** Maximum device name length */
 export const MAX_DEVICE_NAME_LENGTH = 100;
 
+/** Maximum entry ID length */
+export const MAX_ENTRY_ID_LENGTH = 128;
+
+/** Maximum device ID length */
+export const MAX_DEVICE_ID_LENGTH = 50;
+
+/** Maximum inline photo length (base64 chars) — matches server upload limit */
+export const MAX_PHOTO_LENGTH = 500_000;
+
+const BASE64_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+const PHOTO_DATA_URL_PREFIX_RE = /^data:image\/(jpeg|png|webp);base64,/;
+
+/**
+ * Validate inline photo data: raw base64 (optionally with an image data-URL
+ * prefix) within the size cap. The 'indexeddb' marker is NOT photo data.
+ */
+export function isValidPhotoData(photo: unknown): photo is string {
+  if (typeof photo !== 'string' || photo.length === 0) return false;
+  if (photo.length > MAX_PHOTO_LENGTH) return false;
+  return BASE64_RE.test(photo.replace(PHOTO_DATA_URL_PREFIX_RE, ''));
+}
+
 // ===== Shared Validation Functions =====
 
 /**
@@ -50,7 +72,9 @@ export function isValidRaceId(raceId: unknown): raceId is string {
  * - Optional: syncedAt, photo, gpsCoords, timeSource, gpsTimestamp
  *
  * This is the shared core validation used by both client and server.
- * The server may apply additional constraints (e.g., run limited to 1|2).
+ * Length caps for deviceId/deviceName and photo format are enforced by
+ * sanitization (truncate/strip) rather than rejection, so a bad field never
+ * drops the timing data itself.
  */
 export function isValidEntry(entry: unknown): boolean {
   if (!entry || typeof entry !== 'object') return false;
@@ -60,6 +84,8 @@ export function isValidEntry(entry: unknown): boolean {
   // ID can be string (new format) or number (legacy)
   if (typeof e.id !== 'string' && typeof e.id !== 'number') return false;
   if (typeof e.id === 'string' && e.id.length === 0) return false;
+  if (typeof e.id === 'string' && e.id.length > MAX_ENTRY_ID_LENGTH)
+    return false;
   if (typeof e.id === 'number' && e.id <= 0) return false;
 
   // Bib is optional but must be string if present
@@ -80,6 +106,9 @@ export function isValidEntry(entry: unknown): boolean {
     !(VALID_STATUSES as readonly string[]).includes(e.status as string)
   )
     return false;
+
+  // Run is optional (legacy data) but must be 1 or 2 if present
+  if (e.run !== undefined && e.run !== 1 && e.run !== 2) return false;
 
   // DeviceId is optional but must be string if present
   if (e.deviceId !== undefined && typeof e.deviceId !== 'string') return false;

@@ -28,9 +28,13 @@ export {
 import {
   isValidDeviceId,
   isValidEntry,
+  isValidPhotoData,
   isValidRaceId,
+  MAX_DEVICE_ID_LENGTH,
+  MAX_DEVICE_NAME_LENGTH,
   VALID_FAULT_TYPES,
 } from '../../shared/validation';
+import { isPhotoMarker } from './photoHelpers';
 
 /**
  * Validate that a run number is a positive integer
@@ -358,11 +362,18 @@ export function sanitizeEntry(entry: unknown, deviceId: string): Entry | null {
     run: e.run ?? 1,
     timestamp: e.timestamp,
     status: e.status || 'ok',
-    deviceId: sanitizeString(e.deviceId || deviceId, 50),
-    deviceName: sanitizeString(e.deviceName || 'Unknown Device', 100),
+    deviceId: sanitizeString(e.deviceId || deviceId, MAX_DEVICE_ID_LENGTH),
+    deviceName: sanitizeString(
+      e.deviceName || 'Unknown Device',
+      MAX_DEVICE_NAME_LENGTH,
+    ),
     syncedAt: e.syncedAt,
-    photo: e.photo, // Base64 doesn't need sanitization
+    // Keep the IndexedDB marker or well-formed base64; drop anything else
+    photo:
+      isPhotoMarker(e.photo) || isValidPhotoData(e.photo) ? e.photo : undefined,
     gpsCoords: e.gpsCoords,
+    ...(e.timeSource !== undefined && { timeSource: e.timeSource }),
+    ...(e.gpsTimestamp !== undefined && { gpsTimestamp: e.gpsTimestamp }),
   };
 }
 

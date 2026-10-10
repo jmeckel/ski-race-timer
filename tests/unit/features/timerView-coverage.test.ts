@@ -83,7 +83,10 @@ vi.mock('../../../src/utils/logger', () => ({
 
 const mockIsDuplicateEntry = vi.fn(() => false);
 
-vi.mock('../../../src/utils/timestampRecorder', () => ({
+vi.mock('../../../src/utils/timestampRecorder', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('../../../src/utils/timestampRecorder')
+  >()),
   createTimestampEntry: vi.fn(() => ({
     entry: {
       id: 'test-entry-1',

@@ -265,6 +265,32 @@ describe('GPS Service', () => {
     });
   });
 
+  describe('time offset from cached fixes', () => {
+    const coords = {
+      latitude: 47.0,
+      longitude: 8.0,
+      accuracy: 5,
+      altitude: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+    };
+
+    it('ignores a stale cached fix for the clock offset', () => {
+      gpsService.start();
+      successCallback({ coords, timestamp: Date.now() - 30000 });
+      expect(gpsService.getTimeOffset()).toBeNull();
+    });
+
+    it('uses a fresh fix for the clock offset', () => {
+      gpsService.start();
+      successCallback({ coords, timestamp: Date.now() });
+      const offset = gpsService.getTimeOffset();
+      expect(offset).not.toBeNull();
+      expect(Math.abs(offset!)).toBeLessThan(2000);
+    });
+  });
+
   describe('getTimestamp', () => {
     it('should return GPS timestamp when available', () => {
       gpsService.start();

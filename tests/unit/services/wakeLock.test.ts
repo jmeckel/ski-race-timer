@@ -135,6 +135,28 @@ describe('Wake Lock Service', () => {
     });
   });
 
+  describe('enable/disable race', () => {
+    it('should release a lock that resolves after disable()', async () => {
+      let resolveRequest: (s: typeof mockSentinel) => void = () => {};
+      (
+        navigator.wakeLock.request as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRequest = resolve;
+          }),
+      );
+
+      const enabling = wakeLockService.enable();
+      await wakeLockService.disable();
+      resolveRequest(mockSentinel);
+
+      expect(await enabling).toBe(false);
+      expect(mockSentinel.release).toHaveBeenCalled();
+      expect(wakeLockService.isActive()).toBe(false);
+    });
+  });
+
   describe('enable', () => {
     it('should request wake lock and return true', async () => {
       const result = await wakeLockService.enable();
