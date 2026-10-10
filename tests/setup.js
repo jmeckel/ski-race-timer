@@ -193,11 +193,11 @@ afterEach(() => {
 
 // Export mocks for use in tests
 export {
-  localStorageMock,
-  geolocationMock,
   AudioContextMock,
   BroadcastChannelMock,
   FileReaderMock,
+  geolocationMock,
+  localStorageMock,
 };
 
 // Test helper utilities

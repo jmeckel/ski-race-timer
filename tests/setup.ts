@@ -92,9 +92,9 @@ class MockHTMLCanvasElement {
 
 // Export mocks for use in tests
 export {
-  mockUUID,
-  mockMediaStream,
-  mockMediaDevices,
-  MockHTMLVideoElement,
   MockHTMLCanvasElement,
+  MockHTMLVideoElement,
+  mockMediaDevices,
+  mockMediaStream,
+  mockUUID,
 };

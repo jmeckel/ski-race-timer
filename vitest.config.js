@@ -4,8 +4,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      'virtual:pwa-register': resolve(__dirname, 'tests/__mocks__/virtualPwaRegister.ts'),
+      '@': resolve(import.meta.dirname, 'src'),
+      'virtual:pwa-register': resolve(import.meta.dirname, 'tests/__mocks__/virtualPwaRegister.ts'),
     },
   },
   test: {

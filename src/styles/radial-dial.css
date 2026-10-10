@@ -282,6 +282,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     top: 8px;
     /* Fallback for browsers without cqi support (Safari <16.4) */
     transform-origin: 0 130px;
+    /* biome-ignore lint/suspicious/noDuplicateProperties: intentional progressive-enhancement fallback */
     transform-origin: 0 calc(50cqi - 8px);
     opacity: 0.3;
 
@@ -830,6 +831,7 @@ body:not(.ambient-mode) .app:has(.timer-view.radial-mode.active) > .tab-bar {
     /* Tick marks use container query units from dial-container */
     .dial-tick {
       transform-origin: 0 130px;
+      /* biome-ignore lint/suspicious/noDuplicateProperties: intentional progressive-enhancement fallback */
       transform-origin: 0 calc(50cqi - 8px);
     }
 

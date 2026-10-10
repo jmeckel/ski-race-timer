@@ -95,6 +95,7 @@
        - 100dvh: dynamic viewport height (adjusts with browser chrome)
     */
     height: 100%;
+    /* biome-ignore lint/suspicious/noDuplicateProperties: intentional progressive-enhancement fallback */
     height: -webkit-fill-available;
     overflow: hidden;
     font-family: var(--font-body);
@@ -116,6 +117,7 @@
   @media all and (display-mode: standalone) {
     body {
       height: 100%;
+      /* biome-ignore lint/suspicious/noDuplicateProperties: intentional progressive-enhancement fallback */
       height: -webkit-fill-available;
     }
 
@@ -1539,7 +1541,8 @@ body.ambient-mode .timer-view .timing-controls,
 body.ambient-mode .timer-view .bib-entry-section,
 body.ambient-mode .timer-view .number-pad,
 /* Radial mode elements */
-  body.ambient-mode .timer-view
+  body.ambient-mode
+  .timer-view
   .radial-top-row,
 body.ambient-mode .timer-view .radial-controls-row,
 body.ambient-mode .timer-view .radial-bottom-row,

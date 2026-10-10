@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
   define: {
@@ -15,102 +15,58 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     cssMinify: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
       },
       output: {
-        manualChunks(id) {
-          // Vendor chunks
-          if (id.includes('@preact/signals-core')) {
-            return 'vendor-signals';
-          }
-
-          // Voice services: gate-judge only (voice commands, voice notes, LLM, speech)
-          // Must be checked BEFORE the shared rule to exclude from shared chunk
-          if (
-            id.includes('src/services/voice') ||
-            id.includes('src/services/voiceNote') ||
-            id.includes('src/services/llmProvider') ||
-            id.includes('src/services/speechSynthesis')
-          ) {
-            return 'gate-judge';
-          }
-
-          // Camera service: timer views only, lazy-loaded elsewhere
-          if (id.includes('src/services/camera')) {
-            return 'timer';
-          }
-
-          // Shared infrastructure: store, services, utils, i18n, components, modals
-          // Prevents Vite from inlining shared code into view chunks
-          if (
-            id.includes('src/store/') ||
-            id.includes('src/services/') ||
-            id.includes('src/utils/') ||
-            id.includes('src/i18n/') ||
-            id.includes('src/components/Toast') ||
-            id.includes('src/components/Clock') ||
-            id.includes('src/components/SwipeActions') ||
-            id.includes('src/components/index') ||
-            id.includes('src/features/modals') ||
-            id.includes('src/features/faults/')
-          ) {
-            return 'shared';
-          }
-
-          // Timer view: radial dial components and timer view
-          if (
-            id.includes('src/features/radialTimerView') ||
-            id.includes('src/components/RadialDial.ts') ||
-            id.includes('src/components/RadialDialAnimation') ||
-            id.includes('src/components/RadialDialInteraction')
-          ) {
-            return 'timer';
-          }
-
-          // Results view: results list and virtual list
-          if (
-            id.includes('src/features/resultsView') ||
-            id.includes('src/components/VirtualList')
-          ) {
-            return 'results';
-          }
-
-          // Settings view: settings orchestrator and sub-modules
-          if (
-            id.includes('src/features/settingsView') ||
-            id.includes('src/features/settings/')
-          ) {
-            return 'settings';
-          }
-
-          // Gate Judge view: gate judge UI and voice notes
-          // Note: faults/ moved to shared — used by app orchestrators and multiple views
-          if (
-            id.includes('src/features/gateJudgeView') ||
-            id.includes('src/features/gateJudge.ts') ||
-            id.includes('src/features/voiceNoteUI')
-          ) {
-            return 'gate-judge';
-          }
-
-          // Export module: shared between chief-judge and results views
-          if (id.includes('src/features/export')) {
-            return 'export';
-          }
-
-          // Chief Judge view: chief judge panel
-          if (id.includes('src/features/chiefJudgeView')) {
-            return 'chief-judge';
-          }
+        // Rolldown groups capture their modules' dependencies recursively, so
+        // priority decides ownership: higher-priority groups claim modules first.
+        // Shared infrastructure must outrank the view groups, otherwise a view
+        // chunk (e.g. chief-judge) absorbs the store/utils it imports.
+        codeSplitting: {
+          groups: [
+            { name: 'vendor-signals', test: /@preact[\\/]signals-core/, priority: 100 },
+            // Shared infrastructure: store, services, utils, i18n, components, modals, faults.
+            // Voice/camera services are excluded: they belong to the gate-judge/timer chunks.
+            {
+              name: 'shared',
+              test: /src[\\/](store|services[\\/](?!voice|llmProvider|speechSynthesis|camera)|utils|i18n|features[\\/]faults)[\\/]?|src[\\/]components[\\/](Toast|Clock|SwipeActions|index)|src[\\/]features[\\/]modals/,
+              priority: 80,
+            },
+            // Export module: shared between chief-judge and results views
+            { name: 'export', test: /src[\\/]features[\\/]export/, priority: 70 },
+            // Timer view: radial dial components, timer view, camera service
+            {
+              name: 'timer',
+              test: /src[\\/]services[\\/]camera|src[\\/]features[\\/]radialTimerView|src[\\/]components[\\/]RadialDial/,
+              priority: 10,
+            },
+            // Results view: results list and virtual list
+            {
+              name: 'results',
+              test: /src[\\/]features[\\/]resultsView|src[\\/]components[\\/]VirtualList/,
+              priority: 10,
+            },
+            // Settings view: settings orchestrator and sub-modules
+            { name: 'settings', test: /src[\\/]features[\\/]settings(View|[\\/])/, priority: 10 },
+            // Gate Judge view: gate judge UI, voice notes, voice/LLM/speech services
+            {
+              name: 'gate-judge',
+              test: /src[\\/]services[\\/](voice|llmProvider|speechSynthesis)|src[\\/]features[\\/](gateJudgeView|gateJudge\.ts|voiceNoteUI)/,
+              // Above other views: settings imports gate-judge modules and would absorb them
+              priority: 20,
+            },
+            // Chief Judge view: chief judge panel
+            { name: 'chief-judge', test: /src[\\/]features[\\/]chiefJudgeView/, priority: 10 },
+          ],
         },
       },
     },
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
   plugins: [
