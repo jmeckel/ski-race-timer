@@ -20,6 +20,7 @@ const mockRedisClient = {
   get: vi.fn(),
   set: vi.fn().mockResolvedValue('OK'),
   del: vi.fn().mockResolvedValue(1),
+  incr: vi.fn().mockResolvedValue(1),
   multi: vi.fn(() => ({
     incr: vi.fn().mockReturnThis(),
     expire: vi.fn().mockReturnThis(),
@@ -29,6 +30,7 @@ const mockRedisClient = {
 };
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => mockRedisClient),
   hasRedisError: vi.fn(() => false),
   CLIENT_PIN_KEY: 'admin:clientPin',
@@ -322,6 +324,8 @@ describe('API: /api/v1/admin/reset-pin', () => {
 
       expect(mockRedisClient.del).toHaveBeenCalledWith('admin:clientPin');
       expect(mockRedisClient.del).toHaveBeenCalledWith('admin:chiefJudgePin');
+      // Tokens issued under the old PINs are revoked
+      expect(mockRedisClient.incr).toHaveBeenCalledWith('admin:tokenEpoch');
       expect(sendSuccess).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({

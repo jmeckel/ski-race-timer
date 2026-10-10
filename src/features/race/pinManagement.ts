@@ -11,6 +11,7 @@ import {
   exchangePinForToken,
   getAuthHeaders,
   hasAuthToken,
+  setAuthToken,
 } from '../../services/auth';
 import { store } from '../../store';
 import type { Language } from '../../types';
@@ -240,9 +241,18 @@ async function handleSavePin(): Promise<void> {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // Clear old token and get new one with new PIN
-      clearAuthToken();
-      const authResult = await authenticateWithPin(newPin);
+      // Server revokes all tokens on PIN change and returns a fresh one for us
+      const data = (await response.json().catch(() => ({}))) as {
+        token?: unknown;
+      };
+      let authResult: { success: boolean };
+      if (typeof data.token === 'string') {
+        setAuthToken(data.token);
+        authResult = { success: true };
+      } else {
+        clearAuthToken();
+        authResult = await authenticateWithPin(newPin);
+      }
 
       if (!authResult.success) {
         showToast(t('pinSyncFailed', lang), 'error');

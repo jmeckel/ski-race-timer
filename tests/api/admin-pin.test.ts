@@ -15,9 +15,15 @@ const mockRedisClient = {
   get: vi.fn(),
   set: vi.fn().mockResolvedValue('OK'),
   on: vi.fn(),
+  multi: vi.fn(() => ({
+    incr: vi.fn().mockReturnThis(),
+    expire: vi.fn().mockReturnThis(),
+    exec: vi.fn().mockResolvedValue([[null, 1]]),
+  })),
 };
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => mockRedisClient),
   hasRedisError: vi.fn(() => false),
   CLIENT_PIN_KEY: 'admin:clientPin',
@@ -26,6 +32,8 @@ vi.mock('../../api/lib/redis.js', () => ({
 
 vi.mock('../../api/lib/jwt.js', () => ({
   validateAuth: vi.fn().mockResolvedValue({ valid: true, method: 'jwt' }),
+  issueToken: vi.fn(async () => 'fresh-token'),
+  revokeAllTokens: vi.fn(async () => {}),
   hashPin: vi.fn((pin: string) => `hashed:${pin}`),
   verifyPin: vi.fn((pin: string, stored: string) => stored === `hashed:${pin}`),
 }));
@@ -74,7 +82,13 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
   getRequestId: vi.fn(() => 'test-req-id'),
 }));
 
-import { hashPin, validateAuth, verifyPin } from '../../api/lib/jwt.js';
+import {
+  hashPin,
+  issueToken,
+  revokeAllTokens,
+  validateAuth,
+  verifyPin,
+} from '../../api/lib/jwt.js';
 import { getRedis, hasRedisError } from '../../api/lib/redis.js';
 import {
   sendAuthRequired,
@@ -409,9 +423,27 @@ describe('API: /api/v1/admin/pin', () => {
         'admin:clientPin',
         'hashed:5678',
       );
+      // All outstanding tokens are revoked; the caller gets a fresh chief token
+      expect(revokeAllTokens).toHaveBeenCalled();
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ role: 'chiefJudge' }),
+      );
       expect(sendSuccess).toHaveBeenCalledWith(expect.anything(), {
         success: true,
+        token: 'fresh-token',
       });
+    });
+
+    it('should not revoke tokens when current PIN is incorrect', async () => {
+      mockRedisClient.get.mockResolvedValue('hashed:1234');
+      const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+        body: { currentPin: '0000', newPin: '5678' },
+      } as any;
+      await handler(req, mockRes as any);
+      expect(revokeAllTokens).not.toHaveBeenCalled();
     });
   });
 

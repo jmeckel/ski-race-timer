@@ -1,6 +1,11 @@
 import { apiLogger } from '../../lib/apiLogger.js';
 import { createHandler } from '../../lib/handler.js';
-import { hashPin, verifyPin } from '../../lib/jwt.js';
+import {
+  hashPin,
+  issueToken,
+  revokeAllTokens,
+  verifyPin,
+} from '../../lib/jwt.js';
 import { CHIEF_JUDGE_PIN_KEY, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import { sendBadRequest, sendError, sendSuccess } from '../../lib/response.js';
 
@@ -23,6 +28,13 @@ export default createHandler(
   {
     methods: ['GET', 'POST'],
     auth: true,
+    // Throttles currentPin guessing by a chief-judge token holder
+    rateLimit: {
+      keyPrefix: 'admin-pin',
+      window: 60,
+      maxRequests: 30,
+      maxPosts: 5,
+    },
   },
   async (req, res, { client, auth }) => {
     if (req.method === 'GET') {
@@ -79,8 +91,16 @@ export default createHandler(
       const newPinHash = await hashPin(newPin);
       await client.set(CLIENT_PIN_KEY, newPinHash);
 
+      // A PIN change is often a response to a leaked PIN: revoke every token
+      // issued under the old PIN, then re-issue one for the caller.
+      await revokeAllTokens(client);
+      const token = await issueToken(client, {
+        authenticatedAt: Date.now(),
+        role: 'chiefJudge',
+      });
+
       apiLogger.info('PIN changed successfully via admin/pin API');
-      return sendSuccess(res, { success: true });
+      return sendSuccess(res, { success: true, token });
     }
   },
 );

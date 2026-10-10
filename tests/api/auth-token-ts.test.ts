@@ -20,6 +20,7 @@ const mockRedisClient = {
 };
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => mockRedisClient),
   hasRedisError: vi.fn(() => false),
   CLIENT_PIN_KEY: 'admin:clientPin',
@@ -27,7 +28,8 @@ vi.mock('../../api/lib/redis.js', () => ({
 }));
 
 vi.mock('../../api/lib/jwt.js', () => ({
-  generateToken: vi.fn(() => 'mock-jwt-token'),
+  issueToken: vi.fn(async () => 'mock-jwt-token'),
+  validateAuth: vi.fn(async () => ({ valid: true, method: 'none' })),
   hashPin: vi.fn((pin: string) => `hashed:${pin}`),
   verifyPin: vi.fn((pin: string, stored: string) => stored === `hashed:${pin}`),
 }));
@@ -67,7 +69,12 @@ vi.mock('../../api/lib/apiLogger.js', () => ({
   getRequestId: vi.fn(() => 'test-req-id'),
 }));
 
-import { generateToken, hashPin, verifyPin } from '../../api/lib/jwt.js';
+import {
+  hashPin,
+  issueToken,
+  validateAuth,
+  verifyPin,
+} from '../../api/lib/jwt.js';
 import { getRedis, hasRedisError } from '../../api/lib/redis.js';
 import {
   handlePreflight,
@@ -112,7 +119,7 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       exec: vi.fn().mockResolvedValue([[null, 1]]),
     };
     mockRedisClient.multi.mockReturnValue(mockMulti);
-    mockRedisClient.get.mockResolvedValue(null);
+    mockRedisClient.get.mockReset().mockResolvedValue(null);
     mockRedisClient.set.mockResolvedValue('OK');
   });
 
@@ -295,7 +302,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         'hashed:1234',
         'NX',
       );
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'timer' }),
       );
       expect(sendSuccess).toHaveBeenCalledWith(
@@ -320,7 +328,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       } as any;
       await handler(req, mockRes as any);
 
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'gateJudge' }),
       );
       expect(sendSuccess).toHaveBeenCalledWith(
@@ -436,7 +445,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
       mockRedisClient.set.mockResolvedValue('OK');
       const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'timer' }),
       );
     });
@@ -450,7 +460,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         body: { pin: '1234', role: 'admin' },
       } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'timer' }),
       );
     });
@@ -463,7 +474,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         body: { pin: '1234', role: 'gateJudge' },
       } as any;
       await handler(req, mockRes as any);
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'gateJudge' }),
       );
     });
@@ -488,7 +500,8 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         'hashed:9999',
         'NX',
       );
-      expect(generateToken).toHaveBeenCalledWith(
+      expect(issueToken).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ role: 'chiefJudge' }),
       );
       expect(sendSuccess).toHaveBeenCalledWith(
@@ -499,6 +512,31 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
           role: 'chiefJudge',
           message: 'Chief Judge PIN set successfully',
         }),
+      );
+    });
+
+    it('should refuse to set first chief judge PIN without race membership', async () => {
+      // Client PIN exists, caller has no valid token
+      mockRedisClient.get.mockImplementation(async (key: string) =>
+        key === 'admin:clientPin' ? 'hashed:1234' : null,
+      );
+      vi.mocked(validateAuth).mockResolvedValueOnce({
+        valid: false,
+        error: 'Authorization required',
+      });
+      const req = {
+        method: 'POST',
+        headers: {},
+        body: { pin: '9999', role: 'chiefJudge' },
+      } as any;
+      await handler(req, mockRes as any);
+
+      expect(mockRedisClient.set).not.toHaveBeenCalled();
+      expect(issueToken).not.toHaveBeenCalled();
+      expect(sendError).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.stringContaining('race PIN'),
+        401,
       );
     });
 
@@ -551,6 +589,35 @@ describe('API: /api/v1/auth/token (TypeScript handler)', () => {
         'admin:chiefJudgePin',
         'hashed:9999',
       );
+    });
+  });
+
+  // ─── Brute-force Lockout ───
+
+  describe('Global failed-attempt lockout', () => {
+    it('should record a failure for an incorrect PIN', async () => {
+      mockRedisClient.get.mockImplementation(async (key: string) =>
+        key === 'admin:clientPin' ? 'hashed:1234' : null,
+      );
+      const req = { method: 'POST', headers: {}, body: { pin: '0000' } } as any;
+      await handler(req, mockRes as any);
+
+      const multi = mockRedisClient.multi.mock.results.at(-1)?.value;
+      expect(multi.incr).toHaveBeenCalledWith('auth:failures:admin:clientPin');
+    });
+
+    it('should reject even the correct PIN once the failure budget is spent', async () => {
+      mockRedisClient.get.mockImplementation(async (key: string) => {
+        if (key === 'admin:clientPin') return 'hashed:1234';
+        if (key === 'auth:failures:admin:clientPin') return '30';
+        return null;
+      });
+      const req = { method: 'POST', headers: {}, body: { pin: '1234' } } as any;
+      await handler(req, mockRes as any);
+
+      expect(sendRateLimitExceeded).toHaveBeenCalled();
+      expect(verifyPin).not.toHaveBeenCalled();
+      expect(issueToken).not.toHaveBeenCalled();
     });
   });
 

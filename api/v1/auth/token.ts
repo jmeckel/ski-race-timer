@@ -1,5 +1,6 @@
+import type Redis from 'ioredis';
 import { createHandler } from '../../lib/handler.js';
-import { generateToken, hashPin, verifyPin } from '../../lib/jwt.js';
+import { hashPin, issueToken, validateAuth, verifyPin } from '../../lib/jwt.js';
 import { CHIEF_JUDGE_PIN_KEY, CLIENT_PIN_KEY } from '../../lib/redis.js';
 import {
   sendBadRequest,
@@ -20,6 +21,33 @@ const AUTH_RATE_LIMIT = {
   maxRequests: 5,
   maxPosts: 5,
 } as const;
+
+// Global (all-IP) failed-attempt budget per PIN. The per-IP limit alone lets a
+// distributed attacker enumerate the 10,000-PIN space quickly; this caps total
+// guesses to ~3,000/day regardless of source. Valid tokens keep working while locked.
+const FAILED_ATTEMPT_LIMIT = 30;
+const FAILED_ATTEMPT_WINDOW_SECONDS = 15 * 60;
+
+function failedAttemptsKey(pinKey: string): string {
+  return `auth:failures:${pinKey}`;
+}
+
+async function isLockedOut(client: Redis, pinKey: string): Promise<boolean> {
+  const count = Number(await client.get(failedAttemptsKey(pinKey)));
+  return count >= FAILED_ATTEMPT_LIMIT;
+}
+
+async function recordFailedAttempt(
+  client: Redis,
+  pinKey: string,
+): Promise<void> {
+  const key = failedAttemptsKey(pinKey);
+  await client
+    .multi()
+    .incr(key)
+    .expire(key, FAILED_ATTEMPT_WINDOW_SECONDS)
+    .exec();
+}
 
 interface TokenRequestBody {
   pin?: string;
@@ -80,10 +108,25 @@ export default createHandler(
 
     // For chiefJudge role, use separate PIN validation
     if (userRole === 'chiefJudge') {
+      if (await isLockedOut(client, CHIEF_JUDGE_PIN_KEY)) {
+        return sendRateLimitExceeded(res, FAILED_ATTEMPT_WINDOW_SECONDS);
+      }
+
       const chiefPinHash = await client.get(CHIEF_JUDGE_PIN_KEY);
 
       if (!chiefPinHash) {
-        // No chief judge PIN set yet - first request sets the PIN
+        // No chief judge PIN set yet - first request sets the PIN.
+        // SECURITY: once a client PIN exists, only an authenticated race member may
+        // claim the chief role; otherwise anyone could self-promote to chief judge.
+        const membership = await validateAuth(req, client, CLIENT_PIN_KEY);
+        if (!membership.valid) {
+          return sendError(
+            res,
+            'Sign in with the race PIN before setting the Chief Judge PIN',
+            401,
+          );
+        }
+
         // Use SET NX (set-if-not-exists) to prevent race condition where
         // two concurrent requests both observe null and both set their PIN
         const newPinHash = await hashPin(pin);
@@ -93,11 +136,12 @@ export default createHandler(
           // Another request set the PIN concurrently — verify against it
           const concurrentHash = await client.get(CHIEF_JUDGE_PIN_KEY);
           if (!concurrentHash || !(await verifyPin(pin, concurrentHash))) {
+            await recordFailedAttempt(client, CHIEF_JUDGE_PIN_KEY);
             return sendError(res, 'Invalid Chief Judge PIN', 401);
           }
         }
 
-        const token = generateToken({
+        const token = await issueToken(client, {
           createdAt: Date.now(),
           role: 'chiefJudge',
         });
@@ -115,6 +159,7 @@ export default createHandler(
       const pinValid = await verifyPin(pin, chiefPinHash);
 
       if (!pinValid) {
+        await recordFailedAttempt(client, CHIEF_JUDGE_PIN_KEY);
         return sendError(res, 'Invalid Chief Judge PIN', 401);
       }
 
@@ -125,7 +170,7 @@ export default createHandler(
       }
 
       // Chief Judge PIN is valid, generate JWT token
-      const token = generateToken({
+      const token = await issueToken(client, {
         authenticatedAt: Date.now(),
         role: 'chiefJudge',
       });
@@ -138,6 +183,10 @@ export default createHandler(
     }
 
     // For timer and gateJudge roles, use regular PIN
+    if (await isLockedOut(client, CLIENT_PIN_KEY)) {
+      return sendRateLimitExceeded(res, FAILED_ATTEMPT_WINDOW_SECONDS);
+    }
+
     const storedPinHash = await client.get(CLIENT_PIN_KEY);
 
     if (!storedPinHash) {
@@ -151,11 +200,12 @@ export default createHandler(
         // Another request set the PIN concurrently — verify against it
         const concurrentHash = await client.get(CLIENT_PIN_KEY);
         if (!concurrentHash || !(await verifyPin(pin, concurrentHash))) {
+          await recordFailedAttempt(client, CLIENT_PIN_KEY);
           return sendError(res, 'Invalid PIN', 401);
         }
       }
 
-      const token = generateToken({
+      const token = await issueToken(client, {
         createdAt: Date.now(),
         role: userRole,
       });
@@ -174,6 +224,7 @@ export default createHandler(
     const pinValid = await verifyPin(pin, storedPinHash);
 
     if (!pinValid) {
+      await recordFailedAttempt(client, CLIENT_PIN_KEY);
       return sendError(res, 'Invalid PIN', 401);
     }
 
@@ -184,7 +235,7 @@ export default createHandler(
     }
 
     // PIN is valid, generate JWT token
-    const token = generateToken({
+    const token = await issueToken(client, {
       authenticatedAt: Date.now(),
       role: userRole,
     });

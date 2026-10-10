@@ -347,7 +347,8 @@ export default createHandler(
         isReady,
         firstGateColor,
       } = req.query;
-      if (deviceId && gateStart && gateEnd) {
+      // SECURITY: write side effect on GET — only for authenticated devices
+      if (auth?.method === 'jwt' && deviceId && gateStart && gateEnd) {
         const start = parseInt(gateStart as string, 10);
         const end = parseInt(gateEnd as string, 10);
         // Validate gate numbers: must be positive integers, end >= start, reasonable max (100 gates)

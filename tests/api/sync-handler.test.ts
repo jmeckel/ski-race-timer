@@ -28,6 +28,7 @@ const mockRedisClient = {
   hdel: vi.fn().mockResolvedValue(1),
   smembers: vi.fn().mockResolvedValue([]),
   sadd: vi.fn().mockResolvedValue(1),
+  srem: vi.fn().mockResolvedValue(1),
   multi: vi.fn(() => mockMultiResult),
   watch: vi.fn().mockResolvedValue('OK'),
   unwatch: vi.fn().mockResolvedValue('OK'),
@@ -36,6 +37,7 @@ const mockRedisClient = {
 };
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => mockRedisClient),
   hasRedisError: vi.fn(() => false),
   CLIENT_PIN_KEY: 'admin:clientPin',
@@ -79,6 +81,9 @@ vi.mock('../../api/lib/validation.js', () => ({
 }));
 
 vi.mock('../../api/lib/atomicOps.js', () => ({
+  withWatchLock: vi.fn(async (_client: any, fn: () => Promise<unknown>) =>
+    fn(),
+  ),
   atomicUpdate: vi.fn(
     async (
       _client: any,
@@ -488,6 +493,42 @@ describe('API: /api/v1/sync', () => {
           success: true,
         }),
       );
+    });
+
+    describe('photo handling', () => {
+      const storedPhoto = () => {
+        const call = vi.mocked(sendSuccess).mock.calls.at(-1);
+        return (call?.[1] as any)?.entries?.[0]?.photo;
+      };
+      const postWithPhoto = async (photo: string) => {
+        vi.mocked(safeJsonParse).mockReturnValueOnce(null); // tombstone
+        await handler(
+          makeReq(
+            'POST',
+            { raceId: 'test' },
+            { entry: validEntry({ photo }), deviceId: 'dev1' },
+            { authorization: 'Bearer t' },
+          ),
+          mockRes as any,
+        );
+      };
+
+      it('stores raw base64 photos as sent by the camera', async () => {
+        await postWithPhoto('/9j/4AAQSkZJRg==');
+        expect(storedPhoto()).toBe('/9j/4AAQSkZJRg==');
+      });
+
+      it('normalizes data-URL photos to raw base64', async () => {
+        await postWithPhoto('data:image/jpeg;base64,/9j/4AAQSkZJRg==');
+        expect(storedPhoto()).toBe('/9j/4AAQSkZJRg==');
+      });
+
+      it('drops non-base64 payloads', async () => {
+        await postWithPhoto('javascript:alert(1)');
+        expect(storedPhoto()).toBeUndefined();
+        await postWithPhoto('data:image/svg+xml;base64,PHN2Zz4=');
+        expect(storedPhoto()).toBeUndefined();
+      });
     });
 
     it('should detect tombstone on POST', async () => {

@@ -88,10 +88,15 @@ describe('Security Patterns - Source Code Assertions', () => {
       expect(source).toContain('sendAuthRequired');
     });
 
-    it('auth/token.ts should NOT use validateAuth (it IS the auth endpoint)', () => {
+    it('auth/token.ts uses validateAuth only to gate first Chief Judge PIN setup', () => {
       const source = readSource('api/v1/auth/token.ts');
-      // token.ts provides authentication - it verifies PINs directly, not tokens
-      expect(source).not.toContain('validateAuth');
+      // token.ts verifies PINs directly; a token is only required to claim the
+      // chief role when no chief PIN exists yet (prevents self-promotion)
+      const calls = source.match(/validateAuth\(/g) || [];
+      expect(calls).toHaveLength(1);
+      expect(source.indexOf('validateAuth(')).toBeGreaterThan(
+        source.indexOf('if (!chiefPinHash)'),
+      );
     });
 
     it('reset-pin.ts should use server-side PIN verification (not validateAuth)', () => {
@@ -365,8 +370,8 @@ describe('Security Patterns - Source Code Assertions', () => {
   describe('JWT configuration security', () => {
     it('jwt.ts should fail if JWT_SECRET is not set (no fallback)', () => {
       const source = readSource('api/lib/jwt.ts');
-      expect(source).toContain('!process.env.JWT_SECRET');
-      expect(source).toContain('throw new Error');
+      expect(source).toContain('const secret = process.env.JWT_SECRET');
+      expect(source).toMatch(/if \(!secret\) \{\s*throw new Error/);
     });
 
     it('jwt.ts should use HS256 algorithm', () => {

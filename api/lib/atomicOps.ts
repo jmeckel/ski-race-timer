@@ -36,6 +36,36 @@ interface AtomicConflictError {
   existing: null;
 }
 
+// WATCH state belongs to the connection, and the Redis client is a per-instance
+// singleton. With concurrent requests in one instance (Fluid Compute), request
+// B's EXEC/UNWATCH would silently clear request A's WATCH, letting A commit on a
+// stale read. Serialize WATCH sections per connection; plain commands are unaffected.
+const watchLocks = new WeakMap<Redis, Promise<unknown>>();
+
+/**
+ * Run `fn` with exclusive use of the connection's WATCH state.
+ * Every WATCH/MULTI/EXEC sequence on a shared client must go through this.
+ */
+export async function withWatchLock<T>(
+  client: Redis,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const previous = watchLocks.get(client) ?? Promise.resolve();
+  const run = previous.then(fn, fn);
+  // Keep the chain alive regardless of this section's outcome
+  watchLocks.set(
+    client,
+    run.catch(() => {}),
+  );
+  try {
+    return await run;
+  } catch (error) {
+    // Never leave a dangling WATCH for the next section on this connection
+    await client.unwatch().catch(() => {});
+    throw error;
+  }
+}
+
 /**
  * Execute an atomic Redis operation with WATCH/MULTI/EXEC retry loop.
  *
@@ -50,6 +80,24 @@ interface AtomicConflictError {
  * @returns The result from updateFn, or an error object on max retries
  */
 export async function atomicUpdate<TData, TResult>(
+  client: Redis,
+  redisKey: string,
+  defaultData: TData,
+  updateFn: (current: TData) => AtomicOutcome<TData, TResult>,
+  operationName: string,
+): Promise<TResult | AtomicConflictError> {
+  return withWatchLock(client, () =>
+    atomicUpdateUnlocked(
+      client,
+      redisKey,
+      defaultData,
+      updateFn,
+      operationName,
+    ),
+  );
+}
+
+async function atomicUpdateUnlocked<TData, TResult>(
   client: Redis,
   redisKey: string,
   defaultData: TData,

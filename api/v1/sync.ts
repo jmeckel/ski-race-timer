@@ -1,10 +1,10 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
 import { apiLogger } from '../lib/apiLogger.js';
 import {
   atomicUpdate,
   CACHE_EXPIRY_SECONDS,
   MAX_ATOMIC_RETRIES,
+  withWatchLock,
 } from '../lib/atomicOps.js';
 import {
   getActiveDeviceCount,
@@ -16,6 +16,7 @@ import { checkPhotoRateLimit } from '../lib/photoRateLimit.js';
 import {
   checkIfNoneMatch,
   generateETag,
+  getClientIP,
   safeJsonParse,
   sanitizeString,
   sendBadRequest,
@@ -35,10 +36,17 @@ import type {
   RaceEntry,
 } from '../lib/syncTypes.js';
 import { isValidRaceId, MAX_DEVICE_NAME_LENGTH } from '../lib/validation.js';
+import type { VercelRequest, VercelResponse } from '../lib/vercelTypes.js';
 
 // Configuration
 const MAX_ENTRIES_PER_RACE = 10000;
 const MAX_BATCH_SIZE = 10;
+// Race data is one JSON blob; cap embedded photo bytes so the blob (and every
+// read-modify-write of it) stays bounded regardless of how many devices upload
+const MAX_PHOTO_LENGTH = 500000;
+const PHOTO_DATA_URL_PREFIX_RE = /^data:image\/(jpeg|png|webp);base64,/;
+const BASE64_RE = /^[A-Za-z0-9+/]+={0,2}$/;
+const MAX_PHOTO_BYTES_PER_RACE = 50 * 1024 * 1024;
 const DEFAULT_PAGE_LIMIT = 500;
 const MAX_PAGE_LIMIT = 2000;
 
@@ -56,29 +64,35 @@ async function updateHighestBib(
 
   const highestBibKey = `race:${normalizedRaceId}:highestBib`;
 
-  // Use WATCH for atomic compare-and-set
-  for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
-    await client.watch(highestBibKey);
+  // Use WATCH for atomic compare-and-set (serialized on the shared connection)
+  return withWatchLock(client, async (): Promise<HighestBibResult> => {
+    for (let retry = 0; retry < MAX_ATOMIC_RETRIES; retry++) {
+      await client.watch(highestBibKey);
 
-    const currentHighest = await client.get(highestBibKey);
-    const currentNum = parseInt(currentHighest as string, 10) || 0;
+      const currentHighest = await client.get(highestBibKey);
+      const currentNum = parseInt(currentHighest as string, 10) || 0;
 
-    if (bibNum <= currentNum) {
-      await client.unwatch();
-      return { success: true }; // No update needed
+      if (bibNum <= currentNum) {
+        await client.unwatch();
+        return { success: true }; // No update needed
+      }
+
+      const multi = client.multi();
+      multi.set(highestBibKey, String(bibNum), 'EX', CACHE_EXPIRY_SECONDS);
+      const result = await multi.exec();
+
+      if (result !== null) {
+        return { success: true }; // Success
+      }
+      // WATCH detected change, retry
     }
-
-    const multi = client.multi();
-    multi.set(highestBibKey, String(bibNum), 'EX', CACHE_EXPIRY_SECONDS);
-    const result = await multi.exec();
-
-    if (result !== null) {
-      return { success: true }; // Success
-    }
-    // WATCH detected change, retry
-  }
-  apiLogger.warn('updateHighestBib: max retries exceeded');
-  return { success: false, error: 'Max retries exceeded updating highest bib' };
+    await client.unwatch();
+    apiLogger.warn('updateHighestBib: max retries exceeded');
+    return {
+      success: false,
+      error: 'Max retries exceeded updating highest bib',
+    };
+  });
 }
 
 /**
@@ -136,8 +150,27 @@ async function atomicAddEntry(
         };
       }
 
+      if (enrichedEntry.photo) {
+        const photoBytes = existing.entries.reduce(
+          (sum: number, e: RaceEntry) =>
+            sum + (typeof e.photo === 'string' ? e.photo.length : 0),
+          0,
+        );
+        if (
+          photoBytes + enrichedEntry.photo.length >
+          MAX_PHOTO_BYTES_PER_RACE
+        ) {
+          delete enrichedEntry.photo;
+        }
+      }
+
+      // Stamp syncedAt with the same clock reading as lastUpdated, at commit time.
+      // Stamping earlier lets a slow writer land with syncedAt < a cursor that a
+      // concurrent poll already returned, so delta sync would skip it forever.
+      const now = Date.now();
+      enrichedEntry.syncedAt = now;
       existing.entries.push(enrichedEntry);
-      existing.lastUpdated = Date.now();
+      existing.lastUpdated = now;
       return {
         data: existing,
         result: {
@@ -204,6 +237,23 @@ async function atomicDeleteEntry(
   return result;
 }
 
+/**
+ * Re-adding a deleted entry (e.g. undo) must clear its tombstone, otherwise the
+ * next poll on every device deletes it again.
+ */
+async function clearEntryTombstone(
+  client: Redis,
+  normalizedRaceId: string,
+  entryId: string,
+  sanitizedDeviceId: string,
+): Promise<void> {
+  await client.srem(
+    `race:${normalizedRaceId}:deleted_entries`,
+    `${entryId}:${sanitizedDeviceId}`,
+    entryId,
+  );
+}
+
 // Get highest bib for race
 async function getHighestBib(
   client: Redis,
@@ -222,6 +272,7 @@ async function handleGet(
   client: Redis,
   normalizedRaceId: string,
   redisKey: string,
+  isAuthenticated: boolean,
 ): Promise<void> {
   // Check for tombstone (race deleted by admin)
   const tombstoneKey = `race:${normalizedRaceId}:deleted`;
@@ -276,18 +327,19 @@ async function handleGet(
     });
   }
 
-  // Update device heartbeat if deviceId provided (from query params)
+  // Update device heartbeat if deviceId provided (from query params).
+  // SECURITY: this GET has a write side effect, so it gets the same auth and
+  // sanitization as POST — unauthenticated callers must not inflate device lists.
   const { deviceId: queryDeviceId, deviceName: queryDeviceName } = req.query;
-  if (queryDeviceId) {
-    const deviceIdStr =
-      typeof queryDeviceId === 'string' ? queryDeviceId : String(queryDeviceId);
-    const deviceNameStr =
-      typeof queryDeviceName === 'string' ? queryDeviceName : '';
+  if (isAuthenticated && typeof queryDeviceId === 'string' && queryDeviceId) {
     await updateDeviceHeartbeat(
       client,
       normalizedRaceId,
-      deviceIdStr,
-      deviceNameStr,
+      sanitizeString(queryDeviceId, 50),
+      sanitizeString(
+        typeof queryDeviceName === 'string' ? queryDeviceName : '',
+        MAX_DEVICE_NAME_LENGTH,
+      ),
     );
   }
 
@@ -384,6 +436,7 @@ async function enrichEntry(
   client: Redis,
   normalizedRaceId: string,
   log: ReturnType<typeof apiLogger.withRequestId>,
+  clientIP: string,
 ): Promise<{
   enrichedEntry: RaceEntry;
   photoSkipped: boolean;
@@ -403,25 +456,24 @@ async function enrichEntry(
   // Include photo if present (base64, limit size and rate)
   let photoSkipped = false;
   let photoRateLimited = false;
-  const ALLOWED_PHOTO_PREFIXES = [
-    'data:image/jpeg;base64,',
-    'data:image/png;base64,',
-    'data:image/webp;base64,',
-  ];
   if (entry.photo && typeof entry.photo === 'string') {
-    const hasValidPrefix = ALLOWED_PHOTO_PREFIXES.some((prefix) =>
-      entry.photo!.startsWith(prefix),
-    );
-    if (!hasValidPrefix) {
+    // Clients send raw base64 JPEG (camera strips the data-URL prefix) and the
+    // viewer re-adds a fixed image/jpeg prefix. Accept an optional image prefix
+    // for older clients, but always store raw base64 so nothing else (e.g. a
+    // javascript: or SVG URL) can be smuggled through.
+    const rawPhoto = entry.photo.replace(PHOTO_DATA_URL_PREFIX_RE, '');
+    if (!BASE64_RE.test(rawPhoto)) {
       photoSkipped = true;
-    } else if (entry.photo.length <= 500000) {
+    } else if (rawPhoto.length <= MAX_PHOTO_LENGTH) {
+      // Keyed on client IP, not the client-chosen deviceId, which an
+      // attacker could rotate per request to reset the counter
       const photoRateLimit = await checkPhotoRateLimit(
         client,
         normalizedRaceId,
-        sanitizedDeviceId,
+        clientIP,
       );
       if (photoRateLimit.allowed) {
-        enrichedEntry.photo = entry.photo;
+        enrichedEntry.photo = rawPhoto;
       } else {
         photoRateLimited = true;
         log.warn('Photo rate limited', {
@@ -530,6 +582,7 @@ async function handlePost(
     client,
     normalizedRaceId,
     log,
+    getClientIP(req),
   );
 
   // Atomically add entry using WATCH/MULTI/EXEC to prevent race conditions
@@ -543,6 +596,15 @@ async function handlePost(
   if (!addResult.success) {
     const status = addResult.error?.includes('limit') ? 400 : 409;
     return sendError(res, addResult.error!, status);
+  }
+
+  if (!addResult.isDuplicate) {
+    await clearEntryTombstone(
+      client,
+      normalizedRaceId,
+      String(enrichedEntry.id),
+      sanitizedDeviceId,
+    );
   }
 
   // Update device heartbeat
@@ -583,7 +645,7 @@ async function handlePost(
 // ─── POST Batch Handler ───
 
 async function handlePostBatch(
-  _req: VercelRequest,
+  req: VercelRequest,
   res: VercelResponse,
   client: Redis,
   normalizedRaceId: string,
@@ -621,6 +683,10 @@ async function handlePostBatch(
   const results: BatchEntryResult[] = [];
 
   for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') {
+      results.push({ entryId: '', success: false, error: 'Invalid entry' });
+      continue;
+    }
     const entryId = String(entry.id || '');
 
     const entryValidation = validate(EntrySchema, entry);
@@ -641,6 +707,7 @@ async function handlePostBatch(
         client,
         normalizedRaceId,
         log,
+        getClientIP(req),
       );
 
       const addResult = await atomicAddEntry(
@@ -654,6 +721,15 @@ async function handlePostBatch(
         results.push({ entryId, success: false, error: addResult.error });
       } else {
         results.push({ entryId, success: true });
+
+        if (!addResult.isDuplicate) {
+          await clearEntryTombstone(
+            client,
+            normalizedRaceId,
+            String(enrichedEntry.id),
+            sanitizedDeviceId,
+          );
+        }
 
         // Update highest bib (non-critical)
         await updateHighestBib(
@@ -773,7 +849,7 @@ export default createHandler(
     auth: true,
     writeRequiresAuth: true,
   },
-  async (req, res, { client, log }) => {
+  async (req, res, { client, log, auth }) => {
     const { raceId } = req.query;
 
     // Validate raceId
@@ -795,7 +871,14 @@ export default createHandler(
     const redisKey = `race:${normalizedRaceId}`;
 
     if (req.method === 'GET') {
-      return await handleGet(req, res, client, normalizedRaceId, redisKey);
+      return await handleGet(
+        req,
+        res,
+        client,
+        normalizedRaceId,
+        redisKey,
+        auth?.method === 'jwt',
+      );
     }
 
     if (req.method === 'POST') {

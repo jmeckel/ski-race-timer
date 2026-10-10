@@ -9,6 +9,8 @@ import { apiLogger } from './apiLogger.js';
 // Redis key constants
 export const CLIENT_PIN_KEY: string = 'admin:clientPin';
 export const CHIEF_JUDGE_PIN_KEY: string = 'admin:chiefJudgePin';
+/** Monotonic counter; JWTs from an older epoch are rejected (see jwt.ts) */
+export const TOKEN_EPOCH_KEY: string = 'admin:tokenEpoch';
 
 // Singleton Redis client
 let redis: Redis | null = null;

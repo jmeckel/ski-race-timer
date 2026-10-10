@@ -49,15 +49,22 @@ export const RoleSchema = v.union([
 
 // ─── Entry Schemas ───
 
+// Strict ISO-8601 (what toISOString() emits). Date.parse alone accepts free-form
+// trailing text, which would let arbitrary strings be stored and re-served.
+const ISO_TIMESTAMP_RE =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
+
 export const TimestampSchema = v.pipe(
   v.string(),
+  v.maxLength(40),
+  v.regex(ISO_TIMESTAMP_RE, 'Invalid timestamp format'),
   v.check((val) => !Number.isNaN(Date.parse(val)), 'Invalid timestamp format'),
 );
 
 export const EntrySchema = v.object({
   id: v.union([
     v.pipe(v.number(), v.minValue(1)),
-    v.pipe(v.string(), v.minLength(1)),
+    v.pipe(v.string(), v.minLength(1), v.maxLength(128)),
   ]),
   bib: v.optional(BibSchema),
   point: TimingPointSchema,
@@ -91,7 +98,10 @@ export const SyncDeleteBodySchema = v.object({
 export const GateRangeSchema = v.pipe(v.array(v.number()), v.length(2));
 
 export const FaultEntrySchema = v.object({
-  id: v.union([v.number(), v.pipe(v.string(), v.minLength(1))]),
+  id: v.union([
+    v.number(),
+    v.pipe(v.string(), v.minLength(1), v.maxLength(128)),
+  ]),
   bib: BibSchema,
   run: RunSchema,
   gateNumber: v.pipe(v.number(), v.minValue(1), v.maxValue(100)),

@@ -29,6 +29,7 @@ let mockRedisThrows = false;
 let mockRedisError = false;
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => {
     if (mockRedisThrows) throw new Error('Redis unavailable');
     return mockRedisClient;

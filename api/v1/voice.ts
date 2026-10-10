@@ -379,6 +379,8 @@ export default createHandler(
       maxPosts: 10,
     },
     auth: true,
+    // Proxies a paid LLM: never allow unauthenticated use, even in no-PIN mode
+    writeRequiresAuth: true,
   },
   async (req, res) => {
     // Determine provider (default to OpenAI)

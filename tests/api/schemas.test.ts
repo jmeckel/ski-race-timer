@@ -235,7 +235,18 @@ describe('Valibot Schemas', () => {
     it('should accept valid ISO timestamps', () => {
       expect(isValid(TimestampSchema, '2024-01-01T12:00:00.000Z')).toBe(true);
       expect(isValid(TimestampSchema, '2024-12-31T23:59:59Z')).toBe(true);
-      expect(isValid(TimestampSchema, '2024-06-15')).toBe(true);
+      expect(isValid(TimestampSchema, '2024-06-15T08:30:00+02:00')).toBe(true);
+    });
+
+    it('should reject date-only and free-form strings Date.parse would accept', () => {
+      expect(isValid(TimestampSchema, '2024-06-15')).toBe(false);
+      expect(
+        isValid(
+          TimestampSchema,
+          '2024-01-01T00:00:00Z (<img src=x onerror=alert(1)>)',
+        ),
+      ).toBe(false);
+      expect(isValid(TimestampSchema, 'Mon Jan 01 2024 12:00:00')).toBe(false);
     });
 
     it('should reject invalid date strings', () => {

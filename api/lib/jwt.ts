@@ -1,8 +1,10 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
-import type { VercelRequest } from '@vercel/node';
 import type Redis from 'ioredis';
 import jwt from 'jsonwebtoken';
+import { apiLogger } from './apiLogger.js';
+import { TOKEN_EPOCH_KEY } from './redis.js';
+import type { VercelRequest } from './vercelTypes.js';
 
 const pbkdf2Async = promisify(crypto.pbkdf2);
 
@@ -43,18 +45,55 @@ export interface ValidateAuthResult {
 const JWT_ALGORITHM = 'HS256' as const;
 const JWT_EXPIRY: string = '24h'; // Token valid for 24 hours
 const JWT_ISSUER: string = 'ski-race-timer';
+// HS256 secrets shorter than the 256-bit hash output are brute-forceable offline
+const JWT_SECRET_MIN_LENGTH = 32;
+let weakSecretWarned = false;
 
 /**
  * Get JWT secret from environment
  * SECURITY: Always fails if JWT_SECRET is not set - no fallback
  */
 function getJwtSecret(): string {
-  if (!process.env.JWT_SECRET) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
     throw new Error(
       'CRITICAL: JWT_SECRET environment variable must be set. Create a .env.local file for local development.',
     );
   }
-  return process.env.JWT_SECRET;
+  if (secret.length < JWT_SECRET_MIN_LENGTH && !weakSecretWarned) {
+    weakSecretWarned = true;
+    apiLogger.error(
+      `JWT_SECRET is shorter than ${JWT_SECRET_MIN_LENGTH} characters; rotate it to a random 32+ byte value`,
+    );
+  }
+  return secret;
+}
+
+/**
+ * Current token epoch. Every issued JWT carries the epoch it was issued in;
+ * bumping the epoch (PIN reset/change) revokes all outstanding tokens.
+ */
+export async function getTokenEpoch(redisClient: Redis): Promise<number> {
+  const raw = await redisClient.get(TOKEN_EPOCH_KEY);
+  const epoch = raw ? Number.parseInt(raw, 10) : 0;
+  return Number.isFinite(epoch) ? epoch : 0;
+}
+
+/** Revoke every outstanding JWT by advancing the token epoch. */
+export async function revokeAllTokens(redisClient: Redis): Promise<void> {
+  await redisClient.incr(TOKEN_EPOCH_KEY);
+}
+
+/**
+ * Issue a JWT bound to the current token epoch.
+ * Prefer this over generateToken() for tokens handed to clients.
+ */
+export async function issueToken(
+  redisClient: Redis,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const epoch = await getTokenEpoch(redisClient);
+  return generateToken({ ...payload, epoch });
 }
 
 /**
@@ -183,6 +222,19 @@ export async function validateAuth(
   // Try JWT verification first
   const jwtResult = verifyToken(token);
   if (jwtResult.valid) {
+    // Reject tokens issued before the last PIN reset/change.
+    // Tokens without an epoch claim predate revocation support and belong to epoch 0.
+    const tokenEpoch =
+      typeof jwtResult.payload?.epoch === 'number'
+        ? jwtResult.payload.epoch
+        : 0;
+    if (tokenEpoch !== (await getTokenEpoch(redisClient))) {
+      return {
+        valid: false,
+        error: 'Session revoked. Please re-authenticate.',
+        expired: true,
+      };
+    }
     return { valid: true, method: 'jwt', payload: jwtResult.payload };
   }
 

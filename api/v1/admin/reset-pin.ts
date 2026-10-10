@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Redis from 'ioredis';
 import { apiLogger } from '../../lib/apiLogger.js';
+import { revokeAllTokens } from '../../lib/jwt.js';
 import {
   CHIEF_JUDGE_PIN_KEY,
   CLIENT_PIN_KEY,
@@ -21,6 +21,7 @@ import {
   setSecurityHeaders,
 } from '../../lib/response.js';
 import { checkRateLimit } from '../../lib/validation.js';
+import type { VercelRequest, VercelResponse } from '../../lib/vercelTypes.js';
 
 // Rate limiting for PIN reset (critical security endpoint)
 const RESET_PIN_RATE_LIMIT = {
@@ -137,6 +138,8 @@ export default async function handler(
     // Delete both PIN hashes (regular and chief judge)
     await client.del(CLIENT_PIN_KEY);
     await client.del(CHIEF_JUDGE_PIN_KEY);
+    // Emergency reset: tokens issued under the old PINs must stop working
+    await revokeAllTokens(client);
 
     apiLogger.info('Client PIN and Chief Judge PIN have been reset');
 

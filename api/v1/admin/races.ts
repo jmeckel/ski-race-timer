@@ -4,6 +4,8 @@ import { getActiveDeviceCount } from '../../lib/deviceHeartbeat.js';
 import { createHandler } from '../../lib/handler.js';
 import { sendBadRequest, sendError, sendSuccess } from '../../lib/response.js';
 
+const RACE_DATA_KEY_RE = /^race:[^:]+$/;
+
 // Configuration
 const TOMBSTONE_EXPIRY_SECONDS = 600; // 10 minutes - must exceed worst-case poll interval (ultra-low battery = 5min)
 
@@ -42,14 +44,10 @@ async function listRaces(client: Redis): Promise<RaceListItem[]> {
     cursor = nextCursor;
 
     for (const key of keys) {
-      // Skip auxiliary keys (devices, highestBib, deleted*, faults, gate_assignments)
-      if (
-        key.includes(':devices') ||
-        key.includes(':highestBib') ||
-        key.includes(':deleted') ||
-        key.includes(':faults') ||
-        key.includes(':gate_assignments')
-      ) {
+      // Race data keys are exactly `race:<id>` (race IDs cannot contain ':').
+      // Anything with a further segment is an auxiliary key (devices, faults, ...).
+      // Substring matching would also hide races named e.g. "faults-cup".
+      if (!RACE_DATA_KEY_RE.test(key)) {
         continue;
       }
 

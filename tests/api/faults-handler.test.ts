@@ -36,6 +36,7 @@ const mockRedisClient = {
 };
 
 vi.mock('../../api/lib/redis.js', () => ({
+  TOKEN_EPOCH_KEY: 'admin:tokenEpoch',
   getRedis: vi.fn(() => mockRedisClient),
   hasRedisError: vi.fn(() => false),
   CLIENT_PIN_KEY: 'admin:clientPin',
@@ -65,6 +66,9 @@ vi.mock('../../api/lib/validation.js', () => ({
 }));
 
 vi.mock('../../api/lib/atomicOps.js', () => ({
+  withWatchLock: vi.fn(async (_client: any, fn: () => Promise<unknown>) =>
+    fn(),
+  ),
   atomicUpdate: vi.fn(
     async (
       _client: any,

@@ -2,7 +2,7 @@
  * Photo Upload Rate Limiting
  *
  * Prevents memory exhaustion from rapid photo uploads by limiting
- * the number of photos a device can upload per time window.
+ * the number of photos a client can upload per time window.
  */
 
 import type Redis from 'ioredis';
@@ -24,17 +24,17 @@ export const PHOTO_RATE_LIMIT_MAX = 20;
  *
  * @param client - Redis client
  * @param raceId - Normalized race ID
- * @param deviceId - Device identifier
+ * @param identity - Client identity (IP address — never a client-chosen ID)
  * @returns Whether the upload is allowed, with current count and limit
  */
 export async function checkPhotoRateLimit(
   client: Redis,
   raceId: string,
-  deviceId: string,
+  identity: string,
 ): Promise<PhotoRateLimitResult> {
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - (now % PHOTO_RATE_LIMIT_WINDOW);
-  const key = `ratelimit:photo:${raceId}:${deviceId}:${windowStart}`;
+  const key = `ratelimit:photo:${raceId}:${identity}:${windowStart}`;
 
   try {
     const multi = client.multi();

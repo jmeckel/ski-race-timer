@@ -100,9 +100,19 @@ export async function exchangePinForToken(
   );
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    // Setting the first Chief Judge PIN requires proof of race membership
+    const existingToken =
+      role === 'chiefJudge' && hasAuthToken() ? getAuthToken() : null;
+    if (existingToken) {
+      headers.Authorization = `Bearer ${existingToken}`;
+    }
+
     const response = await fetch('/api/v1/auth/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ pin, role }),
       signal: controller.signal,
     });
