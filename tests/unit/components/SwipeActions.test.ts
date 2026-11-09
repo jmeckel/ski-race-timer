@@ -9,6 +9,10 @@ import {
   SwipeActions,
 } from '../../../src/components/SwipeActions';
 
+// jsdom 31+ serializes `translateX(0)` as `translateX(0px)` (matching browsers);
+// accept both forms so assertions stay meaningful across versions.
+const TRANSLATE_X_ZERO = /^translateX\(0(px)?\)$/;
+
 // Helper: jsdom 28 exposes PointerEvent, so SwipeActions uses pointer events.
 // Provide pointer event helpers for the tests.
 const HAS_POINTER_EVENTS =
@@ -128,7 +132,7 @@ describe('SwipeActions Component', () => {
       dispatchStart(wrapper, 200, 100);
       dispatchMove(wrapper, 50, 100);
 
-      expect(wrapper.style.transform).not.toBe('translateX(0)');
+      expect(wrapper.style.transform).not.toMatch(TRANSLATE_X_ZERO);
 
       swipe.destroy();
     });
@@ -140,7 +144,7 @@ describe('SwipeActions Component', () => {
       dispatchStart(wrapper, 50, 100);
       dispatchMove(wrapper, 200, 100);
 
-      expect(wrapper.style.transform).not.toBe('translateX(0)');
+      expect(wrapper.style.transform).not.toMatch(TRANSLATE_X_ZERO);
 
       swipe.destroy();
     });
@@ -220,7 +224,7 @@ describe('SwipeActions Component', () => {
 
       swipe.reset();
 
-      expect(wrapper.style.transform).toBe('translateX(0)');
+      expect(wrapper.style.transform).toMatch(TRANSLATE_X_ZERO);
 
       swipe.destroy();
     });
@@ -235,7 +239,7 @@ describe('SwipeActions Component', () => {
 
       // Should be at initial position (may be reset via transition)
       swipe.reset();
-      expect(wrapper.style.transform).toBe('translateX(0)');
+      expect(wrapper.style.transform).toMatch(TRANSLATE_X_ZERO);
 
       swipe.destroy();
     });
