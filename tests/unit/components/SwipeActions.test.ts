@@ -128,7 +128,7 @@ describe('SwipeActions Component', () => {
       dispatchStart(wrapper, 200, 100);
       dispatchMove(wrapper, 50, 100);
 
-      expect(wrapper.style.transform).not.toBe('translateX(0)');
+      expect(wrapper.style.transform).not.toBe('translateX(0px)');
 
       swipe.destroy();
     });
@@ -140,7 +140,7 @@ describe('SwipeActions Component', () => {
       dispatchStart(wrapper, 50, 100);
       dispatchMove(wrapper, 200, 100);
 
-      expect(wrapper.style.transform).not.toBe('translateX(0)');
+      expect(wrapper.style.transform).not.toBe('translateX(0px)');
 
       swipe.destroy();
     });
@@ -220,7 +220,7 @@ describe('SwipeActions Component', () => {
 
       swipe.reset();
 
-      expect(wrapper.style.transform).toBe('translateX(0)');
+      expect(wrapper.style.transform).toBe('translateX(0px)');
 
       swipe.destroy();
     });
@@ -235,7 +235,7 @@ describe('SwipeActions Component', () => {
 
       // Should be at initial position (may be reset via transition)
       swipe.reset();
-      expect(wrapper.style.transform).toBe('translateX(0)');
+      expect(wrapper.style.transform).toBe('translateX(0px)');
 
       swipe.destroy();
     });
